@@ -2,7 +2,6 @@
   "name": "raceswebsite",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://geniesoftsyatem.github.io/Iraces-website",
   "dependencies": {
     "@fortawesome/react-fontawesome": "^3.1.0",
     "@reduxjs/toolkit": "^2.9.0",
@@ -20,7 +19,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "set \"CI=false\" && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",

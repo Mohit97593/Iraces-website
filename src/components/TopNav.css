@@ -2,7 +2,7 @@
   background: #f2f3f3;
   border-radius: 18px;
   margin: 12px auto; /* center horizontally */
-  width: 95%; /* make navbar 95% width */
+  width: 98%; /* make navbar 95% width */
   max-width: 1490px; /* match hero max width */
   box-sizing: border-box;
 }

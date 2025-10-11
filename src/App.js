@@ -1,14 +1,16 @@
-// ...existing code...
 import React from "react";
 import { RouterProvider } from "react-router-dom";
 import "./App.css";
-import { AppRouter } from "./routes/router"; // use named export
+import { AppRouter } from "./routes/router";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 function App() {
   return (
-    <div className="wrapper">
-      <RouterProvider router={AppRouter} />
-    </div>
+    <ErrorBoundary>
+      <div className="wrapper">
+        <RouterProvider router={AppRouter} />
+      </div>
+    </ErrorBoundary>
   );
 }
 

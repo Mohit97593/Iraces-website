@@ -3,23 +3,41 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Home from "../pages/Home";
 import Hero from "../pages/Hero";
 import OtherPage from "../pages/OtherPage";
-import PrivateRoute from "./PrivateRoute";
+import NotFound from "../pages/NotFound";
+import ErrorBoundary from "../components/ErrorBoundary";
 
 const AppRouter = createBrowserRouter([
   {
     path: "/",
-    element: <Home />,
+    element: (
+      <ErrorBoundary>
+        <Home />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
   },
   {
     path: "/hero",
-    element: <Hero />,
+    element: (
+      <ErrorBoundary>
+        <Hero />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
   },
   {
     path: "/other",
-    element: <OtherPage />,
+    element: (
+      <ErrorBoundary>
+        <OtherPage />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
   },
-], {
-  basename: "/Iraces-website"
-});
+  {
+    path: "*",
+    element: <NotFound />,
+  },
+]);
 
 export { AppRouter, RouterProvider };

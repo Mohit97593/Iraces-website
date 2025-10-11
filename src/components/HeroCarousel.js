@@ -25,13 +25,11 @@ export default function HeroCarousel() {
 
   // numbers section visibility / animation trigger
   const numbersRef = useRef(null);
-  const [numbersVisible, setNumbersVisible] = useState(false);
 
   // countUp helper
   const countUp = (el, target, duration = 2000) => {
     const start = performance.now();
     const from = 0;
-    const isFloat = !Number.isInteger(target);
     const suffix = el.getAttribute("data-suffix") || "";
 
     const step = (now) => {
@@ -53,8 +51,6 @@ export default function HeroCarousel() {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            setNumbersVisible(true);
-
             // start sliding cards with small stagger
             const cards = node.querySelectorAll(".number-card");
             cards.forEach((c, i) => {
@@ -107,7 +103,7 @@ export default function HeroCarousel() {
             <div className="row h-100 align-items-center">
               <div
                 className={`col-lg-7 text-white position-relative`}
-                style={{ marginBottom: "80px", marginLeft: "-60px" }}
+                style={{ marginBottom: "80px" }}
               >
                 <div className="avatar-row mb-3">
                   <img src={Avatar1} className="avatar" alt="a" />
