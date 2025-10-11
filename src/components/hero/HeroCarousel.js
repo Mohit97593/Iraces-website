@@ -1,15 +1,18 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { nextSlide, goToSlide, toggleModal } from "../slice/hero/heroSlice";
+import { nextSlide, goToSlide, toggleModal } from "../../slice/hero/heroSlice";
 import "./Hero.css";
 // Font Awesome is provided via CDN in public/index.html; remove local import to avoid build errors
-import Avatar1 from "../assets/image/avatar1.jpg";
-import Avatar2 from "../assets/image/avatar2.jpg";
-import Avatar3 from "../assets/image/avatar3.jpg";
-import Avatar4 from "../assets/image/avatar4.jpg";
-import logo from "../assets/image/09cbb1e84b3bf91549ba83bb53aceeb0.jpg";
-import EventsPanel from "./EventsPanel";
-import TrainingPanel from "./TrainingPanel";
+import Avatar1 from "../../assets/image/avatar1.jpg";
+import Avatar2 from "../../assets/image/avatar2.jpg";
+import Avatar3 from "../../assets/image/avatar3.jpg";
+import Avatar4 from "../../assets/image/avatar4.jpg";
+import logo from "../../assets/image/09cbb1e84b3bf91549ba83bb53aceeb0.jpg";
+import EventsPanel from "../EventsPanel/EventsPanel";
+import TrainingPanel from "../TrainingPanel/TrainingPanel";
+import WhyRunmatePanel from "../RunmatePanel/WhyRunmatePanel";
+import RunUnintentionallyPanel from "../UnintentionallyPanel/RunUnintentionallyPanel";
+import CoachesPanel from "../CoachesPanel/CoachesPanel";
 
 export default function HeroCarousel() {
   const { slides, currentIndex } = useSelector((s) => s.hero);
@@ -316,7 +319,7 @@ export default function HeroCarousel() {
           <div className="col-lg-3 col-md-6 mb-4">
             <div className="feature-image-wrap">
               <img
-                src={require("../assets/image/run1.jpg")}
+                src={require("../../assets/image/run1.jpg")}
                 alt="run1"
                 className="feature-image rounded-xl"
               />
@@ -329,7 +332,7 @@ export default function HeroCarousel() {
           <div className="col-lg-4 col-md-6 mb-4 d-flex justify-content-center">
             <div className="feature-image-wrap center-card">
               <img
-                src={require("../assets/image/run2.jpg")}
+                src={require("../../assets/image/run2.jpg")}
                 alt="run2"
                 className="feature-image tall rounded-xl"
               />
@@ -380,6 +383,15 @@ export default function HeroCarousel() {
 
       {/* Training Programs section (matches screenshot) */}
       <TrainingPanel />
+
+      {/* Why Runmate section */}
+      <WhyRunmatePanel />
+
+      {/* Run Unintentionally section */}
+      <RunUnintentionallyPanel />
+
+      {/* Coaches section */}
+      <CoachesPanel />
     </section>
   );
 }

@@ -1,0 +1,262 @@
+/* WhyRunmatePanel styles matching the screenshot */
+.why-runmate-section {
+  --green: #9cf09c;
+  --dark: #2d2d2d;
+  --gray: #6b6b6b;
+  padding: 60px 15px;
+}
+
+.why-pill {
+  display: inline-block;
+  background: var(--gray);
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  font-size: 14px;
+}
+
+.why-title {
+  font-family: "Oswald", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 42px;
+  line-height: 1.1;
+  margin: 0;
+  color: var(--dark);
+}
+
+.why-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 400px 1fr;
+  gap: 40px;
+  align-items: start;
+  margin-top: 40px;
+}
+
+.left-features,
+.right-features {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.feature-item {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.feature-icon {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0d4a0f;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.feature-icon i {
+  color: #0d4a0f;
+}
+
+.feature-content h3 {
+  font-size: 23px;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+  color: var(--dark);
+  line-height: 1.3;
+}
+
+.feature-content p {
+  color: var(--gray);
+  margin: 0;
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.center-card {
+  background: black;
+  color: #fff;
+  border-radius: 20px;
+  padding: 40px 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 500px;
+}
+
+.center-pill {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--green);
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-size: 12px;
+  margin-bottom: 20px;
+}
+
+.center-card h2 {
+  font-size: 45px;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  line-height: 1.2;
+}
+
+.center-card p {
+  color: #d1d1d1;
+  margin: 0 0 30px 0;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.explore-btn {
+  background: var(--green);
+  color: var(--dark);
+  border: none;
+  padding: 15px 30px;
+  border-radius: 25px;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.explore-btn:hover {
+  background: #8ae08a;
+  transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .why-content-grid {
+    grid-template-columns: 1fr 350px 1fr;
+    gap: 30px;
+  }
+
+  .center-card {
+    min-height: 450px;
+    padding: 35px 25px;
+  }
+}
+
+@media (max-width: 992px) {
+  .why-content-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .why-title {
+    font-size: 36px;
+    text-align: center;
+  }
+
+  .why-pill {
+    display: none;
+  }
+
+  .center-card {
+    order: -1;
+    min-height: 400px;
+  }
+
+  .left-features,
+  .right-features {
+    gap: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .why-runmate-section {
+    padding: 40px 10px;
+  }
+
+  .why-title {
+    font-size: 28px;
+    line-height: 1.2;
+  }
+
+  .feature-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+  }
+
+  .feature-icon {
+    align-self: center;
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+
+  .feature-content h3 {
+    font-size: 16px;
+    text-align: center;
+  }
+
+  .feature-content p {
+    text-align: center;
+    font-size: 13px;
+  }
+
+  .center-card {
+    padding: 30px 20px;
+    min-height: 350px;
+  }
+
+  .center-card h2 {
+    font-size: 24px;
+  }
+
+  .explore-btn {
+    padding: 12px 24px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 576px) {
+  .why-title {
+    font-size: 24px;
+  }
+
+  .left-features,
+  .right-features {
+    gap: 25px;
+  }
+
+  .feature-item {
+    gap: 12px;
+  }
+
+  .feature-icon {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+
+  .feature-content h3 {
+    font-size: 15px;
+  }
+
+  .center-card {
+    padding: 25px 15px;
+    min-height: 320px;
+  }
+
+  .center-card h2 {
+    font-size: 20px;
+  }
+
+  .center-card p {
+    font-size: 13px;
+  }
+}

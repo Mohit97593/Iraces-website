@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import RunmateLogo from "../assets/image/Runmate-Logo.png";
+import RunmateLogo from "../../assets/image/Runmate-Logo.png";
 import "./TopNav.css";
 
 export default function TopNav() {
@@ -13,7 +13,7 @@ export default function TopNav() {
             maxWidth: 1490,
             padding: "17px 12px",
             borderRadius: "20px",
-            backgroundColor: "rgb(244 238 238)",
+            backgroundColor: "rgb(233 233 236)",
           }}
         >
           {/* logo */}
@@ -50,7 +50,10 @@ export default function TopNav() {
             id="mainNavbar"
             style={{ fontSize: "20px", fontWeight: "700", gap: "20px" }}
           >
-            <ul className="navbar-nav mb-2 mb-lg-0 align-items-lg-center">
+            <ul
+              className="navbar-nav mb-2 mb-lg-0 align-items-lg-center"
+              style={{ gap: "24px" }}
+            >
               <li className="nav-item">
                 <NavLink className="nav-link" to="/">
                   Home
@@ -70,7 +73,6 @@ export default function TopNav() {
                 <span
                   className="nav-link dropdown-toggle"
                   role="button"
-                  data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
                   Page

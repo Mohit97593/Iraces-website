@@ -1,6 +1,6 @@
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { toggleModal } from "../slice/hero/heroSlice";
+import { toggleModal } from "../../slice/hero/heroSlice";
 
 export default function HeroModal() {
   const modalOpen = useSelector((s) => s.hero.modalOpen);

@@ -1,7 +1,7 @@
 import React from "react";
-import HeroCarousel from "../components/HeroCarousel";
-import HeroModal from "../components/HeroModal";
-import TopNav from "../components/TopNav";
+import HeroCarousel from "../components/hero/HeroCarousel";
+import HeroModal from "../components/hero/HeroModal";
+import TopNav from "../components/Navbar/TopNav";
 
 export default function Hero() {
   return (

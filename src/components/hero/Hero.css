@@ -135,7 +135,7 @@
 .social-vertical {
   position: absolute;
   right: 18px;
-  top: 1%;
+  top: 0.5%;
   display: flex;
   flex-direction: column;
   gap: 5px;
