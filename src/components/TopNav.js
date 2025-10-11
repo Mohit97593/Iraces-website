@@ -1,6 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import RunmateLogo from "../assets/image/Runmate-Logo.png";
+import "./TopNav.css";
 
 export default function TopNav() {
   return (
@@ -26,7 +27,7 @@ export default function TopNav() {
 
           {/* mobile toggler - visible only on small screens */}
           <button
-            className="btn d-lg-none"
+            className="navbar-toggler btn d-lg-none"
             type="button"
             data-bs-toggle="collapse"
             data-bs-target="#mainNavbar"
@@ -37,6 +38,7 @@ export default function TopNav() {
               background: "#97f397",
               borderRadius: 12,
               width: 44,
+              border: "none",
             }}
           >
             <span style={{ fontSize: 20, fontWeight: 700 }}>≡</span>

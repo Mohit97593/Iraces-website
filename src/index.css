@@ -5,6 +5,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 code {
@@ -22,6 +23,7 @@ code {
 html {
   /* a stable root font-size to scale from; we'll reduce it on smaller screens */
   font-size: 16px;
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 @media (max-width: 1200px) {
@@ -56,4 +58,27 @@ svg {
 .prevent-overflow {
   word-break: break-word;
   overflow-wrap: anywhere;
+}
+
+/* Ensure mobile responsiveness for Bootstrap components */
+@media (max-width: 768px) {
+  .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+  }
+
+  .row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .col-lg-7,
+  .col-lg-5,
+  .col-md-6,
+  .col-md-3 {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
 }

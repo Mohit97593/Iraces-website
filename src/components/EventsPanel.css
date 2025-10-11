@@ -130,29 +130,164 @@
   .event-card {
     grid-template-columns: 200px 1fr 360px;
     max-width: 1000px;
+    height: 320px;
   }
   .ticket-price {
     font-size: 48px;
+  }
+  .event-title {
+    font-size: 24px;
   }
 }
 
 @media (max-width: 768px) {
   .events-heading {
     font-size: 32px;
+    text-align: center;
+    padding: 0 15px;
   }
+
+  .events-panel {
+    padding: 32px 8px;
+  }
+
   .event-card {
     grid-template-columns: 1fr;
-    height: 370px; /* keep fixed height on stacked mobile layout */
-    max-width: 540px;
-    margin: 0 auto 30px auto;
+    grid-template-rows: auto 1fr auto;
+    height: auto;
+    max-width: 100%;
+    margin: 0 auto 20px auto;
   }
+
   .ticket-col {
+    order: 1;
     padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    text-align: center;
   }
+
+  .ticket-label {
+    grid-column: 1;
+    text-align: left;
+  }
+
+  .ticket-price {
+    grid-column: 2;
+    font-size: 36px;
+    margin: 0;
+  }
+
+  .register-btn {
+    grid-column: 3;
+    justify-self: end;
+    padding: 10px 20px;
+  }
+
   .content-col {
+    order: 2;
     padding: 20px;
   }
+
+  .image-col {
+    order: 3;
+    height: 200px;
+  }
+
   .image-col img {
-    height: 370px; /* match card height */
+    height: 200px;
+    border-radius: 0 0 18px 18px;
+  }
+
+  .event-title {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+
+  .event-desc {
+    font-size: 14px;
+    margin-bottom: 15px;
+  }
+
+  .event-meta li {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+}
+
+@media (max-width: 576px) {
+  .events-heading {
+    font-size: 28px;
+    line-height: 32px;
+  }
+
+  .events-panel {
+    padding: 24px 5px;
+  }
+
+  .event-card {
+    margin: 0 5px 15px 5px;
+  }
+
+  .ticket-col {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 10px;
+    padding: 15px;
+  }
+
+  .ticket-label {
+    grid-column: 1;
+    grid-row: 1;
+    text-align: center;
+  }
+
+  .ticket-price {
+    grid-column: 1;
+    grid-row: 2;
+    font-size: 32px;
+    text-align: center;
+  }
+
+  .register-btn {
+    grid-column: 1;
+    grid-row: 3;
+    justify-self: center;
+    padding: 12px 24px;
+    font-size: 14px;
+  }
+
+  .content-col {
+    padding: 15px;
+  }
+
+  .event-title {
+    font-size: 20px;
+    text-align: center;
+  }
+
+  .event-desc {
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .event-meta {
+    text-align: center;
+  }
+
+  .event-meta li {
+    justify-content: center;
+    font-size: 13px;
+  }
+
+  .view-more {
+    padding: 12px 32px;
+    font-size: 14px;
+  }
+
+  .section-head .upcoming-pill {
+    font-size: 12px;
+    padding: 6px 15px;
   }
 }

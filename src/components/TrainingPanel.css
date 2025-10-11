@@ -173,7 +173,13 @@
 @media (max-width: 992px) {
   .training-grid {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
+
+  .training-title {
+    font-size: 34px;
+  }
+
   .big-card-image {
     position: absolute;
     right: 0;
@@ -183,21 +189,178 @@
     height: 100%;
   }
   .big-card-content {
-    max-width: 100%;
+    max-width: 54%;
   }
   .tall-card {
     height: 420px;
+  }
+
+  .small-cards {
+    flex-direction: row;
+    gap: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .training-section {
+    padding: 0 10px;
+  }
+
+  .training-title {
+    font-size: 28px;
+    text-align: center;
+  }
+
+  .training-pill {
+    display: none; /* Hide on mobile */
+  }
+
+  .btn-all {
+    margin: 0 auto;
+    display: block;
+  }
+
+  .training-grid {
+    gap: 15px;
+  }
+
+  .big-card {
+    min-height: 250px;
+    padding: 24px;
+  }
+
+  .big-card-content {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .big-card-image {
+    display: none; /* Hide image on mobile for better layout */
+  }
+
+  .big-card h3 {
+    font-size: 22px;
+  }
+
+  .small-cards {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .small-card {
+    padding: 15px;
+  }
+
+  .small-card img {
+    height: 150px;
+  }
+
+  .small-card h4 {
+    font-size: 20px;
+    text-align: center;
+  }
+
+  .small-card p {
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .btn-join {
+    display: block;
+    margin: 10px auto 0 auto;
+  }
+
+  .tall-card {
+    height: 350px;
+  }
+
+  .tall-header {
+    padding: 20px;
+  }
+
+  .tall-header h3 {
+    font-size: 18px;
+    text-align: center;
+  }
+
+  .tall-header p {
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .avatar-row.small {
+    justify-content: center;
   }
 }
 
 @media (max-width: 576px) {
   .training-title {
-    font-size: 34px;
+    font-size: 24px;
+    line-height: 28px;
   }
-  .big-card-image {
-    display: none;
+
+  .big-card {
+    min-height: 200px;
+    padding: 20px;
   }
-  .small-cards {
-    flex-direction: column;
+
+  .big-card h3 {
+    font-size: 20px;
+  }
+
+  .big-card p {
+    font-size: 14px;
+  }
+
+  .btn-ghost {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+
+  .small-card {
+    padding: 12px;
+  }
+
+  .small-card img {
+    height: 120px;
+  }
+
+  .small-card h4 {
+    font-size: 18px;
+  }
+
+  .small-card p {
+    font-size: 13px;
+  }
+
+  .btn-join {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  .tall-card {
+    height: 300px;
+  }
+
+  .tall-header {
+    padding: 15px;
+  }
+
+  .tall-header h3 {
+    font-size: 16px;
+  }
+
+  .tall-header p {
+    font-size: 13px;
+  }
+
+  .avatar-row.small img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .btn-all {
+    padding: 10px 18px;
+    font-size: 14px;
   }
 }

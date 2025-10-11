@@ -36,3 +36,40 @@
     transform: rotate(360deg);
   }
 }
+
+/* Global responsive wrapper */
+.wrapper {
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* Ensure all containers are responsive */
+.container {
+  width: 100%;
+  max-width: 1490px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+/* Global mobile responsiveness */
+@media (max-width: 768px) {
+  .wrapper {
+    padding: 0 5px;
+  }
+
+  .container {
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 576px) {
+  .wrapper {
+    padding: 0;
+  }
+
+  .container {
+    padding: 0 8px;
+  }
+}

@@ -397,9 +397,106 @@
   }
 }
 
+@media (max-width: 992px) {
+  .hero-slide {
+    height: 80vh;
+  }
+
+  .hero-title {
+    font-size: 60px !important;
+    line-height: 65px !important;
+  }
+
+  .upcoming-card {
+    margin-top: 100px;
+    margin-right: -50px;
+    width: 300px;
+    height: 280px;
+  }
+
+  .upcoming-image {
+    width: 250px;
+  }
+
+  .feature-title {
+    font-size: 42px;
+  }
+  .feature-image.tall {
+    height: 380px;
+  }
+}
+
 @media (max-width: 768px) {
+  .hero-slide {
+    height: 70vh;
+  }
+
+  .hero-overlay .row {
+    flex-direction: column;
+  }
+
+  .hero-overlay .col-lg-7 {
+    margin-left: 0 !important;
+    margin-bottom: 20px !important;
+    text-align: center;
+  }
+
+  .hero-title {
+    font-size: 48px !important;
+    line-height: 52px !important;
+    text-align: center;
+  }
+
+  .hero-sub {
+    text-align: center;
+    max-width: 400px;
+    margin: 1rem auto;
+  }
+
+  .avatar-row {
+    justify-content: center;
+  }
+
+  .social-vertical {
+    display: none; /* Hide on mobile to avoid overlap */
+  }
+
+  .upcoming-card {
+    position: relative;
+    margin: 20px auto 0 auto;
+    width: 90%;
+    max-width: 400px;
+    height: 250px;
+    flex-direction: column;
+  }
+
+  .upcoming-image {
+    width: 100%;
+    height: 120px;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .upcoming-content {
+    padding: 8px;
+  }
+
+  .upcoming-card h4 {
+    font-size: 18px;
+  }
+
+  .upcoming-card .badge {
+    padding: 4px 15px;
+    font-size: 12px;
+  }
+
+  .upcoming-card .info-box {
+    min-height: auto;
+    padding: 10px;
+  }
+
   .feature-title {
     font-size: 34px;
+    text-align: center;
   }
   .feature-image.tall {
     height: 360px;
@@ -415,5 +512,159 @@
   }
   .about-btn {
     padding: 12px 22px;
+  }
+
+  .numbers-section {
+    padding: 16px 8px;
+  }
+
+  .numbers-intro {
+    font-size: 1.2rem;
+    margin-left: 0;
+  }
+
+  .number-cards {
+    margin-left: 0;
+  }
+
+  .number-card {
+    padding: 20px;
+    margin-bottom: 15px;
+  }
+
+  .number-value {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-slide {
+    height: 60vh;
+  }
+
+  .hero-title {
+    font-size: 36px !important;
+    line-height: 40px !important;
+  }
+
+  .hero-sub {
+    font-size: 14px;
+    max-width: 320px;
+  }
+
+  .avatar-row {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .active-count {
+    font-size: 18px;
+    margin-left: 5px;
+  }
+
+  .upcoming-card {
+    height: 220px;
+  }
+
+  .upcoming-card h4 {
+    font-size: 16px;
+  }
+
+  .numbers-pill {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .numbers-intro {
+    font-size: 1rem;
+  }
+
+  .number-value {
+    font-size: 2rem;
+  }
+
+  .feature-title {
+    font-size: 28px;
+    line-height: 32px;
+  }
+
+  .feature-copy {
+    font-size: 14px;
+  }
+
+  .feature-image {
+    height: 250px;
+  }
+
+  .feature-image.tall {
+    height: 300px;
+  }
+}
+
+/* Additional mobile-specific styles */
+@media (max-width: 480px) {
+  .hero-viewport {
+    margin: 0 5px;
+    border-radius: 15px;
+  }
+
+  .hero-slide {
+    height: 90vh;
+    border-radius: 15px;
+  }
+
+  .hero-title {
+    font-size: 32px !important;
+    line-height: 36px !important;
+  }
+
+  .upcoming-card {
+    width: 95%;
+    height: 403px;
+  }
+
+  .hero-controls {
+    margin-top: 1rem;
+  }
+
+  .hero-controls .dot {
+    width: 8px;
+    height: 8px;
+    margin: 0 4px;
+  }
+}
+
+/* Mobile-first approach for better responsiveness */
+@media (max-width: 375px) {
+  .hero-slide {
+    height: 50vh;
+  }
+
+  .hero-title {
+    font-size: 28px !important;
+    line-height: 32px !important;
+  }
+
+  .hero-sub {
+    font-size: 13px;
+    max-width: 280px;
+  }
+
+  .upcoming-card {
+    height: 180px;
+  }
+
+  .upcoming-card h4 {
+    font-size: 14px;
+  }
+
+  .upcoming-card .badge {
+    font-size: 10px;
+    padding: 3px 10px;
   }
 }
