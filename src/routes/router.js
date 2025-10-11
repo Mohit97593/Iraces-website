@@ -18,6 +18,8 @@ const AppRouter = createBrowserRouter([
     path: "/other",
     element: <OtherPage />,
   },
-]);
+], {
+  basename: "/Iraces-website"
+});
 
 export { AppRouter, RouterProvider };
