@@ -1,0 +1,132 @@
+.topbar {
+  background: #f2f3f3;
+  border-radius: 18px;
+  margin: 12px auto; /* center horizontally */
+  width: 95%; /* make navbar 95% width */
+  max-width: 1490px; /* match hero max width */
+  box-sizing: border-box;
+}
+.topbar .brand {
+  font-weight: 800;
+  color: #111;
+  text-decoration: none;
+  font-size: 20px;
+}
+.main-nav {
+  list-style: none;
+  display: flex;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+}
+.main-nav .nav-link {
+  color: #111;
+  font-weight: 700;
+}
+.contact-btn {
+  border-radius: 24px;
+  padding: 10px 18px;
+  background: #b6ffb6;
+  color: #0a0;
+  font-weight: 700;
+}
+
+/* responsive scaling for navbar */
+@media (max-width: 1200px) {
+  .topbar .brand {
+    font-size: 18px;
+  }
+  .main-nav {
+    gap: 20px;
+  }
+  .contact-btn {
+    padding: 9px 16px;
+    font-size: 0.95rem;
+  }
+}
+@media (max-width: 992px) {
+  .topbar {
+    width: 98%;
+  }
+  .main-nav {
+    gap: 16px;
+  }
+  .main-nav .nav-link {
+    font-size: 0.95rem;
+  }
+  .contact-btn {
+    padding: 8px 14px;
+    font-size: 0.9rem;
+  }
+}
+@media (max-width: 768px) {
+  .main-nav {
+    gap: 12px;
+  }
+  .main-nav .nav-link {
+    font-size: 0.9rem;
+  }
+  .contact-btn {
+    padding: 7px 12px;
+    font-size: 0.85rem;
+  }
+}
+@media (max-width: 576px) {
+  .main-nav {
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .main-nav .nav-link {
+    font-size: 0.85rem;
+    padding: 6px 4px;
+  }
+  .contact-btn {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+}
+
+.header {
+  border: 2px solid red;
+  padding: 21px;
+  border-radius: 21px;
+  background-color: #cfd4cf;
+}
+
+/* container gap: ensure header inner content has 10px left/right padding */
+.topbar .container {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+/* Simple CSS dropdown */
+.nav-dropdown {
+  position: relative;
+}
+.nav-dropdown .nav-link {
+  cursor: pointer;
+}
+.nav-dropdown .dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  padding: 8px 0;
+  min-width: 160px;
+  list-style: none;
+  display: none;
+  z-index: 99;
+}
+.nav-dropdown:hover .dropdown-menu {
+  display: block;
+}
+.dropdown-menu li {
+  padding: 6px 14px;
+}
+.dropdown-menu li .nav-link {
+  color: #111;
+  font-weight: 600;
+}

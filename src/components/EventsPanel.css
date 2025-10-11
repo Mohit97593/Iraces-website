@@ -1,0 +1,158 @@
+.events-panel {
+  background: #efefef; /* subtle light background for the whole section */
+  padding: 48px 12px;
+  border-radius: 23px;
+}
+
+.section-head .upcoming-pill {
+  display: inline-block;
+  background: #b6b6b6;
+  color: #9cf09c;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.events-heading {
+  font-size: 68px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.event-card {
+  display: grid;
+  /* slightly reduce the card footprint and increase the image column */
+  grid-template-columns: 240px 1fr 520px;
+  gap: 0;
+  background: #fff;
+  border-radius: 18px;
+  overflow: hidden;
+  margin: 0 auto 30px auto;
+  align-items: stretch;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.03);
+  height: 370px; /* fixed card height across views */
+  max-width: 1300px; /* keep cards narrower than container */
+}
+
+.ticket-col {
+  background: #0b0b0b;
+  color: #fff;
+  padding: 40px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.ticket-label {
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.ticket-price {
+  color: #9cf09c;
+  font-size: 56px;
+  font-weight: 900;
+  margin-top: -55px;
+}
+.ticket-price .per {
+  font-size: 18px;
+  color: #fff;
+  margin-left: 6px;
+}
+
+.register-btn {
+  background: #9cf09c;
+  color: #071400;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 36px;
+  font-weight: 900;
+  align-self: flex-start;
+}
+
+.content-col {
+  padding: 28px 36px;
+}
+
+.event-title {
+  font-size: 28px;
+  font-weight: 900;
+  margin-bottom: 12px;
+}
+
+.event-desc {
+  color: #666;
+  max-width: 640px;
+  margin-bottom: 18px;
+}
+
+.event-meta {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.event-meta li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #4b4b4b;
+  margin-bottom: 12px;
+}
+.meta-icon {
+  color: #9cf09c;
+  min-width: 20px;
+}
+
+.image-col img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.image-col {
+  overflow: hidden;
+}
+
+.view-more {
+  background: #0b0b0b;
+  color: #9cf09c;
+  padding: 14px 40px;
+  border-radius: 36px;
+  font-weight: 900;
+}
+
+@media (max-width: 992px) {
+  .events-heading {
+    font-size: 40px;
+  }
+  .event-card {
+    grid-template-columns: 200px 1fr 360px;
+    max-width: 1000px;
+  }
+  .ticket-price {
+    font-size: 48px;
+  }
+}
+
+@media (max-width: 768px) {
+  .events-heading {
+    font-size: 32px;
+  }
+  .event-card {
+    grid-template-columns: 1fr;
+    height: 370px; /* keep fixed height on stacked mobile layout */
+    max-width: 540px;
+    margin: 0 auto 30px auto;
+  }
+  .ticket-col {
+    padding: 20px;
+  }
+  .content-col {
+    padding: 20px;
+  }
+  .image-col img {
+    height: 370px; /* match card height */
+  }
+}
