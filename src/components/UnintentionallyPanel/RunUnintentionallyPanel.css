@@ -1,6 +1,6 @@
 /* Run Unintentionally Panel Styles */
 .run-unintentionally-section {
-  --green: #97f397;
+  --green: #da251c;
   --dark: #333;
   --overlay-dark: rgba(0, 0, 0, 0.4);
   margin: 60px 0;
@@ -91,21 +91,21 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: black;
+  background: #da251c;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  box-shadow: 0 6px 20px rgba(151, 243, 151, 0.3);
+  box-shadow: 0 6px 20px rgba(218, 37, 28, 0.3);
   position: relative;
   z-index: 15;
 }
 
 .play-button:hover {
   transform: scale(1.1);
-  box-shadow: 0 8px 25px rgba(151, 243, 151, 0.4);
+  box-shadow: 0 8px 25px rgba(218, 37, 28, 0.4);
 }
 
 .play-button:active {
@@ -113,7 +113,7 @@
 }
 
 .play-icon {
-  color: #97f397;
+  color: white;
   font-size: 24px;
   margin-left: 3px; /* slight offset to center the triangle */
   position: relative;
@@ -147,7 +147,7 @@
   right: -10px;
   bottom: -10px;
   border-radius: 50%;
-  border: 2px solid var(--green);
+  border: 2px solid #da251c;
   opacity: 0;
   animation: pulse 2s infinite;
 }

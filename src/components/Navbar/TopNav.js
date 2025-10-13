@@ -35,10 +35,11 @@ export default function TopNav() {
             aria-expanded="false"
             aria-label="Toggle navigation"
             style={{
-              background: "#97f397",
+              background: "#da251c",
               borderRadius: 12,
               width: 44,
               border: "none",
+              color: "white",
             }}
           >
             <span style={{ fontSize: 20, fontWeight: 700 }}>≡</span>
@@ -96,37 +97,62 @@ export default function TopNav() {
                 </ul>
               </li>
               <li className="nav-item">
-                <NavLink className="nav-link" to="/other">
+                <NavLink className="nav-link" to="/contact">
                   Contact
                 </NavLink>
               </li>
             </ul>
 
-            {/* contact button inside collapse for mobile (duplicate is shown on desktop outside) */}
-            <div className="d-lg-none mt-3">
-              <NavLink to="/contact" className="btn btn-success w-100">
-                Contact Us
+            {/* login/signup buttons inside collapse for mobile */}
+            <div className="d-lg-none mt-3 d-flex gap-2">
+              <NavLink
+                to="/login"
+                className="btn btn-outline-primary flex-fill"
+              >
+                Login
+              </NavLink>
+              <NavLink to="/signup" className="btn btn-success flex-fill">
+                Sign Up
               </NavLink>
             </div>
           </div>
 
-          {/* desktop contact button (visible on large screens) */}
+          {/* desktop login/signup buttons (visible on large screens) */}
           <div className="d-none d-lg-block">
-            <NavLink
-              to="/contact"
-              className="btn ms-lg-3 contact"
-              style={{
-                backgroundColor: "#77f977",
-                color: "black",
-                fontWeight: "700",
-                fontSize: "18px",
-                borderRadius: "23px",
-                padding: "8px 27px 8px 27px",
-                marginRight: "25px",
-              }}
-            >
-              Contact Us
-            </NavLink>
+            <div className="d-flex gap-2">
+              <NavLink
+                to="/login"
+                className="btn login-btn"
+                style={{
+                  backgroundColor: "transparent",
+                  color: "black",
+                  fontWeight: "600",
+                  fontSize: "16px",
+                  borderRadius: "20px",
+                  padding: "8px 20px",
+                  border: "2px solid #333",
+                  marginRight: "8px",
+                }}
+              >
+                Login
+              </NavLink>
+              <NavLink
+                to="/signup"
+                className="btn signup-btn"
+                style={{
+                  backgroundColor: "#da251c",
+                  color: "white",
+                  fontWeight: "700",
+                  fontSize: "16px",
+                  borderRadius: "20px",
+                  padding: "8px 20px",
+                  marginRight: "25px",
+                  border: "none",
+                }}
+              >
+                Sign Up
+              </NavLink>
+            </div>
           </div>
         </div>
       </nav>

@@ -100,7 +100,7 @@
   background: black;
 }
 .hero-controls .dot.active {
-  background: #28a745;
+  background: #da251c;
 }
 
 .hero-aside {
@@ -121,7 +121,7 @@
   object-fit: cover;
 }
 .active-count {
-  color: #aaff7a;
+  color: #da251c;
   font-weight: 800;
   margin-left: 8px;
   font-size: 24px;
@@ -148,8 +148,8 @@
   width: 41px;
   height: 41px;
   border-radius: 22px;
-  background: black;
-  color: #97f397;
+  background: #da251c;
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,7 +224,7 @@
   color: #fff;
 }
 .upcoming-content .info-row .info-icon {
-  color: #97f397; /* green accent */
+  color: #da251c; /* red accent */
   width: 20px;
   text-align: center;
 }
@@ -277,10 +277,10 @@
 }
 .numbers-pill {
   display: inline-block;
-  background: #aeabab;
+  background: #da251c;
   padding: 8px 18px;
   border-radius: 999px;
-  color: #97f397;
+  color: white;
   font-weight: 700;
   letter-spacing: 1px;
   text-align: center;
@@ -377,8 +377,8 @@
 }
 
 .about-btn {
-  background: #a7ffb7; /* light green */
-  color: #061b00;
+  background: #da251c; /* red */
+  color: white;
   border: none;
   padding: 16px 34px;
   border-radius: 30px;

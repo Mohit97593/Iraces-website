@@ -15,8 +15,8 @@
 }
 
 .coaches-badge span {
-  background-color: #a8d5a8;
-  color: #333;
+  background-color: #da251c;
+  color: white;
   padding: 8px 20px;
   border-radius: 25px;
   font-size: 14px;
@@ -40,8 +40,8 @@
 }
 
 .see-full-team-btn {
-  background-color: #90ee90;
-  color: #333;
+  background-color: #da251c;
+  color: white;
   border: none;
   padding: 15px 30px;
   border-radius: 30px;
@@ -114,8 +114,8 @@
 .social-icon {
   width: 36px;
   height: 36px;
-  background: black;
-  color: #97f397;
+  background: #da251c;
+  color: white;
   border-radius: 18px;
   display: flex;
   align-items: center;
@@ -127,8 +127,8 @@
 }
 
 .social-icon:hover {
-  background-color: #97f397;
-  color: #000;
+  background-color: #b81f16;
+  color: white;
   transform: scale(1.1);
 }
 

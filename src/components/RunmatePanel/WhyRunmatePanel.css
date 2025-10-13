@@ -1,6 +1,6 @@
 /* WhyRunmatePanel styles matching the screenshot */
 .why-runmate-section {
-  --green: #9cf09c;
+  --green: #da251c;
   --dark: #2d2d2d;
   --gray: #6b6b6b;
   padding: 60px 15px;
@@ -52,17 +52,17 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: var(--green);
+  background: #da251c;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0d4a0f;
+  color: white;
   font-size: 24px;
   font-weight: 600;
 }
 
 .feature-icon i {
-  color: #0d4a0f;
+  color: white;
 }
 
 .feature-content h3 {
@@ -94,8 +94,8 @@
 
 .center-pill {
   display: inline-block;
-  background: rgba(255, 255, 255, 0.2);
-  color: var(--green);
+  background: #da251c;
+  color: white;
   padding: 8px 18px;
   border-radius: 20px;
   font-weight: 700;
@@ -119,8 +119,8 @@
 }
 
 .explore-btn {
-  background: var(--green);
-  color: var(--dark);
+  background: #da251c;
+  color: white;
   border: none;
   padding: 15px 30px;
   border-radius: 25px;
@@ -132,7 +132,7 @@
 }
 
 .explore-btn:hover {
-  background: #8ae08a;
+  background: #b81f16;
   transform: translateY(-2px);
 }
 

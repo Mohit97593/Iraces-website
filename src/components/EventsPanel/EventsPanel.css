@@ -6,8 +6,8 @@
 
 .section-head .upcoming-pill {
   display: inline-block;
-  background: #b6b6b6;
-  color: #9cf09c;
+  background: #da251c;
+  color: white;
   padding: 8px 18px;
   border-radius: 999px;
   font-weight: 700;
@@ -51,7 +51,7 @@
 }
 
 .ticket-price {
-  color: #9cf09c;
+  color: #da251c;
   font-size: 56px;
   font-weight: 900;
   margin-top: -55px;
@@ -63,8 +63,8 @@
 }
 
 .register-btn {
-  background: #9cf09c;
-  color: #071400;
+  background: #da251c;
+  color: white;
   border: none;
   padding: 14px 28px;
   border-radius: 36px;
@@ -101,7 +101,7 @@
   margin-bottom: 12px;
 }
 .meta-icon {
-  color: #9cf09c;
+  color: #da251c;
   min-width: 20px;
 }
 
@@ -116,8 +116,8 @@
 }
 
 .view-more {
-  background: #0b0b0b;
-  color: #9cf09c;
+  background: #da251c;
+  color: white;
   padding: 14px 40px;
   border-radius: 36px;
   font-weight: 900;
