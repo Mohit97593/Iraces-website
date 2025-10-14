@@ -1,0 +1,54 @@
+.youcanrun-banner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: #fff;
+  padding: 32px 24px;
+}
+
+.youcanrun-banner-img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 32px;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.youcanrun-play-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.play-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .youcanrun-banner-container {
+    padding: 16px 8px;
+  }
+  .youcanrun-banner-img {
+    margin-bottom: 16px;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .youcanrun-banner-container {
+    padding: 8px 0;
+  }
+  .youcanrun-banner-img {
+    margin-bottom: 8px;
+    border-radius: 6px;
+  }
+}

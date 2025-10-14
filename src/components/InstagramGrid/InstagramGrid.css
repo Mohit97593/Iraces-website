@@ -1,0 +1,173 @@
+.insta-grid-root {
+  width: 100%;
+  background: #f7f7f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 0;
+}
+
+.insta-grid-2x3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 32px;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.insta-card {
+  background: #fff;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  height: 100%;
+}
+
+.insta-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 24px;
+}
+
+.insta-follow {
+  background: #181818;
+  color: #fff;
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 32px;
+  min-height: 280px;
+  text-align: left;
+}
+
+.insta-follow h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+
+.insta-follow p {
+  font-size: 1rem;
+  margin-bottom: 32px;
+  color: #eaeaea;
+}
+
+.insta-follow-btn {
+  background: #da251c;
+  color: #fff;
+  border: none;
+  border-radius: 32px;
+  padding: 16px 38px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.insta-follow-btn:hover {
+  background: #b81f16;
+}
+
+.custom-card {
+  background: #fff;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+  height: 300px;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.text-card {
+  background: #181818;
+  color: #fff;
+  width: 100%;
+  height: 300px;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.btn-follow {
+  background: #da251c;
+  color: #fff;
+  border: none;
+  border-radius: 32px;
+  padding: 14px 36px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-follow:hover {
+  background: #b81f16;
+}
+
+.object-fit-cover {
+  object-fit: cover;
+}
+
+@media (max-width: 900px) {
+  .insta-grid-2x3 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .insta-grid-2x3 {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(6, 1fr);
+    gap: 18px;
+  }
+  .insta-card {
+    min-height: 140px;
+    border-radius: 12px;
+  }
+  .insta-card img {
+    border-radius: 12px;
+  }
+  .insta-follow {
+    padding: 14px;
+    border-radius: 12px;
+  }
+}
+
+@media (min-width: 992px) {
+  .row.g-4 > .col-lg-8 .row.g-4 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 18px;
+    height: 100%;
+    width: 100%;
+  }
+  .row.g-4 > .col-lg-8 .row.g-4 > .col-md-6 {
+    height: 300px;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+  }
+  .custom-card,
+  .text-card {
+    height: 300px;
+    min-height: 140px;
+    width: 100%;
+  }
+}

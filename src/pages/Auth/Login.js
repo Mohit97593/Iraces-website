@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import YouCanRunBanner from "./YouCanRunBanner";
 import { NavLink } from "react-router-dom";
 import "./Auth.css";
 
@@ -116,42 +117,57 @@ export default function Login() {
         <div className="pink-shape pink-shape-top"></div>
         <div className="pink-shape pink-shape-bottom"></div>
       </div>
-
       <div className="container-fluid h-100">
         <div className="row h-100 align-items-center">
-          {/* Left Side - Illustration */}
-          <div className="col-lg-6 d-none d-lg-flex justify-content-center align-items-center">
-            <div className="illustration-container">
-              <div className="desk-illustration">
-                <div className="desk-base"></div>
-                <div className="desk-legs"></div>
-                <div className="monitor">
-                  <div className="monitor-screen"></div>
-                  <div className="monitor-stand"></div>
-                </div>
-                <div className="keyboard"></div>
-                <div className="mouse"></div>
-                <div className="coffee-cup">
-                  <div className="coffee-steam steam-1"></div>
-                  <div className="coffee-steam steam-2"></div>
-                  <div className="coffee-steam steam-3"></div>
-                </div>
-                <div className="plant-pot">
-                  <div className="plant-leaf leaf-1"></div>
-                  <div className="plant-leaf leaf-2"></div>
-                  <div className="plant-leaf leaf-3"></div>
-                </div>
-                <div className="floating-elements">
-                  <div className="floating-element element-1"></div>
-                  <div className="floating-element element-2"></div>
-                  <div className="floating-element element-3"></div>
-                  <div className="floating-element element-4"></div>
-                  <div className="floating-element element-5"></div>
-                </div>
+          {/* Left Side - Banner with background */}
+          <div
+            className="col-lg-6 d-none d-lg-flex p-0"
+            style={{
+              position: "relative",
+              background: "#fff",
+              minHeight: "100vh",
+              boxShadow: "0 0 32px rgba(218,37,28,0.08)",
+            }}
+          >
+            <div
+              className="auth-background"
+              style={{ position: "absolute", inset: 0, zIndex: 0 }}
+            >
+              <div className="pink-shape pink-shape-top"></div>
+              <div className="pink-shape pink-shape-bottom"></div>
+            </div>
+            <div
+              style={{
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                padding: "48px 24px",
+                position: "relative",
+                zIndex: 1,
+              }}
+            >
+              <div
+                style={{
+                  width: "484px",
+                  maxWidth: "95%",
+                  minHeight: "550px",
+                  background: "#fff",
+                  borderRadius: "24px",
+                  boxShadow: "0 4px 24px rgba(218,37,28,0.10)",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "32px 24px",
+                  //   border: "2px solid #da251c",
+                }}
+              >
+                <YouCanRunBanner />
               </div>
             </div>
           </div>
-
           {/* Right Side - Login Form */}
           <div className="col-lg-6 col-md-8 col-sm-10 mx-auto">
             <div className="auth-form-container">
@@ -162,7 +178,6 @@ export default function Login() {
                     Your all-in-one event registering tool
                   </p>
                 </div>
-
                 <form onSubmit={handleSubmit} className="auth-form">
                   {/* Login Type Selector */}
                   <div className="login-type-selector">
@@ -200,7 +215,6 @@ export default function Login() {
                       </button>
                     </div>
                   </div>
-
                   {/* Dynamic Input Field */}
                   <div className="form-group">
                     <div className="input-icon">
@@ -221,7 +235,6 @@ export default function Login() {
                       <div className="error-message">{errors.identifier}</div>
                     )}
                   </div>
-
                   {/* Password Field */}
                   <div className="form-group">
                     <div className="input-icon">
@@ -242,12 +255,10 @@ export default function Login() {
                       <div className="error-message">{errors.password}</div>
                     )}
                   </div>
-
                   <button type="submit" className="btn auth-submit-btn">
                     Login with {getLoginTypeLabel()}
                   </button>
                 </form>
-
                 <div className="auth-footer">
                   <p className="auth-link-text">
                     Don't have an account?

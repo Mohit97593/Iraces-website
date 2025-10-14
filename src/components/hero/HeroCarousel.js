@@ -13,6 +13,7 @@ import TrainingPanel from "../TrainingPanel/TrainingPanel";
 import WhyRunmatePanel from "../RunmatePanel/WhyRunmatePanel";
 import RunUnintentionallyPanel from "../UnintentionallyPanel/RunUnintentionallyPanel";
 import CoachesPanel from "../CoachesPanel/CoachesPanel";
+import InstagramGrid from "../InstagramGrid/InstagramGrid";
 
 export default function HeroCarousel() {
   const { slides, currentIndex } = useSelector((s) => s.hero);
@@ -392,6 +393,7 @@ export default function HeroCarousel() {
 
       {/* Coaches section */}
       <CoachesPanel />
+      <InstagramGrid />
     </section>
   );
 }
