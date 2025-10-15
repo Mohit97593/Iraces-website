@@ -1,7 +1,7 @@
 import React from "react";
 import "./EventsPanel.css";
 import event1 from "../../assets/image/event1.jpg";
-import event2 from "../../assets/image/event2.jpg";
+import event2 from "../../assets/image/09cbb1e84b3bf91549ba83bb53aceeb0.jpg";
 
 const EventCard = ({ image, title, date, category, time, location }) => (
   <div className="event-card">

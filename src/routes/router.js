@@ -4,6 +4,11 @@ import Home from "../pages/Home";
 import Hero from "../pages/Hero";
 import OtherPage from "../pages/OtherPage";
 import Contact from "../pages/Contact/Contact";
+import Disclaimer from "../pages/Disclaimer/Disclaimer_new";
+import TermsConditions from "../pages/TermsConditions/TermsConditions";
+import PrivacyPolicy from "../pages/PrivacyPolicy/PrivacyPolicy";
+import CancellationPolicy from "../pages/CancellationPolicy/CancellationPolicy";
+import WhyChooseRaces from "../pages/WhyChooseRaces/WhyChooseRaces";
 import Login from "../pages/Auth/Login";
 import Signup from "../pages/Auth/Signup";
 import NotFound from "../pages/NotFound";
@@ -42,6 +47,51 @@ const AppRouter = createBrowserRouter([
     element: (
       <ErrorBoundary>
         <Contact />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/disclaimer",
+    element: (
+      <ErrorBoundary>
+        <Disclaimer />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/terms-conditions",
+    element: (
+      <ErrorBoundary>
+        <TermsConditions />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/privacy-policy",
+    element: (
+      <ErrorBoundary>
+        <PrivacyPolicy />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/cancellation-policy",
+    element: (
+      <ErrorBoundary>
+        <CancellationPolicy />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/why-choose-races",
+    element: (
+      <ErrorBoundary>
+        <WhyChooseRaces />
       </ErrorBoundary>
     ),
     errorElement: <NotFound />,

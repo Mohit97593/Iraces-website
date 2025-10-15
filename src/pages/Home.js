@@ -32,7 +32,7 @@ export default function Home() {
             margin: "0 auto 20px",
           }}
         ></div>
-        <p>Loading Runmate...</p>
+        <p>Loading IRACES...</p>
         <style>
           {`
             @keyframes spin {

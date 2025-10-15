@@ -3,7 +3,7 @@ import "./TrainingPanel.css";
 import tranning from "../../assets/image/tranning1.png";
 import run1 from "../../assets/image/run1.jpg";
 import run2 from "../../assets/image/run2.jpg";
-import event2 from "../../assets/image/event2.jpg";
+import event2 from "../../assets/image/event1.jpg";
 
 export default function TrainingPanel() {
   return (

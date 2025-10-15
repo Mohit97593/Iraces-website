@@ -1,0 +1,70 @@
+/* Additional styles for Disclaimer page */
+.disclaimer-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.disclaimer-heading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #191919;
+  margin-bottom: 30px;
+  letter-spacing: 0.5px;
+  text-align: left;
+}
+
+.disclaimer-text {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #555;
+  text-align: justify;
+}
+
+.disclaimer-text p {
+  margin-bottom: 25px;
+  text-indent: 0;
+}
+
+.disclaimer-subheading {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #191919;
+  margin: 35px 0 20px 0;
+  letter-spacing: 0.3px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .disclaimer-content {
+    padding: 0 16px;
+  }
+
+  .disclaimer-heading {
+    font-size: 1.3rem;
+  }
+
+  .disclaimer-text {
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .disclaimer-subheading {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .disclaimer-heading {
+    font-size: 1.2rem;
+  }
+
+  .disclaimer-text {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .disclaimer-subheading {
+    font-size: 1rem;
+  }
+}
