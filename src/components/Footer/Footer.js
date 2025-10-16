@@ -115,8 +115,7 @@ export default function Footer() {
           <div className="footer-copyright">
             <p>
               Copyright © 2024 <strong>YooTooCanRun</strong>. All Rights
-              Reserved. Design By{" "}
-              <strong>StandardWings Technologies Pvt. Ltd.</strong>
+              Reserved. Design By <strong>Testriq QA LAB LLP.</strong>
             </p>
           </div>
         </div>

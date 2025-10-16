@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import "./TestimonialsCarousel.css";
 
 const testimonials = [
@@ -47,26 +47,6 @@ const testimonials = [
 ];
 
 function TestimonialsCarousel() {
-  const carouselRef = useRef(null);
-
-  useEffect(() => {
-    let interval;
-    function startScroll() {
-      interval = setInterval(() => {
-        if (carouselRef.current) {
-          const { scrollLeft, offsetWidth, scrollWidth } = carouselRef.current;
-          if (scrollLeft + offsetWidth >= scrollWidth - 10) {
-            carouselRef.current.scrollTo({ left: 0, behavior: "auto" });
-          } else {
-            carouselRef.current.scrollBy({ left: 400, behavior: "smooth" });
-          }
-        }
-      }, 3000);
-    }
-    startScroll();
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <div className="testimonials-section container-fluid">
       <div className="testimonials-header row justify-content-center align-items-center text-center">
@@ -84,10 +64,7 @@ function TestimonialsCarousel() {
           <button className="testimonials-cta w-100">JOIN THE COMMUNITY</button>
         </div>
       </div>
-      <div
-        className="testimonials-carousel d-flex flex-row flex-nowrap"
-        ref={carouselRef}
-      >
+      <div className="testimonials-grid">
         {testimonials.map((t, idx) => (
           <div className="testimonial-card" key={idx}>
             <div className="testimonial-stars">

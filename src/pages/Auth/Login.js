@@ -1,15 +1,18 @@
 import React, { useState } from "react";
 import YouCanRunBanner from "./YouCanRunBanner";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import authService from "../../services/authService";
 import "./Auth.css";
 
 export default function Login() {
+  const navigate = useNavigate();
   const [loginType, setLoginType] = useState("email");
   const [formData, setFormData] = useState({
     identifier: "",
     password: "",
   });
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLoginTypeChange = (type) => {
     setLoginType(type);
@@ -41,11 +44,63 @@ export default function Login() {
     if (!formData.identifier.trim()) {
       newErrors.identifier = `${getLoginTypeLabel()} is required`;
     }
+
+    // Email validation
+    if (loginType === "email" && formData.identifier) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.identifier)) {
+        newErrors.identifier = "Please enter a valid email address";
+      }
+    }
+
+    // Mobile validation
+    if (loginType === "mobile" && formData.identifier) {
+      const mobileRegex = /^[6-9]\d{9}$/;
+      if (!mobileRegex.test(formData.identifier)) {
+        newErrors.identifier = "Please enter a valid 10-digit mobile number";
+      }
+    }
+
     if (!formData.password) {
       newErrors.password = "Password is required";
     }
 
     return newErrors;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const newErrors = validateForm();
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      const loginData = {
+        [loginType === "email" ? "email" : "phone"]: formData.identifier,
+        password: formData.password,
+      };
+
+      const response = await authService.login(loginData);
+
+      // Login successful
+      console.log("Login successful:", response);
+
+      // Redirect to dashboard or home page
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Login error:", error);
+      setErrors({
+        general: error.message || "Login failed. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getLoginTypeLabel = () => {
@@ -96,19 +151,6 @@ export default function Login() {
       default:
         return "fas fa-envelope";
     }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const newErrors = validateForm();
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    console.log("Login data:", { loginType, ...formData });
-    // Handle login logic here
   };
 
   return (
@@ -235,6 +277,13 @@ export default function Login() {
                       <div className="error-message">{errors.identifier}</div>
                     )}
                   </div>
+                  {/* General Error Message */}
+                  {errors.general && (
+                    <div className="alert alert-danger" role="alert">
+                      {errors.general}
+                    </div>
+                  )}
+
                   {/* Password Field */}
                   <div className="form-group">
                     <div className="input-icon">
@@ -255,8 +304,23 @@ export default function Login() {
                       <div className="error-message">{errors.password}</div>
                     )}
                   </div>
-                  <button type="submit" className="btn auth-submit-btn">
-                    Login with {getLoginTypeLabel()}
+                  <button
+                    type="submit"
+                    className="btn auth-submit-btn"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        Logging in...
+                      </>
+                    ) : (
+                      `Login with ${getLoginTypeLabel()}`
+                    )}
                   </button>
                 </form>
                 <div className="auth-footer">

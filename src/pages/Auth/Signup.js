@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import YouCanRunBanner from "./YouCanRunBanner";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import authService from "../../services/authService";
 import "./Auth.css";
 
 export default function Signup() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -17,6 +19,7 @@ export default function Signup() {
   });
 
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -40,16 +43,37 @@ export default function Signup() {
     if (!formData.firstName.trim())
       newErrors.firstName = "First name is required";
     if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
-    if (!formData.mobileNo.trim())
+
+    if (!formData.mobileNo.trim()) {
       newErrors.mobileNo = "Mobile number is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
+    } else {
+      const mobileRegex = /^[6-9]\d{9}$/;
+      if (!mobileRegex.test(formData.mobileNo)) {
+        newErrors.mobileNo = "Please enter a valid 10-digit mobile number";
+      }
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = "Please enter a valid email address";
+      }
+    }
+
     if (!formData.dob) newErrors.dob = "Date of birth is required";
     if (!formData.gender) newErrors.gender = "Gender is required";
-    if (!formData.password) newErrors.password = "Password is required";
-    if (!formData.confirmPassword)
-      newErrors.confirmPassword = "Confirm password is required";
 
-    if (
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Confirm password is required";
+    } else if (
       formData.password &&
       formData.confirmPassword &&
       formData.password !== formData.confirmPassword
@@ -63,7 +87,7 @@ export default function Signup() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateForm();
 
@@ -72,8 +96,25 @@ export default function Signup() {
       return;
     }
 
-    console.log("Signup data:", formData);
-    // Handle signup logic here
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      const response = await authService.signup(formData);
+
+      // Signup successful
+      console.log("Signup successful:", response);
+
+      // Redirect to login or dashboard
+      navigate("/login");
+    } catch (error) {
+      console.error("Signup error:", error);
+      setErrors({
+        general: error.message || "Signup failed. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -340,8 +381,31 @@ export default function Signup() {
                       <div className="error-message">{errors.agreeToTerms}</div>
                     )}
                   </div>
-                  <button type="submit" className="btn auth-submit-btn">
-                    Sign Up
+
+                  {/* General Error Message */}
+                  {errors.general && (
+                    <div className="alert alert-danger" role="alert">
+                      {errors.general}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="btn auth-submit-btn"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        Creating Account...
+                      </>
+                    ) : (
+                      "Sign Up"
+                    )}
                   </button>
                 </form>
                 <div className="auth-footer">
