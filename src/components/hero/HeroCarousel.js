@@ -156,7 +156,7 @@ export default function HeroCarousel() {
                         <div className="upcoming-header">
                           <div className="badge">- UPCOMING RACES -</div>
                           <h4>
-                            RUNMATE CITY
+                            IRACES CITY
                             <br />
                             SPRINT 10K
                           </h4>
@@ -252,15 +252,16 @@ export default function HeroCarousel() {
         <section ref={numbersRef} className="numbers-section container mt-5">
           <div className="row align-items-start">
             <div className="col-md-3 d-none d-md-block">
-              <div className="numbers-pill">- RUNMATE IN NUMBERS -</div>
+              <div className="numbers-pill">- IRACES IN NUMBERS -</div>
             </div>
 
             <div className="col-12 col-md-9">
               <p className="numbers-intro">
-                Every number tells a story of persistence, performance, and
-                progress. Lorem ipsum dolor sit amet, consectetur adipiscing
-                elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar
-                dapibus leo.
+                RACES is India’s first fully integrated registration platform
+                for running events. Beside being a registration platform for
+                running events, we also provide technology solutions, back
+                office service and go-to-market offerings to grow your running
+                event.
               </p>
 
               <div className="row number-cards mt-4">
@@ -350,7 +351,7 @@ export default function HeroCarousel() {
                 STRONGER WITH EVERY STRIDE.
               </h2>
               <p className="feature-copy">
-                Runmate is more than just a running club—it’s a thriving,
+                Iraces is more than just a running club—it’s a thriving,
                 inclusive community where runners of all levels come together to
                 train, race, and grow. Founded in 2018, we’ve helped over 1,200
                 runners across 12 cities reach their goals—whether it’s a

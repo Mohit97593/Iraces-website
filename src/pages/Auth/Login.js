@@ -1,26 +1,96 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import YouCanRunBanner from "./YouCanRunBanner";
 import { NavLink, useNavigate } from "react-router-dom";
-import authService from "../../services/authService";
+import { useAuth } from "../../contexts/AuthContext";
+import { authAPI } from "../../services/authAPI";
 import "./Auth.css";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login, sendOTP, loginWithOTP } = useAuth();
+
   const [loginType, setLoginType] = useState("email");
   const [formData, setFormData] = useState({
     identifier: "",
     password: "",
+    otp: "",
+    phoneCode: "+91",
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [showOTPField, setShowOTPField] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [phoneCodes, setPhoneCodes] = useState([
+    { country_code: "IN", phone_code: "+91", country_name: "India" },
+    { country_code: "US", phone_code: "+1", country_name: "United States" },
+    { country_code: "UK", phone_code: "+44", country_name: "United Kingdom" },
+  ]);
+
+  // Fetch phone codes on component mount
+  useEffect(() => {
+    const fetchPhoneCodes = async () => {
+      try {
+        console.log("Starting to fetch phone codes for login...");
+        const response = await authAPI.getPhoneCodes();
+        console.log("Login phone codes response:", response);
+
+        let codes = [];
+        if (
+          response?.data?.PhoneCode &&
+          Array.isArray(response.data.PhoneCode)
+        ) {
+          codes = response.data.PhoneCode;
+        } else if (response?.PhoneCode && Array.isArray(response.PhoneCode)) {
+          codes = response.PhoneCode;
+        } else if (response?.data && Array.isArray(response.data)) {
+          codes = response.data;
+        } else if (Array.isArray(response)) {
+          codes = response;
+        }
+
+        if (codes.length > 0) {
+          const formattedCodes = codes.map((code) => ({
+            country_code:
+              code.country_code || code.CountryCode || code.code || code.Code,
+            phone_code:
+              code.phone_code || code.PhoneCode || code.phoneCode || code.code,
+            country_name:
+              code.country_name ||
+              code.CountryName ||
+              code.name ||
+              code.Name ||
+              code.country_code,
+          }));
+          setPhoneCodes(formattedCodes);
+          console.log(
+            "Login phone codes loaded successfully:",
+            formattedCodes.length,
+            "codes"
+          );
+        } else {
+          console.log("No phone codes found, using defaults");
+        }
+      } catch (error) {
+        console.error("Failed to fetch phone codes for login:", error);
+        // Use default codes if API fails - they're already set in state
+      }
+    };
+
+    fetchPhoneCodes();
+  }, []);
 
   const handleLoginTypeChange = (type) => {
     setLoginType(type);
     setFormData({
       identifier: "",
       password: "",
+      otp: "",
+      phoneCode: "+91",
     });
     setErrors({});
+    setShowOTPField(false);
+    setOtpSent(false);
   };
 
   const handleChange = (e) => {
@@ -55,14 +125,33 @@ export default function Login() {
 
     // Mobile validation
     if (loginType === "mobile" && formData.identifier) {
-      const mobileRegex = /^[6-9]\d{9}$/;
-      if (!mobileRegex.test(formData.identifier)) {
-        newErrors.identifier = "Please enter a valid 10-digit mobile number";
+      const cleanMobile = formData.identifier.replace(/^0+/, "");
+
+      if (formData.phoneCode === "+91") {
+        // Indian mobile validation
+        const mobileRegex = /^[6-9]\d{9}$/;
+        if (!mobileRegex.test(cleanMobile)) {
+          newErrors.identifier =
+            "Please enter a valid 10-digit mobile number starting with 6-9";
+        }
+      } else {
+        // International mobile validation
+        const mobileRegex = /^\d{7,15}$/;
+        if (!mobileRegex.test(cleanMobile)) {
+          newErrors.identifier =
+            "Please enter a valid mobile number (7-15 digits)";
+        }
       }
     }
 
-    if (!formData.password) {
+    // Password validation (only if OTP field is not shown)
+    if (!showOTPField && !formData.password) {
       newErrors.password = "Password is required";
+    }
+
+    // OTP validation (only if OTP field is shown)
+    if (showOTPField && !formData.otp) {
+      newErrors.otp = "OTP is required";
     }
 
     return newErrors;
@@ -81,22 +170,137 @@ export default function Login() {
     setErrors({});
 
     try {
-      const loginData = {
-        [loginType === "email" ? "email" : "phone"]: formData.identifier,
-        password: formData.password,
-      };
+      // If OTP field is shown and OTP is provided, login with OTP
+      if (showOTPField && formData.otp) {
+        const cleanMobile =
+          loginType === "mobile" ? formData.identifier.replace(/^0+/, "") : "";
+        const otpData = {
+          email:
+            loginType === "email"
+              ? formData.identifier.toLowerCase().trim()
+              : "",
+          mobile: cleanMobile,
+          otp: formData.otp,
+          loginType: loginType === "mobile" ? 2 : 3, // 2=Mobile+OTP, 3=Email+OTP
+          phoneCode: loginType === "mobile" ? formData.phoneCode : "",
+        };
 
-      const response = await authService.login(loginData);
+        const result = await loginWithOTP(otpData);
 
-      // Login successful
-      console.log("Login successful:", response);
+        if (result.success) {
+          console.log("OTP Login successful:", result.data);
+          navigate("/"); // Redirect to home page
+        } else {
+          setErrors({
+            general: result.message || "OTP login failed. Please try again.",
+          });
+        }
+      } else {
+        // Regular password login
+        const cleanMobile =
+          loginType === "mobile" ? formData.identifier.replace(/^0+/, "") : "";
+        const loginData = {
+          email:
+            loginType === "email"
+              ? formData.identifier.toLowerCase().trim()
+              : loginType === "userId"
+              ? formData.identifier
+              : "",
+          mobile: cleanMobile,
+          password: formData.password,
+          loginType: 1, // 1=Password login (both email and mobile)
+          phoneCode: loginType === "mobile" ? formData.phoneCode : "",
+        };
 
-      // Redirect to dashboard or home page
-      navigate("/dashboard");
+        const result = await login(loginData);
+
+        if (result.success) {
+          // Wait a moment for AuthContext to update
+          setTimeout(() => {
+            const token = localStorage.getItem("token");
+
+            if (token) {
+              navigate("/"); // Redirect to home page
+            } else {
+              setErrors({
+                general:
+                  "Login successful but authentication data missing. Please contact support.",
+              });
+            }
+          }, 500);
+        } else {
+          // More specific error messages
+          let errorMessage =
+            result.message ||
+            "Login failed. Please check your credentials and try again.";
+
+          // Handle common error cases
+          if (
+            errorMessage.toLowerCase().includes("user not found") ||
+            errorMessage.toLowerCase().includes("invalid credentials")
+          ) {
+            errorMessage =
+              "Invalid email/mobile or password. Please check your credentials.";
+          } else if (
+            errorMessage.toLowerCase().includes("account not verified")
+          ) {
+            errorMessage =
+              "Your account is not verified. Please check your email/SMS for verification.";
+          }
+
+          setErrors({
+            general: errorMessage,
+          });
+        }
+      }
     } catch (error) {
       console.error("Login error:", error);
       setErrors({
         general: error.message || "Login failed. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Function to send OTP
+  const handleSendOTP = async () => {
+    if (!formData.identifier.trim()) {
+      setErrors({
+        identifier: `${getLoginTypeLabel()} is required to send OTP`,
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      const cleanMobile =
+        loginType === "mobile" ? formData.identifier.replace(/^0+/, "") : "";
+      const otpData = {
+        email:
+          loginType === "email" ? formData.identifier.toLowerCase().trim() : "",
+        mobile: cleanMobile,
+        loginType: loginType === "mobile" ? 2 : 3, // 2=Mobile, 3=Email
+        phoneCode: loginType === "mobile" ? formData.phoneCode : "",
+      };
+
+      const result = await sendOTP(otpData);
+
+      if (result.success) {
+        setShowOTPField(true);
+        setOtpSent(true);
+        console.log("OTP sent successfully");
+      } else {
+        setErrors({
+          general: result.message || "Failed to send OTP. Please try again.",
+        });
+      }
+    } catch (error) {
+      console.error("Send OTP error:", error);
+      setErrors({
+        general: error.message || "Failed to send OTP. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -262,17 +466,49 @@ export default function Login() {
                     <div className="input-icon">
                       <i className={getIcon()}></i>
                     </div>
-                    <input
-                      type={getInputType()}
-                      name="identifier"
-                      className={`form-control auth-input ${
-                        errors.identifier ? "is-invalid" : ""
-                      }`}
-                      placeholder={getPlaceholder()}
-                      value={formData.identifier}
-                      onChange={handleChange}
-                      required
-                    />
+                    {loginType === "mobile" ? (
+                      <div className="d-flex">
+                        <select
+                          name="phoneCode"
+                          className="form-control auth-input me-2"
+                          style={{ maxWidth: "120px" }}
+                          value={formData.phoneCode}
+                          onChange={handleChange}
+                        >
+                          {phoneCodes.map((country) => (
+                            <option
+                              key={country.country_code}
+                              value={country.phone_code}
+                            >
+                              {country.phone_code} ({country.country_code})
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type={getInputType()}
+                          name="identifier"
+                          className={`form-control auth-input ${
+                            errors.identifier ? "is-invalid" : ""
+                          }`}
+                          placeholder={getPlaceholder()}
+                          value={formData.identifier}
+                          onChange={handleChange}
+                          required
+                        />
+                      </div>
+                    ) : (
+                      <input
+                        type={getInputType()}
+                        name="identifier"
+                        className={`form-control auth-input ${
+                          errors.identifier ? "is-invalid" : ""
+                        }`}
+                        placeholder={getPlaceholder()}
+                        value={formData.identifier}
+                        onChange={handleChange}
+                        required
+                      />
+                    )}
                     {errors.identifier && (
                       <div className="error-message">{errors.identifier}</div>
                     )}
@@ -285,25 +521,99 @@ export default function Login() {
                   )}
 
                   {/* Password Field */}
-                  <div className="form-group">
-                    <div className="input-icon">
-                      <i className="fas fa-lock"></i>
+                  {!showOTPField && (
+                    <div className="form-group">
+                      <div className="input-icon">
+                        <i className="fas fa-lock"></i>
+                      </div>
+                      <div className="position-relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          name="password"
+                          className={`form-control auth-input ${
+                            errors.password ? "is-invalid" : ""
+                          }`}
+                          placeholder="Password"
+                          value={formData.password}
+                          onChange={handleChange}
+                          required
+                          style={{ paddingRight: "40px" }}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-sm position-absolute"
+                          style={{
+                            right: "10px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            border: "none",
+                            background: "transparent",
+                            color: "#6c757d",
+                            padding: "0",
+                            width: "24px",
+                            height: "24px",
+                          }}
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          <i
+                            className={`fas ${
+                              showPassword ? "fa-eye-slash" : "fa-eye"
+                            }`}
+                          ></i>
+                        </button>
+                      </div>
+                      {errors.password && (
+                        <div className="error-message">{errors.password}</div>
+                      )}
                     </div>
-                    <input
-                      type="password"
-                      name="password"
-                      className={`form-control auth-input ${
-                        errors.password ? "is-invalid" : ""
-                      }`}
-                      placeholder="Password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                    />
-                    {errors.password && (
-                      <div className="error-message">{errors.password}</div>
+                  )}
+
+                  {/* OTP Field */}
+                  {showOTPField && (
+                    <div className="form-group">
+                      <div className="input-icon">
+                        <i className="fas fa-key"></i>
+                      </div>
+                      <input
+                        type="text"
+                        name="otp"
+                        className={`form-control auth-input ${
+                          errors.otp ? "is-invalid" : ""
+                        }`}
+                        placeholder="Enter OTP"
+                        value={formData.otp}
+                        onChange={handleChange}
+                        required
+                        maxLength="6"
+                      />
+                      {errors.otp && (
+                        <div className="error-message">{errors.otp}</div>
+                      )}
+                      {otpSent && (
+                        <div className="text-success small mt-1">
+                          OTP sent successfully! Please check your{" "}
+                          {loginType === "mobile" ? "SMS" : "email"}.
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Login with OTP Option */}
+                  {(loginType === "mobile" || loginType === "email") &&
+                    !showOTPField && (
+                      <div className="form-group text-center">
+                        <button
+                          type="button"
+                          className="btn btn-link text-primary"
+                          onClick={handleSendOTP}
+                          disabled={isLoading || !formData.identifier.trim()}
+                        >
+                          Login with OTP instead
+                        </button>
+                      </div>
                     )}
-                  </div>
+
+                  {/* Submit Button */}
                   <button
                     type="submit"
                     className="btn auth-submit-btn"
@@ -316,12 +626,39 @@ export default function Login() {
                           role="status"
                           aria-hidden="true"
                         ></span>
-                        Logging in...
+                        {showOTPField ? "Verifying OTP..." : "Logging in..."}
                       </>
+                    ) : showOTPField ? (
+                      "Verify OTP & Login"
                     ) : (
                       `Login with ${getLoginTypeLabel()}`
                     )}
                   </button>
+
+                  {/* Resend OTP or Back to Password */}
+                  {showOTPField && (
+                    <div className="form-group text-center">
+                      <button
+                        type="button"
+                        className="btn btn-link text-secondary me-3"
+                        onClick={() => {
+                          setShowOTPField(false);
+                          setOtpSent(false);
+                          setFormData((prev) => ({ ...prev, otp: "" }));
+                        }}
+                      >
+                        Back to Password Login
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-link text-primary"
+                        onClick={handleSendOTP}
+                        disabled={isLoading}
+                      >
+                        Resend OTP
+                      </button>
+                    </div>
+                  )}
                 </form>
                 <div className="auth-footer">
                   <p className="auth-link-text">

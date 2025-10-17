@@ -55,7 +55,7 @@ const EventsPanel = () => {
       <div className="events-list">
         <EventCard
           image={event1}
-          title="RUNMATE CITY SPRINT 10K"
+          title="IRACES CITY SPRINT 10K"
           date="September 20, 2025"
           category="General"
           time="Start 05:00 AM - Finish"
