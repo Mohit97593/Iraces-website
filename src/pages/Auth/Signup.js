@@ -55,7 +55,6 @@ export default function Signup() {
     const fetchPhoneCodes = async () => {
       try {
         const response = await authAPI.getPhoneCodes();
-        console.log("Phone codes API response:", response);
         let codes = [];
         if (
           response?.data?.PhoneCode &&
@@ -69,43 +68,24 @@ export default function Signup() {
         } else if (Array.isArray(response)) {
           codes = response;
         }
-        console.log("Extracted codes:", codes);
+        console.log("Raw API codes:", codes);
         if (codes.length > 0) {
           const formattedCodes = codes
             .map((code) => ({
-              country_code:
-                code.country_code ||
-                code.CountryCode ||
-                code.code ||
-                code.Code ||
-                "XX",
-              phone_code:
-                code.phone_code ||
-                code.PhoneCode ||
-                code.phoneCode ||
-                code.code ||
-                "+1",
-              country_name:
-                code.country_name ||
-                code.CountryName ||
-                code.name ||
-                code.Name ||
-                code.country_code ||
-                "Unknown",
+              id: code.id,
+              phone_code: code.phonecode,
+              emoji: code.emoji,
             }))
-            .filter(
-              (code) =>
-                code.phone_code &&
-                code.country_code &&
-                code.country_name !== "Unknown"
-            );
+            .filter((code) => code.phone_code);
           setPhoneCodes(formattedCodes);
+          console.log("Assigned phoneCodes:", formattedCodes);
         } else {
           setPhoneCodes([]);
+          console.log("Assigned phoneCodes: []");
         }
       } catch (error) {
-        console.error("Failed to fetch phone codes:", error);
         setPhoneCodes([]);
+        console.log("Assigned phoneCodes: [] (error)");
       }
     };
     fetchPhoneCodes();
@@ -199,11 +179,7 @@ export default function Signup() {
         mobile: cleanMobile,
         dob: formData.dob,
         gender:
-          formData.gender === "male"
-            ? "M"
-            : formData.gender === "female"
-            ? "F"
-            : "O",
+          formData.gender === "male" ? 1 : formData.gender === "female" ? 2 : 3,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
         phoneCode: formData.phoneCode,
@@ -512,286 +488,144 @@ export default function Signup() {
                       </p>
                     </div>
                     <form onSubmit={handleSubmit} className="auth-form">
+                      {/* Responsive field order for mobile and desktop - only one set per view */}
                       <div className="row">
-                        {/* First Column */}
-                        <div className="col-6">
-                          {/* First Name */}
-                          <div className="form-group">
-                            <input
-                              type="text"
-                              name="firstName"
-                              className={`form-control auth-input ${
-                                errors.firstName ? "is-invalid" : ""
-                              }`}
-                              placeholder="First Name"
-                              value={formData.firstName}
-                              onChange={handleChange}
-                              required
-                              style={{ fontSize: "14px" }}
-                            />
-                            {errors.firstName && (
-                              <div className="error-message">
-                                {errors.firstName}
-                              </div>
-                            )}
-                          </div>
-                          {/* Mobile Number with Country Code */}
-                          <div className="form-group">
-                            <div className="d-flex">
-                              <select
-                                name="phoneCode"
-                                className="form-control auth-input me-2"
-                                style={{ maxWidth: "82px" }}
-                                value={formData.phoneCode}
-                                onChange={handleChange}
-                              >
-                                {phoneCodes.length === 0 && (
-                                  <option value="+91">+91 (India)</option>
-                                )}
-                                {phoneCodes.map((country) => (
-                                  <option
-                                    key={
-                                      country.country_code || country.phone_code
-                                    }
-                                    value={country.phone_code}
-                                  >
-                                    {country.phone_code} (
-                                    {country.country_name ||
-                                      country.country_code}
-                                    )
-                                  </option>
-                                ))}
-                              </select>
-                              <input
-                                type="tel"
-                                name="mobileNo"
-                                className={`form-control auth-input ${
-                                  errors.mobileNo ? "is-invalid" : ""
-                                }`}
-                                placeholder="Mobile Number"
-                                value={formData.mobileNo}
-                                onChange={handleChange}
-                                required
-                                style={{ fontSize: "14px" }}
-                              />
+                        {/* Mobile: stack fields in correct order */}
+                        {window.innerWidth < 992 ? (
+                          <div className="col-12">
+                            <div className="form-group">
+                              <input type="text" name="firstName" className={`form-control auth-input ${errors.firstName ? "is-invalid" : ""}`} placeholder="First Name" value={formData.firstName} onChange={handleChange} required style={{ fontSize: "14px" }} />
+                              {errors.firstName && <div className="error-message">{errors.firstName}</div>}
                             </div>
-                            {errors.mobileNo && (
-                              <div className="error-message">
-                                {errors.mobileNo}
-                              </div>
-                            )}
-                          </div>
-                          {/* Date of Birth */}
-                          <div className="form-group">
-                            <div style={{ position: "relative" }}>
-                              <span
-                                style={{
-                                  position: "absolute",
-                                  left: "12px",
-                                  top: "7px",
-                                  fontSize: "11px",
-                                  color: "#888",
-                                  pointerEvents: "none",
-                                }}
-                              >
-                                Date of Birth
-                              </span>
-                              <input
-                                type="date"
-                                name="dob"
-                                id="dob"
-                                className={`form-control auth-input ${
-                                  errors.dob ? "is-invalid" : ""
-                                }`}
-                                value={formData.dob}
-                                onChange={handleChange}
-                                required
-                                style={{ fontSize: "14px", paddingTop: "20px" }}
-                              />
+                            <div className="form-group">
+                              <input type="text" name="lastName" className={`form-control auth-input ${errors.lastName ? "is-invalid" : ""}`} placeholder="Last Name" value={formData.lastName} onChange={handleChange} required style={{ fontSize: "14px" }} />
+                              {errors.lastName && <div className="error-message">{errors.lastName}</div>}
                             </div>
-                            {errors.dob && (
-                              <div className="error-message">{errors.dob}</div>
-                            )}
-                          </div>
-                          {/* Password */}
-                          <div className="form-group">
-                            <div className="position-relative">
-                              <input
-                                type={showPassword ? "text" : "password"}
-                                name="password"
-                                className={`form-control auth-input ${
-                                  errors.password ? "is-invalid" : ""
-                                }`}
-                                placeholder="Password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                required
-                                style={{
-                                  paddingRight: "40px",
-                                  fontSize: "14px",
-                                }}
-                              />
-                              <button
-                                type="button"
-                                className="btn btn-sm position-absolute"
-                                style={{
-                                  right: "10px",
-                                  top: "50%",
-                                  transform: "translateY(-50%)",
-                                  border: "none",
-                                  background: "transparent",
-                                  color: "#6c757d",
-                                  padding: "0",
-                                  width: "24px",
-                                  height: "24px",
-                                }}
-                                onClick={() => setShowPassword(!showPassword)}
-                              >
-                                <i
-                                  className={`fas ${
-                                    showPassword ? "fa-eye-slash" : "fa-eye"
-                                  }`}
-                                ></i>
-                              </button>
+                            <div className="form-group">
+                              <div className="d-flex">
+                                <select name="phoneCode" className="form-control auth-input me-2" style={{ maxWidth: "82px" }} value={formData.phoneCode} onChange={handleChange}>
+                                  {phoneCodes.length === 0 ? (<option value="">No country codes found</option>) : (phoneCodes.map((country) => (<option key={country.id} value={country.phone_code}>{country.phone_code} {country.emoji}</option>)))}
+                                </select>
+                                <input type="tel" name="mobileNo" className={`form-control auth-input ${errors.mobileNo ? "is-invalid" : ""}`} placeholder="Mobile Number" value={formData.mobileNo} onChange={handleChange} required style={{ fontSize: "14px" }} />
+                              </div>
+                              {errors.mobileNo && <div className="error-message">{errors.mobileNo}</div>}
                             </div>
-                            {errors.password && (
-                              <div className="error-message">
-                                {errors.password}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {/* Second Column */}
-                        <div className="col-6">
-                          {/* Last Name */}
-                          <div className="form-group">
-                            <input
-                              type="text"
-                              name="lastName"
-                              className={`form-control auth-input ${
-                                errors.lastName ? "is-invalid" : ""
-                              }`}
-                              placeholder="Last Name"
-                              value={formData.lastName}
-                              onChange={handleChange}
-                              required
-                              style={{ fontSize: "14px" }}
-                            />
-                            {errors.lastName && (
-                              <div className="error-message">
-                                {errors.lastName}
-                              </div>
-                            )}
-                          </div>
-                          {/* Email */}
-                          <div className="form-group">
-                            <input
-                              type="email"
-                              name="email"
-                              className={`form-control auth-input ${
-                                errors.email ? "is-invalid" : ""
-                              }`}
-                              placeholder="Email ID"
-                              value={formData.email}
-                              onChange={handleChange}
-                              required
-                              style={{ fontSize: "14px" }}
-                            />
-                            {errors.email && (
-                              <div className="error-message">
-                                {errors.email}
-                              </div>
-                            )}
-                          </div>
-                          {/* Gender */}
-                          <div className="form-group">
-                            <div style={{ position: "relative" }}>
-                              <span
-                                style={{
-                                  position: "absolute",
-                                  left: "12px",
-                                  top: "7px",
-                                  fontSize: "11px",
-                                  color: "#888",
-                                  pointerEvents: "none",
-                                }}
-                              >
-                                Gender
-                              </span>
-                              <select
-                                name="gender"
-                                className={`form-control auth-input ${
-                                  errors.gender ? "is-invalid" : ""
-                                }`}
-                                value={formData.gender}
-                                onChange={handleChange}
-                                required
-                                style={{ fontSize: "15px", paddingTop: "20px" }}
-                              >
-                                <option value="">Select Gender</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
-                              </select>
+                            <div className="form-group">
+                              <input type="email" name="email" className={`form-control auth-input ${errors.email ? "is-invalid" : ""}`} placeholder="Email ID" value={formData.email} onChange={handleChange} required style={{ fontSize: "14px" }} />
+                              {errors.email && <div className="error-message">{errors.email}</div>}
                             </div>
-                            {errors.gender && (
-                              <div className="error-message">
-                                {errors.gender}
+                            <div className="form-group">
+                              <div style={{ position: "relative" }}>
+                                <span style={{ position: "absolute", left: "12px", top: "7px", fontSize: "11px", color: "#888", pointerEvents: "none" }}>Date of Birth</span>
+                                <input type="date" name="dob" id="dob" className={`form-control auth-input ${errors.dob ? "is-invalid" : ""}`} value={formData.dob} onChange={handleChange} required style={{ fontSize: "14px", paddingTop: "20px" }} />
                               </div>
-                            )}
-                          </div>
-                          {/* Confirm Password */}
-                          <div className="form-group">
-                            <div className="position-relative">
-                              <input
-                                type={showConfirmPassword ? "text" : "password"}
-                                name="confirmPassword"
-                                className={`form-control auth-input ${
-                                  errors.confirmPassword ? "is-invalid" : ""
-                                }`}
-                                placeholder="Confirm Password"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                                required
-                                style={{
-                                  paddingRight: "40px",
-                                  fontSize: "14px",
-                                }}
-                              />
-                              <button
-                                type="button"
-                                className="btn btn-sm position-absolute"
-                                style={{
-                                  right: "10px",
-                                  top: "50%",
-                                  transform: "translateY(-50%)",
-                                  border: "none",
-                                  background: "transparent",
-                                  color: "#6c757d",
-                                  padding: "0",
-                                  width: "24px",
-                                  height: "24px",
-                                }}
-                                onClick={() =>
-                                  setShowConfirmPassword(!showConfirmPassword)
-                                }
-                              >
-                                <i
-                                  className={`fas ${
-                                    showConfirmPassword
-                                      ? "fa-eye-slash"
-                                      : "fa-eye"
-                                  }`}
-                                ></i>
-                              </button>
+                              {errors.dob && <div className="error-message">{errors.dob}</div>}
                             </div>
-                            {errors.confirmPassword && (
-                              <div className="error-message">
-                                {errors.confirmPassword}
+                            <div className="form-group">
+                              <div style={{ position: "relative" }}>
+                                <span style={{ position: "absolute", left: "12px", top: "7px", fontSize: "11px", color: "#888", pointerEvents: "none" }}>Gender</span>
+                                <select name="gender" className={`form-control auth-input ${errors.gender ? "is-invalid" : ""}`} value={formData.gender} onChange={handleChange} required style={{ fontSize: "15px", paddingTop: "20px" }}>
+                                  <option value="">Select Gender</option>
+                                  <option value="male">Male</option>
+                                  <option value="female">Female</option>
+                                  <option value="other">Other</option>
+                                </select>
                               </div>
-                            )}
+                              {errors.gender && <div className="error-message">{errors.gender}</div>}
+                            </div>
+                            <div className="form-group">
+                              <div className="position-relative">
+                                <input type={showPassword ? "text" : "password"} name="password" className={`form-control auth-input ${errors.password ? "is-invalid" : ""}`} placeholder="Password" value={formData.password} onChange={handleChange} required style={{ paddingRight: "40px", fontSize: "14px" }} />
+                                <button type="button" className="btn btn-sm position-absolute" style={{ right: "10px", top: "50%", transform: "translateY(-50%)", border: "none", background: "transparent", color: "#6c757d", padding: "0", width: "24px", height: "24px" }} onClick={() => setShowPassword(!showPassword)}>
+                                  <i className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+                                </button>
+                              </div>
+                              {errors.password && <div className="error-message">{errors.password}</div>}
+                            </div>
+                            <div className="form-group">
+                              <div className="position-relative">
+                                <input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" className={`form-control auth-input ${errors.confirmPassword ? "is-invalid" : ""}`} placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} required style={{ paddingRight: "40px", fontSize: "14px" }} />
+                                <button type="button" className="btn btn-sm position-absolute" style={{ right: "10px", top: "50%", transform: "translateY(-50%)", border: "none", background: "transparent", color: "#6c757d", padding: "0", width: "24px", height: "24px" }} onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                  <i className={`fas ${showConfirmPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+                                </button>
+                              </div>
+                              {errors.confirmPassword && <div className="error-message">{errors.confirmPassword}</div>}
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <>
+                            <div className="col-6">
+                              {/* First Name */}
+                              <div className="form-group">
+                                <input type="text" name="firstName" className={`form-control auth-input ${errors.firstName ? "is-invalid" : ""}`} placeholder="First Name" value={formData.firstName} onChange={handleChange} required style={{ fontSize: "14px" }} />
+                                {errors.firstName && <div className="error-message">{errors.firstName}</div>}
+                              </div>
+                              {/* Mobile Number with Country Code */}
+                              <div className="form-group">
+                                <div className="d-flex">
+                                  <select name="phoneCode" className="form-control auth-input me-2" style={{ maxWidth: "82px" }} value={formData.phoneCode} onChange={handleChange}>
+                                    {phoneCodes.length === 0 ? (<option value="">No country codes found</option>) : (phoneCodes.map((country) => (<option key={country.id} value={country.phone_code}>{country.phone_code} {country.emoji}</option>)))}
+                                  </select>
+                                  <input type="tel" name="mobileNo" className={`form-control auth-input ${errors.mobileNo ? "is-invalid" : ""}`} placeholder="Mobile Number" value={formData.mobileNo} onChange={handleChange} required style={{ fontSize: "14px" }} />
+                                </div>
+                                {errors.mobileNo && <div className="error-message">{errors.mobileNo}</div>}
+                              </div>
+                              {/* Date of Birth */}
+                              <div className="form-group">
+                                <div style={{ position: "relative" }}>
+                                  <span style={{ position: "absolute", left: "12px", top: "7px", fontSize: "11px", color: "#888", pointerEvents: "none" }}>Date of Birth</span>
+                                  <input type="date" name="dob" id="dob" className={`form-control auth-input ${errors.dob ? "is-invalid" : ""}`} value={formData.dob} onChange={handleChange} required style={{ fontSize: "14px", paddingTop: "20px" }} />
+                                </div>
+                                {errors.dob && <div className="error-message">{errors.dob}</div>}
+                              </div>
+                              {/* Password */}
+                              <div className="form-group">
+                                <div className="position-relative">
+                                  <input type={showPassword ? "text" : "password"} name="password" className={`form-control auth-input ${errors.password ? "is-invalid" : ""}`} placeholder="Password" value={formData.password} onChange={handleChange} required style={{ paddingRight: "40px", fontSize: "14px" }} />
+                                  <button type="button" className="btn btn-sm position-absolute" style={{ right: "10px", top: "50%", transform: "translateY(-50%)", border: "none", background: "transparent", color: "#6c757d", padding: "0", width: "24px", height: "24px" }} onClick={() => setShowPassword(!showPassword)}>
+                                    <i className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+                                  </button>
+                                </div>
+                                {errors.password && <div className="error-message">{errors.password}</div>}
+                              </div>
+                            </div>
+                            <div className="col-6">
+                              {/* Last Name */}
+                              <div className="form-group">
+                                <input type="text" name="lastName" className={`form-control auth-input ${errors.lastName ? "is-invalid" : ""}`} placeholder="Last Name" value={formData.lastName} onChange={handleChange} required style={{ fontSize: "14px" }} />
+                                {errors.lastName && <div className="error-message">{errors.lastName}</div>}
+                              </div>
+                              {/* Email */}
+                              <div className="form-group">
+                                <input type="email" name="email" className={`form-control auth-input ${errors.email ? "is-invalid" : ""}`} placeholder="Email ID" value={formData.email} onChange={handleChange} required style={{ fontSize: "14px" }} />
+                                {errors.email && <div className="error-message">{errors.email}</div>}
+                              </div>
+                              {/* Gender */}
+                              <div className="form-group">
+                                <div style={{ position: "relative" }}>
+                                  <span style={{ position: "absolute", left: "12px", top: "7px", fontSize: "11px", color: "#888", pointerEvents: "none" }}>Gender</span>
+                                  <select name="gender" className={`form-control auth-input ${errors.gender ? "is-invalid" : ""}`} value={formData.gender} onChange={handleChange} required style={{ fontSize: "15px", paddingTop: "20px" }}>
+                                    <option value="">Select Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                  </select>
+                                </div>
+                                {errors.gender && <div className="error-message">{errors.gender}</div>}
+                              </div>
+                              {/* Confirm Password */}
+                              <div className="form-group">
+                                <div className="position-relative">
+                                  <input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" className={`form-control auth-input ${errors.confirmPassword ? "is-invalid" : ""}`} placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} required style={{ paddingRight: "40px", fontSize: "14px" }} />
+                                  <button type="button" className="btn btn-sm position-absolute" style={{ right: "10px", top: "50%", transform: "translateY(-50%)", border: "none", background: "transparent", color: "#6c757d", padding: "0", width: "24px", height: "24px" }} onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                    <i className={`fas ${showConfirmPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+                                  </button>
+                                </div>
+                                {errors.confirmPassword && <div className="error-message">{errors.confirmPassword}</div>}
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                       {/* Terms and Conditions - Full Width */}
                       <div className="form-group checkbox-group">

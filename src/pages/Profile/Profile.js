@@ -13,7 +13,10 @@ const Profile = () => {
   const lastName = user?.lastName || user?.lastname || "";
   const email = user?.email || user?.Email || "";
   const mobile = user?.mobile || user?.Mobile || "";
-  const gender = user?.gender || user?.Gender || "";
+  let gender = user?.gender || user?.Gender || "";
+  if (gender === 1 || gender === "1") gender = "Male";
+  else if (gender === 2 || gender === "2") gender = "Female";
+  else if (gender === 3 || gender === "3") gender = "Other";
   const dob = user?.dob || user?.DOB || "";
   const phoneCode = user?.phone_code || user?.phoneCode || "";
 
