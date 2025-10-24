@@ -98,10 +98,10 @@
   margin-right: 4px;
 }
 .testimonial-text {
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: #555;
   margin-bottom: 32px;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Inter", "Roboto", Arial, Helvetica, sans-serif;
 }
 .testimonial-user {
   display: flex;

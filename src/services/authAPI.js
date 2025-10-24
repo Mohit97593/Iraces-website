@@ -50,17 +50,21 @@ export const authAPI = {
     try {
       console.log("Sending signup data:", userData);
 
-      const response = await api.post("/signup", {
-        firstname: userData.firstName,
-        lastname: userData.lastName,
-        email: userData.email,
-        mobile: userData.mobile,
-        dob: userData.dob, // Format: DD/MM/YYYY
-        gender: userData.gender, // M या F
-        password: userData.password,
-        confirm_password: userData.confirmPassword,
-        phone_code: userData.phoneCode || "+91",
-        organising_user_id: userData.organisingUserId || 0,
+      const formData = new FormData();
+      formData.append("firstname", userData.firstName);
+      formData.append("lastname", userData.lastName);
+      formData.append("email", userData.email);
+      formData.append("mobile", userData.mobile);
+      formData.append("dob", userData.dob); // Format: DD/MM/YYYY
+      formData.append("gender", userData.gender); // M या F
+      formData.append("password", userData.password);
+      formData.append("confirm_password", userData.confirmPassword);
+      formData.append("phone_code", userData.phoneCode || "+91");
+      formData.append("organising_user_id", userData.organisingUserId || 0);
+      const response = await api.post("/signup", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       console.log("Signup API response:", response);
@@ -77,29 +81,26 @@ export const authAPI = {
   // Login API
   login: async (loginData) => {
     try {
-      const response = await api.post("/login", {
-        Email: loginData.email || loginData.identifier,
-        Password: loginData.password,
-        LoginType: loginData.loginType || 1, // 1=Email+Password, 2=Mobile+OTP, 3=Email+OTP
-        Mobile: loginData.mobile,
-        PhoneCode: loginData.phoneCode || "+91",
-        ValidOpt: loginData.otp,
-        LoginAsOrganiser: loginData.loginAsOrganiser || 0,
+      const formData = new FormData();
+      formData.append("LoginType", loginData.loginType || 1);
+      formData.append("Email", loginData.email || loginData.identifier || "");
+      formData.append("Password", loginData.password || "");
+      const response = await api.post("/login", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
-      // Handle different response structures
       const responseData = response.data;
-
       let token = null;
       let userData = null;
       let isSuccess = false;
 
-      // Check if login was successful based on HTTP status
-      if (response.status === 200) {
+      // Success if validate === 0, failure if validate === 1
+      if (response.status === 200 && responseData.validate === 0) {
         isSuccess = true;
-
-        // Try to extract user data even if no token
         userData =
+          responseData.data?.userData ||
           responseData.data ||
           responseData.user ||
           responseData.userData ||
@@ -123,40 +124,45 @@ export const authAPI = {
         } else if (responseData.data?.auth_token) {
           token = responseData.data.auth_token;
         } else {
-          // Generate a temporary token if none provided but login was successful
           token = `temp_token_${Date.now()}_${Math.random()
             .toString(36)
             .substr(2, 9)}`;
         }
-      }
 
-      // If login was successful (HTTP 200), proceed regardless of token format
-      if (isSuccess && token) {
-        // Enhance user data with login information
+        // Merge all possible user fields
         const enhancedUserData = {
           ...userData,
-          // Store the credentials used for login
           loginEmail: loginData.email || loginData.identifier,
           loginMobile: loginData.mobile,
-          phoneCode: loginData.phoneCode,
-          // Normalize field names
+          phoneCode:
+            userData.phone_code ||
+            userData.phoneCode ||
+            loginData.phoneCode ||
+            "",
           firstName:
-            userData.firstName || userData.firstname || userData.FirstName,
-          lastName: userData.lastName || userData.lastname || userData.LastName,
+            userData.firstName ||
+            userData.firstname ||
+            userData.FirstName ||
+            "",
+          lastName:
+            userData.lastName || userData.lastname || userData.LastName || "",
           email:
             userData.email ||
             userData.Email ||
             loginData.email ||
-            loginData.identifier,
-          mobile: userData.mobile || userData.Mobile || loginData.mobile,
+            loginData.identifier ||
+            "",
+          mobile: userData.mobile || userData.Mobile || loginData.mobile || "",
+          dob: userData.dob || userData.DOB || userData.birth_date || "",
+          gender: userData.gender || userData.Gender || "",
         };
 
         localStorage.setItem("token", token);
         localStorage.setItem("userData", JSON.stringify(enhancedUserData));
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-        // Return consistent structure
         return {
+          success: true,
           status: 200,
           data: {
             token: token,
@@ -166,8 +172,19 @@ export const authAPI = {
             responseData.message || responseData.Message || "Login successful",
         };
       } else {
+        // Failure case: validate === 1 or other error
+        userData =
+          responseData.data?.userData ||
+          responseData.data ||
+          responseData.user ||
+          responseData.userData ||
+          responseData;
         return {
+          success: false,
           status: responseData.status || 400,
+          data: {
+            userData: userData,
+          },
           message:
             responseData.message ||
             responseData.Message ||
@@ -177,13 +194,11 @@ export const authAPI = {
     } catch (error) {
       console.error("Login API error:", error);
       console.error("Error response:", error.response?.data);
-
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.Message ||
         error.message ||
         "Login failed";
-
       throw { message: errorMessage, ...error.response?.data };
     }
   },
@@ -206,22 +221,25 @@ export const authAPI = {
   // Login with OTP
   loginWithOTP: async (otpData) => {
     try {
-      const response = await api.post("/login", {
-        Email: otpData.email || "",
-        Mobile: otpData.mobile || "",
+      // Determine LoginType and identifier for OTP login
+      let payload = {
         PhoneCode: otpData.phoneCode || "+91",
         ValidOpt: otpData.otp,
-        LoginType: otpData.loginType, // 2=Mobile+OTP, 3=Email+OTP
-      });
-
+      };
+      if (otpData.loginType === 2) {
+        // Mobile OTP login
+        payload.Mobile = otpData.mobile || "";
+        payload.LoginType = 2;
+      } else if (otpData.loginType === 3) {
+        // Email OTP login
+        payload.Email = otpData.email || "";
+        payload.LoginType = 3;
+      }
+      const response = await api.post("/login", payload);
       console.log("Login with OTP response:", response.data);
-
-      // Handle different response structures
       const responseData = response.data;
       let token = null;
       let userData = null;
-
-      // Check different possible response structures
       if (responseData.data?.token) {
         token = responseData.data.token;
         userData = responseData.data.userData || responseData.data;
@@ -232,14 +250,10 @@ export const authAPI = {
         token = responseData.data.Token;
         userData = responseData.data;
       }
-
-      // Token save करें
       if (token) {
         localStorage.setItem("token", token);
         localStorage.setItem("userData", JSON.stringify(userData));
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-        // Return consistent structure
         return {
           status: 200,
           data: {
@@ -249,7 +263,6 @@ export const authAPI = {
           message: responseData.message || "Login successful",
         };
       }
-
       return response.data;
     } catch (error) {
       console.error("Login with OTP API error:", error);

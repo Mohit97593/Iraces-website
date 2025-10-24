@@ -1,0 +1,840 @@
+import React, { useState } from "react";
+import "./Profile.css";
+import TopNav from "../../components/Navbar/TopNav";
+import { useAuth } from "../../contexts/AuthContext";
+
+const Profile = () => {
+  const [activeTab, setActiveTab] = useState("personal");
+  const [mainSection, setMainSection] = useState("profile"); // 'profile' or 'team'
+  const { user } = useAuth();
+
+  // Extract user fields safely
+  const firstName = user?.firstName || user?.firstname || "";
+  const lastName = user?.lastName || user?.lastname || "";
+  const email = user?.email || user?.Email || "";
+  const mobile = user?.mobile || user?.Mobile || "";
+  const gender = user?.gender || user?.Gender || "";
+  const dob = user?.dob || user?.DOB || "";
+  const phoneCode = user?.phone_code || user?.phoneCode || "";
+
+  return (
+    <div className="profile-page">
+      <TopNav />
+      <section className="contact-hero">
+        <div className="contact-hero-overlay"></div>
+        <div className="container">
+          <div className="row">
+            <div className="col-12">
+              <h1 className="contact-hero-title">Profile</h1>
+              <nav className="contact-breadcrumb">
+                <span>Home</span>
+                <span className="breadcrumb-separator">→</span>
+                <span>Profile</span>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div
+        className="profile-top-btn-group"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          margin: "37px 0 -56px 0",
+        }}
+      >
+        <div style={{ flex: 1 }}></div>
+        <div
+          style={{
+            display: "flex",
+            border: "2px solid #e53935",
+            borderRadius: "32px",
+            overflow: "hidden",
+            justifyContent: "center",
+            alignItems: "center",
+            flexShrink: 0,
+          }}
+        >
+          <button
+            className={
+              mainSection === "profile"
+                ? "profile-main-btn active"
+                : "profile-main-btn"
+            }
+            style={{
+              background: mainSection === "profile" ? "#e53935" : "white",
+              color: mainSection === "profile" ? "white" : "#555",
+              border: "none",
+              padding: "12px 32px",
+              fontSize: "18px",
+              fontWeight: "500",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              cursor: "pointer",
+              borderRadius: "32px",
+              outline: "none",
+            }}
+            onClick={() => setMainSection("profile")}
+          >
+            {" "}
+            <span style={{ fontSize: "22px" }}>👤</span> My Profile{" "}
+          </button>
+          <button
+            className={
+              mainSection === "team"
+                ? "profile-main-btn active"
+                : "profile-main-btn"
+            }
+            style={{
+              background: mainSection === "team" ? "#e53935" : "white",
+              color: mainSection === "team" ? "white" : "#555",
+              border: "none",
+              padding: "12px 32px",
+              fontSize: "18px",
+              fontWeight: "500",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              cursor: "pointer",
+              borderRadius: "32px",
+              outline: "none",
+            }}
+            onClick={() => setMainSection("team")}
+          >
+            {" "}
+            <span style={{ fontSize: "22px" }}>👥</span> Organizing Team{" "}
+          </button>
+        </div>
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            justifyContent: "flex-end",
+            marginRight: "20px",
+          }}
+        >
+          <button
+            className="profile-athlete-btn"
+            style={{
+              color: "#e53935",
+              border: "1.5px solid #e53935",
+              background: "white",
+              borderRadius: "8px",
+              padding: "12px 32px",
+              fontSize: "18px",
+              fontWeight: "500",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              cursor: "pointer",
+              outline: "none",
+            }}
+          >
+            {" "}
+            <span style={{ fontSize: "22px" }}>☁️</span> Athlete Card{" "}
+          </button>
+        </div>
+      </div>
+      <div className="profile-container">
+        <div className="profile-main">
+          {mainSection === "profile" ? (
+            <>
+              <div className="profile-sidebar">
+                <div className="profile-card profile-card-horizontal">
+                  <img
+                    className="profile-avatar"
+                    src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                    alt="avatar"
+                  />
+                  <div className="profile-card-details">
+                    <div className="profile-name">
+                      {firstName} {lastName}
+                    </div>
+                    <div className="profile-phone">
+                      {phoneCode ? `+${phoneCode} - ` : ""}
+                      {mobile}
+                    </div>
+                    <div className="profile-email">{email}</div>
+                  </div>
+                </div>
+                <div className="profile-progress">
+                  <span>Profile Progress</span>
+                  <div className="progress-bar">
+                    <div
+                      className="progress-bar-fill"
+                      style={{ width: "25.89%" }}
+                    ></div>
+                  </div>
+                  <span className="progress-percent">25.89%</span>
+                </div>
+                <div className="profile-info-section">
+                  <div className="profile-info-title">Your Information</div>
+                  <div className="profile-info-tabs">
+                    <button
+                      className={`tab ${
+                        activeTab === "personal" ? "active" : ""
+                      }`}
+                      onClick={() => setActiveTab("personal")}
+                    >
+                      Personal Details
+                    </button>
+                    <button
+                      className={`tab ${activeTab === "basic" ? "active" : ""}`}
+                      onClick={() => setActiveTab("basic")}
+                    >
+                      Basic Information
+                    </button>
+                    <button
+                      className={`tab ${
+                        activeTab === "address" ? "active" : ""
+                      }`}
+                      onClick={() => setActiveTab("address")}
+                    >
+                      Your Address
+                    </button>
+                    <button
+                      className={`tab ${
+                        activeTab === "medical" ? "active" : ""
+                      }`}
+                      onClick={() => setActiveTab("medical")}
+                    >
+                      Medical Profile
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="profile-details">
+                {activeTab === "medical" && (
+                  <div className="medical-profile-section">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <h2 style={{ margin: 0 }}>Medical Profile</h2>
+                      <button
+                        className="profile-action-btn"
+                        style={{
+                          color: "red",
+                          border: "1px solid red",
+                          background: "white",
+                          borderRadius: "6px",
+                          padding: "6px 16px",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        <span style={{ marginRight: "6px" }}>✏️</span>Edit
+                      </button>
+                    </div>
+                    <div style={{ marginTop: "32px", marginBottom: "16px", fontWeight: "bold" }}>
+                      Medical Details
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "24px",
+                        marginBottom: "24px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <div className="basic-info-card" style={{ border: "0.5px solid #d9d6d6", borderRadius: "10px", padding: "13px" }}>
+                        <div style={{ fontWeight: "bold", marginBottom: "14px" }}>Blood Group</div>
+                        <div>NA</div>
+                      </div>
+                      <div className="basic-info-card" style={{ border: "0.5px solid #d9d6d6", borderRadius: "10px", padding: "13px" }}>
+                        <div style={{ fontWeight: "bold", marginBottom: "14px" }}>Any Medical Condition</div>
+                        <div>NA</div>
+                      </div>
+                      <div className="basic-info-card" style={{ border: "0.5px solid #d9d6d6", borderRadius: "10px", padding: "13px" }}>
+                        <div style={{ fontWeight: "bold", marginBottom: "14px" }}>Allergies</div>
+                        <div>NA</div>
+                      </div>
+                      <div className="basic-info-card" style={{ border: "0.5px solid #d9d6d6", borderRadius: "10px", padding: "13px" }}>
+                        <div style={{ fontWeight: "bold", marginBottom: "14px" }}>Current Medication</div>
+                        <div>NA</div>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: "32px", marginBottom: "16px", fontWeight: "bold" }}>
+                      Emergency Medical Contact
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "24px",
+                        marginBottom: "24px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <div className="basic-info-card" style={{ border: "0.5px solid #d9d6d6", borderRadius: "10px", padding: "13px" }}>
+                        <div style={{ fontWeight: "bold", marginBottom: "14px" }}>Contact Name</div>
+                        <div>NA</div>
+                      </div>
+                      <div className="basic-info-card" style={{ border: "0.5px solid #d9d6d6", borderRadius: "10px", padding: "13px" }}>
+                        <div style={{ fontWeight: "bold", marginBottom: "14px" }}>Contact Number</div>
+                        <div>NA</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {activeTab === "personal" && (
+                  <>
+                    <div
+                      className="profile-details-header"
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "16px",
+                      }}
+                    >
+                      <h2 style={{ margin: 0 }}>Personal Details</h2>
+                      <button
+                        className="profile-action-btn"
+                        style={{
+                          color: "red",
+                          border: "1px solid red",
+                          background: "white",
+                          borderRadius: "6px",
+                          padding: "6px 16px",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        <span style={{ marginRight: "6px" }}>✏️</span>Edit
+                      </button>
+                    </div>
+                    <div className="profile-details-card">
+                      <img
+                        className="profile-avatar-large"
+                        src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                        alt="avatar"
+                      />
+                      <div className="profile-details-info">
+                        <div className="profile-details-name">
+                          {firstName} {lastName}
+                        </div>
+                        <div className="profile-details-row">
+                          <span>
+                            📞 {phoneCode ? `+${phoneCode} - ` : ""}
+                            {mobile}
+                          </span>
+                          <span>⚧️ {gender}</span>
+                        </div>
+                        <div className="profile-details-row">
+                          <span>✉️ {email}</span>
+                          <span>🎂 {dob}</span>
+                        </div>
+                        <div className="profile-details-bio">
+                          <span>My Bio :</span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+                {activeTab === "basic" && (
+                  <div className="basic-info-section">
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <h2 style={{ margin: 0 }}>Basic Information</h2>
+                      <button
+                        className="profile-action-btn"
+                        style={{
+                          color: "red",
+                          border: "1px solid red",
+                          background: "white",
+                          borderRadius: "6px",
+                          padding: "6px 16px",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        <span style={{ marginRight: "6px" }}>✏️</span>Edit
+                      </button>
+                    </div>
+                    <div
+                      style={{
+                        marginTop: "32px",
+                        marginBottom: "16px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Emergency Contact Details
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "24px",
+                        marginBottom: "24px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Emergency Contact Name
+                        </div>
+                        <div>abc</div>
+                      </div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Emergency Contact Number
+                        </div>
+                        <div>9988776655</div>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        marginTop: "32px",
+                        marginBottom: "16px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Organisation Details
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "24px",
+                        marginBottom: "24px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Organisation
+                        </div>
+                        <div>NA</div>
+                      </div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Designation
+                        </div>
+                        <div>NA</div>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        marginTop: "32px",
+                        marginBottom: "16px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Identification Details
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "24px",
+                        marginBottom: "24px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Id Proof Type
+                        </div>
+                        <div>NA</div>
+                      </div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Id Proof Number
+                        </div>
+                        <div>NA</div>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr",
+                        gap: "24px",
+                        marginBottom: "24px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Id Proof Document
+                        </div>
+                        <div>NA</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {activeTab === "address" && (
+                  <div className="address-info-section">
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <h2 style={{ margin: 0 }}>Your Address</h2>
+                      <button
+                        className="profile-action-btn"
+                        style={{
+                          color: "red",
+                          border: "1px solid red",
+                          background: "white",
+                          borderRadius: "6px",
+                          padding: "6px 16px",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        <span style={{ marginRight: "6px" }}>✏️</span>Edit
+                      </button>
+                    </div>
+                    <div
+                      style={{
+                        marginTop: "32px",
+                        marginBottom: "16px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Permanent Address Details
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "24px",
+                        marginBottom: "24px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Flat No./Building No.
+                        </div>
+                        <div>NA</div>
+                      </div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Street Name, Area Name/Colony
+                        </div>
+                        <div>NA</div>
+                      </div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          City
+                        </div>
+                        <div>NA</div>
+                      </div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          State
+                        </div>
+                        <div>NA</div>
+                      </div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Country
+                        </div>
+                        <div>NA</div>
+                      </div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Pincode
+                        </div>
+                        <div>NA</div>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        marginTop: "32px",
+                        marginBottom: "16px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Communication Address Details
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "24px",
+                        marginBottom: "24px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Flat No./Building No.
+                        </div>
+                        <div>NA</div>
+                      </div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Street Name,Area Name/Colony
+                        </div>
+                        <div>NA</div>
+                      </div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          City
+                        </div>
+                        <div>NA</div>
+                      </div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          State
+                        </div>
+                        <div>NA</div>
+                      </div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Country
+                        </div>
+                        <div>NA</div>
+                      </div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Pincode
+                        </div>
+                        <div>NA</div>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        marginTop: "32px",
+                        marginBottom: "16px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Address proof details
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr",
+                        gap: "24px",
+                        marginBottom: "24px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Nationality
+                        </div>
+                        <div>NA</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div
+              style={{
+                width: "100%",
+                minHeight: "300px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <div
+                className="coming-soon-panel"
+                style={{ textAlign: "center" }}
+              >
+                <h3>Coming Soon</h3>
+                <p>This section will be available soon.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Profile;

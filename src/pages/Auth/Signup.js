@@ -4,7 +4,6 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { authAPI } from "../../services/authAPI";
 import "./Auth.css";
-
 export default function Signup() {
   const navigate = useNavigate();
   const { signup, validateOTP, resendOTP } = useAuth();
@@ -25,6 +24,7 @@ export default function Signup() {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [showOTPStep, setShowOTPStep] = useState(false);
+  const [showOTPModal, setShowOTPModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [otpData, setOtpData] = useState({
@@ -32,20 +32,7 @@ export default function Signup() {
     emailOtp: "",
     mobileOtp: "",
   });
-  const [phoneCodes, setPhoneCodes] = useState([
-    { country_code: "IN", phone_code: "+91", country_name: "India" },
-    { country_code: "US", phone_code: "+1", country_name: "United States" },
-    { country_code: "UK", phone_code: "+44", country_name: "United Kingdom" },
-    { country_code: "CA", phone_code: "+1", country_name: "Canada" },
-    { country_code: "AU", phone_code: "+61", country_name: "Australia" },
-    { country_code: "AE", phone_code: "+971", country_name: "UAE" },
-    { country_code: "SG", phone_code: "+65", country_name: "Singapore" },
-    { country_code: "MY", phone_code: "+60", country_name: "Malaysia" },
-    { country_code: "PK", phone_code: "+92", country_name: "Pakistan" },
-    { country_code: "BD", phone_code: "+880", country_name: "Bangladesh" },
-    { country_code: "LK", phone_code: "+94", country_name: "Sri Lanka" },
-    { country_code: "NP", phone_code: "+977", country_name: "Nepal" },
-  ]);
+  const [phoneCodes, setPhoneCodes] = useState([]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -69,8 +56,6 @@ export default function Signup() {
       try {
         const response = await authAPI.getPhoneCodes();
         console.log("Phone codes API response:", response);
-
-        // Check different possible response structures
         let codes = [];
         if (
           response?.data?.PhoneCode &&
@@ -84,98 +69,45 @@ export default function Signup() {
         } else if (Array.isArray(response)) {
           codes = response;
         }
-
         console.log("Extracted codes:", codes);
-
         if (codes.length > 0) {
-          // Ensure the data has the right format
           const formattedCodes = codes
-            .map((code) => {
-              const formatted = {
-                country_code:
-                  code.country_code ||
-                  code.CountryCode ||
-                  code.code ||
-                  code.Code ||
-                  "XX",
-                phone_code:
-                  code.phone_code ||
-                  code.PhoneCode ||
-                  code.phoneCode ||
-                  code.code ||
-                  "+1",
-                country_name:
-                  code.country_name ||
-                  code.CountryName ||
-                  code.name ||
-                  code.Name ||
-                  code.country_code ||
-                  "Unknown",
-              };
-              return formatted;
-            })
+            .map((code) => ({
+              country_code:
+                code.country_code ||
+                code.CountryCode ||
+                code.code ||
+                code.Code ||
+                "XX",
+              phone_code:
+                code.phone_code ||
+                code.PhoneCode ||
+                code.phoneCode ||
+                code.code ||
+                "+1",
+              country_name:
+                code.country_name ||
+                code.CountryName ||
+                code.name ||
+                code.Name ||
+                code.country_code ||
+                "Unknown",
+            }))
             .filter(
               (code) =>
                 code.phone_code &&
                 code.country_code &&
-                code.phone_code !== "+1" &&
-                code.country_code !== "XX"
+                code.country_name !== "Unknown"
             );
-          console.log("Formatted codes:", formattedCodes);
-
-          if (formattedCodes.length > 0) {
-            setPhoneCodes(formattedCodes);
-          } else {
-            throw new Error("No valid phone codes after formatting");
-          }
+          setPhoneCodes(formattedCodes);
         } else {
-          throw new Error("No phone codes found in response");
+          setPhoneCodes([]);
         }
       } catch (error) {
         console.error("Failed to fetch phone codes:", error);
-        // Set comprehensive default phone codes if API fails
-        const defaultCodes = [
-          { country_code: "IN", phone_code: "+91", country_name: "India" },
-          {
-            country_code: "US",
-            phone_code: "+1",
-            country_name: "United States",
-          },
-          {
-            country_code: "UK",
-            phone_code: "+44",
-            country_name: "United Kingdom",
-          },
-          { country_code: "CA", phone_code: "+1", country_name: "Canada" },
-          { country_code: "AU", phone_code: "+61", country_name: "Australia" },
-          { country_code: "DE", phone_code: "+49", country_name: "Germany" },
-          { country_code: "FR", phone_code: "+33", country_name: "France" },
-          { country_code: "JP", phone_code: "+81", country_name: "Japan" },
-          { country_code: "CN", phone_code: "+86", country_name: "China" },
-          { country_code: "AE", phone_code: "+971", country_name: "UAE" },
-          { country_code: "SG", phone_code: "+65", country_name: "Singapore" },
-          { country_code: "MY", phone_code: "+60", country_name: "Malaysia" },
-          { country_code: "TH", phone_code: "+66", country_name: "Thailand" },
-          { country_code: "ID", phone_code: "+62", country_name: "Indonesia" },
-          {
-            country_code: "PH",
-            phone_code: "+63",
-            country_name: "Philippines",
-          },
-          { country_code: "VN", phone_code: "+84", country_name: "Vietnam" },
-          {
-            country_code: "BD",
-            phone_code: "+880",
-            country_name: "Bangladesh",
-          },
-          { country_code: "PK", phone_code: "+92", country_name: "Pakistan" },
-          { country_code: "LK", phone_code: "+94", country_name: "Sri Lanka" },
-          { country_code: "NP", phone_code: "+977", country_name: "Nepal" },
-        ];
-        setPhoneCodes(defaultCodes);
+        setPhoneCodes([]);
       }
     };
-
     fetchPhoneCodes();
   }, []);
 
@@ -286,7 +218,12 @@ export default function Signup() {
         let userId = null;
         const responseData = result.data;
 
-        if (responseData?.data?.UserId) {
+        // Support userData.id from nested response structure
+        if (responseData?.data?.userData?.id) {
+          userId = responseData.data.userData.id;
+        } else if (responseData?.userData?.id) {
+          userId = responseData.userData.id;
+        } else if (responseData?.data?.UserId) {
           userId = responseData.data.UserId;
         } else if (responseData?.UserId) {
           userId = responseData.UserId;
@@ -300,18 +237,18 @@ export default function Signup() {
           userId = responseData.UserID;
         }
 
-        // If userId is returned, move to OTP verification step
+        // Always require OTP verification after signup
         if (userId) {
           setOtpData({
             userId: userId,
             emailOtp: "",
             mobileOtp: "",
           });
-          setShowOTPStep(true);
+          setShowOTPModal(true);
         } else {
-          // Check if signup was successful but no OTP required
-          alert("Signup successful! Please login with your credentials.");
-          navigate("/login");
+          setErrors({
+            general: "Signup failed. User ID not found. Please try again.",
+          });
         }
       } else {
         setErrors({
@@ -395,6 +332,116 @@ export default function Signup() {
 
   return (
     <div className="auth-container">
+      {/* OTP Modal Popup */}
+      {showOTPModal && (
+        <div
+          className="otp-modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.4)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            className="otp-modal-content"
+            style={{
+              background: "#fff",
+              borderRadius: "16px",
+              padding: "32px 24px",
+              minWidth: "340px",
+              boxShadow: "0 4px 24px rgba(218,37,28,0.10)",
+              position: "relative",
+            }}
+          >
+            <h2 style={{ textAlign: "center", marginBottom: "18px" }}>
+              Verify Your Account
+            </h2>
+            <p style={{ textAlign: "center", marginBottom: "18px" }}>
+              Please enter the OTP sent to your email and mobile
+            </p>
+            <form onSubmit={handleOTPVerification}>
+              <div className="form-group">
+                <input
+                  type="text"
+                  name="emailOtp"
+                  className="form-control auth-input"
+                  placeholder="Email OTP"
+                  value={otpData.emailOtp}
+                  onChange={(e) =>
+                    setOtpData({ ...otpData, emailOtp: e.target.value })
+                  }
+                  maxLength="6"
+                  style={{ fontSize: "15px", marginBottom: "12px" }}
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  type="text"
+                  name="mobileOtp"
+                  className="form-control auth-input"
+                  placeholder="Mobile OTP"
+                  value={otpData.mobileOtp}
+                  onChange={(e) =>
+                    setOtpData({ ...otpData, mobileOtp: e.target.value })
+                  }
+                  maxLength="6"
+                  style={{ fontSize: "15px", marginBottom: "12px" }}
+                />
+              </div>
+              {errors.general && (
+                <div className="alert alert-danger" role="alert">
+                  {errors.general}
+                </div>
+              )}
+              <button
+                type="submit"
+                className="btn auth-submit-btn"
+                disabled={isLoading}
+                style={{ width: "100%", marginBottom: "10px" }}
+              >
+                {isLoading ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
+                    Verifying...
+                  </>
+                ) : (
+                  "Verify & Complete Signup"
+                )}
+              </button>
+              <div className="form-group text-center">
+                <button
+                  type="button"
+                  className="btn btn-link text-primary"
+                  onClick={handleResendOTP}
+                  disabled={isLoading}
+                >
+                  Resend OTP
+                </button>
+              </div>
+              <div className="form-group text-center">
+                <button
+                  type="button"
+                  className="btn btn-link text-secondary p-0"
+                  onClick={() => setShowOTPModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       <div className="auth-background">
         <div className="pink-shape pink-shape-top"></div>
         <div className="pink-shape pink-shape-bottom"></div>
@@ -470,9 +517,6 @@ export default function Signup() {
                         <div className="col-6">
                           {/* First Name */}
                           <div className="form-group">
-                            <div className="input-icon">
-                              <i className="fas fa-user"></i>
-                            </div>
                             <input
                               type="text"
                               name="firstName"
@@ -483,6 +527,7 @@ export default function Signup() {
                               value={formData.firstName}
                               onChange={handleChange}
                               required
+                              style={{ fontSize: "14px" }}
                             />
                             {errors.firstName && (
                               <div className="error-message">
@@ -492,17 +537,17 @@ export default function Signup() {
                           </div>
                           {/* Mobile Number with Country Code */}
                           <div className="form-group">
-                            <div className="input-icon">
-                              <i className="fas fa-phone"></i>
-                            </div>
                             <div className="d-flex">
                               <select
                                 name="phoneCode"
                                 className="form-control auth-input me-2"
-                                style={{ maxWidth: "120px" }}
+                                style={{ maxWidth: "82px" }}
                                 value={formData.phoneCode}
                                 onChange={handleChange}
                               >
+                                {phoneCodes.length === 0 && (
+                                  <option value="+91">+91 (India)</option>
+                                )}
                                 {phoneCodes.map((country) => (
                                   <option
                                     key={
@@ -527,6 +572,7 @@ export default function Signup() {
                                 value={formData.mobileNo}
                                 onChange={handleChange}
                                 required
+                                style={{ fontSize: "14px" }}
                               />
                             </div>
                             {errors.mobileNo && (
@@ -537,28 +583,38 @@ export default function Signup() {
                           </div>
                           {/* Date of Birth */}
                           <div className="form-group">
-                            <div className="input-icon">
-                              <i className="fas fa-calendar-alt"></i>
+                            <div style={{ position: "relative" }}>
+                              <span
+                                style={{
+                                  position: "absolute",
+                                  left: "12px",
+                                  top: "7px",
+                                  fontSize: "11px",
+                                  color: "#888",
+                                  pointerEvents: "none",
+                                }}
+                              >
+                                Date of Birth
+                              </span>
+                              <input
+                                type="date"
+                                name="dob"
+                                id="dob"
+                                className={`form-control auth-input ${
+                                  errors.dob ? "is-invalid" : ""
+                                }`}
+                                value={formData.dob}
+                                onChange={handleChange}
+                                required
+                                style={{ fontSize: "14px", paddingTop: "20px" }}
+                              />
                             </div>
-                            <input
-                              type="date"
-                              name="dob"
-                              className={`form-control auth-input ${
-                                errors.dob ? "is-invalid" : ""
-                              }`}
-                              value={formData.dob}
-                              onChange={handleChange}
-                              required
-                            />
                             {errors.dob && (
                               <div className="error-message">{errors.dob}</div>
                             )}
                           </div>
                           {/* Password */}
                           <div className="form-group">
-                            <div className="input-icon">
-                              <i className="fas fa-lock"></i>
-                            </div>
                             <div className="position-relative">
                               <input
                                 type={showPassword ? "text" : "password"}
@@ -570,7 +626,10 @@ export default function Signup() {
                                 value={formData.password}
                                 onChange={handleChange}
                                 required
-                                style={{ paddingRight: "40px" }}
+                                style={{
+                                  paddingRight: "40px",
+                                  fontSize: "14px",
+                                }}
                               />
                               <button
                                 type="button"
@@ -606,9 +665,6 @@ export default function Signup() {
                         <div className="col-6">
                           {/* Last Name */}
                           <div className="form-group">
-                            <div className="input-icon">
-                              <i className="fas fa-user"></i>
-                            </div>
                             <input
                               type="text"
                               name="lastName"
@@ -619,6 +675,7 @@ export default function Signup() {
                               value={formData.lastName}
                               onChange={handleChange}
                               required
+                              style={{ fontSize: "14px" }}
                             />
                             {errors.lastName && (
                               <div className="error-message">
@@ -628,9 +685,6 @@ export default function Signup() {
                           </div>
                           {/* Email */}
                           <div className="form-group">
-                            <div className="input-icon">
-                              <i className="fas fa-envelope"></i>
-                            </div>
                             <input
                               type="email"
                               name="email"
@@ -641,6 +695,7 @@ export default function Signup() {
                               value={formData.email}
                               onChange={handleChange}
                               required
+                              style={{ fontSize: "14px" }}
                             />
                             {errors.email && (
                               <div className="error-message">
@@ -650,23 +705,35 @@ export default function Signup() {
                           </div>
                           {/* Gender */}
                           <div className="form-group">
-                            <div className="input-icon">
-                              <i className="fas fa-venus-mars"></i>
+                            <div style={{ position: "relative" }}>
+                              <span
+                                style={{
+                                  position: "absolute",
+                                  left: "12px",
+                                  top: "7px",
+                                  fontSize: "11px",
+                                  color: "#888",
+                                  pointerEvents: "none",
+                                }}
+                              >
+                                Gender
+                              </span>
+                              <select
+                                name="gender"
+                                className={`form-control auth-input ${
+                                  errors.gender ? "is-invalid" : ""
+                                }`}
+                                value={formData.gender}
+                                onChange={handleChange}
+                                required
+                                style={{ fontSize: "15px", paddingTop: "20px" }}
+                              >
+                                <option value="">Select Gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                              </select>
                             </div>
-                            <select
-                              name="gender"
-                              className={`form-control auth-input ${
-                                errors.gender ? "is-invalid" : ""
-                              }`}
-                              value={formData.gender}
-                              onChange={handleChange}
-                              required
-                            >
-                              <option value="">Select Gender</option>
-                              <option value="male">Male</option>
-                              <option value="female">Female</option>
-                              <option value="other">Other</option>
-                            </select>
                             {errors.gender && (
                               <div className="error-message">
                                 {errors.gender}
@@ -675,9 +742,6 @@ export default function Signup() {
                           </div>
                           {/* Confirm Password */}
                           <div className="form-group">
-                            <div className="input-icon">
-                              <i className="fas fa-lock"></i>
-                            </div>
                             <div className="position-relative">
                               <input
                                 type={showConfirmPassword ? "text" : "password"}
@@ -689,7 +753,10 @@ export default function Signup() {
                                 value={formData.confirmPassword}
                                 onChange={handleChange}
                                 required
-                                style={{ paddingRight: "40px" }}
+                                style={{
+                                  paddingRight: "40px",
+                                  fontSize: "14px",
+                                }}
                               />
                               <button
                                 type="button"
@@ -738,9 +805,23 @@ export default function Signup() {
                           />
                           <span className="checkmark"></span>
                           <span className="checkbox-text">
-                            I agree to the{" "}
-                            <a href="#" className="terms-link">
-                              Terms and Conditions
+                            I acknowledge the
+                            <a
+                              href="https://youtoocanrun.com/terms-and-conditions-for-use/"
+                              target="blank"
+                              style={{ textDecoration: "none", color: "black" }}
+                            >
+                              {" "}
+                              Terms of Services{" "}
+                            </a>
+                            &
+                            <a
+                              href="https://youtoocanrun.com/privacy-policy/"
+                              target="blank"
+                              style={{ textDecoration: "none", color: "black" }}
+                            >
+                              {" "}
+                              Privacy Policy.{" "}
                             </a>
                           </span>
                         </label>
@@ -801,9 +882,6 @@ export default function Signup() {
                     >
                       {/* Email OTP */}
                       <div className="form-group">
-                        <div className="input-icon">
-                          <i className="fas fa-envelope"></i>
-                        </div>
                         <input
                           type="text"
                           name="emailOtp"
@@ -814,14 +892,12 @@ export default function Signup() {
                             setOtpData({ ...otpData, emailOtp: e.target.value })
                           }
                           maxLength="6"
+                          style={{ fontSize: "15px" }}
                         />
                       </div>
 
                       {/* Mobile OTP */}
                       <div className="form-group">
-                        <div className="input-icon">
-                          <i className="fas fa-mobile-alt"></i>
-                        </div>
                         <input
                           type="text"
                           name="mobileOtp"
@@ -835,6 +911,7 @@ export default function Signup() {
                             })
                           }
                           maxLength="6"
+                          style={{ fontSize: "15px" }}
                         />
                       </div>
 

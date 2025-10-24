@@ -1,11 +1,47 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  font-family: "Inter", "Roboto", "Poppins", Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden; /* Prevent horizontal scroll */
+}
+/* Consistent font for all headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Poppins", "Inter", "Roboto", Arial, Helvetica, sans-serif;
+  font-weight: 700;
+}
+
+/* Consistent font for all text/paragraphs */
+p,
+span,
+label,
+li,
+ul,
+ol,
+.form-control,
+.auth-input,
+.error-message,
+.text-muted,
+.text-dark,
+.form-group,
+.input-icon {
+  font-family: "Inter", "Roboto", Arial, Helvetica, sans-serif;
+  font-weight: 400;
+}
+
+/* Consistent font for all buttons */
+button,
+.btn,
+input[type="submit"],
+input[type="button"] {
+  font-family: "Poppins", "Inter", "Roboto", Arial, Helvetica, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 code {

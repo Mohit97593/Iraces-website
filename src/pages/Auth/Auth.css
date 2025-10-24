@@ -317,7 +317,7 @@
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   border-radius: 30px;
-  padding: 50px 40px;
+  padding: 40px 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 650px;
@@ -375,17 +375,11 @@
 }
 
 .input-icon {
-  position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #adb5bd;
-  z-index: 3;
-  font-size: 16px;
+  display: none !important;
 }
 
 .auth-input {
-  padding: 15px 15px 15px 45px;
+  padding: 15px 15px 15px 10px;
   border: 2px solid #e9ecef;
   border-radius: 15px;
   font-size: 16px;
@@ -460,7 +454,6 @@ select.auth-input option {
 
 .checkmark {
   position: absolute;
-  top: 2px;
   left: 0;
   height: 20px;
   width: 20px;
@@ -655,6 +648,20 @@ select.auth-input option {
 }
 
 @media (max-width: 767px) {
+  /* Force all login inputs to single column in mobile view */
+  .auth-form .row {
+    display: block !important;
+    margin: 0 !important;
+  }
+  .auth-form .col-6,
+  .auth-form .col-md-6 {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+    display: block !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
   .pink-shape-top {
     width: 300px;
     height: 250px;
@@ -677,6 +684,19 @@ select.auth-input option {
 
   .auth-title {
     font-size: 1.8rem;
+    /* Force all inputs to single column in mobile view */
+    .auth-form .row {
+      display: block !important;
+      margin: 0 !important;
+    }
+    .auth-form .col-6 {
+      width: 100% !important;
+      max-width: 100% !important;
+      flex: none !important;
+      display: block !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
   }
 
   .auth-subtitle {
@@ -700,7 +720,7 @@ select.auth-input option {
   }
 
   .auth-input {
-    padding: 12px 12px 12px 40px;
+    /* padding: 12px 12px 12px 40px; */
     font-size: 15px;
   }
 

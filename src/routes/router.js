@@ -13,6 +13,7 @@ import Login from "../pages/Auth/Login";
 import Signup from "../pages/Auth/Signup";
 import NotFound from "../pages/NotFound";
 import ErrorBoundary from "../components/ErrorBoundary";
+import Profile from "../pages/Profile/Profile";
 
 const AppRouter = createBrowserRouter([
   {
@@ -110,6 +111,15 @@ const AppRouter = createBrowserRouter([
     element: (
       <ErrorBoundary>
         <Signup />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/profile",
+    element: (
+      <ErrorBoundary>
+        <Profile />
       </ErrorBoundary>
     ),
     errorElement: <NotFound />,

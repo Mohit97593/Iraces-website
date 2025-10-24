@@ -184,9 +184,7 @@ export default function Login() {
           loginType: loginType === "mobile" ? 2 : 3, // 2=Mobile+OTP, 3=Email+OTP
           phoneCode: loginType === "mobile" ? formData.phoneCode : "",
         };
-
         const result = await loginWithOTP(otpData);
-
         if (result.success) {
           console.log("OTP Login successful:", result.data);
           navigate("/"); // Redirect to home page
@@ -211,16 +209,12 @@ export default function Login() {
           loginType: 1, // 1=Password login (both email and mobile)
           phoneCode: loginType === "mobile" ? formData.phoneCode : "",
         };
-
         const result = await login(loginData);
-
         if (result.success) {
-          // Wait a moment for AuthContext to update
           setTimeout(() => {
             const token = localStorage.getItem("token");
-
             if (token) {
-              navigate("/"); // Redirect to home page
+              navigate("/");
             } else {
               setErrors({
                 general:
@@ -466,49 +460,18 @@ export default function Login() {
                     <div className="input-icon">
                       <i className={getIcon()}></i>
                     </div>
-                    {loginType === "mobile" ? (
-                      <div className="d-flex">
-                        <select
-                          name="phoneCode"
-                          className="form-control auth-input me-2"
-                          style={{ maxWidth: "120px" }}
-                          value={formData.phoneCode}
-                          onChange={handleChange}
-                        >
-                          {phoneCodes.map((country) => (
-                            <option
-                              key={country.country_code}
-                              value={country.phone_code}
-                            >
-                              {country.phone_code} ({country.country_code})
-                            </option>
-                          ))}
-                        </select>
-                        <input
-                          type={getInputType()}
-                          name="identifier"
-                          className={`form-control auth-input ${
-                            errors.identifier ? "is-invalid" : ""
-                          }`}
-                          placeholder={getPlaceholder()}
-                          value={formData.identifier}
-                          onChange={handleChange}
-                          required
-                        />
-                      </div>
-                    ) : (
-                      <input
-                        type={getInputType()}
-                        name="identifier"
-                        className={`form-control auth-input ${
-                          errors.identifier ? "is-invalid" : ""
-                        }`}
-                        placeholder={getPlaceholder()}
-                        value={formData.identifier}
-                        onChange={handleChange}
-                        required
-                      />
-                    )}
+                    <input
+                      type={getInputType()}
+                      name="identifier"
+                      className={`form-control auth-input ${
+                        errors.identifier ? "is-invalid" : ""
+                      }`}
+                      placeholder={getPlaceholder()}
+                      value={formData.identifier}
+                      onChange={handleChange}
+                      required
+                      disabled={showOTPField && loginType === "mobile"}
+                    />
                     {errors.identifier && (
                       <div className="error-message">{errors.identifier}</div>
                     )}
@@ -520,8 +483,8 @@ export default function Login() {
                     </div>
                   )}
 
-                  {/* Password Field */}
-                  {!showOTPField && (
+                  {/* Password Field: Only for userId login */}
+                  {!showOTPField && loginType === "userId" && (
                     <div className="form-group">
                       <div className="input-icon">
                         <i className="fas fa-lock"></i>
@@ -591,27 +554,25 @@ export default function Login() {
                       )}
                       {otpSent && (
                         <div className="text-success small mt-1">
-                          OTP sent successfully! Please check your{" "}
-                          {loginType === "mobile" ? "SMS" : "email"}.
+                          OTP sent successfully! Please check your SMS.
                         </div>
                       )}
                     </div>
                   )}
 
                   {/* Login with OTP Option */}
-                  {(loginType === "mobile" || loginType === "email") &&
-                    !showOTPField && (
-                      <div className="form-group text-center">
-                        <button
-                          type="button"
-                          className="btn btn-link text-primary"
-                          onClick={handleSendOTP}
-                          disabled={isLoading || !formData.identifier.trim()}
-                        >
-                          Login with OTP instead
-                        </button>
-                      </div>
-                    )}
+                  {loginType === "mobile" && !showOTPField && (
+                    <div className="form-group text-center">
+                      <button
+                        type="button"
+                        className="btn btn-link text-primary"
+                        onClick={handleSendOTP}
+                        disabled={isLoading || !formData.identifier.trim()}
+                      >
+                        Send OTP
+                      </button>
+                    </div>
+                  )}
 
                   {/* Submit Button */}
                   <button

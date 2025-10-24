@@ -470,6 +470,7 @@ export default function TopNav() {
                       justifyContent: "center",
                       fontWeight: "600",
                       fontSize: "14px",
+                      marginTop: "10px",
                     }}
                   >
                     {getInitials(
