@@ -64,7 +64,7 @@ export default function WhyRunmatePanel() {
             <div className="center-pill">- WHY RUNMATE -</div>
             <h2>MORE THAN JUST A RUNNING CLUB</h2>
             <p>
-              Iraces is your community, your coach, and your motivation partner
+              Races is your community, your coach, and your motivation partner
               in every stride. Vestibulum varius augue quis lacus fringilla
               suscipit. Duis varius dapibus odio a imperdiet.
             </p>

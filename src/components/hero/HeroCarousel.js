@@ -156,7 +156,7 @@ export default function HeroCarousel() {
                         <div className="upcoming-header">
                           <div className="badge">- UPCOMING RACES -</div>
                           <h4>
-                            IRACES CITY
+                            RACES CITY
                             <br />
                             SPRINT 10K
                           </h4>
@@ -252,7 +252,7 @@ export default function HeroCarousel() {
         <section ref={numbersRef} className="numbers-section container mt-5">
           <div className="row align-items-start">
             <div className="col-md-3 d-none d-md-block">
-              <div className="numbers-pill">- IRACES IN NUMBERS -</div>
+              <div className="numbers-pill">- RACES IN NUMBERS -</div>
             </div>
 
             <div className="col-12 col-md-9">
@@ -351,7 +351,7 @@ export default function HeroCarousel() {
                 STRONGER WITH EVERY STRIDE.
               </h2>
               <p className="feature-copy">
-                Iraces is more than just a running club—it’s a thriving,
+                Races is more than just a running club—it’s a thriving,
                 inclusive community where runners of all levels come together to
                 train, race, and grow. Founded in 2018, we’ve helped over 1,200
                 runners across 12 cities reach their goals—whether it’s a
