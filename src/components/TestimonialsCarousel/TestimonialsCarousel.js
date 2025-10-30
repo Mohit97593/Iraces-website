@@ -1,52 +1,50 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./TestimonialsCarousel.css";
 
-const testimonials = [
-  {
-    name: "Sarah M.",
-    role: "Beginner Runner",
-    text: "I joined Runmate to get fit, but I found so much more. The training plan was easy to follow, and I finished my first 5K without stopping! Quisque ac felis finibus, pretium arcu vitae, pulvinar nulla. In luctus justo sapien, non maximus sapien interdum sed.",
-    stars: 5,
-    img: "https://randomuser.me/api/portraits/women/44.jpg",
-  },
-  {
-    name: "Liam B.",
-    role: "10K Competitive Runner",
-    text: "The coaches are amazing! They helped me shave 4 minutes off my 10K personal best. I never thought pacing could make such a difference. Quisque ac felis finibus, pretium arcu vitae, pulvinar nulla. In luctus justo sapien, non maximus sapien interdum sed.",
-    stars: 5,
-    img: "https://randomuser.me/api/portraits/men/45.jpg",
-  },
-  {
-    name: "Priya S.",
-    role: "Half Marathoner",
-    text: "Runmate gave me the confidence to run my first half marathon. The community is so supportive! Quisque ac felis finibus, pretium arcu vitae, pulvinar nulla.",
-    stars: 5,
-    img: "https://randomuser.me/api/portraits/women/46.jpg",
-  },
-  {
-    name: "Alex T.",
-    role: "Trail Runner",
-    text: "I love the variety in the training plans. Trail running became fun and challenging! Quisque ac felis finibus, pretium arcu vitae, pulvinar nulla.",
-    stars: 5,
-    img: "https://randomuser.me/api/portraits/men/47.jpg",
-  },
-  {
-    name: "Maya R.",
-    role: "Fitness Enthusiast",
-    text: "The app keeps me motivated every week. I never miss a run now! Quisque ac felis finibus, pretium arcu vitae, pulvinar nulla.",
-    stars: 5,
-    img: "https://randomuser.me/api/portraits/women/48.jpg",
-  },
-  {
-    name: "John D.",
-    role: "Marathon Finisher",
-    text: "Thanks to Runmate, I completed my first marathon! The tips and plans are top-notch. Quisque ac felis finibus, pretium arcu vitae, pulvinar nulla.",
-    stars: 5,
-    img: "https://randomuser.me/api/portraits/men/49.jpg",
-  },
-];
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
+function stripHtml(html) {
+  if (!html) return "";
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div.textContent || div.innerText || "";
+}
 
 function TestimonialsCarousel() {
+  const [testimonials, setTestimonials] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchTestimonials() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/get_testimonial`);
+        const result = await response.json();
+        // Try to log and inspect the actual API response
+        console.log("API testimonials response:", result);
+        if (result?.data?.testimonials) {
+          setTestimonials(result.data.testimonials);
+        } else {
+          setTestimonials([]);
+        }
+      } catch (err) {
+        setError("Failed to load testimonials.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchTestimonials();
+  }, []);
+
+  // Helper to get correct field names
+  const getField = (obj, keys, fallback = "") => {
+    for (let k of keys) {
+      if (obj[k] && typeof obj[k] === "string" && obj[k].trim() !== "")
+        return obj[k];
+    }
+    return fallback;
+  };
+
   return (
     <div className="testimonials-section container-fluid">
       <div className="testimonials-header row justify-content-center align-items-center text-center">
@@ -65,26 +63,75 @@ function TestimonialsCarousel() {
         </div>
       </div>
       <div className="testimonials-grid">
-        {testimonials.map((t, idx) => (
-          <div className="testimonial-card" key={idx}>
-            <div className="testimonial-stars">
-              {Array.from({ length: t.stars }).map((_, i) => (
-                <span key={i} className="star">
-                  ★
-                </span>
-              ))}
-            </div>
-            <p className="testimonial-text">“{t.text}”</p>
-            <div className="testimonial-user d-flex align-items-center">
-              <img src={t.img} alt={t.name} className="testimonial-img me-2" />
-              <div>
-                <div className="testimonial-name">{t.name}</div>
-                <div className="testimonial-role">{t.role}</div>
+        {loading ? (
+          <div className="text-center w-100">Loading...</div>
+        ) : error ? (
+          <div className="text-center w-100 text-danger">{error}</div>
+        ) : testimonials.length === 0 ? (
+          <div className="text-center w-100">No testimonials found.</div>
+        ) : (
+          testimonials.map((t, idx) => (
+            <div className="testimonial-card" key={idx}>
+              <div
+                style={{
+                  fontSize: "2.5rem",
+                  color: "#eee",
+                  marginBottom: "-16px",
+                }}
+              >
+                “
+              </div>
+              <div
+                style={{
+                  fontWeight: "bold",
+                  fontSize: "1.3rem",
+                  marginTop: "8px",
+                }}
+              >
+                {getField(t, ["testimonial_name", "name"], "Anonymous")}
+              </div>
+              <div
+                style={{
+                  fontStyle: "italic",
+                  color: "#888",
+                  fontSize: "1rem",
+                  marginBottom: "12px",
+                }}
+              >
+                {getField(t, ["testimonial_role", "role"], "Athlete")}
+              </div>
+              <div
+                style={{
+                  fontWeight: "normal",
+                  fontSize: "1.1rem",
+                  margin: "12px 0",
+                }}
+              >
+                {stripHtml(
+                  getField(
+                    t,
+                    ["testimonial_text", "text", "testimonial", "description"],
+                    "No testimonial text."
+                  )
+                )}
+              </div>
+              <div style={{ margin: "24px 0 0 0" }}>
+                {Array.from({ length: t.stars || 5 }).map((_, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      color: "#000",
+                      fontSize: "1.3rem",
+                      marginRight: "2px",
+                    }}
+                  >
+                    ★
+                  </span>
+                ))}
               </div>
             </div>
-            <div className="testimonial-quote">❞</div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
