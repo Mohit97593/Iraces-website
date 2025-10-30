@@ -211,7 +211,13 @@ const Profile = () => {
               <div className="profile-details">
                 {activeTab === "medical" && (
                   <div className="medical-profile-section">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
                       <h2 style={{ margin: 0 }}>Medical Profile</h2>
                       <button
                         className="profile-action-btn"
@@ -228,7 +234,13 @@ const Profile = () => {
                         <span style={{ marginRight: "6px" }}>✏️</span>Edit
                       </button>
                     </div>
-                    <div style={{ marginTop: "32px", marginBottom: "16px", fontWeight: "bold" }}>
+                    <div
+                      style={{
+                        marginTop: "32px",
+                        marginBottom: "16px",
+                        fontWeight: "bold",
+                      }}
+                    >
                       Medical Details
                     </div>
                     <div
@@ -240,24 +252,74 @@ const Profile = () => {
                         textAlign: "center",
                       }}
                     >
-                      <div className="basic-info-card" style={{ border: "0.5px solid #d9d6d6", borderRadius: "10px", padding: "13px" }}>
-                        <div style={{ fontWeight: "bold", marginBottom: "14px" }}>Blood Group</div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Blood Group
+                        </div>
                         <div>NA</div>
                       </div>
-                      <div className="basic-info-card" style={{ border: "0.5px solid #d9d6d6", borderRadius: "10px", padding: "13px" }}>
-                        <div style={{ fontWeight: "bold", marginBottom: "14px" }}>Any Medical Condition</div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Any Medical Condition
+                        </div>
                         <div>NA</div>
                       </div>
-                      <div className="basic-info-card" style={{ border: "0.5px solid #d9d6d6", borderRadius: "10px", padding: "13px" }}>
-                        <div style={{ fontWeight: "bold", marginBottom: "14px" }}>Allergies</div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Allergies
+                        </div>
                         <div>NA</div>
                       </div>
-                      <div className="basic-info-card" style={{ border: "0.5px solid #d9d6d6", borderRadius: "10px", padding: "13px" }}>
-                        <div style={{ fontWeight: "bold", marginBottom: "14px" }}>Current Medication</div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Current Medication
+                        </div>
                         <div>NA</div>
                       </div>
                     </div>
-                    <div style={{ marginTop: "32px", marginBottom: "16px", fontWeight: "bold" }}>
+                    <div
+                      style={{
+                        marginTop: "32px",
+                        marginBottom: "16px",
+                        fontWeight: "bold",
+                      }}
+                    >
                       Emergency Medical Contact
                     </div>
                     <div
@@ -269,12 +331,34 @@ const Profile = () => {
                         textAlign: "center",
                       }}
                     >
-                      <div className="basic-info-card" style={{ border: "0.5px solid #d9d6d6", borderRadius: "10px", padding: "13px" }}>
-                        <div style={{ fontWeight: "bold", marginBottom: "14px" }}>Contact Name</div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Contact Name
+                        </div>
                         <div>NA</div>
                       </div>
-                      <div className="basic-info-card" style={{ border: "0.5px solid #d9d6d6", borderRadius: "10px", padding: "13px" }}>
-                        <div style={{ fontWeight: "bold", marginBottom: "14px" }}>Contact Number</div>
+                      <div
+                        className="basic-info-card"
+                        style={{
+                          border: "0.5px solid #d9d6d6",
+                          borderRadius: "10px",
+                          padding: "13px",
+                        }}
+                      >
+                        <div
+                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                        >
+                          Contact Number
+                        </div>
                         <div>NA</div>
                       </div>
                     </div>
