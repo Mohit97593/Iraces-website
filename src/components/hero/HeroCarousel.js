@@ -1,6 +1,8 @@
+// Use base URL from environment variable
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 import React, { useEffect, useState, useRef } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { nextSlide, goToSlide, toggleModal } from "../../slice/hero/heroSlice";
+import { useDispatch } from "react-redux";
+import { toggleModal } from "../../slice/hero/heroSlice";
 import "./Hero.css";
 // Font Awesome is provided via CDN in public/index.html; remove local import to avoid build errors
 import Avatar1 from "../../assets/image/avatar1.jpg";
@@ -20,81 +22,85 @@ import FAQPanel from "../FAQPanel/FAQPanel";
 import Footer from "../Footer/Footer";
 
 export default function HeroCarousel() {
-  const { slides, currentIndex } = useSelector((s) => s.hero);
+  // Local state for API banners
+  const [slides, setSlides] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    const t = setInterval(() => dispatch(nextSlide()), 6000);
-    return () => clearInterval(t);
-  }, [dispatch]);
-
-  // animation state must be declared before any early returns so hooks order stays stable
+  // Animation state
   const [animate, setAnimate] = useState(false);
-
-  // numbers section visibility / animation trigger
   const numbersRef = useRef(null);
 
-  // countUp helper
+  // Fetch banners from API
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/banners`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === "success" && Array.isArray(data.data)) {
+          setSlides(data.data);
+        }
+      });
+  }, []);
+
+  // Carousel auto-slide
+  useEffect(() => {
+    if (slides.length === 0) return;
+    const t = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % slides.length);
+    }, 6000);
+    return () => clearInterval(t);
+  }, [slides]);
+
+  // Animation trigger
+  useEffect(() => {
+    const id = setTimeout(() => setAnimate(true), 80);
+    return () => clearTimeout(id);
+  }, []);
+
+  // Numbers section animation (unchanged)
   const countUp = (el, target, duration = 2000) => {
     const start = performance.now();
     const from = 0;
     const suffix = el.getAttribute("data-suffix") || "";
-
     const step = (now) => {
       const t = Math.min(1, (now - start) / duration);
-      const eased = t; // linear easing is fine for counters
+      const eased = t;
       const current = Math.round(from + (target - from) * eased);
       el.textContent = `${current}${suffix}`;
       if (t < 1) requestAnimationFrame(step);
-      else el.textContent = `${target}${suffix}`; // ensure final value with suffix
+      else el.textContent = `${target}${suffix}`;
     };
-
     requestAnimationFrame(step);
   };
-
   useEffect(() => {
     if (!numbersRef.current) return;
     const node = numbersRef.current;
-    const observer = new IntersectionObserver(
+    const observer = new window.IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            // start sliding cards with small stagger
             const cards = node.querySelectorAll(".number-card");
             cards.forEach((c, i) => {
               setTimeout(() => c.classList.add("visible"), i * 120);
             });
-
-            // start count up for number values
             const counters = node.querySelectorAll("[data-target]");
             counters.forEach((el) => {
               const target = parseInt(el.getAttribute("data-target"), 10) || 0;
-              // small per-counter delay to match stagger
               const idx = Array.from(counters).indexOf(el);
               setTimeout(() => countUp(el, target, 1600), idx * 140);
             });
-
             observer.disconnect();
           }
         });
       },
       { threshold: 0.2 }
     );
-
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    // trigger the entry animations after mount
-    const id = setTimeout(() => setAnimate(true), 80);
-    return () => clearTimeout(id);
-  }, []);
-
   if (!slides || slides.length === 0) return null;
-
   const active = slides[currentIndex];
-  // Static overlay text so the heading/subtitle don't change when the background image changes
   const staticTitle = "RUN TOGETHER, ACHIEVE MORE";
   const staticSubtitle =
     "Join our vibrant running club and conquer every mile – from weekend jogs to marathon triumphs.";
@@ -105,7 +111,7 @@ export default function HeroCarousel() {
         <div className="hero-slide">
           <div
             className="hero-bg"
-            style={{ backgroundImage: `url(${active.image})` }}
+            style={{ backgroundImage: `url(${active.banner_image_url})` }}
           />
           <div className="hero-overlay">
             <div className="container h-100">
@@ -241,9 +247,9 @@ export default function HeroCarousel() {
         <div className="hero-controls container">
           {slides.map((s, idx) => (
             <button
-              key={s.id}
+              key={s.id || idx}
               className={`dot ${idx === currentIndex ? "active" : ""}`}
-              onClick={() => dispatch(goToSlide(idx))}
+              onClick={() => setCurrentIndex(idx)}
             />
           ))}
         </div>
