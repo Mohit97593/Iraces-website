@@ -106,39 +106,26 @@ export default function HeroCarousel() {
   const staticSubtitle =
     "Join our vibrant running club and conquer every mile – from weekend jogs to marathon triumphs.";
 
-  // Default banner image import
-  const defaultBanner = require("../../assets/image/default-banner.png");
-  // Local state to track image error
-  const [bannerError, setBannerError] = useState(false);
+  // // Default banner image import
+  // const defaultBanner = require("../../assets/image/default-banner.png");
+  // // Local state to track image error
+  // const [bannerError, setBannerError] = useState(false);
 
-  // Helper to get banner image src
-  const getBannerSrc = () => {
-    if (bannerError || !active.banner_image_url) return defaultBanner;
-    return active.banner_image_url;
-  };
+  // // Helper to get banner image src
+  // const getBannerSrc = () => {
+  //   if (bannerError || !active.banner_image_url) return defaultBanner;
+  //   return active.banner_image_url;
+  // };
 
   return (
     <>
       <section className="hero-viewport">
         <div className="hero-slide">
           {/* Banner image with error fallback */}
-          <div className="hero-bg">
-            <img
-              src={getBannerSrc()}
-              alt="Banner"
-              className="banner-img"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                position: "absolute",
-                top: 0,
-                left: 0,
-                zIndex: 0,
-              }}
-              onError={() => setBannerError(true)}
-            />
-          </div>
+          <div
+            className="hero-bg"
+            style={{ backgroundImage: `url(${active.banner_image_url})` }}
+          />
           <div className="hero-overlay">
             <div className="container h-100">
               <div className="row h-100 align-items-center">
