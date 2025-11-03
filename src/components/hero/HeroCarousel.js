@@ -98,7 +98,7 @@ export default function HeroCarousel() {
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-  console.log(slide)
+  console.log("Number of slides:", slides.length);
   if (!slides || slides.length === 0) return null;
 
   const active = slides[currentIndex];
