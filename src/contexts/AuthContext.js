@@ -58,22 +58,30 @@ export const AuthProvider = ({ children }) => {
   const login = async (loginData) => {
     try {
       setIsLoading(true);
-
       const response = await authAPI.login(loginData);
-
       // Check for successful login with different response structures
       if (response.status === 200) {
         let userData =
           response.data?.userData || response.userData || response.data || {};
-
+        // Login success, ab getProfile call karo
+        try {
+          const profileResponse = await authAPI.getProfile();
+          if (
+            profileResponse &&
+            profileResponse.data &&
+            profileResponse.data.userData
+          ) {
+            userData = profileResponse.data.userData[0] || userData;
+          }
+        } catch (profileError) {
+          console.error("Profile fetch after login failed:", profileError);
+        }
         // Enhance user data with login credentials
         const enhancedUserData = {
           ...userData,
-          // Store the email/mobile used for login
           loginEmail: loginData.email || loginData.identifier || userData.email,
           loginMobile: loginData.mobile || userData.mobile,
           loginType: loginData.loginType || 1,
-          // Ensure we have proper name fields
           firstName:
             userData.firstName || userData.firstname || userData.FirstName,
           lastName: userData.lastName || userData.lastname || userData.LastName,
@@ -84,10 +92,8 @@ export const AuthProvider = ({ children }) => {
             loginData.identifier,
           mobile: userData.mobile || userData.Mobile || loginData.mobile,
         };
-
         setUser(enhancedUserData);
         setIsAuthenticated(true);
-
         return { success: true, data: response };
       } else {
         // Check if token was still set despite non-200 status

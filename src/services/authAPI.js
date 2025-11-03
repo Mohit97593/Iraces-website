@@ -45,6 +45,28 @@ api.interceptors.response.use(
 
 // Auth API Functions
 export const authAPI = {
+  // Personal Details API
+  personalDetails: async (details) => {
+    try {
+      const formData = new FormData();
+      formData.append("firstname", details.firstName);
+      formData.append("lastname", details.lastName);
+      formData.append("mobile", details.mobile);
+      formData.append("email", details.email);
+      formData.append("gender", details.gender);
+      formData.append("dob", details.dob);
+      formData.append("bio", details.bio);
+      const response = await api.post("/personal_details", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("PersonalDetails API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
   // Signup API
   signup: async (userData) => {
     try {
@@ -366,6 +388,45 @@ export const authAPI = {
   getToken: () => {
     return localStorage.getItem("token");
   },
+
+  // Get Profile API
+  getProfile: async () => {
+    try {
+      const response = await api.get("/get_profile");
+      return response.data;
+    } catch (error) {
+      console.error("GetProfile API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // General Details API (for Basic Information)
+  generalDetails: async (details) => {
+    try {
+      const formData = new FormData();
+      formData.append(
+        "emergency_contact_person",
+        details.emergency_contact_person
+      );
+      formData.append("emergency_contact_no", details.emergency_contact_no);
+      formData.append("organization", details.organization);
+      formData.append("designation", details.designation);
+      formData.append("id_proof_type", details.id_proof_type);
+      formData.append("id_proof_no", details.id_proof_no);
+      if (details.id_proof_doc_upload) {
+        formData.append("id_proof_doc_upload", details.id_proof_doc_upload);
+      }
+      const response = await api.post("/general_details", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("GeneralDetails API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 // Token को axios header में set करें app load होते समय
@@ -373,5 +434,3 @@ const token = localStorage.getItem("token");
 if (token) {
   api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 }
-
-export default api;

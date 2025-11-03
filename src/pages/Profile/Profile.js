@@ -4,6 +4,30 @@ import TopNav from "../../components/Navbar/TopNav";
 import { useAuth } from "../../contexts/AuthContext";
 
 const Profile = () => {
+  // Fetch latest profile on every page load
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const profileResponse = await import("../../services/authAPI").then(
+          ({ authAPI }) => authAPI.getProfile()
+        );
+        if (
+          profileResponse &&
+          profileResponse.data &&
+          profileResponse.data.userData
+        ) {
+          localStorage.setItem(
+            "userData",
+            JSON.stringify(profileResponse.data.userData[0])
+          );
+          checkAuthStatus();
+        }
+      } catch (err) {
+        // Optionally show error
+        console.error("Failed to fetch profile:", err);
+      }
+    })();
+  }, []);
   // Editing state for Personal Details
   const [editPersonal, setEditPersonal] = useState(false);
   const [editFirstName, setEditFirstName] = useState("");
@@ -13,9 +37,46 @@ const Profile = () => {
   const [editGender, setEditGender] = useState("");
   const [editDob, setEditDob] = useState("");
   const [editBio, setEditBio] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
+
+  // Fetch profile when Basic Information tab is opened
+  React.useEffect(() => {
+    if (activeTab === "basic") {
+      (async () => {
+        try {
+          const profileResponse = await import("../../services/authAPI").then(
+            ({ authAPI }) => authAPI.getProfile()
+          );
+          if (
+            profileResponse &&
+            profileResponse.data &&
+            profileResponse.data.userData
+          ) {
+            localStorage.setItem(
+              "userData",
+              JSON.stringify(profileResponse.data.userData[0])
+            );
+            checkAuthStatus();
+          }
+        } catch (err) {
+          // Optionally show error
+          console.error("Failed to fetch profile:", err);
+        }
+      })();
+    }
+  }, [activeTab]);
   const [mainSection, setMainSection] = useState("profile"); // 'profile' or 'team'
-  const { user } = useAuth();
+  // Basic Information edit states
+  const [editBasic, setEditBasic] = useState(false);
+  const [editEmergencyName, setEditEmergencyName] = useState("");
+  const [editEmergencyNumber, setEditEmergencyNumber] = useState("");
+  const [editOrganisation, setEditOrganisation] = useState("");
+  const [editDesignation, setEditDesignation] = useState("");
+  const [editIdProofType, setEditIdProofType] = useState("");
+  const [editIdProofNumber, setEditIdProofNumber] = useState("");
+  const [editIdProofFile, setEditIdProofFile] = useState(null);
+  const { user, checkAuthStatus } = useAuth();
 
   // Extract user fields safely
   const firstName = user?.firstName || user?.firstname || "";
@@ -28,9 +89,43 @@ const Profile = () => {
   else if (gender === 3 || gender === "3") gender = "Other";
   const dob = user?.dob || user?.DOB || "";
   const phoneCode = user?.phone_code || user?.phoneCode || "";
+  const bio = user?.bio || user?.Bio || "";
 
   return (
     <div className="profile-page">
+      {/* Success Popup (top-level, always rendered) */}
+      {showSuccess && (
+        <div
+          style={{
+            position: "fixed",
+            top: 24,
+            right: 24,
+            zIndex: 9999,
+            background: "#22c55e",
+            color: "#fff",
+            padding: "18px 32px",
+            borderRadius: "12px",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+            fontWeight: 600,
+            fontSize: "1.1rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            minWidth: "260px",
+            maxWidth: "350px",
+            border: "2px solid #22c55e",
+          }}
+        >
+          <span style={{ fontSize: "1.5rem" }}>✔️</span>
+          Personal Details updated successfully
+          <span
+            style={{ marginLeft: "auto", cursor: "pointer" }}
+            onClick={() => setShowSuccess(false)}
+          >
+            ✖️
+          </span>
+        </div>
+      )}
       <TopNav />
       <section className="contact-hero">
         <div className="contact-hero-overlay"></div>
@@ -400,13 +495,26 @@ const Profile = () => {
                             }}
                             onClick={() => {
                               setEditPersonal(true);
-                              setEditFirstName(firstName);
-                              setEditLastName(lastName);
-                              setEditMobile(mobile);
-                              setEditEmail(email);
-                              setEditGender(gender);
-                              setEditDob(dob);
-                              setEditBio(""); // Set to user's bio if available
+                              // Always use latest user state for edit fields
+                              setEditFirstName(
+                                user?.firstName || user?.firstname || ""
+                              );
+                              setEditLastName(
+                                user?.lastName || user?.lastname || ""
+                              );
+                              setEditMobile(user?.mobile || user?.Mobile || "");
+                              setEditEmail(user?.email || user?.Email || "");
+                              let g = user?.gender || user?.Gender || "";
+                              if (g === 1 || g === "1" || g === "Male")
+                                g = "Male";
+                              else if (g === 2 || g === "2" || g === "Female")
+                                g = "Female";
+                              else if (g === 3 || g === "3" || g === "Other")
+                                g = "Other";
+                              else g = editGender || "Male";
+                              setEditGender(g);
+                              setEditDob(user?.dob || user?.DOB || "");
+                              setEditBio(user?.bio || user?.Bio || "");
                             }}
                           >
                             <span style={{ marginRight: "6px" }}>✏️</span>Edit
@@ -676,7 +784,100 @@ const Profile = () => {
                             </button>
                             <button
                               type="button"
-                              onClick={() => setEditPersonal(false)}
+                              onClick={async () => {
+                                // Prepare details object
+                                // Convert gender to number for API
+                                let genderNum = 1;
+                                if (editGender === "Male") genderNum = 1;
+                                else if (editGender === "Female") genderNum = 2;
+                                else if (editGender === "Other") genderNum = 3;
+                                const details = {
+                                  firstName: editFirstName,
+                                  lastName: editLastName,
+                                  mobile: editMobile,
+                                  email: editEmail,
+                                  gender: genderNum,
+                                  dob: editDob,
+                                  bio: editBio,
+                                };
+                                try {
+                                  // Call PersonalDetails API
+                                  await import("../../services/authAPI").then(
+                                    ({ authAPI }) =>
+                                      authAPI.personalDetails(details)
+                                  );
+                                  // Fetch updated profile
+                                  const profileResponse = await import(
+                                    "../../services/authAPI"
+                                  ).then(({ authAPI }) => authAPI.getProfile());
+                                  // Save new user data to localStorage
+                                  if (
+                                    profileResponse &&
+                                    profileResponse.data &&
+                                    profileResponse.data.userData
+                                  ) {
+                                    localStorage.setItem(
+                                      "userData",
+                                      JSON.stringify(
+                                        profileResponse.data.userData[0]
+                                      )
+                                    );
+                                  }
+                                  // Update user state
+                                  checkAuthStatus();
+                                  setEditPersonal(false);
+                                  setShowSuccess(true);
+                                  setTimeout(() => setShowSuccess(false), 3000);
+                                } catch (err) {
+                                  alert(
+                                    "Failed to update profile: " +
+                                      (err?.message || err)
+                                  );
+                                }
+                                {
+                                  /* Success Popup */
+                                }
+                                {
+                                  showSuccess && (
+                                    <div
+                                      style={{
+                                        position: "fixed",
+                                        top: 24,
+                                        right: 24,
+                                        zIndex: 9999,
+                                        background: "#22c55e",
+                                        color: "#fff",
+                                        padding: "18px 32px",
+                                        borderRadius: "12px",
+                                        boxShadow:
+                                          "0 2px 12px rgba(0,0,0,0.12)",
+                                        fontWeight: 600,
+                                        fontSize: "1.1rem",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "12px",
+                                        minWidth: "260px",
+                                        maxWidth: "350px",
+                                        border: "2px solid #22c55e",
+                                      }}
+                                    >
+                                      <span style={{ fontSize: "1.5rem" }}>
+                                        ✔️
+                                      </span>
+                                      Personal Details updated successfully
+                                      <span
+                                        style={{
+                                          marginLeft: "auto",
+                                          cursor: "pointer",
+                                        }}
+                                        onClick={() => setShowSuccess(false)}
+                                      >
+                                        ✖️
+                                      </span>
+                                    </div>
+                                  );
+                                }
+                              }}
                               style={{
                                 background: "#e53935",
                                 color: "#fff",
@@ -697,203 +898,558 @@ const Profile = () => {
                   </>
                 )}
                 {activeTab === "basic" && (
-                  <div className="basic-info-section">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <h2 style={{ margin: 0 }}>Basic Information</h2>
-                      <button
-                        className="profile-action-btn"
-                        style={{
-                          color: "red",
-                          border: "1px solid red",
-                          background: "white",
-                          borderRadius: "6px",
-                          padding: "6px 16px",
-                          cursor: "pointer",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        <span style={{ marginRight: "6px" }}>✏️</span>Edit
-                      </button>
-                    </div>
-                    <div
-                      style={{
-                        marginTop: "32px",
-                        marginBottom: "16px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Emergency Contact Details
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "24px",
-                        marginBottom: "24px",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
+                  <>
+                    {!editBasic ? (
+                      <div className="basic-info-section">
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
                         >
-                          Emergency Contact Name
+                          <h2 style={{ margin: 0 }}>Basic Information</h2>
+                          <button
+                            className="profile-action-btn"
+                            style={{
+                              color: "red",
+                              border: "1px solid red",
+                              background: "white",
+                              borderRadius: "6px",
+                              padding: "6px 16px",
+                              cursor: "pointer",
+                              fontWeight: "bold",
+                            }}
+                            onClick={async () => {
+                              // Always fetch latest profile before editing
+                              try {
+                                const profileResponse = await import(
+                                  "../../services/authAPI"
+                                ).then(({ authAPI }) => authAPI.getProfile());
+                                const userData =
+                                  profileResponse?.data?.userData?.[0] || {};
+                                setEditEmergencyName(
+                                  userData.emergency_contact_person || ""
+                                );
+                                setEditEmergencyNumber(
+                                  userData.emergency_contact_no || ""
+                                );
+                                setEditOrganisation(
+                                  userData.organization || ""
+                                );
+                                setEditIdProofType(
+                                  userData.id_proof_type || ""
+                                );
+                                setEditIdProofNumber(
+                                  userData.id_proof_no || ""
+                                );
+                                setEditIdProofFile(null);
+                                setEditBasic(true);
+                              } catch (err) {
+                                setEditEmergencyName(
+                                  user?.emergency_contact_person || ""
+                                );
+                                setEditEmergencyNumber(
+                                  user?.emergency_contact_no || ""
+                                );
+                                setEditOrganisation(user?.organization || "");
+                                setEditIdProofType(user?.id_proof_type || "");
+                                setEditIdProofNumber(user?.id_proof_no || "");
+                                setEditIdProofFile(null);
+                                setEditBasic(true);
+                              }
+                            }}
+                          >
+                            <span style={{ marginRight: "6px" }}>✏️</span>Edit
+                          </button>
                         </div>
-                        <div>abc</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            marginTop: "32px",
+                            marginBottom: "16px",
+                            fontWeight: "bold",
+                          }}
                         >
-                          Emergency Contact Number
+                          Emergency Contact Details
                         </div>
-                        <div>9988776655</div>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        marginTop: "32px",
-                        marginBottom: "16px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Organisation Details
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "24px",
-                        marginBottom: "24px",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: "24px",
+                            marginBottom: "24px",
+                            textAlign: "center",
+                          }}
                         >
-                          Organisation
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Emergency Contact Name
+                            </div>
+                            <div>{user?.emergency_contact_person || "NA"}</div>
+                          </div>
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Emergency Contact Number
+                            </div>
+                            <div>{user?.emergency_contact_no || "NA"}</div>
+                          </div>
                         </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            marginTop: "32px",
+                            marginBottom: "16px",
+                            fontWeight: "bold",
+                          }}
                         >
-                          Designation
+                          Organisation Details
                         </div>
-                        <div>NA</div>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        marginTop: "32px",
-                        marginBottom: "16px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Identification Details
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "24px",
-                        marginBottom: "24px",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: "24px",
+                            marginBottom: "24px",
+                            textAlign: "center",
+                          }}
                         >
-                          Id Proof Type
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Organisation
+                            </div>
+                            <div>{user?.organization || "NA"}</div>
+                          </div>
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Designation
+                            </div>
+                            <div>{user?.designation || "NA"}</div>
+                          </div>
                         </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            marginTop: "32px",
+                            marginBottom: "16px",
+                            fontWeight: "bold",
+                          }}
                         >
-                          Id Proof Number
+                          Identification Details
                         </div>
-                        <div>NA</div>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr",
-                        gap: "24px",
-                        marginBottom: "24px",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: "24px",
+                            marginBottom: "24px",
+                            textAlign: "center",
+                          }}
                         >
-                          Id Proof Document
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Id Proof Type
+                            </div>
+                            <div>{user?.id_proof_type || "NA"}</div>
+                          </div>
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Id Proof Number
+                            </div>
+                            <div>{user?.id_proof_no || "NA"}</div>
+                          </div>
                         </div>
-                        <div>NA</div>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr",
+                            gap: "24px",
+                            marginBottom: "24px",
+                            textAlign: "center",
+                          }}
+                        >
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Id Proof Document
+                            </div>
+                            <div>
+                              {user?.id_proof_doc_upload ? (
+                                <a
+                                  href={user.id_proof_doc_upload}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  View Document
+                                </a>
+                              ) : (
+                                "NA"
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    ) : (
+                      <div className="basic-info-section">
+                        <form
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: "24px",
+                            marginBottom: "0",
+                          }}
+                          encType="multipart/form-data"
+                        >
+                          <input
+                            type="text"
+                            placeholder="Please provide your emergency contact name:"
+                            value={editEmergencyName}
+                            onChange={(e) =>
+                              setEditEmergencyName(e.target.value)
+                            }
+                            required
+                            style={{
+                              fontSize: "14px",
+                              padding: "16px",
+                              borderRadius: "8px",
+                              border: "1px solid #e0e0e0",
+                              background: "#fff",
+                              marginBottom: "0",
+                            }}
+                          />
+                          <input
+                            type="text"
+                            placeholder="Please provide your emergency contact number:"
+                            value={editEmergencyNumber}
+                            onChange={(e) =>
+                              setEditEmergencyNumber(e.target.value)
+                            }
+                            required
+                            style={{
+                              fontSize: "14px",
+                              padding: "16px",
+                              borderRadius: "8px",
+                              border: "1px solid #e0e0e0",
+                              background: "#fff",
+                              marginBottom: "0",
+                            }}
+                          />
+                          <input
+                            type="text"
+                            placeholder="Current Organisation"
+                            value={editOrganisation}
+                            onChange={(e) =>
+                              setEditOrganisation(e.target.value)
+                            }
+                            style={{
+                              fontSize: "14px",
+                              padding: "16px",
+                              borderRadius: "8px",
+                              border: "1px solid #e0e0e0",
+                              background: "#fff",
+                              marginBottom: "0",
+                            }}
+                          />
+                          <input
+                            type="text"
+                            placeholder="Designation"
+                            value={editDesignation}
+                            onChange={(e) => setEditDesignation(e.target.value)}
+                            style={{
+                              fontSize: "14px",
+                              padding: "16px",
+                              borderRadius: "8px",
+                              border: "1px solid #e0e0e0",
+                              background: "#fff",
+                              marginBottom: "0",
+                            }}
+                          />
+                          <div style={{ position: "relative" }}>
+                            <select
+                              value={editIdProofType}
+                              onChange={(e) =>
+                                setEditIdProofType(e.target.value)
+                              }
+                              style={{
+                                fontSize: "14px",
+                                padding: "24px 16px 8px 16px",
+                                borderRadius: "8px",
+                                border: "1px solid #e0e0e0",
+                                background: "#fff",
+                                color: editIdProofType ? "#333" : "#aaa",
+                                marginBottom: "0",
+                                width: "100%",
+                              }}
+                            >
+                              <option value="">Select Id Proof Type</option>
+                              <option value="Aadhar">Aadhar</option>
+                              <option value="PAN">PAN</option>
+                              <option value="Passport">Passport</option>
+                              <option value="Other">Other</option>
+                            </select>
+                            <span
+                              style={{
+                                position: "absolute",
+                                top: "8px",
+                                left: "20px",
+                                fontSize: "0.9rem",
+                                color: "#aaa",
+                                pointerEvents: "none",
+                              }}
+                            >
+                              {editIdProofType ? "Id Proof" : "Id Proof | Type"}
+                            </span>
+                          </div>
+                          <div style={{ position: "relative" }}>
+                            <input
+                              type="text"
+                              placeholder="Id Proof Number"
+                              value={editIdProofNumber}
+                              onChange={(e) =>
+                                setEditIdProofNumber(e.target.value)
+                              }
+                              style={{
+                                fontSize: "14px",
+                                padding: "16px",
+                                borderRadius: "8px",
+                                border: "1px solid #e0e0e0",
+                                background: "#fff",
+                                marginBottom: "0",
+                                width: "100%",
+                              }}
+                            />
+                            <span
+                              style={{
+                                position: "absolute",
+                                left: "17px",
+                                top: "3px",
+                                fontSize: "14px",
+                                color: "#aaa",
+                                pointerEvents: "none",
+                              }}
+                            >
+                              Id Proof
+                            </span>
+                          </div>
+                          <div style={{ gridColumn: "1/3" }}>
+                            <div style={{ position: "relative" }}>
+                              <input
+                                type="file"
+                                onChange={(e) =>
+                                  setEditIdProofFile(e.target.files[0])
+                                }
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                style={{
+                                  fontSize: "14px",
+                                  padding: "24px 14px 14px 14px",
+                                  borderRadius: "8px",
+                                  border: "1px solid #e0e0e0",
+                                  background: "#f7f7f7",
+                                  width: "100%",
+                                }}
+                              />
+                              <span
+                                style={{
+                                  position: "absolute",
+                                  top: "8px",
+                                  left: "16px",
+                                  fontSize: "0.95rem",
+                                  color: "#aaa",
+                                  pointerEvents: "none",
+                                }}
+                              >
+                                Id Proof Document
+                              </span>
+                            </div>
+                          </div>
+                        </form>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            gap: "32px",
+                            marginTop: "32px",
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setEditBasic(false)}
+                            style={{
+                              background: "#fff",
+                              color: "#e53935",
+                              border: "2px solid #e53935",
+                              borderRadius: "8px",
+                              padding: "12px 32px",
+                              fontWeight: 600,
+                              fontSize: "1.1rem",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await import("../../services/authAPI").then(
+                                  ({ authAPI }) =>
+                                    authAPI.generalDetails({
+                                      emergency_contact_person:
+                                        editEmergencyName,
+                                      emergency_contact_no: editEmergencyNumber,
+                                      organization: editOrganisation,
+                                      designation: editDesignation,
+                                      id_proof_type: editIdProofType,
+                                      id_proof_no: editIdProofNumber,
+                                      id_proof_doc_upload: editIdProofFile,
+                                    })
+                                );
+                                // Fetch updated profile after saving
+                                const profileResponse = await import(
+                                  "../../services/authAPI"
+                                ).then(({ authAPI }) => authAPI.getProfile());
+                                if (
+                                  profileResponse &&
+                                  profileResponse.data &&
+                                  profileResponse.data.userData
+                                ) {
+                                  localStorage.setItem(
+                                    "userData",
+                                    JSON.stringify(
+                                      profileResponse.data.userData[0]
+                                    )
+                                  );
+                                  checkAuthStatus();
+                                  // Update edit fields with latest data after save
+                                  const userData =
+                                    profileResponse.data.userData[0];
+                                  setEditEmergencyName(
+                                    userData.emergency_contact_person || ""
+                                  );
+                                  setEditEmergencyNumber(
+                                    userData.emergency_contact_no || ""
+                                  );
+                                  setEditOrganisation(
+                                    userData.organization || ""
+                                  );
+                                  setEditDesignation(
+                                    userData.designation || ""
+                                  );
+                                  setEditIdProofType(
+                                    userData.id_proof_type || ""
+                                  );
+                                  setEditIdProofNumber(
+                                    userData.id_proof_no || ""
+                                  );
+                                  setEditIdProofFile(null);
+                                }
+                                setEditBasic(false);
+                                setShowSuccess(true);
+                                setTimeout(() => setShowSuccess(false), 3000);
+                              } catch (err) {
+                                alert(
+                                  "Failed to update basic info: " +
+                                    (err?.message || err)
+                                );
+                              }
+                            }}
+                            style={{
+                              background: "#e53935",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "8px",
+                              padding: "12px 32px",
+                              fontWeight: 600,
+                              fontSize: "1.1rem",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
                 {activeTab === "address" && (
                   <div className="address-info-section">
