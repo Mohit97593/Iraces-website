@@ -20,6 +20,7 @@ import TestimonialsCarousel from "../TestimonialsCarousel/TestimonialsCarousel";
 import BlogPanel from "../BlogPanel/BlogPanel";
 import FAQPanel from "../FAQPanel/FAQPanel";
 import Footer from "../Footer/Footer";
+import DEFAULT_BANNER from "../../assets/image/default-banner.png";
 
 export default function HeroCarousel() {
   // Local state for API banners
@@ -111,7 +112,7 @@ export default function HeroCarousel() {
         <div className="hero-slide">
           <div className="hero-bg">
             <img
-              src="/assets/image/default-banner.png"
+              src={DEFAULT_BANNER}
               alt="Banner"
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
