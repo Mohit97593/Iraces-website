@@ -1,3 +1,4 @@
+import ResetPasswordPage from "../pages/ResetPasswordPage";
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Home from "../pages/Home";
@@ -128,6 +129,10 @@ const AppRouter = createBrowserRouter([
   {
     path: "/banner-debug",
     element: <BannerDebugPage />,
+  },
+  {
+    path: "/reset-password/:token",
+    element: <ResetPasswordPage />,
   },
   {
     path: "*",

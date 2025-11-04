@@ -45,6 +45,18 @@ api.interceptors.response.use(
 
 // Auth API Functions
 export const authAPI = {
+  // Send Reset Password Link
+  sendResetPasswordLink: async ({ email, base_url }) => {
+    try {
+      const response = await api.post("/send_reset_password_link", {
+        email,
+        base_url,
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
   // Personal Details API
   personalDetails: async (details) => {
     try {
