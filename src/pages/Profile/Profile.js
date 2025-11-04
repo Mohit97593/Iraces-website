@@ -33,9 +33,11 @@ const Profile = () => {
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
   const [editMobile, setEditMobile] = useState("");
+  const [mobileError, setMobileError] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editGender, setEditGender] = useState("");
   const [editDob, setEditDob] = useState("");
+  const [dobError, setDobError] = useState("");
   const [editBio, setEditBio] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
@@ -71,6 +73,7 @@ const Profile = () => {
   const [editBasic, setEditBasic] = useState(false);
   const [editEmergencyName, setEditEmergencyName] = useState("");
   const [editEmergencyNumber, setEditEmergencyNumber] = useState("");
+  const [emergencyNumberError, setEmergencyNumberError] = useState("");
   const [editOrganisation, setEditOrganisation] = useState("");
   const [editDesignation, setEditDesignation] = useState("");
   const [editIdProofType, setEditIdProofType] = useState("");
@@ -651,13 +654,27 @@ const Profile = () => {
                               </label>
                               <input
                                 value={editMobile}
-                                onChange={(e) => setEditMobile(e.target.value)}
+                                onChange={(e) => {
+                                  setEditMobile(e.target.value);
+                                  setMobileError("");
+                                }}
                                 style={{
                                   padding: "10px",
                                   borderRadius: "6px",
                                   border: "1px solid #ccc",
                                 }}
                               />
+                              {mobileError && (
+                                <span
+                                  style={{
+                                    color: "red",
+                                    fontSize: "13px",
+                                    marginTop: "4px",
+                                  }}
+                                >
+                                  {mobileError}
+                                </span>
+                              )}
                             </div>
                             <div
                               style={{
@@ -724,13 +741,28 @@ const Profile = () => {
                               <input
                                 type="date"
                                 value={editDob}
-                                onChange={(e) => setEditDob(e.target.value)}
+                                onChange={(e) => {
+                                  setEditDob(e.target.value);
+                                  setDobError("");
+                                }}
+                                max="2009-12-31"
                                 style={{
                                   padding: "10px",
                                   borderRadius: "6px",
                                   border: "1px solid #ccc",
                                 }}
                               />
+                              {dobError && (
+                                <span
+                                  style={{
+                                    color: "red",
+                                    fontSize: "13px",
+                                    marginTop: "4px",
+                                  }}
+                                >
+                                  {dobError}
+                                </span>
+                              )}
                             </div>
                           </form>
                           <div
@@ -785,12 +817,37 @@ const Profile = () => {
                             <button
                               type="button"
                               onClick={async () => {
-                                // Prepare details object
                                 // Convert gender to number for API
                                 let genderNum = 1;
                                 if (editGender === "Male") genderNum = 1;
                                 else if (editGender === "Female") genderNum = 2;
                                 else if (editGender === "Other") genderNum = 3;
+                                // Mobile validation: required and must be 10 digits
+                                if (!editMobile) {
+                                  setMobileError("Mobile number is required");
+                                  return;
+                                }
+                                if (!/^\d{10}$/.test(editMobile)) {
+                                  setMobileError(
+                                    "Please enter a valid 10-digit mobile number"
+                                  );
+                                  return;
+                                }
+                                setMobileError("");
+                                // DOB validation: required and must be before 2010
+                                if (!editDob) {
+                                  setDobError("Date of birth is required");
+                                  return;
+                                }
+                                const selectedDate = new Date(editDob);
+                                const maxAllowedDate = new Date("2009-12-31");
+                                if (selectedDate > maxAllowedDate) {
+                                  setDobError(
+                                    "Only date of birth before 2010 is allowed"
+                                  );
+                                  return;
+                                }
+                                setDobError("");
                                 const details = {
                                   firstName: editFirstName,
                                   lastName: editLastName,
@@ -1227,11 +1284,19 @@ const Profile = () => {
                             </label>
                             <input
                               type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              maxLength={10}
                               placeholder="Please provide your emergency contact number:"
                               value={editEmergencyNumber}
-                              onChange={(e) =>
-                                setEditEmergencyNumber(e.target.value)
-                              }
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                // Only allow numbers and max 10 digits
+                                if (/^\d{0,10}$/.test(value)) {
+                                  setEditEmergencyNumber(value);
+                                  setEmergencyNumberError("");
+                                }
+                              }}
                               required
                               style={{
                                 fontSize: "14px",
@@ -1242,6 +1307,17 @@ const Profile = () => {
                                 marginBottom: "0",
                               }}
                             />
+                            {emergencyNumberError && (
+                              <span
+                                style={{
+                                  color: "red",
+                                  fontSize: "13px",
+                                  marginTop: "4px",
+                                }}
+                              >
+                                {emergencyNumberError}
+                              </span>
+                            )}
                           </div>
                           <div
                             style={{ display: "flex", flexDirection: "column" }}
@@ -1410,6 +1486,14 @@ const Profile = () => {
                           <button
                             type="button"
                             onClick={async () => {
+                              // Emergency contact number validation: must be 10 digits
+                              if (!/^\d{10}$/.test(editEmergencyNumber)) {
+                                setEmergencyNumberError(
+                                  "Please enter a valid 10-digit emergency contact number."
+                                );
+                                return;
+                              }
+                              setEmergencyNumberError("");
                               try {
                                 await import("../../services/authAPI").then(
                                   ({ authAPI }) =>
