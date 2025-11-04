@@ -3,7 +3,7 @@ import React from "react";
 function BannerDebugPage() {
   // These URLs should come from your API, but for debug, hardcoded here
   const bannerImageUrl =
-    "http://13.233.59.198/races/public/uploads/banner_image/1762194388_banner.png";
+    "https://13.233.59.198/races/public/uploads/banner_image/1762194388_banner.png";
   const bannerUrl =
     "https://drive.google.com/file/d/1RffOm13TNIY96OQteS_sW9oWMDaw-AH2/view?usp=sharing";
 
