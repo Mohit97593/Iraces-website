@@ -560,19 +560,20 @@ export default function Login() {
                     </div>
                   )}
 
-                  {/* Login with OTP Option */}
-                  {loginType === "mobile" && !showOTPField && (
-                    <div className="form-group text-center">
-                      <button
-                        type="button"
-                        className="btn btn-link text-primary"
-                        onClick={handleSendOTP}
-                        disabled={isLoading || !formData.identifier.trim()}
-                      >
-                        Send OTP
-                      </button>
-                    </div>
-                  )}
+                  {/* Login with OTP Option for mobile and email */}
+                  {(loginType === "mobile" || loginType === "email") &&
+                    !showOTPField && (
+                      <div className="form-group text-center">
+                        <button
+                          type="button"
+                          className="btn btn-link text-primary"
+                          onClick={handleSendOTP}
+                          disabled={isLoading || !formData.identifier.trim()}
+                        >
+                          Send OTP
+                        </button>
+                      </div>
+                    )}
 
                   {/* Submit Button */}
                   <button
