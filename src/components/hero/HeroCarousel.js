@@ -106,6 +106,16 @@ export default function HeroCarousel() {
   const staticSubtitle =
     "Join our vibrant running club and conquer every mile – from weekend jogs to marathon triumphs.";
 
+  // Static test images for banner
+  const testBannerImages = [
+    "https://i.pinimg.com/736x/8e/28/c8/8e28c892e3ec79da5b46b62722944ab7.jpg",
+    "https://i.pinimg.com/736x/c9/af/43/c9af431cdb9322e4ff4a43af70db96ae.jpg",
+    "https://i.pinimg.com/736x/0f/28/52/0f28521e08848dd7d85666e0afef762d.jpg",
+  ];
+  // Use static test image for banner instead of API image
+  const testBannerUrl =
+    testBannerImages[currentIndex % testBannerImages.length];
+
   // // Default banner image import
   // const defaultBanner = require("../../assets/image/default-banner.png");
   // // Local state to track image error
@@ -121,10 +131,10 @@ export default function HeroCarousel() {
     <>
       <section className="hero-viewport">
         <div className="hero-slide">
-          {/* Banner image with error fallback */}
+          {/* Banner image with static test image for debugging */}
           <div
             className="hero-bg"
-            style={{ backgroundImage: `url(${active.banner_image_url})` }}
+            style={{ backgroundImage: `url(${testBannerUrl})` }}
           />
           <div className="hero-overlay">
             <div className="container h-100">
