@@ -6,6 +6,15 @@ import { authAPI } from "../../services/authAPI";
 import "./Auth.css";
 
 export default function Login() {
+  // Show reset password modal if token is present in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    if (token) {
+      setResetToken(token);
+      setShowReset(true);
+    }
+  }, []);
   const navigate = useNavigate();
   const { login, sendOTP, loginWithOTP } = useAuth();
 
@@ -353,27 +362,26 @@ export default function Login() {
       return;
     }
     try {
-      // Use correct API method and payload
-      // Use sendResetPasswordLink API (not implemented yet in authAPI.js)
       const baseUrl = window.location.origin + "/reset-password";
       const payload = {
         email: forgotEmail.trim(),
         base_url: baseUrl,
       };
-      // If sendResetPasswordLink is not implemented, add it to authAPI.js
       if (authAPI.sendResetPasswordLink) {
         const res = await authAPI.sendResetPasswordLink(payload);
-        // ...existing code...
+        console.log("Forgot password API response:", res);
+        // Treat any response (no error thrown) as success if status 200 or no error
+        if ((res && res.status === 200) || (res && !res.error)) {
+          setForgotStatus("Password reset link sent! Please check your email.");
+        } else {
+          setForgotStatus(res.message || "Failed to send reset link.");
+        }
       } else {
         alert("sendResetPasswordLink API not implemented in authAPI.js");
       }
-      if (res.status === 200) {
-        setForgotStatus("Password reset link sent! Please check your email.");
-      } else {
-        setForgotStatus(res.message || "Failed to send reset link.");
-      }
     } catch (err) {
       setForgotStatus("Error sending reset link. Try again later.");
+      console.error("Forgot password error:", err);
     }
   };
 
