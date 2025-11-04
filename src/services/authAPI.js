@@ -67,7 +67,7 @@ export const authAPI = {
       formData.append("email", details.email);
       formData.append("gender", details.gender);
       formData.append("dob", details.dob);
-      formData.append("bio", details.bio);
+      formData.append("about_you", details.about_you);
       const response = await api.post("/personal_details", formData, {
         headers: {
           "Content-Type": "multipart/form-data",

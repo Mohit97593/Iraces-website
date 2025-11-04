@@ -89,7 +89,7 @@ const Profile = () => {
   else if (gender === 3 || gender === "3") gender = "Other";
   const dob = user?.dob || user?.DOB || "";
   const phoneCode = user?.phone_code || user?.phoneCode || "";
-  const bio = user?.bio || user?.Bio || "";
+  const bio = user?.about_you || "";
 
   return (
     <div className="profile-page">
@@ -514,7 +514,7 @@ const Profile = () => {
                               else g = editGender || "Male";
                               setEditGender(g);
                               setEditDob(user?.dob || user?.DOB || "");
-                              setEditBio(user?.bio || user?.Bio || "");
+                              setEditBio(user?.about_you || "");
                             }}
                           >
                             <span style={{ marginRight: "6px" }}>✏️</span>Edit
@@ -542,7 +542,7 @@ const Profile = () => {
                               <span>🎂 {dob}</span>
                             </div>
                             <div className="profile-details-bio">
-                              <span>My Bio :</span>
+                              <span>My Bio :</span> {bio}
                             </div>
                           </div>
                         </div>
@@ -798,7 +798,7 @@ const Profile = () => {
                                   email: editEmail,
                                   gender: genderNum,
                                   dob: editDob,
-                                  bio: editBio,
+                                  about_you: editBio,
                                 };
                                 try {
                                   // Call PersonalDetails API
@@ -821,6 +821,11 @@ const Profile = () => {
                                       JSON.stringify(
                                         profileResponse.data.userData[0]
                                       )
+                                    );
+                                    // Update local bio state so UI reflects new bio
+                                    setEditBio(
+                                      profileResponse.data.userData[0]
+                                        .about_you || ""
                                     );
                                   }
                                   // Update user state
