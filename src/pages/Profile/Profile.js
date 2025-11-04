@@ -38,6 +38,12 @@ const Profile = () => {
   const [editGender, setEditGender] = useState("");
   const [editDob, setEditDob] = useState("");
   const [dobError, setDobError] = useState("");
+  // Calculate today's date for max DOB
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  const maxDob = `${yyyy}-${mm}-${dd}`;
   const [editBio, setEditBio] = useState("");
   const [bioError, setBioError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
@@ -746,7 +752,7 @@ const Profile = () => {
                                   setEditDob(e.target.value);
                                   setDobError("");
                                 }}
-                                max="2009-12-31"
+                                max={maxDob}
                                 style={{
                                   padding: "10px",
                                   borderRadius: "6px",
@@ -860,16 +866,18 @@ const Profile = () => {
                                   return;
                                 }
                                 setMobileError("");
-                                // DOB validation: required and must be before 2010
+                                // DOB validation: required and must be in the past (not today/future)
                                 if (!editDob) {
                                   setDobError("Date of birth is required");
                                   return;
                                 }
                                 const selectedDate = new Date(editDob);
-                                const maxAllowedDate = new Date("2009-12-31");
-                                if (selectedDate > maxAllowedDate) {
+                                const now = new Date();
+                                selectedDate.setHours(0, 0, 0, 0);
+                                now.setHours(0, 0, 0, 0);
+                                if (selectedDate >= now) {
                                   setDobError(
-                                    "Only date of birth before 2010 is allowed"
+                                    "Date of birth cannot be today or a future date"
                                   );
                                   return;
                                 }

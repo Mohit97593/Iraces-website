@@ -8,8 +8,12 @@ export default function Signup() {
   const navigate = useNavigate();
   const { signup, validateOTP, resendOTP } = useAuth();
 
-  // Set maxDob to Dec 31, 2009 so only DOB before 2010 can be selected
-  const maxDob = "2009-12-31";
+  // Set maxDob to today so only DOB before today can be selected
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  const maxDob = `${yyyy}-${mm}-${dd}`;
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -137,11 +141,14 @@ export default function Signup() {
     if (!formData.dob) {
       newErrors.dob = "Date of birth is required";
     } else {
-      // Only allow DOB before 2010
+      // Only prevent today or future dates
       const selectedDate = new Date(formData.dob);
-      const maxAllowedDate = new Date("2009-12-31");
-      if (selectedDate > maxAllowedDate) {
-        newErrors.dob = "Only date of birth before 2010 is allowed";
+      const now = new Date();
+      // Remove time part for comparison
+      selectedDate.setHours(0, 0, 0, 0);
+      now.setHours(0, 0, 0, 0);
+      if (selectedDate >= now) {
+        newErrors.dob = "Date of birth cannot be today or a future date";
       }
     }
     if (!formData.gender) newErrors.gender = "Gender is required";
