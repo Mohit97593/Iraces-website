@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import YouCanRunBanner from "./YouCanRunBanner";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -34,6 +34,8 @@ export default function Login() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [resetStatus, setResetStatus] = useState("");
+  const [otpTimer, setOtpTimer] = useState(30);
+  const otpIntervalRef = useRef(null);
 
   // Fetch phone codes on component mount
   useEffect(() => {
@@ -87,6 +89,28 @@ export default function Login() {
 
     fetchPhoneCodes();
   }, []);
+
+  useEffect(() => {
+    if (showOTPField) {
+      setOtpTimer(30);
+      if (otpIntervalRef.current) clearInterval(otpIntervalRef.current);
+      otpIntervalRef.current = setInterval(() => {
+        setOtpTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(otpIntervalRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setOtpTimer(30);
+      if (otpIntervalRef.current) clearInterval(otpIntervalRef.current);
+    }
+    return () => {
+      if (otpIntervalRef.current) clearInterval(otpIntervalRef.current);
+    };
+  }, [showOTPField]);
 
   const handleLoginTypeChange = (type) => {
     setLoginType(type);
@@ -293,6 +317,17 @@ export default function Login() {
       if (result.success) {
         setShowOTPField(true);
         setOtpSent(true);
+        setOtpTimer(30); // Reset timer after resend
+        if (otpIntervalRef.current) clearInterval(otpIntervalRef.current);
+        otpIntervalRef.current = setInterval(() => {
+          setOtpTimer((prev) => {
+            if (prev <= 1) {
+              clearInterval(otpIntervalRef.current);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
         console.log("OTP sent successfully");
       } else {
         setErrors({
@@ -598,8 +633,23 @@ export default function Login() {
                           ></i>
                         </button>
                       </div>
+                      {/* Show password error below input */}
                       {errors.password && (
-                        <div className="error-message">{errors.password}</div>
+                        <div
+                          className="error-message"
+                          style={{ marginTop: "4px" }}
+                        >
+                          {errors.password}
+                        </div>
+                      )}
+                      {/* Show general error below password if it's a password error */}
+                      {errors.general && !showOTPField && (
+                        <div
+                          className="error-message"
+                          style={{ marginTop: "4px" }}
+                        >
+                          {errors.general}
+                        </div>
                       )}
                     </div>
                   )}
@@ -622,14 +672,50 @@ export default function Login() {
                         required
                         maxLength="6"
                       />
+                      {/* Show OTP error below input */}
                       {errors.otp && (
-                        <div className="error-message">{errors.otp}</div>
+                        <div
+                          className="error-message"
+                          style={{ marginTop: "4px" }}
+                        >
+                          {errors.otp}
+                        </div>
+                      )}
+                      {/* Show general error below OTP if it's an OTP error */}
+                      {errors.general && showOTPField && (
+                        <div
+                          className="error-message"
+                          style={{ marginTop: "4px" }}
+                        >
+                          {errors.general}
+                        </div>
                       )}
                       {otpSent && (
                         <div className="text-success small mt-1">
                           OTP sent successfully! Please check your SMS.
                         </div>
                       )}
+                      {/* Countdown and resend OTP UI */}
+                      <div style={{ marginTop: "10px", textAlign: "center" }}>
+                        {otpTimer > 0 ? (
+                          <span style={{ fontWeight: 500 }}>
+                            Didn't get the OTP ?{" "}
+                            <i className="fas fa-clock"></i>{" "}
+                            <span style={{ fontWeight: "bold" }}>{`00:${otpTimer
+                              .toString()
+                              .padStart(2, "0")}`}</span>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-link text-primary"
+                            onClick={handleSendOTP}
+                            disabled={isLoading}
+                          >
+                            Resend OTP
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -671,29 +757,6 @@ export default function Login() {
                   </button>
 
                   {/* Resend OTP or Back to Password */}
-                  {showOTPField && (
-                    <div className="form-group text-center">
-                      <button
-                        type="button"
-                        className="btn btn-link text-secondary me-3"
-                        onClick={() => {
-                          setShowOTPField(false);
-                          setOtpSent(false);
-                          setFormData((prev) => ({ ...prev, otp: "" }));
-                        }}
-                      >
-                        Back to Password Login
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-link text-primary"
-                        onClick={handleSendOTP}
-                        disabled={isLoading}
-                      >
-                        Resend OTP
-                      </button>
-                    </div>
-                  )}
                 </form>
                 <div className="auth-footer">
                   <p className="auth-link-text">

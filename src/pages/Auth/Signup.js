@@ -8,6 +8,13 @@ export default function Signup() {
   const navigate = useNavigate();
   const { signup, validateOTP, resendOTP } = useAuth();
 
+  // Calculate today's date in YYYY-MM-DD format for maxDob
+  // Calculate yesterday's date in YYYY-MM-DD format for maxDob
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const maxDob = yesterday.toISOString().split("T")[0];
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -131,7 +138,18 @@ export default function Signup() {
       }
     }
 
-    if (!formData.dob) newErrors.dob = "Date of birth is required";
+    if (!formData.dob) {
+      newErrors.dob = "Date of birth is required";
+    } else {
+      // Prevent today's or future dates
+      const selectedDate = new Date(formData.dob);
+      const todayDate = new Date();
+      selectedDate.setHours(0, 0, 0, 0);
+      todayDate.setHours(0, 0, 0, 0);
+      if (selectedDate >= todayDate) {
+        newErrors.dob = "Date of birth cannot be today or a future date";
+      }
+    }
     if (!formData.gender) newErrors.gender = "Gender is required";
 
     if (!formData.password) {
@@ -617,6 +635,7 @@ export default function Signup() {
                                   value={formData.dob}
                                   onChange={handleChange}
                                   required
+                                  max={maxDob}
                                   style={{
                                     fontSize: "14px",
                                     paddingTop: "20px",
@@ -859,6 +878,7 @@ export default function Signup() {
                                     value={formData.dob}
                                     onChange={handleChange}
                                     required
+                                    max={maxDob}
                                     style={{
                                       fontSize: "14px",
                                       paddingTop: "20px",
