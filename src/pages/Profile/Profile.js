@@ -39,6 +39,7 @@ const Profile = () => {
   const [editDob, setEditDob] = useState("");
   const [dobError, setDobError] = useState("");
   const [editBio, setEditBio] = useState("");
+  const [bioError, setBioError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
 
@@ -778,7 +779,21 @@ const Profile = () => {
                           <div style={{ margin: "8px 0 32px 0" }}>
                             <textarea
                               value={editBio}
-                              onChange={(e) => setEditBio(e.target.value)}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                const wordCount = value
+                                  .trim()
+                                  .split(/\s+/)
+                                  .filter(Boolean).length;
+                                if (wordCount > 100) {
+                                  setBioError("Bio cannot exceed 100 words.");
+                                  // Prevent adding more words
+                                  return;
+                                } else {
+                                  setBioError("");
+                                  setEditBio(value);
+                                }
+                              }}
                               rows={6}
                               style={{
                                 width: "100%",
@@ -789,6 +804,17 @@ const Profile = () => {
                               }}
                               placeholder="Write your bio here..."
                             />
+                            {bioError && (
+                              <span
+                                style={{
+                                  color: "red",
+                                  fontSize: "13px",
+                                  marginTop: "4px",
+                                }}
+                              >
+                                {bioError}
+                              </span>
+                            )}
                           </div>
                           <div
                             style={{
