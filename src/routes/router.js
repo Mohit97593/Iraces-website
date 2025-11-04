@@ -14,6 +14,7 @@ import Signup from "../pages/Auth/Signup";
 import NotFound from "../pages/NotFound";
 import ErrorBoundary from "../components/ErrorBoundary";
 import Profile from "../pages/Profile/Profile";
+import BannerDebugPage from "../pages/BannerDebugPage";
 
 const AppRouter = createBrowserRouter([
   {
@@ -123,6 +124,10 @@ const AppRouter = createBrowserRouter([
       </ErrorBoundary>
     ),
     errorElement: <NotFound />,
+  },
+  {
+    path: "/banner-debug",
+    element: <BannerDebugPage />,
   },
   {
     path: "*",
