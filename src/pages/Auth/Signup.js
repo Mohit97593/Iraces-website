@@ -536,7 +536,7 @@ export default function Signup() {
                                 <select
                                   name="phoneCode"
                                   className="form-control auth-input me-2"
-                                  style={{ maxWidth: "82px" }}
+                                  style={{ maxWidth: "110px" }}
                                   value={formData.phoneCode}
                                   onChange={handleChange}
                                 >
@@ -1069,7 +1069,6 @@ export default function Signup() {
                             name="agreeToTerms"
                             checked={formData.agreeToTerms}
                             onChange={handleChange}
-                            required
                           />
                           <span className="checkmark"></span>
                           <span className="checkbox-text">
