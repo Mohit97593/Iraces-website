@@ -937,7 +937,9 @@ const Profile = () => {
                                   userData.emergency_contact_person || ""
                                 );
                                 setEditEmergencyNumber(
-                                  userData.emergency_contact_no || ""
+                                  userData.emergency_contact_no1 ||
+                                    userData.emergency_contact_no ||
+                                    ""
                                 );
                                 setEditOrganisation(
                                   userData.organization || ""
@@ -955,7 +957,9 @@ const Profile = () => {
                                   user?.emergency_contact_person || ""
                                 );
                                 setEditEmergencyNumber(
-                                  user?.emergency_contact_no || ""
+                                  user?.emergency_contact_no1 ||
+                                    user?.emergency_contact_no ||
+                                    ""
                                 );
                                 setEditOrganisation(user?.organization || "");
                                 setEditIdProofType(user?.id_proof_type || "");
@@ -1020,7 +1024,7 @@ const Profile = () => {
                             >
                               Emergency Contact Number
                             </div>
-                            <div>{user?.emergency_contact_no || "NA"}</div>
+                            <div>{user?.emergency_contact_no1 || "NA"}</div>
                           </div>
                         </div>
                         <div
@@ -1185,71 +1189,120 @@ const Profile = () => {
                           }}
                           encType="multipart/form-data"
                         >
-                          <input
-                            type="text"
-                            placeholder="Please provide your emergency contact name:"
-                            value={editEmergencyName}
-                            onChange={(e) =>
-                              setEditEmergencyName(e.target.value)
-                            }
-                            required
-                            style={{
-                              fontSize: "14px",
-                              padding: "16px",
-                              borderRadius: "8px",
-                              border: "1px solid #e0e0e0",
-                              background: "#fff",
-                              marginBottom: "0",
-                            }}
-                          />
-                          <input
-                            type="text"
-                            placeholder="Please provide your emergency contact number:"
-                            value={editEmergencyNumber}
-                            onChange={(e) =>
-                              setEditEmergencyNumber(e.target.value)
-                            }
-                            required
-                            style={{
-                              fontSize: "14px",
-                              padding: "16px",
-                              borderRadius: "8px",
-                              border: "1px solid #e0e0e0",
-                              background: "#fff",
-                              marginBottom: "0",
-                            }}
-                          />
-                          <input
-                            type="text"
-                            placeholder="Current Organisation"
-                            value={editOrganisation}
-                            onChange={(e) =>
-                              setEditOrganisation(e.target.value)
-                            }
-                            style={{
-                              fontSize: "14px",
-                              padding: "16px",
-                              borderRadius: "8px",
-                              border: "1px solid #e0e0e0",
-                              background: "#fff",
-                              marginBottom: "0",
-                            }}
-                          />
-                          <input
-                            type="text"
-                            placeholder="Designation"
-                            value={editDesignation}
-                            onChange={(e) => setEditDesignation(e.target.value)}
-                            style={{
-                              fontSize: "14px",
-                              padding: "16px",
-                              borderRadius: "8px",
-                              border: "1px solid #e0e0e0",
-                              background: "#fff",
-                              marginBottom: "0",
-                            }}
-                          />
-                          <div style={{ position: "relative" }}>
+                          <div
+                            style={{ display: "flex", flexDirection: "column" }}
+                          >
+                            <label
+                              style={{ fontWeight: 500, marginBottom: "6px" }}
+                            >
+                              Emergency Contact Name
+                              <span style={{ color: "red" }}>*</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Please provide your emergency contact name:"
+                              value={editEmergencyName}
+                              onChange={(e) =>
+                                setEditEmergencyName(e.target.value)
+                              }
+                              required
+                              style={{
+                                fontSize: "14px",
+                                padding: "16px",
+                                borderRadius: "8px",
+                                border: "1px solid #e0e0e0",
+                                background: "#fff",
+                                marginBottom: "0",
+                              }}
+                            />
+                          </div>
+                          <div
+                            style={{ display: "flex", flexDirection: "column" }}
+                          >
+                            <label
+                              style={{ fontWeight: 500, marginBottom: "6px" }}
+                            >
+                              Emergency Contact Number
+                              <span style={{ color: "red" }}>*</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Please provide your emergency contact number:"
+                              value={editEmergencyNumber}
+                              onChange={(e) =>
+                                setEditEmergencyNumber(e.target.value)
+                              }
+                              required
+                              style={{
+                                fontSize: "14px",
+                                padding: "16px",
+                                borderRadius: "8px",
+                                border: "1px solid #e0e0e0",
+                                background: "#fff",
+                                marginBottom: "0",
+                              }}
+                            />
+                          </div>
+                          <div
+                            style={{ display: "flex", flexDirection: "column" }}
+                          >
+                            <label
+                              style={{ fontWeight: 500, marginBottom: "6px" }}
+                            >
+                              Current Organisation
+                              <span style={{ color: "red" }}>*</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Current Organisation"
+                              value={editOrganisation}
+                              onChange={(e) =>
+                                setEditOrganisation(e.target.value)
+                              }
+                              style={{
+                                fontSize: "14px",
+                                padding: "16px",
+                                borderRadius: "8px",
+                                border: "1px solid #e0e0e0",
+                                background: "#fff",
+                                marginBottom: "0",
+                              }}
+                            />
+                          </div>
+                          <div
+                            style={{ display: "flex", flexDirection: "column" }}
+                          >
+                            <label
+                              style={{ fontWeight: 500, marginBottom: "6px" }}
+                            >
+                              Designation<span style={{ color: "red" }}>*</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Designation"
+                              value={editDesignation}
+                              onChange={(e) =>
+                                setEditDesignation(e.target.value)
+                              }
+                              style={{
+                                fontSize: "14px",
+                                padding: "16px",
+                                borderRadius: "8px",
+                                border: "1px solid #e0e0e0",
+                                background: "#fff",
+                                marginBottom: "0",
+                              }}
+                            />
+                          </div>
+                          <div
+                            style={{ display: "flex", flexDirection: "column" }}
+                          >
+                            <label
+                              style={{ fontWeight: 500, marginBottom: "6px" }}
+                            >
+                              Id Proof Type
+                              <span style={{ color: "red" }}>*</span>
+                            </label>
                             <select
                               value={editIdProofType}
                               onChange={(e) =>
@@ -1257,7 +1310,7 @@ const Profile = () => {
                               }
                               style={{
                                 fontSize: "14px",
-                                padding: "24px 16px 8px 16px",
+                                padding: "16px",
                                 borderRadius: "8px",
                                 border: "1px solid #e0e0e0",
                                 background: "#fff",
@@ -1272,20 +1325,16 @@ const Profile = () => {
                               <option value="Passport">Passport</option>
                               <option value="Other">Other</option>
                             </select>
-                            <span
-                              style={{
-                                position: "absolute",
-                                top: "8px",
-                                left: "20px",
-                                fontSize: "0.9rem",
-                                color: "#aaa",
-                                pointerEvents: "none",
-                              }}
-                            >
-                              {editIdProofType ? "Id Proof" : "Id Proof | Type"}
-                            </span>
                           </div>
-                          <div style={{ position: "relative" }}>
+                          <div
+                            style={{ display: "flex", flexDirection: "column" }}
+                          >
+                            <label
+                              style={{ fontWeight: 500, marginBottom: "6px" }}
+                            >
+                              Id Proof Number
+                              <span style={{ color: "red" }}>*</span>
+                            </label>
                             <input
                               type="text"
                               placeholder="Id Proof Number"
@@ -1303,49 +1352,35 @@ const Profile = () => {
                                 width: "100%",
                               }}
                             />
-                            <span
-                              style={{
-                                position: "absolute",
-                                left: "17px",
-                                top: "3px",
-                                fontSize: "14px",
-                                color: "#aaa",
-                                pointerEvents: "none",
-                              }}
-                            >
-                              Id Proof
-                            </span>
                           </div>
-                          <div style={{ gridColumn: "1/3" }}>
-                            <div style={{ position: "relative" }}>
-                              <input
-                                type="file"
-                                onChange={(e) =>
-                                  setEditIdProofFile(e.target.files[0])
-                                }
-                                accept=".pdf,.jpg,.jpeg,.png"
-                                style={{
-                                  fontSize: "14px",
-                                  padding: "24px 14px 14px 14px",
-                                  borderRadius: "8px",
-                                  border: "1px solid #e0e0e0",
-                                  background: "#f7f7f7",
-                                  width: "100%",
-                                }}
-                              />
-                              <span
-                                style={{
-                                  position: "absolute",
-                                  top: "8px",
-                                  left: "16px",
-                                  fontSize: "0.95rem",
-                                  color: "#aaa",
-                                  pointerEvents: "none",
-                                }}
-                              >
-                                Id Proof Document
-                              </span>
-                            </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gridColumn: "1/3",
+                            }}
+                          >
+                            <label
+                              style={{ fontWeight: 500, marginBottom: "6px" }}
+                            >
+                              Id Proof Document
+                              <span style={{ color: "red" }}>*</span>
+                            </label>
+                            <input
+                              type="file"
+                              onChange={(e) =>
+                                setEditIdProofFile(e.target.files[0])
+                              }
+                              accept=".pdf,.jpg,.jpeg,.png"
+                              style={{
+                                fontSize: "14px",
+                                padding: "16px",
+                                borderRadius: "8px",
+                                border: "1px solid #e0e0e0",
+                                background: "#f7f7f7",
+                                width: "100%",
+                              }}
+                            />
                           </div>
                         </form>
                         <div
