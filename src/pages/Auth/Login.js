@@ -584,12 +584,7 @@ export default function Login() {
                       <div className="error-message">{errors.identifier}</div>
                     )}
                   </div>
-                  {/* General Error Message */}
-                  {errors.general && (
-                    <div className="alert alert-danger" role="alert">
-                      {errors.general}
-                    </div>
-                  )}
+                  {/* General Error Message: removed for password errors, only show below input */}
 
                   {/* Password Field: Only for userId login */}
                   {!showOTPField && loginType === "userId" && (
