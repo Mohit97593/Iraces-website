@@ -101,6 +101,215 @@ const Profile = () => {
   const phoneCode = user?.phone_code || user?.phoneCode || "";
   const bio = user?.about_you || "";
 
+  // Add validation and error states for general details
+  const [personalErrors, setPersonalErrors] = useState({});
+
+  const handlePersonalSubmit = async (e) => {
+    e.preventDefault();
+    let errors = {};
+    if (!editFirstName.trim()) errors.editFirstName = "First name is required";
+    if (!editLastName.trim()) errors.editLastName = "Last name is required";
+    if (!editMobile.trim()) errors.editMobile = "Mobile number is required";
+    if (!editEmail.trim()) errors.editEmail = "Email is required";
+    if (!editGender.trim()) errors.editGender = "Gender is required";
+    if (!editDob.trim()) errors.editDob = "Date of birth is required";
+    if (!editBio.trim()) errors.editBio = "Bio is required";
+    setPersonalErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    // Convert gender to number for API
+    let genderNum = 1;
+    if (editGender === "Male") genderNum = 1;
+    else if (editGender === "Female") genderNum = 2;
+    else if (editGender === "Other") genderNum = 3;
+    // Mobile validation: required and must be 10 digits
+    if (!editMobile) {
+      setMobileError("Mobile number is required");
+      return;
+    }
+    if (!/^\d{10}$/.test(editMobile)) {
+      setMobileError("Please enter a valid 10-digit mobile number");
+      return;
+    }
+    setMobileError("");
+    // DOB validation: required and must be in the past (not today/future)
+    if (!editDob) {
+      setDobError("Date of birth is required");
+      return;
+    }
+    const selectedDate = new Date(editDob);
+    const now = new Date();
+    selectedDate.setHours(0, 0, 0, 0);
+    now.setHours(0, 0, 0, 0);
+    if (selectedDate >= now) {
+      setDobError("Date of birth cannot be today or a future date");
+      return;
+    }
+    setDobError("");
+    const details = {
+      firstName: editFirstName,
+      lastName: editLastName,
+      mobile: editMobile,
+      email: editEmail,
+      gender: genderNum,
+      dob: editDob,
+      about_you: editBio,
+    };
+    try {
+      // Call PersonalDetails API
+      await import("../../services/authAPI").then(({ authAPI }) =>
+        authAPI.personalDetails(details)
+      );
+      // Fetch updated profile
+      const profileResponse = await import("../../services/authAPI").then(
+        ({ authAPI }) => authAPI.getProfile()
+      );
+      // Save new user data to localStorage
+      if (
+        profileResponse &&
+        profileResponse.data &&
+        profileResponse.data.userData
+      ) {
+        localStorage.setItem(
+          "userData",
+          JSON.stringify(profileResponse.data.userData[0])
+        );
+        // Update local bio state so UI reflects new bio
+        setEditBio(profileResponse.data.userData[0].about_you || "");
+      }
+      // Update user state
+      checkAuthStatus();
+      setEditPersonal(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (err) {
+      alert("Failed to update profile: " + (err?.message || err));
+    }
+    {
+      /* Success Popup */
+    }
+    {
+      showSuccess && (
+        <div
+          style={{
+            position: "fixed",
+            top: 24,
+            right: 24,
+            zIndex: 9999,
+            background: "#22c55e",
+            color: "#fff",
+            padding: "18px 32px",
+            borderRadius: "12px",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+            fontWeight: 600,
+            fontSize: "1.1rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            minWidth: "260px",
+            maxWidth: "350px",
+            border: "2px solid #22c55e",
+          }}
+        >
+          <span style={{ fontSize: "1.5rem" }}>✔️</span>
+          Personal Details updated successfully
+          <span
+            style={{ marginLeft: "auto", cursor: "pointer" }}
+            onClick={() => setShowSuccess(false)}
+          >
+            ✖️
+          </span>
+        </div>
+      );
+    }
+  };
+  // Add validation and error states for basic information
+  const [basicErrors, setBasicErrors] = useState({});
+
+  const handleBasicSubmit = async (e) => {
+    e.preventDefault();
+    let errors = {};
+    if (!editEmergencyName.trim())
+      errors.editEmergencyName = "Emergency name is required";
+    if (!editEmergencyNumber.trim())
+      errors.editEmergencyNumber = "Emergency number is required";
+    if (!editOrganisation.trim())
+      errors.editOrganisation = "Organisation is required";
+    if (!editDesignation.trim())
+      errors.editDesignation = "Designation is required";
+    if (!editIdProofType.trim())
+      errors.editIdProofType = "ID proof type is required";
+    if (!editIdProofNumber.trim())
+      errors.editIdProofNumber = "ID proof number is required";
+    if (!editIdProofFile) errors.editIdProofFile = "ID proof file is required";
+    setBasicErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    // Emergency contact number validation: must be 10 digits
+    if (!/^\d{10}$/.test(editEmergencyNumber)) {
+      setEmergencyNumberError(
+        "Please enter a valid 10-digit emergency contact number."
+      );
+      return;
+    }
+    setEmergencyNumberError("");
+    const details = {
+      emergency_contact_person: editEmergencyName,
+      emergency_contact_no: editEmergencyNumber,
+      organization: editOrganisation,
+      designation: editDesignation,
+      id_proof_type: editIdProofType,
+      id_proof_no: editIdProofNumber,
+      id_proof_doc_upload: editIdProofFile,
+    };
+    try {
+      // Call GeneralDetails API
+      const { authAPI } = await import("../../services/authAPI");
+      await authAPI.generalDetails(details);
+      // Fetch updated profile
+      const profileResponse = await authAPI.getProfile();
+      // Save new user data to localStorage
+      if (
+        profileResponse &&
+        profileResponse.data &&
+        profileResponse.data.userData
+      ) {
+        localStorage.setItem(
+          "userData",
+          JSON.stringify(profileResponse.data.userData[0])
+        );
+        checkAuthStatus();
+        // Update edit fields with latest data after save
+        const userData = profileResponse.data.userData[0];
+        setEditEmergencyName(userData.emergency_contact_person || "");
+        setEditEmergencyNumber(userData.emergency_contact_no || "");
+        setEditOrganisation(userData.organization || "");
+        setEditDesignation(userData.designation || "");
+        setEditIdProofType(userData.id_proof_type || "");
+        setEditIdProofNumber(userData.id_proof_no || "");
+        setEditIdProofFile(null);
+      }
+      setEditBasic(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (err) {
+      alert("Failed to update basic info: " + (err?.message || err));
+    }
+  };
+  // When editBasic is set to true, initialize editDesignation from user data
+  React.useEffect(() => {
+    if (editBasic) {
+      const userData = JSON.parse(localStorage.getItem("userData"));
+      setEditDesignation(userData?.designation || "");
+    }
+  }, [editBasic]);
+  // Fix: Ensure Designation field is set from user data when editBasic is enabled
+  React.useEffect(() => {
+    if (editBasic) {
+      const userData = JSON.parse(localStorage.getItem("userData"));
+      if (userData && userData.designation !== undefined) {
+        setEditDesignation(userData.designation);
+      }
+    }
+  }, [editBasic]);
   return (
     <div className="profile-page">
       {/* Success Popup (top-level, always rendered) */}
@@ -265,15 +474,17 @@ const Profile = () => {
                     src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
                     alt="avatar"
                   />
-                  <div className="profile-card-details">
+                  <div className="profile-info">
                     <div className="profile-name">
                       {firstName} {lastName}
                     </div>
-                    <div className="profile-phone">
-                      {phoneCode ? `+${phoneCode} - ` : ""}
-                      {mobile}
+                    <div className="profile-contact">
+                      <div className="profile-phone">
+                        📞 {phoneCode ? `+${phoneCode} - ` : ""}
+                        {mobile}
+                      </div>
+                      <div className="profile-email">{email}</div>
                     </div>
-                    <div className="profile-email">{email}</div>
                   </div>
                 </div>
                 <div className="profile-progress">
@@ -598,6 +809,7 @@ const Profile = () => {
                               gap: "24px 16px",
                               marginBottom: "0",
                             }}
+                            onSubmit={handlePersonalSubmit}
                           >
                             <div
                               style={{
@@ -622,6 +834,17 @@ const Profile = () => {
                                   border: "1px solid #ccc",
                                 }}
                               />
+                              {personalErrors.editFirstName && (
+                                <div
+                                  style={{
+                                    color: "red",
+                                    fontSize: "0.9em",
+                                    marginTop: "4px",
+                                  }}
+                                >
+                                  {personalErrors.editFirstName}
+                                </div>
+                              )}
                             </div>
                             <div
                               style={{
@@ -646,6 +869,17 @@ const Profile = () => {
                                   border: "1px solid #ccc",
                                 }}
                               />
+                              {personalErrors.editLastName && (
+                                <div
+                                  style={{
+                                    color: "red",
+                                    fontSize: "0.9em",
+                                    marginTop: "4px",
+                                  }}
+                                >
+                                  {personalErrors.editLastName}
+                                </div>
+                              )}
                             </div>
                             <div
                               style={{
@@ -682,6 +916,17 @@ const Profile = () => {
                                   {mobileError}
                                 </span>
                               )}
+                              {personalErrors.editMobile && (
+                                <div
+                                  style={{
+                                    color: "red",
+                                    fontSize: "0.9em",
+                                    marginTop: "4px",
+                                  }}
+                                >
+                                  {personalErrors.editMobile}
+                                </div>
+                              )}
                             </div>
                             <div
                               style={{
@@ -705,6 +950,17 @@ const Profile = () => {
                                   color: "#333",
                                 }}
                               />
+                              {personalErrors.editEmail && (
+                                <div
+                                  style={{
+                                    color: "red",
+                                    fontSize: "0.9em",
+                                    marginTop: "4px",
+                                  }}
+                                >
+                                  {personalErrors.editEmail}
+                                </div>
+                              )}
                             </div>
                             <div
                               style={{
@@ -732,6 +988,17 @@ const Profile = () => {
                                 <option value="Female">Female</option>
                                 <option value="Other">Other</option>
                               </select>
+                              {personalErrors.editGender && (
+                                <div
+                                  style={{
+                                    color: "red",
+                                    fontSize: "0.9em",
+                                    marginTop: "4px",
+                                  }}
+                                >
+                                  {personalErrors.editGender}
+                                </div>
+                              )}
                             </div>
                             <div
                               style={{
@@ -769,6 +1036,17 @@ const Profile = () => {
                                 >
                                   {dobError}
                                 </span>
+                              )}
+                              {personalErrors.editDob && (
+                                <div
+                                  style={{
+                                    color: "red",
+                                    fontSize: "0.9em",
+                                    marginTop: "4px",
+                                  }}
+                                >
+                                  {personalErrors.editDob}
+                                </div>
                               )}
                             </div>
                           </form>
@@ -848,132 +1126,7 @@ const Profile = () => {
                             </button>
                             <button
                               type="button"
-                              onClick={async () => {
-                                // Convert gender to number for API
-                                let genderNum = 1;
-                                if (editGender === "Male") genderNum = 1;
-                                else if (editGender === "Female") genderNum = 2;
-                                else if (editGender === "Other") genderNum = 3;
-                                // Mobile validation: required and must be 10 digits
-                                if (!editMobile) {
-                                  setMobileError("Mobile number is required");
-                                  return;
-                                }
-                                if (!/^\d{10}$/.test(editMobile)) {
-                                  setMobileError(
-                                    "Please enter a valid 10-digit mobile number"
-                                  );
-                                  return;
-                                }
-                                setMobileError("");
-                                // DOB validation: required and must be in the past (not today/future)
-                                if (!editDob) {
-                                  setDobError("Date of birth is required");
-                                  return;
-                                }
-                                const selectedDate = new Date(editDob);
-                                const now = new Date();
-                                selectedDate.setHours(0, 0, 0, 0);
-                                now.setHours(0, 0, 0, 0);
-                                if (selectedDate >= now) {
-                                  setDobError(
-                                    "Date of birth cannot be today or a future date"
-                                  );
-                                  return;
-                                }
-                                setDobError("");
-                                const details = {
-                                  firstName: editFirstName,
-                                  lastName: editLastName,
-                                  mobile: editMobile,
-                                  email: editEmail,
-                                  gender: genderNum,
-                                  dob: editDob,
-                                  about_you: editBio,
-                                };
-                                try {
-                                  // Call PersonalDetails API
-                                  await import("../../services/authAPI").then(
-                                    ({ authAPI }) =>
-                                      authAPI.personalDetails(details)
-                                  );
-                                  // Fetch updated profile
-                                  const profileResponse = await import(
-                                    "../../services/authAPI"
-                                  ).then(({ authAPI }) => authAPI.getProfile());
-                                  // Save new user data to localStorage
-                                  if (
-                                    profileResponse &&
-                                    profileResponse.data &&
-                                    profileResponse.data.userData
-                                  ) {
-                                    localStorage.setItem(
-                                      "userData",
-                                      JSON.stringify(
-                                        profileResponse.data.userData[0]
-                                      )
-                                    );
-                                    // Update local bio state so UI reflects new bio
-                                    setEditBio(
-                                      profileResponse.data.userData[0]
-                                        .about_you || ""
-                                    );
-                                  }
-                                  // Update user state
-                                  checkAuthStatus();
-                                  setEditPersonal(false);
-                                  setShowSuccess(true);
-                                  setTimeout(() => setShowSuccess(false), 3000);
-                                } catch (err) {
-                                  alert(
-                                    "Failed to update profile: " +
-                                      (err?.message || err)
-                                  );
-                                }
-                                {
-                                  /* Success Popup */
-                                }
-                                {
-                                  showSuccess && (
-                                    <div
-                                      style={{
-                                        position: "fixed",
-                                        top: 24,
-                                        right: 24,
-                                        zIndex: 9999,
-                                        background: "#22c55e",
-                                        color: "#fff",
-                                        padding: "18px 32px",
-                                        borderRadius: "12px",
-                                        boxShadow:
-                                          "0 2px 12px rgba(0,0,0,0.12)",
-                                        fontWeight: 600,
-                                        fontSize: "1.1rem",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "12px",
-                                        minWidth: "260px",
-                                        maxWidth: "350px",
-                                        border: "2px solid #22c55e",
-                                      }}
-                                    >
-                                      <span style={{ fontSize: "1.5rem" }}>
-                                        ✔️
-                                      </span>
-                                      Personal Details updated successfully
-                                      <span
-                                        style={{
-                                          marginLeft: "auto",
-                                          cursor: "pointer",
-                                        }}
-                                        onClick={() => setShowSuccess(false)}
-                                      >
-                                        ✖️
-                                      </span>
-                                    </div>
-                                  );
-                                }
-                              }}
+                              onClick={handlePersonalSubmit}
                               style={{
                                 background: "#e53935",
                                 color: "#fff",
@@ -1306,6 +1459,11 @@ const Profile = () => {
                                 marginBottom: "0",
                               }}
                             />
+                            {basicErrors.editEmergencyName && (
+                              <div style={{ color: "red", fontSize: "0.9em" }}>
+                                {basicErrors.editEmergencyName}
+                              </div>
+                            )}
                           </div>
                           <div
                             style={{ display: "flex", flexDirection: "column" }}
@@ -1352,6 +1510,11 @@ const Profile = () => {
                                 {emergencyNumberError}
                               </span>
                             )}
+                            {basicErrors.editEmergencyNumber && (
+                              <div style={{ color: "red", fontSize: "0.9em" }}>
+                                {basicErrors.editEmergencyNumber}
+                              </div>
+                            )}
                           </div>
                           <div
                             style={{ display: "flex", flexDirection: "column" }}
@@ -1378,6 +1541,11 @@ const Profile = () => {
                                 marginBottom: "0",
                               }}
                             />
+                            {basicErrors.editOrganisation && (
+                              <div style={{ color: "red", fontSize: "0.9em" }}>
+                                {basicErrors.editOrganisation}
+                              </div>
+                            )}
                           </div>
                           <div
                             style={{ display: "flex", flexDirection: "column" }}
@@ -1403,6 +1571,11 @@ const Profile = () => {
                                 marginBottom: "0",
                               }}
                             />
+                            {basicErrors.editDesignation && (
+                              <div style={{ color: "red", fontSize: "0.9em" }}>
+                                {basicErrors.editDesignation}
+                              </div>
+                            )}
                           </div>
                           <div
                             style={{ display: "flex", flexDirection: "column" }}
@@ -1435,6 +1608,11 @@ const Profile = () => {
                               <option value="Passport">Passport</option>
                               <option value="Other">Other</option>
                             </select>
+                            {basicErrors.editIdProofType && (
+                              <div style={{ color: "red", fontSize: "0.9em" }}>
+                                {basicErrors.editIdProofType}
+                              </div>
+                            )}
                           </div>
                           <div
                             style={{ display: "flex", flexDirection: "column" }}
@@ -1462,6 +1640,11 @@ const Profile = () => {
                                 width: "100%",
                               }}
                             />
+                            {basicErrors.editIdProofNumber && (
+                              <div style={{ color: "red", fontSize: "0.9em" }}>
+                                {basicErrors.editIdProofNumber}
+                              </div>
+                            )}
                           </div>
                           <div
                             style={{
@@ -1491,6 +1674,11 @@ const Profile = () => {
                                 width: "100%",
                               }}
                             />
+                            {basicErrors.editIdProofFile && (
+                              <div style={{ color: "red", fontSize: "0.9em" }}>
+                                {basicErrors.editIdProofFile}
+                              </div>
+                            )}
                           </div>
                         </form>
                         <div
@@ -1519,78 +1707,7 @@ const Profile = () => {
                           </button>
                           <button
                             type="button"
-                            onClick={async () => {
-                              // Emergency contact number validation: must be 10 digits
-                              if (!/^\d{10}$/.test(editEmergencyNumber)) {
-                                setEmergencyNumberError(
-                                  "Please enter a valid 10-digit emergency contact number."
-                                );
-                                return;
-                              }
-                              setEmergencyNumberError("");
-                              try {
-                                await import("../../services/authAPI").then(
-                                  ({ authAPI }) =>
-                                    authAPI.generalDetails({
-                                      emergency_contact_person:
-                                        editEmergencyName,
-                                      emergency_contact_no: editEmergencyNumber,
-                                      organization: editOrganisation,
-                                      designation: editDesignation,
-                                      id_proof_type: editIdProofType,
-                                      id_proof_no: editIdProofNumber,
-                                      id_proof_doc_upload: editIdProofFile,
-                                    })
-                                );
-                                // Fetch updated profile after saving
-                                const profileResponse = await import(
-                                  "../../services/authAPI"
-                                ).then(({ authAPI }) => authAPI.getProfile());
-                                if (
-                                  profileResponse &&
-                                  profileResponse.data &&
-                                  profileResponse.data.userData
-                                ) {
-                                  localStorage.setItem(
-                                    "userData",
-                                    JSON.stringify(
-                                      profileResponse.data.userData[0]
-                                    )
-                                  );
-                                  checkAuthStatus();
-                                  // Update edit fields with latest data after save
-                                  const userData =
-                                    profileResponse.data.userData[0];
-                                  setEditEmergencyName(
-                                    userData.emergency_contact_person || ""
-                                  );
-                                  setEditEmergencyNumber(
-                                    userData.emergency_contact_no || ""
-                                  );
-                                  setEditOrganisation(
-                                    userData.organization || ""
-                                  );
-                                  setEditDesignation(
-                                    userData.designation || ""
-                                  );
-                                  setEditIdProofType(
-                                    userData.id_proof_type || ""
-                                  );
-                                  setEditIdProofNumber(
-                                    userData.id_proof_no || ""
-                                  );
-                                  setEditIdProofFile(null);
-                                }
-                                setEditBasic(false);
-                                setShowSuccess(true);
-                                setTimeout(() => setShowSuccess(false), 3000);
-                              } catch (err) {
-                                alert(
-                                  "Failed to update basic info: " +
-                                    (err?.message || err)
-                                );
-                              }
-                            }}
+                            onClick={handleBasicSubmit}
                             style={{
                               background: "#e53935",
                               color: "#fff",
@@ -1891,21 +2008,154 @@ const Profile = () => {
               </div>
             </>
           ) : (
-            <div
-              style={{
-                width: "100%",
-                minHeight: "300px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <div
-                className="coming-soon-panel"
-                style={{ textAlign: "center" }}
-              >
-                <h3>Coming Soon</h3>
-                <p>This section will be available soon.</p>
+            <div style={{ width: "100%" }}>
+              <div style={{ marginTop: 32 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  <h2 style={{ fontWeight: 500, fontSize: 22, margin: 0 }}>
+                    Organizing Team - New user
+                  </h2>
+                  <button
+                    style={{
+                      border: "1.5px solid #d7261a",
+                      color: "#d7261a",
+                      background: "#fff",
+                      borderRadius: 6,
+                      padding: "6px 18px",
+                      fontSize: 18,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <span
+                      style={{ fontSize: 22, fontWeight: 600, marginRight: 4 }}
+                    >
+                      +
+                    </span>{" "}
+                    Add User
+                  </button>
+                </div>
+                <div
+                  style={{
+                    background: "#fff",
+                    borderRadius: 12,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                    padding: 0,
+                    overflow: "hidden",
+                  }}
+                >
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ background: "#e6f0ff", height: 44 }}>
+                        <th
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 16,
+                            padding: "8px 0",
+                            border: "none",
+                          }}
+                        >
+                          Sr. No.
+                        </th>
+                        <th
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 16,
+                            padding: "8px 0",
+                            border: "none",
+                          }}
+                        >
+                          User Name
+                        </th>
+                        <th
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 16,
+                            padding: "8px 0",
+                            border: "none",
+                          }}
+                        >
+                          Email
+                        </th>
+                        <th
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 16,
+                            padding: "8px 0",
+                            border: "none",
+                          }}
+                        >
+                          Mobile Number
+                        </th>
+                        <th
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 16,
+                            padding: "8px 0",
+                            border: "none",
+                          }}
+                        >
+                          Gender
+                        </th>
+                        <th
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 16,
+                            padding: "8px 0",
+                            border: "none",
+                          }}
+                        >
+                          Date of Birth
+                        </th>
+                        <th
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 16,
+                            padding: "8px 0",
+                            border: "none",
+                          }}
+                        >
+                          Role
+                        </th>
+                        <th
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 16,
+                            padding: "8px 0",
+                            border: "none",
+                          }}
+                        >
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td
+                          colSpan={8}
+                          style={{
+                            textAlign: "center",
+                            color: "red",
+                            fontWeight: 500,
+                            fontSize: 18,
+                            padding: "24px 0",
+                          }}
+                        >
+                          No Record Found
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

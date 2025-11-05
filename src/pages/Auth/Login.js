@@ -18,7 +18,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { login, sendOTP, loginWithOTP } = useAuth();
 
-  const [loginType, setLoginType] = useState("email");
+  const [loginType, setLoginType] = useState("userId");
   const [formData, setFormData] = useState({
     identifier: "",
     password: "",
@@ -541,30 +541,104 @@ export default function Login() {
                     <div className="login-type-buttons">
                       <button
                         type="button"
-                        className={`login-type-btn ${
-                          loginType === "userId" ? "active" : ""
+                        className={`login-type-btn${
+                          loginType === "userId" ? " active" : ""
                         }`}
                         onClick={() => handleLoginTypeChange("userId")}
+                        style={{
+                          border:
+                            loginType === "userId"
+                              ? "2px solid #da251c"
+                              : "1px solid #ddd",
+                          color: loginType === "userId" ? "#da251c" : "#333",
+                          background:
+                            loginType === "userId" ? "#fff5f3" : "#fff",
+                          fontWeight:
+                            loginType === "userId" ? "bold" : "normal",
+                          boxShadow:
+                            loginType === "userId"
+                              ? "0 2px 8px rgba(218,37,28,0.08)"
+                              : "none",
+                          cursor: "pointer",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.border = "2px solid #da251c")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.border =
+                            loginType === "userId"
+                              ? "2px solid #da251c"
+                              : "1px solid #ddd")
+                        }
                       >
                         <i className="fas fa-user"></i>
                         User ID
                       </button>
                       <button
                         type="button"
-                        className={`login-type-btn ${
-                          loginType === "mobile" ? "active" : ""
+                        className={`login-type-btn${
+                          loginType === "mobile" ? " active" : ""
                         }`}
                         onClick={() => handleLoginTypeChange("mobile")}
+                        style={{
+                          border:
+                            loginType === "mobile"
+                              ? "2px solid #da251c"
+                              : "1px solid #ddd",
+                          color: loginType === "mobile" ? "#da251c" : "#333",
+                          background:
+                            loginType === "mobile" ? "#fff5f3" : "#fff",
+                          fontWeight:
+                            loginType === "mobile" ? "bold" : "normal",
+                          boxShadow:
+                            loginType === "mobile"
+                              ? "0 2px 8px rgba(218,37,28,0.08)"
+                              : "none",
+                          cursor: "pointer",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.border = "2px solid #da251c")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.border =
+                            loginType === "mobile"
+                              ? "2px solid #da251c"
+                              : "1px solid #ddd")
+                        }
                       >
                         <i className="fas fa-phone"></i>
                         Mobile
                       </button>
                       <button
                         type="button"
-                        className={`login-type-btn ${
-                          loginType === "email" ? "active" : ""
+                        className={`login-type-btn${
+                          loginType === "email" ? " active" : ""
                         }`}
                         onClick={() => handleLoginTypeChange("email")}
+                        style={{
+                          border:
+                            loginType === "email"
+                              ? "2px solid #da251c"
+                              : "1px solid #ddd",
+                          color: loginType === "email" ? "#da251c" : "#333",
+                          background:
+                            loginType === "email" ? "#fff5f3" : "#fff",
+                          fontWeight: loginType === "email" ? "bold" : "normal",
+                          boxShadow:
+                            loginType === "email"
+                              ? "0 2px 8px rgba(218,37,28,0.08)"
+                              : "none",
+                          cursor: "pointer",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.border = "2px solid #da251c")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.border =
+                            loginType === "email"
+                              ? "2px solid #da251c"
+                              : "1px solid #ddd")
+                        }
                       >
                         <i className="fas fa-envelope"></i>
                         Email
@@ -695,7 +769,7 @@ export default function Login() {
                       )}
                       {otpSent && (
                         <div className="text-success small mt-1">
-                          OTP sent successfully! Please check your SMS.
+                          OTP sent successfully! Please check your email.
                         </div>
                       )}
                       {/* Countdown and resend OTP UI */}

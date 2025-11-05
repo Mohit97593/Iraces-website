@@ -1094,23 +1094,21 @@ export default function Signup() {
                           <span className="checkmark"></span>
                           <span className="checkbox-text">
                             I acknowledge the
-                            <a
-                              href="https://youtoocanrun.com/terms-and-conditions-for-use/"
-                              target="blank"
+                            <NavLink
+                              to="/terms-conditions"
                               style={{ textDecoration: "none", color: "black" }}
                             >
                               {" "}
                               Terms of Services{" "}
-                            </a>
+                            </NavLink>
                             &
-                            <a
-                              href="https://youtoocanrun.com/privacy-policy/"
-                              target="blank"
+                            <NavLink
+                              to="/privacy-policy"
                               style={{ textDecoration: "none", color: "black" }}
                             >
                               {" "}
                               Privacy Policy.{" "}
-                            </a>
+                            </NavLink>
                           </span>
                         </label>
                         {errors.agreeToTerms && (
