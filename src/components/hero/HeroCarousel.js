@@ -408,7 +408,7 @@ export default function HeroCarousel() {
         <EventsPanel />
 
         {/* Training Programs section (matches screenshot) */}
-        <TrainingPanel />
+        {/* <TrainingPanel /> */}
 
         {/* Why Runmate section */}
         <WhyRunmatePanel />
@@ -417,7 +417,7 @@ export default function HeroCarousel() {
         <RunUnintentionallyPanel />
 
         {/* Coaches section */}
-        <CoachesPanel />
+        {/* <CoachesPanel /> */}
 
         <InstagramGrid />
 
@@ -425,7 +425,7 @@ export default function HeroCarousel() {
         <TestimonialsCarousel />
 
         {/* Blog Section */}
-        <BlogPanel />
+        {/* <BlogPanel /> */}
 
         {/* FAQ Section */}
         <FAQPanel />

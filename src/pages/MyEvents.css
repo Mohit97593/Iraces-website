@@ -1,0 +1,91 @@
+.my-events-hero {
+  background: #2176c1;
+  position: relative;
+  padding: 32px 0 0 0;
+  min-height: 120px;
+}
+.my-events-hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #2176c1 80%, #2176c1 0%);
+  opacity: 0.9;
+  z-index: 1;
+}
+.my-events-title {
+  color: #fff;
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 2;
+}
+.my-events-breadcrumb {
+  color: #fff;
+  font-size: 1.1rem;
+  opacity: 0.85;
+  position: relative;
+  z-index: 2;
+}
+.breadcrumb-separator {
+  margin: 0 8px;
+}
+.my-events-section {
+  padding: 32px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.my-events-type-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.my-events-type-btn {
+  background: #fff;
+  color: #e53935;
+  border: 2px solid #e53935;
+  border-radius: 30px;
+  padding: 8px 24px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.my-events-type-btn.public {
+  background: #e53935;
+  color: #fff;
+}
+.my-events-type-btn.private {
+  background: #fff;
+  color: #e53935;
+}
+.my-events-type-btn.draft {
+  background: #fff;
+  color: #e53935;
+}
+.my-events-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 48px;
+}
+.my-events-empty-img {
+  width: 160px;
+  margin-bottom: 24px;
+  opacity: 0.7;
+}
+.my-events-empty-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 8px;
+}
+.my-events-empty-desc {
+  font-size: 1.1rem;
+  color: #444;
+  opacity: 0.8;
+  text-align: center;
+}

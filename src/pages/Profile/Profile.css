@@ -305,3 +305,35 @@
     padding: 16px;
   }
 }
+
+/* Success Toast Animation */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Organizing Team Table Fix */
+table.organizing-team-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+table.organizing-team-table th,
+table.organizing-team-table td {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  vertical-align: middle;
+  text-align: center;
+}
+table.organizing-team-table th {
+  background: #eaf2ff;
+  font-weight: 600;
+}
+table.organizing-team-table tr {
+  vertical-align: middle;
+}

@@ -1,9 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./Profile.css";
 import TopNav from "../../components/Navbar/TopNav";
 import { useAuth } from "../../contexts/AuthContext";
+import { authAPI } from "../../services/authAPI";
 
 const Profile = () => {
+  // Add User Modal States
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [roles, setRoles] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+
+  // Add User Form States
+  const [selectedRole, setSelectedRole] = useState("");
+  const [addFirstName, setAddFirstName] = useState("");
+  const [addLastName, setAddLastName] = useState("");
+  const [addContactNumber, setAddContactNumber] = useState("");
+  const [addEmail, setAddEmail] = useState("");
+  const [addDob, setAddDob] = useState("");
+  const [addGender, setAddGender] = useState("");
+  const [eventSelection, setEventSelection] = useState("all"); // 'all' or 'select'
+  const [selectedEvents, setSelectedEvents] = useState([]);
+
+  // Add User Modal Validation States
+  const [orgUserErrors, setOrgUserErrors] = useState({});
+
   // Fetch latest profile on every page load
   React.useEffect(() => {
     (async () => {
@@ -76,6 +98,9 @@ const Profile = () => {
     }
   }, [activeTab]);
   const [mainSection, setMainSection] = useState("profile"); // 'profile' or 'team'
+  const [orgUserDetails, setOrgUserDetails] = useState([]);
+  const [loadingOrgUsers, setLoadingOrgUsers] = useState(false);
+
   // Basic Information edit states
   const [editBasic, setEditBasic] = useState(false);
   const [editEmergencyName, setEditEmergencyName] = useState("");
@@ -87,6 +112,393 @@ const Profile = () => {
   const [editIdProofNumber, setEditIdProofNumber] = useState("");
   const [editIdProofFile, setEditIdProofFile] = useState(null);
   const { user, checkAuthStatus } = useAuth();
+
+  // Fetch org user details when Organizing Team section is opened
+  useEffect(() => {
+    if (mainSection === "team") {
+      (async () => {
+        // Always fetch latest profile first
+        try {
+          const profileResponse = await authAPI.getProfile();
+          if (
+            profileResponse &&
+            profileResponse.data &&
+            profileResponse.data.userData
+          ) {
+            localStorage.setItem(
+              "userData",
+              JSON.stringify(profileResponse.data.userData[0])
+            );
+            checkAuthStatus();
+          }
+        } catch (err) {
+          console.error("Failed to fetch profile for org team:", err);
+        }
+        // Now fetch org user details with user_id
+        setLoadingOrgUsers(true);
+        try {
+          // Get user_id from localStorage
+          const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+          const userId = userData.id || 0;
+
+          const orgResponse = await authAPI.orgUserDetails(userId);
+          console.log("Org User Details Response:", orgResponse);
+          if (orgResponse && orgResponse.data && orgResponse.data.AllOrgUsers) {
+            setOrgUserDetails(
+              Array.isArray(orgResponse.data.AllOrgUsers)
+                ? orgResponse.data.AllOrgUsers
+                : []
+            );
+          } else {
+            setOrgUserDetails([]);
+          }
+        } catch (error) {
+          console.error("Error fetching org user details:", error);
+          setOrgUserDetails([]);
+        } finally {
+          setLoadingOrgUsers(false);
+        }
+      })();
+    }
+  }, [mainSection]);
+  // ...existing code...
+
+  const handleOpenAddUserModal = async () => {
+    setShowAddUserModal(true);
+
+    // Fetch roles
+    setLoadingRoles(true);
+    try {
+      const rolesResponse = await authAPI.getRoles();
+      console.log("Roles Response:", rolesResponse);
+      if (rolesResponse && rolesResponse.data && rolesResponse.data.AllRoles) {
+        setRoles(
+          Array.isArray(rolesResponse.data.AllRoles)
+            ? rolesResponse.data.AllRoles
+            : []
+        );
+      } else {
+        setRoles([]);
+      }
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+      setRoles([]);
+    } finally {
+      setLoadingRoles(false);
+    }
+
+    // Fetch events
+    setLoadingEvents(true);
+    try {
+      const eventsResponse = await authAPI.getEvents();
+      console.log("Events Response:", eventsResponse);
+      if (eventsResponse && eventsResponse.data && eventsResponse.data.events) {
+        setEvents(
+          Array.isArray(eventsResponse.data.events)
+            ? eventsResponse.data.events
+            : []
+        );
+      } else {
+        setEvents([]);
+      }
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      setEvents([]);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
+  const handleCloseAddUserModal = () => {
+    setShowAddUserModal(false);
+    // Reset form fields
+    setSelectedRole("");
+    setAddFirstName("");
+    setAddLastName("");
+    setAddContactNumber("");
+    setAddEmail("");
+    setAddDob("");
+    setAddGender("");
+    setEventSelection("all");
+    setSelectedEvents([]);
+    setEditOrgUserId(0); // Reset edit mode
+    setOrgUserErrors({}); // Reset validation errors
+  };
+
+  const handleSaveUser = async () => {
+    // Validation logic for organiser user modal
+    let errors = {};
+
+    if (!selectedRole) {
+      errors.selectedRole = "Role is required";
+    }
+    if (!addFirstName.trim()) {
+      errors.addFirstName = "First name is required";
+    }
+    if (!addLastName.trim()) {
+      errors.addLastName = "Last name is required";
+    }
+    if (!addContactNumber.trim()) {
+      errors.addContactNumber = "Mobile number is required";
+    } else if (!/^[0-9]{10}$/.test(addContactNumber.trim())) {
+      errors.addContactNumber = "Please enter a valid 10-digit mobile number";
+    }
+    if (!addEmail.trim()) {
+      errors.addEmail = "Email is required";
+    } else if (!/^\S+@\S+\.\S+$/.test(addEmail.trim())) {
+      errors.addEmail = "Please enter a valid email address";
+    }
+    if (!addDob.trim()) {
+      errors.addDob = "Date of birth is required";
+    }
+    if (!addGender.trim()) {
+      errors.addGender = "Gender is required";
+    }
+    if (eventSelection === "select" && selectedEvents.length === 0) {
+      errors.selectedEvents = "Please select at least one event";
+    }
+
+    setOrgUserErrors(errors);
+
+    // If there are errors, stop here
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
+    // Validate and save user
+    console.log("Saving user:", {
+      role: selectedRole,
+      firstName: addFirstName,
+      lastName: addLastName,
+      contactNumber: addContactNumber,
+      email: addEmail,
+      dob: addDob,
+      gender: addGender,
+      eventSelection,
+      selectedEvents,
+    });
+
+    // Prepare payload for addEditOrgUser
+    const payload = {
+      edit_org_user_id: editOrgUserId || 0, // If editOrgUserId is set, we're editing
+      user_role: selectedRole,
+      firstname: addFirstName,
+      lastname: addLastName,
+      email: addEmail,
+      mobile: addContactNumber,
+      dob: addDob,
+      gender: addGender === "Male" ? 1 : addGender === "Female" ? 2 : 3,
+      event_selected_type: eventSelection === "all" ? 1 : 2,
+      event_data: JSON.stringify(
+        events.map((e) => ({
+          id: e.id,
+          name: e.name,
+          checked: selectedEvents.includes(e.id),
+        }))
+      ),
+    };
+
+    try {
+      // Call addEditOrgUser API
+      const res = await authAPI.addEditOrgUser(payload);
+      console.log("addEditOrgUser response:", res);
+      if (res && res.message && res.message.toLowerCase().includes("success")) {
+        // Success, now fetch org user details
+        setLoadingOrgUsers(true);
+        try {
+          // Get user_id from localStorage
+          const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+          const userId = userData.id || user?.id || 0;
+
+          const orgRes = await authAPI.orgUserDetails(userId);
+          console.log("OrgUserDetails response:", orgRes);
+          if (orgRes && orgRes.data && orgRes.data.AllOrgUsers) {
+            setOrgUserDetails(
+              Array.isArray(orgRes.data.AllOrgUsers)
+                ? orgRes.data.AllOrgUsers
+                : []
+            );
+          } else {
+            setOrgUserDetails([]);
+          }
+        } catch (err) {
+          console.error("Error fetching org users:", err);
+          setOrgUserDetails([]);
+        } finally {
+          setLoadingOrgUsers(false);
+        }
+        handleCloseAddUserModal();
+        showSuccessMessage(
+          res.message ||
+            (editOrgUserId
+              ? "User updated successfully!"
+              : "User added successfully!")
+        );
+      } else {
+        alert(res?.message || "Failed to save user");
+      }
+    } catch (err) {
+      alert("Failed to save user: " + (err?.message || err));
+    }
+  };
+
+  // Edit Org User Handler
+  const handleEditOrgUser = async (orgUserId) => {
+    try {
+      // Call EditOrgUser API to get user details
+      const response = await authAPI.editOrgUser({ org_user_id: orgUserId });
+      console.log("EditOrgUser response:", response);
+
+      if (
+        response &&
+        response.data &&
+        response.data.AllOrgUsers &&
+        response.data.AllOrgUsers.length > 0
+      ) {
+        const orgUserData = response.data.AllOrgUsers[0];
+
+        // Populate modal fields with existing data
+        setSelectedRole(String(orgUserData.user_role || ""));
+        setAddFirstName(orgUserData.firstname || "");
+        setAddLastName(orgUserData.lastname || "");
+        setAddContactNumber(orgUserData.mobile || "");
+        setAddEmail(orgUserData.email || "");
+        setAddDob(orgUserData.dob || "");
+
+        // Set gender
+        let genderValue = "";
+        if (orgUserData.gender === 1 || orgUserData.gender === "1")
+          genderValue = "Male";
+        else if (orgUserData.gender === 2 || orgUserData.gender === "2")
+          genderValue = "Female";
+        else if (orgUserData.gender === 3 || orgUserData.gender === "3")
+          genderValue = "Other";
+        setAddGender(genderValue);
+
+        // Set event selection
+        setEventSelection(
+          orgUserData.event_selected_type === 1 ? "all" : "select"
+        );
+
+        // Load events and set checked ones
+        setLoadingEvents(true);
+        try {
+          const eventsResponse = await authAPI.getEvents();
+          if (
+            eventsResponse &&
+            eventsResponse.data &&
+            eventsResponse.data.AllEvents
+          ) {
+            const allEvents = Array.isArray(eventsResponse.data.AllEvents)
+              ? eventsResponse.data.AllEvents
+              : [];
+
+            // Get event data from API response
+            const eventData = orgUserData.eventData || [];
+            const checkedEventIds = eventData
+              .filter((e) => e.checked === true)
+              .map((e) => e.id);
+
+            setEvents(allEvents);
+            setSelectedEvents(checkedEventIds);
+          } else {
+            setEvents([]);
+          }
+        } catch (error) {
+          console.error("Error fetching events:", error);
+          setEvents([]);
+        } finally {
+          setLoadingEvents(false);
+        }
+
+        // Load roles
+        setLoadingRoles(true);
+        try {
+          const rolesResponse = await authAPI.getRoles();
+          if (
+            rolesResponse &&
+            rolesResponse.data &&
+            rolesResponse.data.AllRoles
+          ) {
+            setRoles(
+              Array.isArray(rolesResponse.data.AllRoles)
+                ? rolesResponse.data.AllRoles
+                : []
+            );
+          } else {
+            setRoles([]);
+          }
+        } catch (error) {
+          console.error("Error fetching roles:", error);
+          setRoles([]);
+        } finally {
+          setLoadingRoles(false);
+        }
+
+        // Open modal in edit mode (we'll need to track edit mode)
+        setEditOrgUserId(orgUserId);
+        setShowAddUserModal(true);
+      }
+    } catch (err) {
+      console.error("Error fetching org user for edit:", err);
+      alert("Failed to load user details for editing");
+    }
+  };
+
+  // Delete Org User Handler
+  const handleDeleteOrgUser = async (orgUserId) => {
+    if (!window.confirm("Are you sure you want to delete this user?")) {
+      return;
+    }
+
+    try {
+      const response = await authAPI.deleteOrgUser({ org_user_id: orgUserId });
+      console.log("DeleteOrgUser response:", response);
+
+      if (response && response.message) {
+        // Refresh org user list
+        setLoadingOrgUsers(true);
+        try {
+          const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+          const userId = userData.id || user?.id || 0;
+
+          const orgRes = await authAPI.orgUserDetails(userId);
+          if (orgRes && orgRes.data && orgRes.data.AllOrgUsers) {
+            setOrgUserDetails(
+              Array.isArray(orgRes.data.AllOrgUsers)
+                ? orgRes.data.AllOrgUsers
+                : []
+            );
+          } else {
+            setOrgUserDetails([]);
+          }
+        } catch (err) {
+          console.error("Error fetching org users:", err);
+          setOrgUserDetails([]);
+        } finally {
+          setLoadingOrgUsers(false);
+        }
+
+        showSuccessMessage(response.message || "User deleted successfully!");
+      }
+    } catch (err) {
+      console.error("Error deleting org user:", err);
+      alert("Failed to delete user");
+    }
+  };
+
+  // Success Message State and Handler
+  const [successMessage, setSuccessMessage] = useState("");
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [editOrgUserId, setEditOrgUserId] = useState(0);
+
+  const showSuccessMessage = (message) => {
+    setSuccessMessage(message);
+    setShowSuccessToast(true);
+    setTimeout(() => {
+      setShowSuccessToast(false);
+    }, 3000);
+  };
 
   // Extract user fields safely
   const firstName = user?.firstName || user?.firstname || "";
@@ -2035,6 +2447,7 @@ const Profile = () => {
                       alignItems: "center",
                       gap: 6,
                     }}
+                    onClick={handleOpenAddUserModal}
                   >
                     <span
                       style={{ fontSize: 22, fontWeight: 600, marginRight: 4 }}
@@ -2053,7 +2466,7 @@ const Profile = () => {
                     overflow: "hidden",
                   }}
                 >
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <table className="organizing-team-table">
                     <thead>
                       <tr style={{ background: "#e6f0ff", height: 44 }}>
                         <th
@@ -2139,20 +2552,134 @@ const Profile = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td
-                          colSpan={8}
-                          style={{
-                            textAlign: "center",
-                            color: "red",
-                            fontWeight: 500,
-                            fontSize: 18,
-                            padding: "24px 0",
-                          }}
-                        >
-                          No Record Found
-                        </td>
-                      </tr>
+                      {loadingOrgUsers ? (
+                        <tr>
+                          <td
+                            colSpan={8}
+                            style={{
+                              textAlign: "center",
+                              padding: "24px 0",
+                            }}
+                          >
+                            Loading...
+                          </td>
+                        </tr>
+                      ) : orgUserDetails && orgUserDetails.length > 0 ? (
+                        orgUserDetails.map((orgUser, index) => (
+                          <tr key={orgUser.id || index}>
+                            <td
+                              style={{
+                                textAlign: "center",
+                                padding: "12px 8px",
+                                borderBottom: "1px solid #e0e0e0",
+                              }}
+                            >
+                              {index + 1}
+                            </td>
+                            <td
+                              style={{
+                                textAlign: "center",
+                                padding: "12px 8px",
+                                borderBottom: "1px solid #e0e0e0",
+                              }}
+                            >
+                              {orgUser.username ||
+                                `${orgUser.firstname} ${orgUser.lastname}`}
+                            </td>
+                            <td
+                              style={{
+                                textAlign: "center",
+                                padding: "12px 8px",
+                                borderBottom: "1px solid #e0e0e0",
+                              }}
+                            >
+                              {orgUser.email}
+                            </td>
+                            <td
+                              style={{
+                                textAlign: "center",
+                                padding: "12px 8px",
+                                borderBottom: "1px solid #e0e0e0",
+                              }}
+                            >
+                              {orgUser.mobile}
+                            </td>
+                            <td
+                              style={{
+                                textAlign: "center",
+                                padding: "12px 8px",
+                                borderBottom: "1px solid #e0e0e0",
+                              }}
+                            >
+                              {orgUser.gender}
+                            </td>
+                            <td
+                              style={{
+                                textAlign: "center",
+                                padding: "12px 8px",
+                                borderBottom: "1px solid #e0e0e0",
+                              }}
+                            >
+                              {orgUser.dob}
+                            </td>
+                            <td
+                              style={{
+                                textAlign: "center",
+                                padding: "12px 8px",
+                                borderBottom: "1px solid #e0e0e0",
+                              }}
+                            >
+                              {orgUser.user_role}
+                            </td>
+                            <td
+                              style={{
+                                textAlign: "center",
+                                padding: "12px 8px",
+                                borderBottom: "1px solid #e0e0e0",
+                              }}
+                            >
+                              <button
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  marginRight: "8px",
+                                }}
+                                title="Edit"
+                                onClick={() => handleEditOrgUser(orgUser.id)}
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                }}
+                                title="Delete"
+                                onClick={() => handleDeleteOrgUser(orgUser.id)}
+                              >
+                                🗑️
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={8}
+                            style={{
+                              textAlign: "center",
+                              color: "red",
+                              fontWeight: 500,
+                              fontSize: 18,
+                              padding: "24px 0",
+                            }}
+                          >
+                            No Record Found
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -2161,6 +2688,583 @@ const Profile = () => {
           )}
         </div>
       </div>
+
+      {/* Add User Modal */}
+      {showAddUserModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+          onClick={handleCloseAddUserModal}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              padding: "32px",
+              maxWidth: "900px",
+              width: "90%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ marginBottom: "32px" }}>
+              <h2
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "600",
+                  color: "#333",
+                  margin: 0,
+                }}
+              >
+                Organising Team - Add User
+              </h2>
+            </div>
+
+            {/* Form Fields */}
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "24px" }}
+            >
+              {/* Manage Roles */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#555",
+                  }}
+                >
+                  Manage Roles <span style={{ color: "red" }}>*</span>
+                </label>
+                <select
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: "1px solid #ddd",
+                    fontSize: "14px",
+                    color: "#333",
+                  }}
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(String(e.target.value))}
+                >
+                  <option value="">-- Select Roles --</option>
+                  {loadingRoles ? (
+                    <option disabled>Loading roles...</option>
+                  ) : roles && roles.length > 0 ? (
+                    roles.map((role, idx) => (
+                      <option
+                        key={role.id || role.role_id || idx}
+                        value={role.id || role.role_id}
+                      >
+                        {role.role_name || role.name || role.roleName || "Role"}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>No roles available</option>
+                  )}
+                </select>
+                {orgUserErrors.selectedRole && (
+                  <div
+                    style={{
+                      color: "red",
+                      fontSize: "13px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {orgUserErrors.selectedRole}
+                  </div>
+                )}
+              </div>
+
+              {/* First Name and Last Name */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "16px",
+                }}
+              >
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "#555",
+                    }}
+                  >
+                    First Name <span style={{ color: "red" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #ddd",
+                      fontSize: "14px",
+                    }}
+                    value={addFirstName}
+                    onChange={(e) => setAddFirstName(e.target.value)}
+                  />
+                  {orgUserErrors.addFirstName && (
+                    <div
+                      style={{
+                        color: "red",
+                        fontSize: "13px",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {orgUserErrors.addFirstName}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "#555",
+                    }}
+                  >
+                    Last Name <span style={{ color: "red" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #ddd",
+                      fontSize: "14px",
+                    }}
+                    value={addLastName}
+                    onChange={(e) => setAddLastName(e.target.value)}
+                  />
+                  {orgUserErrors.addLastName && (
+                    <div
+                      style={{
+                        color: "red",
+                        fontSize: "13px",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {orgUserErrors.addLastName}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Contact Number and Email */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "16px",
+                }}
+              >
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "#555",
+                    }}
+                  >
+                    Contact number <span style={{ color: "red" }}>*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #ddd",
+                      fontSize: "14px",
+                    }}
+                    value={addContactNumber}
+                    onChange={(e) =>
+                      setAddContactNumber(e.target.value.replace(/[^0-9]/g, ""))
+                    }
+                    maxLength={10}
+                  />
+                  {orgUserErrors.addContactNumber && (
+                    <div
+                      style={{
+                        color: "red",
+                        fontSize: "13px",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {orgUserErrors.addContactNumber}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "#555",
+                    }}
+                  >
+                    Email Id <span style={{ color: "red" }}>*</span>
+                  </label>
+                  <input
+                    type="email"
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #ddd",
+                      fontSize: "14px",
+                    }}
+                    value={addEmail}
+                    onChange={(e) => setAddEmail(e.target.value)}
+                  />
+                  {orgUserErrors.addEmail && (
+                    <div
+                      style={{
+                        color: "red",
+                        fontSize: "13px",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {orgUserErrors.addEmail}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Date of Birth and Gender */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "16px",
+                }}
+              >
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "#555",
+                    }}
+                  >
+                    Date Of Birth <span style={{ color: "red" }}>*</span>
+                  </label>
+                  <input
+                    type="date"
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #ddd",
+                      fontSize: "14px",
+                      color: addDob ? "#333" : "#999",
+                    }}
+                    placeholder="dd-mm-yyyy"
+                    value={addDob}
+                    max={maxDob}
+                    onChange={(e) => setAddDob(e.target.value)}
+                  />
+                  {orgUserErrors.addDob && (
+                    <div
+                      style={{
+                        color: "red",
+                        fontSize: "13px",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {orgUserErrors.addDob}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "#555",
+                    }}
+                  >
+                    Gender <span style={{ color: "red" }}>*</span>
+                  </label>
+                  <select
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #ddd",
+                      fontSize: "14px",
+                      color: addGender ? "#333" : "#999",
+                    }}
+                    value={addGender}
+                    onChange={(e) => setAddGender(e.target.value)}
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  {orgUserErrors.addGender && (
+                    <div
+                      style={{
+                        color: "red",
+                        fontSize: "13px",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {orgUserErrors.addGender}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Event Selection Radio Buttons */}
+              <div>
+                <div
+                  style={{ display: "flex", gap: "24px", marginBottom: "16px" }}
+                >
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="eventSelection"
+                      value="all"
+                      checked={eventSelection === "all"}
+                      onChange={(e) => setEventSelection(e.target.value)}
+                      style={{
+                        width: "20px",
+                        height: "20px",
+                        cursor: "pointer",
+                      }}
+                    />
+                    <span
+                      style={{
+                        backgroundColor:
+                          eventSelection === "all" ? "#e53935" : "transparent",
+                        color: eventSelection === "all" ? "white" : "#555",
+                        padding: "8px 20px",
+                        borderRadius: "20px",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        border:
+                          eventSelection === "all" ? "none" : "1px solid #ddd",
+                      }}
+                    >
+                      All Events
+                    </span>
+                  </label>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="eventSelection"
+                      value="select"
+                      checked={eventSelection === "select"}
+                      onChange={(e) => setEventSelection(e.target.value)}
+                      style={{
+                        width: "20px",
+                        height: "20px",
+                        cursor: "pointer",
+                      }}
+                    />
+                    <span
+                      style={{
+                        backgroundColor:
+                          eventSelection === "select"
+                            ? "transparent"
+                            : "transparent",
+                        color: eventSelection === "select" ? "#e53935" : "#555",
+                        padding: "8px 20px",
+                        borderRadius: "20px",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        border: "1px solid #e53935",
+                      }}
+                    >
+                      Select Events
+                    </span>
+                  </label>
+                </div>
+
+                {/* Events List (shown when Select Events is chosen) */}
+                {eventSelection === "select" && (
+                  <div
+                    style={{
+                      maxHeight: "200px",
+                      overflowY: "auto",
+                      border: "1px solid #ddd",
+                      borderRadius: "8px",
+                      padding: "12px",
+                    }}
+                  >
+                    {loadingEvents ? (
+                      <p style={{ textAlign: "center", color: "#999" }}>
+                        Loading events...
+                      </p>
+                    ) : events.length > 0 ? (
+                      events.map((event) => (
+                        <label
+                          key={event.id}
+                          style={{
+                            display: "block",
+                            padding: "8px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            value={event.id}
+                            checked={selectedEvents.includes(event.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedEvents([
+                                  ...selectedEvents,
+                                  event.id,
+                                ]);
+                              } else {
+                                setSelectedEvents(
+                                  selectedEvents.filter((id) => id !== event.id)
+                                );
+                              }
+                            }}
+                            style={{ marginRight: "8px" }}
+                          />
+                          {event.event_name || event.name}
+                        </label>
+                      ))
+                    ) : (
+                      <p style={{ textAlign: "center", color: "#999" }}>
+                        No events available
+                      </p>
+                    )}
+                  </div>
+                )}
+                {eventSelection === "select" &&
+                  orgUserErrors.selectedEvents && (
+                    <div
+                      style={{
+                        color: "red",
+                        fontSize: "13px",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {orgUserErrors.selectedEvents}
+                    </div>
+                  )}
+              </div>
+
+              {/* Action Buttons */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "16px",
+                  marginTop: "24px",
+                }}
+              >
+                <button
+                  onClick={handleCloseAddUserModal}
+                  style={{
+                    padding: "12px 32px",
+                    borderRadius: "8px",
+                    border: "2px solid #e53935",
+                    backgroundColor: "white",
+                    color: "#e53935",
+                    fontSize: "16px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveUser}
+                  style={{
+                    padding: "12px 32px",
+                    borderRadius: "8px",
+                    border: "none",
+                    backgroundColor: "#e53935",
+                    color: "white",
+                    fontSize: "16px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                  }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Toast Message */}
+      {showSuccessToast && (
+        <div
+          style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            backgroundColor: "#4caf50",
+            color: "white",
+            padding: "16px 24px",
+            borderRadius: "8px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            zIndex: 10000,
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            animation: "slideIn 0.3s ease-out",
+          }}
+        >
+          <span style={{ fontSize: "20px" }}>✓</span>
+          <span style={{ fontSize: "14px", fontWeight: "500" }}>
+            {successMessage}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

@@ -16,7 +16,9 @@ import Signup from "../pages/Auth/Signup";
 import NotFound from "../pages/NotFound";
 import ErrorBoundary from "../components/ErrorBoundary";
 import Profile from "../pages/Profile/Profile";
+import MyEvents from "../pages/MyEvents";
 import BannerDebugPage from "../pages/BannerDebugPage";
+import SearchEvents from "../pages/SearchEvents";
 
 const AppRouter = createBrowserRouter([
   {
@@ -123,6 +125,24 @@ const AppRouter = createBrowserRouter([
     element: (
       <ErrorBoundary>
         <Profile />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/myevents",
+    element: (
+      <ErrorBoundary>
+        <MyEvents />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/search-events",
+    element: (
+      <ErrorBoundary>
+        <SearchEvents />
       </ErrorBoundary>
     ),
     errorElement: <NotFound />,

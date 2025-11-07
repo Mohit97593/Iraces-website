@@ -12,6 +12,9 @@ const api = axios.create({
     "X-Requested-With": "XMLHttpRequest",
   },
 });
+// ...existing code...
+
+// ...existing code...
 
 // Request interceptor - headers के लिए
 api.interceptors.request.use(
@@ -45,6 +48,79 @@ api.interceptors.response.use(
 
 // Auth API Functions
 export const authAPI = {
+  // Get Roles API
+  getRoles: async () => {
+    try {
+      const response = await api.post("/get_roles");
+      return response.data;
+    } catch (error) {
+      console.error("GetRoles API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Events API
+  getEvents: async (params = {}) => {
+    try {
+      const response = await api.post("/events", params);
+      return response.data;
+    } catch (error) {
+      console.error("GetEvents API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Add/Edit Org User API
+  addEditOrgUser: async (payload) => {
+    try {
+      const formData = new URLSearchParams();
+      Object.entries(payload).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+      const response = await api.post("/add_edit_org_user", formData, {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("addEditOrgUser API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Edit Org User API
+  editOrgUser: async (payload) => {
+    try {
+      const formData = new URLSearchParams();
+      Object.entries(payload).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+      const response = await api.post("/edit_org_user", formData, {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("editOrgUser API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Delete Org User API
+  deleteOrgUser: async (payload) => {
+    try {
+      const formData = new URLSearchParams();
+      Object.entries(payload).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+      const response = await api.post("/delete_org_user", formData, {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("deleteOrgUser API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Reset Password
   resetPassword: async ({ token, new_password, confirm_new_password }) => {
     try {
@@ -448,6 +524,62 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       console.error("GeneralDetails API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Org User Details API
+  orgUserDetails: async (user_id) => {
+    try {
+      // Call as POST with user_id in payload
+      const response = await api.post("/org_user_details", { user_id });
+      return response.data;
+    } catch (error) {
+      console.error("OrgUserDetails API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Cities API
+  getCities: async (params = {}) => {
+    try {
+      const response = await api.post("/city", params);
+      return response.data;
+    } catch (error) {
+      console.error("GetCities API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Types API (Event Types)
+  getTypes: async () => {
+    try {
+      const response = await api.get("/types");
+      return response.data;
+    } catch (error) {
+      console.error("GetTypes API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get States API
+  getStates: async (params = {}) => {
+    try {
+      const response = await api.post("/state", params);
+      return response.data;
+    } catch (error) {
+      console.error("GetStates API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Countries API
+  getCountries: async (params = {}) => {
+    try {
+      const response = await api.post("/country", params);
+      return response.data;
+    } catch (error) {
+      console.error("GetCountries API error:", error);
       throw error.response?.data || error.message;
     }
   },

@@ -113,12 +113,8 @@ export default function TopNav() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      // Navigate to search results page or handle search logic
-      console.log("Searching for:", searchQuery);
-      // You can implement navigation to search results page here
-      // navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-    }
+    // Navigate to search events page
+    navigate("/search-events");
   };
 
   const handleSearchInputChange = (e) => {
@@ -532,7 +528,7 @@ export default function TopNav() {
                     </NavLink>
 
                     <NavLink
-                      to="/dashboard"
+                      to="/myevents"
                       className="dropdown-item d-flex align-items-center gap-2 px-3 py-2"
                       style={{ textDecoration: "none", color: "#333" }}
                       onClick={() => setShowProfileDropdown(false)}
@@ -541,7 +537,7 @@ export default function TopNav() {
                         className="fas fa-tachometer-alt"
                         style={{ width: "16px" }}
                       ></i>
-                      Dashboard
+                      My Events
                     </NavLink>
 
                     <NavLink
