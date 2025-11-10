@@ -374,7 +374,7 @@ export default function EventDetails() {
                 <div className="info-item">
                   <i className="fas fa-calendar-day"></i>
                   <div>
-                    <span className="info-label">Starts On</span>
+                    <span className="info-label1">Starts On</span>
                     <span className="info-value">
                       {formatDate(event.start_time)}{" "}
                       {formatTime(event.start_time)}
@@ -385,7 +385,7 @@ export default function EventDetails() {
                 <div className="info-item">
                   <i className="fas fa-calendar-times"></i>
                   <div>
-                    <span className="info-label">Ends On</span>
+                    <span className="info-label1">Ends On</span>
                     <span className="info-value">
                       {formatDate(event.end_time)} {formatTime(event.end_time)}
                     </span>
@@ -395,7 +395,9 @@ export default function EventDetails() {
                 <div className="info-item">
                   <i className="fas fa-clock"></i>
                   <div>
-                    <span className="info-label">Registration starting at</span>
+                    <span className="info-label1">
+                      Registration starting at
+                    </span>
                     <span className="info-value">
                       {formatDate(event.registration_start_time)}{" "}
                       {formatTime(event.registration_start_time)}
@@ -406,7 +408,7 @@ export default function EventDetails() {
                 <div className="info-item">
                   <i className="fas fa-clock"></i>
                   <div>
-                    <span className="info-label">Registration ending on</span>
+                    <span className="info-label1">Registration ending on</span>
                     <span className="info-value">
                       {formatDate(event.registration_end_time)}{" "}
                       {formatTime(event.registration_end_time)}
@@ -417,7 +419,7 @@ export default function EventDetails() {
                 <div className="info-item">
                   <i className="fas fa-flag"></i>
                   <div>
-                    <span className="info-label">Race Category</span>
+                    <span className="info-label1">Race Category</span>
                     <span className="info-value">
                       {tickets && tickets.length > 0
                         ? tickets.map((t) => t.ticket_name).join(", ")
@@ -429,7 +431,7 @@ export default function EventDetails() {
                 <div className="info-item">
                   <i className="fas fa-tag"></i>
                   <div>
-                    <span className="info-label">Category</span>
+                    <span className="info-label1">Category</span>
                     <span className="info-value">
                       {Array.isArray(event.category) &&
                       event.category.length > 0
