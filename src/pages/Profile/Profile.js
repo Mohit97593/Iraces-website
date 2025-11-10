@@ -92,8 +92,12 @@ const Profile = () => {
                   })
                 );
                 let citiesData = [];
-                if (citiesResponse?.data?.AllCity) {
+                if (citiesResponse?.data?.AllCities) {
+                  citiesData = citiesResponse.data.AllCities;
+                } else if (citiesResponse?.data?.AllCity) {
                   citiesData = citiesResponse.data.AllCity;
+                } else if (citiesResponse?.AllCities) {
+                  citiesData = citiesResponse.AllCities;
                 } else if (citiesResponse?.AllCity) {
                   citiesData = citiesResponse.AllCity;
                 } else if (Array.isArray(citiesResponse?.data)) {
@@ -130,8 +134,12 @@ const Profile = () => {
                   })
                 );
                 let commCitiesData = [];
-                if (commCitiesResponse?.data?.AllCity) {
+                if (commCitiesResponse?.data?.AllCities) {
+                  commCitiesData = commCitiesResponse.data.AllCities;
+                } else if (commCitiesResponse?.data?.AllCity) {
                   commCitiesData = commCitiesResponse.data.AllCity;
+                } else if (commCitiesResponse?.AllCities) {
+                  commCitiesData = commCitiesResponse.AllCities;
                 } else if (commCitiesResponse?.AllCity) {
                   commCitiesData = commCitiesResponse.AllCity;
                 } else if (Array.isArray(commCitiesResponse?.data)) {
@@ -920,12 +928,12 @@ const Profile = () => {
 
   // Address Edit Functions
   const handleEditAddressClick = async () => {
-    setEditAddress(true);
-
     let permCountry = "";
     let permState = "";
+    let permCity = "";
     let commCountry = "";
     let commState = "";
+    let commCity = "";
 
     // Fetch profile data first
     try {
@@ -942,9 +950,10 @@ const Profile = () => {
         setPermStreet(userData.address2 || "");
         permCountry = userData.country || "";
         permState = userData.state || "";
+        permCity = userData.city || "";
         setPermCountryId(permCountry);
         setPermStateId(permState);
-        setPermCityId(userData.city || "");
+        setPermCityId(permCity);
         setPermPincode(userData.pincode || "");
 
         // Set communication address fields
@@ -952,9 +961,10 @@ const Profile = () => {
         setCommStreet(userData.ca_address2 || "");
         commCountry = userData.ca_country || "";
         commState = userData.ca_state || "";
+        commCity = userData.ca_city || "";
         setCommCountryId(commCountry);
         setCommStateId(commState);
-        setCommCityId(userData.ca_city || "");
+        setCommCityId(commCity);
         setCommPincode(userData.ca_pincode || "");
 
         setNationality(userData.nationality || "");
@@ -1023,8 +1033,12 @@ const Profile = () => {
         console.log("Perm cities response:", citiesResponse);
 
         let citiesData = [];
-        if (citiesResponse?.data?.AllCity) {
+        if (citiesResponse?.data?.AllCities) {
+          citiesData = citiesResponse.data.AllCities;
+        } else if (citiesResponse?.data?.AllCity) {
           citiesData = citiesResponse.data.AllCity;
+        } else if (citiesResponse?.AllCities) {
+          citiesData = citiesResponse.AllCities;
         } else if (citiesResponse?.AllCity) {
           citiesData = citiesResponse.AllCity;
         } else if (Array.isArray(citiesResponse?.data)) {
@@ -1068,8 +1082,12 @@ const Profile = () => {
         });
 
         let citiesData = [];
-        if (citiesResponse?.data?.AllCity) {
+        if (citiesResponse?.data?.AllCities) {
+          citiesData = citiesResponse.data.AllCities;
+        } else if (citiesResponse?.data?.AllCity) {
           citiesData = citiesResponse.data.AllCity;
+        } else if (citiesResponse?.AllCities) {
+          citiesData = citiesResponse.AllCities;
         } else if (citiesResponse?.AllCity) {
           citiesData = citiesResponse.AllCity;
         } else if (Array.isArray(citiesResponse?.data)) {
@@ -1081,6 +1099,12 @@ const Profile = () => {
         console.error("Failed to fetch comm cities:", error);
       }
     }
+
+    // Set editAddress to true only after all data is loaded and state is updated
+    // Small delay to ensure React state updates are processed
+    setTimeout(() => {
+      setEditAddress(true);
+    }, 100);
   };
 
   // Fetch states when country changes for permanent address
@@ -1118,8 +1142,12 @@ const Profile = () => {
       });
 
       let citiesData = [];
-      if (citiesResponse?.data?.AllCity) {
+      if (citiesResponse?.data?.AllCities) {
+        citiesData = citiesResponse.data.AllCities;
+      } else if (citiesResponse?.data?.AllCity) {
         citiesData = citiesResponse.data.AllCity;
+      } else if (citiesResponse?.AllCities) {
+        citiesData = citiesResponse.AllCities;
       } else if (citiesResponse?.AllCity) {
         citiesData = citiesResponse.AllCity;
       } else if (Array.isArray(citiesResponse?.data)) {
@@ -1178,8 +1206,12 @@ const Profile = () => {
       });
 
       let citiesData = [];
-      if (citiesResponse?.data?.AllCity) {
+      if (citiesResponse?.data?.AllCities) {
+        citiesData = citiesResponse.data.AllCities;
+      } else if (citiesResponse?.data?.AllCity) {
         citiesData = citiesResponse.data.AllCity;
+      } else if (citiesResponse?.AllCities) {
+        citiesData = citiesResponse.AllCities;
       } else if (citiesResponse?.AllCity) {
         citiesData = citiesResponse.AllCity;
       } else if (Array.isArray(citiesResponse?.data)) {
@@ -1349,27 +1381,89 @@ const Profile = () => {
               updatedUserData.sameAsPermanent === 1
           );
 
-          // Reload states and cities for helper functions
+          // Reload states and cities for helper functions to display correctly
           if (updatedUserData.country) {
-            await fetchPermStates(updatedUserData.country);
-            if (updatedUserData.state) {
-              await fetchPermCities(updatedUserData.state);
+            const statesResponse = await authAPI.getStates({
+              country_id: updatedUserData.country,
+            });
+            let statesData = [];
+            if (statesResponse?.data?.AllState) {
+              statesData = statesResponse.data.AllState;
+            } else if (statesResponse?.AllState) {
+              statesData = statesResponse.AllState;
+            } else if (Array.isArray(statesResponse?.data)) {
+              statesData = statesResponse.data;
             }
-          }
-          if (updatedUserData.ca_country) {
-            await fetchCommStates(updatedUserData.ca_country);
-            if (updatedUserData.ca_state) {
-              await fetchCommCities(updatedUserData.ca_state);
-            }
+            setPermStates(statesData);
           }
 
-          // Trigger UI refresh
-          setRefreshTrigger((prev) => prev + 1);
+          if (updatedUserData.state) {
+            const citiesResponse = await authAPI.getCities({
+              state_id: updatedUserData.state,
+              search_flag: "N",
+            });
+            let citiesData = [];
+            if (citiesResponse?.data?.AllCities) {
+              citiesData = citiesResponse.data.AllCities;
+            } else if (citiesResponse?.data?.AllCity) {
+              citiesData = citiesResponse.data.AllCity;
+            } else if (citiesResponse?.AllCities) {
+              citiesData = citiesResponse.AllCities;
+            } else if (citiesResponse?.AllCity) {
+              citiesData = citiesResponse.AllCity;
+            } else if (Array.isArray(citiesResponse?.data)) {
+              citiesData = citiesResponse.data;
+            }
+            console.log("Perm cities loaded after save:", citiesData);
+            setPermCities(citiesData);
+          }
+
+          if (updatedUserData.ca_country) {
+            const statesResponse = await authAPI.getStates({
+              country_id: updatedUserData.ca_country,
+            });
+            let statesData = [];
+            if (statesResponse?.data?.AllState) {
+              statesData = statesResponse.data.AllState;
+            } else if (statesResponse?.AllState) {
+              statesData = statesResponse.AllState;
+            } else if (Array.isArray(statesResponse?.data)) {
+              statesData = statesResponse.data;
+            }
+            setCommStates(statesData);
+          }
+
+          if (updatedUserData.ca_state) {
+            const citiesResponse = await authAPI.getCities({
+              state_id: updatedUserData.ca_state,
+              search_flag: "N",
+            });
+            let citiesData = [];
+            if (citiesResponse?.data?.AllCities) {
+              citiesData = citiesResponse.data.AllCities;
+            } else if (citiesResponse?.data?.AllCity) {
+              citiesData = citiesResponse.data.AllCity;
+            } else if (citiesResponse?.AllCities) {
+              citiesData = citiesResponse.AllCities;
+            } else if (citiesResponse?.AllCity) {
+              citiesData = citiesResponse.AllCity;
+            } else if (Array.isArray(citiesResponse?.data)) {
+              citiesData = citiesResponse.data;
+            }
+            console.log("Comm cities loaded after save:", citiesData);
+            setCommCities(citiesData);
+          }
         }
 
-        setEditAddress(false);
-        setShowAddressSuccess(true);
-        setTimeout(() => setShowAddressSuccess(false), 3000);
+        // Trigger UI refresh first so getCityName can find the city
+        setRefreshTrigger((prev) => prev + 1);
+
+        // Small delay to ensure state updates are reflected
+        setTimeout(() => {
+          setEditAddress(false);
+          setShowAddressSuccess(true);
+          setTimeout(() => setShowAddressSuccess(false), 3000);
+        }, 50);
       }
     } catch (error) {
       console.error("Failed to save address:", error);
@@ -1396,9 +1490,152 @@ const Profile = () => {
   const getCityName = (cityId, isComm = false) => {
     if (!cityId) return "";
     const citiesList = isComm ? commCities : permCities;
+    if (!citiesList || citiesList.length === 0) {
+      console.log(
+        "Cities list is empty for",
+        isComm ? "communication" : "permanent",
+        "address"
+      );
+      return "";
+    }
     const city = citiesList.find((c) => c.id === parseInt(cityId));
+    if (!city) {
+      console.log(
+        "City not found for ID:",
+        cityId,
+        "in",
+        citiesList.length,
+        "cities"
+      );
+    }
     return city ? city.name : "";
   };
+
+  // Load countries, states, and cities on page load for proper display
+  useEffect(() => {
+    const loadAddressData = async () => {
+      const userData = JSON.parse(localStorage.getItem("userData"));
+      if (!userData) {
+        console.log("No userData found in localStorage");
+        return;
+      }
+      console.log("Loading address data for user:", userData);
+
+      // Fetch countries
+      try {
+        const countriesResponse = await authAPI.getCountries();
+        let countriesData = [];
+        if (countriesResponse?.data?.AllCountries) {
+          countriesData = countriesResponse.data.AllCountries;
+        } else if (countriesResponse?.data?.AllCountry) {
+          countriesData = countriesResponse.data.AllCountry;
+        } else if (countriesResponse?.AllCountries) {
+          countriesData = countriesResponse.AllCountries;
+        } else if (countriesResponse?.AllCountry) {
+          countriesData = countriesResponse.AllCountry;
+        } else if (Array.isArray(countriesResponse?.data)) {
+          countriesData = countriesResponse.data;
+        } else if (Array.isArray(countriesResponse)) {
+          countriesData = countriesResponse;
+        }
+        setCountries(countriesData);
+      } catch (error) {
+        console.error("Failed to fetch countries:", error);
+      }
+
+      // Fetch permanent address states
+      if (userData.country) {
+        try {
+          const statesResponse = await authAPI.getStates({
+            country_id: userData.country,
+          });
+          let statesData = [];
+          if (statesResponse?.data?.AllState) {
+            statesData = statesResponse.data.AllState;
+          } else if (statesResponse?.AllState) {
+            statesData = statesResponse.AllState;
+          } else if (Array.isArray(statesResponse?.data)) {
+            statesData = statesResponse.data;
+          }
+          setPermStates(statesData);
+        } catch (error) {
+          console.error("Failed to fetch perm states:", error);
+        }
+      }
+
+      // Fetch permanent address cities
+      if (userData.state) {
+        try {
+          const citiesResponse = await authAPI.getCities({
+            state_id: userData.state,
+            search_flag: "N",
+          });
+          let citiesData = [];
+          if (citiesResponse?.data?.AllCities) {
+            citiesData = citiesResponse.data.AllCities;
+          } else if (citiesResponse?.data?.AllCity) {
+            citiesData = citiesResponse.data.AllCity;
+          } else if (citiesResponse?.AllCities) {
+            citiesData = citiesResponse.AllCities;
+          } else if (citiesResponse?.AllCity) {
+            citiesData = citiesResponse.AllCity;
+          } else if (Array.isArray(citiesResponse?.data)) {
+            citiesData = citiesResponse.data;
+          }
+          setPermCities(citiesData);
+        } catch (error) {
+          console.error("Failed to fetch perm cities:", error);
+        }
+      }
+
+      // Fetch communication address states
+      if (userData.ca_country) {
+        try {
+          const statesResponse = await authAPI.getStates({
+            country_id: userData.ca_country,
+          });
+          let statesData = [];
+          if (statesResponse?.data?.AllState) {
+            statesData = statesResponse.data.AllState;
+          } else if (statesResponse?.AllState) {
+            statesData = statesResponse.AllState;
+          } else if (Array.isArray(statesResponse?.data)) {
+            statesData = statesResponse.data;
+          }
+          setCommStates(statesData);
+        } catch (error) {
+          console.error("Failed to fetch comm states:", error);
+        }
+      }
+
+      // Fetch communication address cities
+      if (userData.ca_state) {
+        try {
+          const citiesResponse = await authAPI.getCities({
+            state_id: userData.ca_state,
+            search_flag: "N",
+          });
+          let citiesData = [];
+          if (citiesResponse?.data?.AllCities) {
+            citiesData = citiesResponse.data.AllCities;
+          } else if (citiesResponse?.data?.AllCity) {
+            citiesData = citiesResponse.data.AllCity;
+          } else if (citiesResponse?.AllCities) {
+            citiesData = citiesResponse.AllCities;
+          } else if (citiesResponse?.AllCity) {
+            citiesData = citiesResponse.AllCity;
+          } else if (Array.isArray(citiesResponse?.data)) {
+            citiesData = citiesResponse.data;
+          }
+          setCommCities(citiesData);
+        } catch (error) {
+          console.error("Failed to fetch comm cities:", error);
+        }
+      }
+    };
+
+    loadAddressData();
+  }, [refreshTrigger]);
 
   // When editAddress is set to true, fetch states and cities if country/state already selected
   useEffect(() => {
