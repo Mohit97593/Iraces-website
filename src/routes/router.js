@@ -19,6 +19,9 @@ import Profile from "../pages/Profile/Profile";
 import MyEvents from "../pages/MyEvents";
 import BannerDebugPage from "../pages/BannerDebugPage";
 import SearchEvents from "../pages/SearchEvents";
+import OrganiserProfile from "../pages/OrganiserProfile/OrganiserProfile";
+import Favourites from "../pages/Favourites/Favourites";
+import EventDetails from "../pages/EventDetails/EventDetails";
 
 const AppRouter = createBrowserRouter([
   {
@@ -26,6 +29,15 @@ const AppRouter = createBrowserRouter([
     element: (
       <ErrorBoundary>
         <Home />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/in/:citySlug",
+    element: (
+      <ErrorBoundary>
+        <Hero />
       </ErrorBoundary>
     ),
     errorElement: <NotFound />,
@@ -139,10 +151,37 @@ const AppRouter = createBrowserRouter([
     errorElement: <NotFound />,
   },
   {
+    path: "/organiser-profile",
+    element: (
+      <ErrorBoundary>
+        <OrganiserProfile />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
     path: "/search-events",
     element: (
       <ErrorBoundary>
         <SearchEvents />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/event/:eventId",
+    element: (
+      <ErrorBoundary>
+        <EventDetails />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/favourites",
+    element: (
+      <ErrorBoundary>
+        <Favourites />
       </ErrorBoundary>
     ),
     errorElement: <NotFound />,

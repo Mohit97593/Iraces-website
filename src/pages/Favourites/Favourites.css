@@ -1,0 +1,554 @@
+.fav-event-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.3s;
+}
+.fav-event-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.fav-card-image-wrapper {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+}
+.fav-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+.fav-event-card:hover .fav-card-image {
+  transform: scale(1.05);
+}
+.fav-location-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: #e53935;
+  color: #fff;
+  padding: 7px 18px;
+  border-radius: 20px;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+}
+.fav-like-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #fff;
+  border: 1.5px solid #e53935;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: background 0.2s, border 0.2s;
+  z-index: 3;
+}
+.fav-like-btn.liked {
+  background: #ffeaea;
+  border-color: #e53935;
+}
+.fav-card-body {
+  padding: 20px 20px 18px 20px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+.fav-date-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+  margin-right: 0;
+  padding-top: 2px;
+}
+.fav-month {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1565c0;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.fav-day {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #e53935;
+  line-height: 1;
+  margin-top: 2px;
+}
+.fav-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 18px;
+}
+.fav-event-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #222;
+  line-height: 1.4;
+  margin: 0 0 5px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.fav-divider {
+  margin: 10px 0 12px 0;
+  border: none;
+  border-top: 1px solid #e0e0e0;
+}
+.fav-register-by {
+  font-size: 0.95rem;
+  color: #666;
+  margin: 0 0 10px 0;
+}
+.fav-date-red {
+  color: #e53935;
+  font-weight: 700;
+}
+.fav-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 18px;
+  margin-top: 0;
+}
+.fav-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #e53935;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.fav-view-btn {
+  background: #fff;
+  color: #e53935;
+  border: 2px solid #e53935;
+  padding: 8px 28px;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+.fav-view-btn:hover {
+  background: #e53935;
+  color: #fff;
+}
+/* Heart Like Button */
+.fav-like-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: white;
+  border: 1px solid #e53935;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: background 0.2s, border 0.2s;
+  z-index: 3;
+  padding: 0;
+}
+.fav-like-btn svg {
+  display: block;
+}
+.fav-like-btn.liked {
+  background: #ffeaea;
+  border-color: #e53935;
+}
+/* Favourites Page Styles */
+
+/* Hero Section - Blue Background */
+.favourites-hero {
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  position: relative;
+  padding: 60px 60px 60px 60px;
+  overflow: hidden;
+}
+
+.favourites-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="90" cy="80" r="2.5" fill="rgba(255,255,255,0.1)"/><circle cx="10" cy="60" r="1.5" fill="rgba(255,255,255,0.1)"/></svg>');
+  background-size: 200px 200px;
+  animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+}
+
+.favourites-hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.favourites-hero-title {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: white;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 2;
+}
+
+.favourites-breadcrumb {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  position: relative;
+  z-index: 2;
+}
+
+.breadcrumb-separator {
+  margin: 0 10px;
+  /* Favourites Event Card - Match SearchEvents card exactly */
+  .fav-event-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .fav-event-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  }
+  .fav-card-image-wrapper {
+    position: relative;
+    overflow: hidden;
+    height: 220px;
+  }
+  .fav-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  .fav-event-card:hover .fav-card-image {
+    transform: scale(1.05);
+  }
+  .fav-card-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+  margin-bottom: 30px;
+}
+
+.favourites-count {
+  font-size: 1rem;
+  color: #666;
+  font-weight: 500;
+  padding: 28px;
+}
+
+/* Loading State */
+.loading-container {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.loading-container p {
+  font-size: 1.1rem;
+  color: #666;
+}
+
+/* No Favourites State */
+.no-favourites {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.no-favourites-img {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 30px;
+  opacity: 0.6;
+}
+
+.no-favourites-title {
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 15px;
+  font-weight: 700;
+}
+
+.no-favourites-desc {
+  font-size: 1.1rem;
+  color: #666;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* Favourites Grid */
+.favourites-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  @media (max-width: 1200px) {
+    .favourites-grid {
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+    }
+  }
+  @media (max-width: 900px) {
+    .favourites-grid {
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+  }
+  @media (max-width: 600px) {
+    .favourites-grid {
+      grid-template-columns: 1fr;
+      padding-left: 5px;
+      padding-right: 5px;
+    }
+  }
+  gap: 30px;
+  margin-top: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+/* Favourites Event Card - Match Screenshot */
+
+/* Match SearchEvents card size/layout */
+.fav-event-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.fav-event-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+.fav-card-image-wrapper {
+  position: relative;
+  overflow: hidden;
+  height: 220px;
+}
+
+.fav-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.fav-event-card:hover .fav-card-image {
+  transform: scale(1.05);
+}
+
+.fav-location-badge {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: #e53935;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+}
+
+.fav-location-badge i {
+  font-size: 0.85rem;
+}
+
+.fav-card-body {
+  padding: 20px;
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.fav-date-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 60px;
+  padding-top: 5px;
+}
+
+.fav-month {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #4a90e2;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.fav-day {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #e53935;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.fav-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fav-event-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #222;
+  line-height: 1.4;
+  margin: 0 0 5px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fav-register-by {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0 0 12px 0;
+}
+
+.fav-date-red {
+  color: #e53935;
+  font-weight: 700;
+}
+
+.fav-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0;
+  gap: 10px;
+}
+
+.fav-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #e53935;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.fav-status-badge i {
+  font-size: 0.85rem;
+}
+
+.fav-view-btn {
+  background: white;
+  color: #e53935;
+  border: 2px solid #e53935;
+  padding: 8px 24px;
+  border-radius: 25px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.fav-view-btn:hover {
+  background: #e53935;
+  color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .favourites-hero {
+    padding: 40px 20px;
+  }
+
+  .favourites-hero-title {
+    font-size: 2rem;
+  }
+
+  .favourites-breadcrumb {
+    font-size: 0.95rem;
+  }
+
+  .favourites-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .favourites-container {
+    margin: 20px auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .favourites-hero-title {
+    font-size: 1.75rem;
+  }
+
+  .favourites-hero {
+    padding: 30px 15px;
+  }
+
+  .event-card-title {
+    font-size: 1.1rem;
+  }
+
+  .no-favourites-img {
+    width: 150px;
+    height: 150px;
+  }
+
+  .no-favourites-title {
+    font-size: 1.5rem;
+  }
+
+  .no-favourites-desc {
+    font-size: 1rem;
+  }
+}

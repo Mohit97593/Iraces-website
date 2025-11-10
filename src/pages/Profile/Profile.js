@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import "./Profile.css";
 import TopNav from "../../components/Navbar/TopNav";
 import { useAuth } from "../../contexts/AuthContext";
 import { authAPI } from "../../services/authAPI";
+import MedicalProfile from "../../components/MedicalProfile/MedicalProfile";
 
 const Profile = () => {
   // Add User Modal States
@@ -38,11 +39,110 @@ const Profile = () => {
           profileResponse.data &&
           profileResponse.data.userData
         ) {
-          localStorage.setItem(
-            "userData",
-            JSON.stringify(profileResponse.data.userData[0])
-          );
+          const userData = profileResponse.data.userData[0];
+          localStorage.setItem("userData", JSON.stringify(userData));
           checkAuthStatus();
+          setRefreshTrigger((prev) => prev + 1);
+
+          // Fetch countries for address display
+          try {
+            const countriesResponse = await import(
+              "../../services/authAPI"
+            ).then(({ authAPI }) => authAPI.getCountries());
+            let countriesData = [];
+            if (countriesResponse?.data?.AllCountries) {
+              countriesData = countriesResponse.data.AllCountries;
+            } else if (countriesResponse?.data?.AllCountry) {
+              countriesData = countriesResponse.data.AllCountry;
+            } else if (countriesResponse?.AllCountries) {
+              countriesData = countriesResponse.AllCountries;
+            } else if (countriesResponse?.AllCountry) {
+              countriesData = countriesResponse.AllCountry;
+            } else if (Array.isArray(countriesResponse?.data)) {
+              countriesData = countriesResponse.data;
+            } else if (Array.isArray(countriesResponse)) {
+              countriesData = countriesResponse;
+            }
+            setCountries(countriesData);
+
+            // Fetch permanent address states and cities if available
+            if (userData.country) {
+              const statesResponse = await import(
+                "../../services/authAPI"
+              ).then(({ authAPI }) =>
+                authAPI.getStates({ country_id: userData.country })
+              );
+              let statesData = [];
+              if (statesResponse?.data?.AllState) {
+                statesData = statesResponse.data.AllState;
+              } else if (statesResponse?.AllState) {
+                statesData = statesResponse.AllState;
+              } else if (Array.isArray(statesResponse?.data)) {
+                statesData = statesResponse.data;
+              }
+              setPermStates(statesData);
+
+              if (userData.state) {
+                const citiesResponse = await import(
+                  "../../services/authAPI"
+                ).then(({ authAPI }) =>
+                  authAPI.getCities({
+                    state_id: userData.state,
+                    search_flag: "N",
+                  })
+                );
+                let citiesData = [];
+                if (citiesResponse?.data?.AllCity) {
+                  citiesData = citiesResponse.data.AllCity;
+                } else if (citiesResponse?.AllCity) {
+                  citiesData = citiesResponse.AllCity;
+                } else if (Array.isArray(citiesResponse?.data)) {
+                  citiesData = citiesResponse.data;
+                }
+                setPermCities(citiesData);
+              }
+            }
+
+            // Fetch communication address states and cities if available
+            if (userData.ca_country) {
+              const commStatesResponse = await import(
+                "../../services/authAPI"
+              ).then(({ authAPI }) =>
+                authAPI.getStates({ country_id: userData.ca_country })
+              );
+              let commStatesData = [];
+              if (commStatesResponse?.data?.AllState) {
+                commStatesData = commStatesResponse.data.AllState;
+              } else if (commStatesResponse?.AllState) {
+                commStatesData = commStatesResponse.AllState;
+              } else if (Array.isArray(commStatesResponse?.data)) {
+                commStatesData = commStatesResponse.data;
+              }
+              setCommStates(commStatesData);
+
+              if (userData.ca_state) {
+                const commCitiesResponse = await import(
+                  "../../services/authAPI"
+                ).then(({ authAPI }) =>
+                  authAPI.getCities({
+                    state_id: userData.ca_state,
+                    search_flag: "N",
+                  })
+                );
+                let commCitiesData = [];
+                if (commCitiesResponse?.data?.AllCity) {
+                  commCitiesData = commCitiesResponse.data.AllCity;
+                } else if (commCitiesResponse?.AllCity) {
+                  commCitiesData = commCitiesResponse.AllCity;
+                } else if (Array.isArray(commCitiesResponse?.data)) {
+                  commCitiesData = commCitiesResponse.data;
+                }
+                setCommCities(commCitiesData);
+              }
+            }
+          } catch (err) {
+            console.error("Failed to fetch address data:", err);
+          }
         }
       } catch (err) {
         // Optionally show error
@@ -112,6 +212,115 @@ const Profile = () => {
   const [editIdProofNumber, setEditIdProofNumber] = useState("");
   const [editIdProofFile, setEditIdProofFile] = useState(null);
   const { user, checkAuthStatus } = useAuth();
+
+  // Address edit states
+  const [editAddress, setEditAddress] = useState(false);
+  const [permHouseNo, setPermHouseNo] = useState("");
+  const [permStreet, setPermStreet] = useState("");
+  const [permCountryId, setPermCountryId] = useState("");
+  const [permStateId, setPermStateId] = useState("");
+  const [permCityId, setPermCityId] = useState("");
+  const [permPincode, setPermPincode] = useState("");
+  const [commHouseNo, setCommHouseNo] = useState("");
+  const [commStreet, setCommStreet] = useState("");
+  const [commCountryId, setCommCountryId] = useState("");
+  const [commStateId, setCommStateId] = useState("");
+  const [commCityId, setCommCityId] = useState("");
+  const [commPincode, setCommPincode] = useState("");
+  const [nationality, setNationality] = useState("");
+  const [sameAsPermAddress, setSameAsPermAddress] = useState(false);
+  const [addressProofType, setAddressProofType] = useState("");
+  const [addressProofNo, setAddressProofNo] = useState("");
+  const [addressProofDoc, setAddressProofDoc] = useState(null);
+
+  // Dropdown data
+  const [countries, setCountries] = useState([]);
+  const [permStates, setPermStates] = useState([]);
+  const [permCities, setPermCities] = useState([]);
+  const [commStates, setCommStates] = useState([]);
+  const [commCities, setCommCities] = useState([]);
+
+  // Loading states
+  const [loadingPermStates, setLoadingPermStates] = useState(false);
+  const [loadingPermCities, setLoadingPermCities] = useState(false);
+  const [loadingCommStates, setLoadingCommStates] = useState(false);
+  const [loadingCommCities, setLoadingCommCities] = useState(false);
+  const [savingAddress, setSavingAddress] = useState(false);
+  const [addressError, setAddressError] = useState("");
+  const [showAddressSuccess, setShowAddressSuccess] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Get userData from localStorage, updates when refreshTrigger changes
+  const userData = useMemo(() => {
+    const data = localStorage.getItem("userData");
+    return data ? JSON.parse(data) : {};
+  }, [refreshTrigger]);
+
+  // Calculate profile completion percentage
+  const profileProgress = useMemo(() => {
+    if (!userData || Object.keys(userData).length === 0) return 0;
+
+    const fields = [
+      // Personal Details (7 fields)
+      userData.firstname,
+      userData.lastname,
+      userData.mobile,
+      userData.email,
+      userData.gender,
+      userData.dob,
+      userData.bio,
+
+      // Basic Information (7 fields)
+      userData.emergency_contact_name,
+      userData.emergency_contact_no,
+      userData.organisation,
+      userData.designation,
+      userData.id_proof_type,
+      userData.id_proof_no,
+      userData.id_proof_doc_upload,
+
+      // Address Details (16 fields)
+      userData.country,
+      userData.state,
+      userData.city,
+      userData.pincode,
+      userData.address1,
+      userData.address2,
+      userData.ca_country,
+      userData.ca_state,
+      userData.ca_city,
+      userData.ca_pincode,
+      userData.ca_address1,
+      userData.ca_address2,
+      userData.nationality,
+      userData.address_proof_type,
+      userData.address_proof_no,
+      userData.address_proof_doc_upload,
+
+      // Medical Profile (10 key fields)
+      userData.blood_group,
+      userData.height,
+      userData.weight,
+      userData.medical_conditions,
+      userData.diabetes,
+      userData.chestpain,
+      userData.allergies,
+      userData.familydoctorname,
+      userData.familydoctorcontactno,
+      userData.currentmedications,
+    ];
+
+    const filledFields = fields.filter((field) => {
+      if (field === null || field === undefined || field === "") return false;
+      if (typeof field === "string" && field.trim() === "") return false;
+      return true;
+    }).length;
+
+    const totalFields = fields.length;
+    const percentage = (filledFields / totalFields) * 100;
+
+    return Math.round(percentage * 100) / 100; // Round to 2 decimal places
+  }, [userData]);
 
   // Fetch org user details when Organizing Team section is opened
   useEffect(() => {
@@ -590,6 +799,7 @@ const Profile = () => {
       }
       // Update user state
       checkAuthStatus();
+      setRefreshTrigger((prev) => prev + 1); // Trigger profile progress update
       setEditPersonal(false);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
@@ -699,6 +909,7 @@ const Profile = () => {
         setEditIdProofNumber(userData.id_proof_no || "");
         setEditIdProofFile(null);
       }
+      setRefreshTrigger((prev) => prev + 1); // Trigger profile progress update
       setEditBasic(false);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
@@ -706,6 +917,514 @@ const Profile = () => {
       alert("Failed to update basic info: " + (err?.message || err));
     }
   };
+
+  // Address Edit Functions
+  const handleEditAddressClick = async () => {
+    setEditAddress(true);
+
+    let permCountry = "";
+    let permState = "";
+    let commCountry = "";
+    let commState = "";
+
+    // Fetch profile data first
+    try {
+      const profileResponse = await authAPI.getProfile();
+      if (
+        profileResponse &&
+        profileResponse.data &&
+        profileResponse.data.userData
+      ) {
+        const userData = profileResponse.data.userData[0];
+
+        // Set permanent address fields
+        setPermHouseNo(userData.address1 || "");
+        setPermStreet(userData.address2 || "");
+        permCountry = userData.country || "";
+        permState = userData.state || "";
+        setPermCountryId(permCountry);
+        setPermStateId(permState);
+        setPermCityId(userData.city || "");
+        setPermPincode(userData.pincode || "");
+
+        // Set communication address fields
+        setCommHouseNo(userData.ca_address1 || "");
+        setCommStreet(userData.ca_address2 || "");
+        commCountry = userData.ca_country || "";
+        commState = userData.ca_state || "";
+        setCommCountryId(commCountry);
+        setCommStateId(commState);
+        setCommCityId(userData.ca_city || "");
+        setCommPincode(userData.ca_pincode || "");
+
+        setNationality(userData.nationality || "");
+        setAddressProofType(userData.address_proof_type || "");
+        setAddressProofNo(userData.address_proof_no || "");
+        setSameAsPermAddress(userData.sameAsPermanent === 1);
+      }
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+    }
+
+    // Fetch countries
+    try {
+      const countriesResponse = await authAPI.getCountries();
+
+      // Check different possible response structures
+      let countriesData = [];
+      if (countriesResponse?.data?.AllCountries) {
+        countriesData = countriesResponse.data.AllCountries;
+      } else if (countriesResponse?.data?.AllCountry) {
+        countriesData = countriesResponse.data.AllCountry;
+      } else if (countriesResponse?.AllCountries) {
+        countriesData = countriesResponse.AllCountries;
+      } else if (countriesResponse?.AllCountry) {
+        countriesData = countriesResponse.AllCountry;
+      } else if (Array.isArray(countriesResponse?.data)) {
+        countriesData = countriesResponse.data;
+      } else if (Array.isArray(countriesResponse)) {
+        countriesData = countriesResponse;
+      }
+
+      setCountries(countriesData);
+    } catch (error) {
+      console.error("Failed to fetch countries:", error);
+    }
+
+    // Fetch permanent address states if country is selected
+    if (permCountry) {
+      try {
+        const statesResponse = await authAPI.getStates({
+          country_id: permCountry,
+        });
+
+        let statesData = [];
+        if (statesResponse?.data?.AllState) {
+          statesData = statesResponse.data.AllState;
+        } else if (statesResponse?.AllState) {
+          statesData = statesResponse.AllState;
+        } else if (Array.isArray(statesResponse?.data)) {
+          statesData = statesResponse.data;
+        }
+
+        setPermStates(statesData);
+      } catch (error) {
+        console.error("Failed to fetch perm states:", error);
+      }
+    }
+
+    // Fetch permanent address cities if state is selected
+    if (permState) {
+      try {
+        const citiesResponse = await authAPI.getCities({
+          state_id: permState,
+          search_flag: "N",
+        });
+        console.log("Perm cities response:", citiesResponse);
+
+        let citiesData = [];
+        if (citiesResponse?.data?.AllCity) {
+          citiesData = citiesResponse.data.AllCity;
+        } else if (citiesResponse?.AllCity) {
+          citiesData = citiesResponse.AllCity;
+        } else if (Array.isArray(citiesResponse?.data)) {
+          citiesData = citiesResponse.data;
+        }
+
+        setPermCities(citiesData);
+      } catch (error) {
+        console.error("Failed to fetch perm cities:", error);
+      }
+    }
+
+    // Fetch communication address states if country is selected
+    if (commCountry) {
+      try {
+        const statesResponse = await authAPI.getStates({
+          country_id: commCountry,
+        });
+
+        let statesData = [];
+        if (statesResponse?.data?.AllState) {
+          statesData = statesResponse.data.AllState;
+        } else if (statesResponse?.AllState) {
+          statesData = statesResponse.AllState;
+        } else if (Array.isArray(statesResponse?.data)) {
+          statesData = statesResponse.data;
+        }
+
+        setCommStates(statesData);
+      } catch (error) {
+        console.error("Failed to fetch comm states:", error);
+      }
+    }
+
+    // Fetch communication address cities if state is selected
+    if (commState) {
+      try {
+        const citiesResponse = await authAPI.getCities({
+          state_id: commState,
+          search_flag: "N",
+        });
+
+        let citiesData = [];
+        if (citiesResponse?.data?.AllCity) {
+          citiesData = citiesResponse.data.AllCity;
+        } else if (citiesResponse?.AllCity) {
+          citiesData = citiesResponse.AllCity;
+        } else if (Array.isArray(citiesResponse?.data)) {
+          citiesData = citiesResponse.data;
+        }
+
+        setCommCities(citiesData);
+      } catch (error) {
+        console.error("Failed to fetch comm cities:", error);
+      }
+    }
+  };
+
+  // Fetch states when country changes for permanent address
+  const fetchPermStates = async (countryId) => {
+    if (!countryId) return;
+    setLoadingPermStates(true);
+    try {
+      const statesResponse = await authAPI.getStates({ country_id: countryId });
+
+      let statesData = [];
+      if (statesResponse?.data?.AllState) {
+        statesData = statesResponse.data.AllState;
+      } else if (statesResponse?.AllState) {
+        statesData = statesResponse.AllState;
+      } else if (Array.isArray(statesResponse?.data)) {
+        statesData = statesResponse.data;
+      }
+
+      setPermStates(statesData);
+    } catch (error) {
+      console.error("Failed to fetch states:", error);
+    } finally {
+      setLoadingPermStates(false);
+    }
+  };
+
+  // Fetch cities when state changes for permanent address
+  const fetchPermCities = async (stateId) => {
+    if (!stateId) return;
+    setLoadingPermCities(true);
+    try {
+      const citiesResponse = await authAPI.getCities({
+        state_id: stateId,
+        search_flag: "N",
+      });
+
+      let citiesData = [];
+      if (citiesResponse?.data?.AllCity) {
+        citiesData = citiesResponse.data.AllCity;
+      } else if (citiesResponse?.AllCity) {
+        citiesData = citiesResponse.AllCity;
+      } else if (Array.isArray(citiesResponse?.data)) {
+        citiesData = citiesResponse.data;
+      } else if (citiesResponse?.data) {
+        // Check all keys in data object
+        const dataKeys = Object.keys(citiesResponse.data);
+        for (const key of dataKeys) {
+          if (Array.isArray(citiesResponse.data[key])) {
+            citiesData = citiesResponse.data[key];
+            break;
+          }
+        }
+      }
+
+      setPermCities(citiesData);
+    } catch (error) {
+      console.error("Failed to fetch cities:", error);
+    } finally {
+      setLoadingPermCities(false);
+    }
+  };
+
+  // Fetch states when country changes for communication address
+  const fetchCommStates = async (countryId) => {
+    if (!countryId) return;
+    setLoadingCommStates(true);
+    try {
+      const statesResponse = await authAPI.getStates({ country_id: countryId });
+
+      let statesData = [];
+      if (statesResponse?.data?.AllState) {
+        statesData = statesResponse.data.AllState;
+      } else if (statesResponse?.AllState) {
+        statesData = statesResponse.AllState;
+      } else if (Array.isArray(statesResponse?.data)) {
+        statesData = statesResponse.data;
+      }
+
+      setCommStates(statesData);
+    } catch (error) {
+      console.error("Failed to fetch states:", error);
+    } finally {
+      setLoadingCommStates(false);
+    }
+  };
+
+  // Fetch cities when state changes for communication address
+  const fetchCommCities = async (stateId) => {
+    if (!stateId) return;
+    setLoadingCommCities(true);
+    try {
+      const citiesResponse = await authAPI.getCities({
+        state_id: stateId,
+        search_flag: "N",
+      });
+
+      let citiesData = [];
+      if (citiesResponse?.data?.AllCity) {
+        citiesData = citiesResponse.data.AllCity;
+      } else if (citiesResponse?.AllCity) {
+        citiesData = citiesResponse.AllCity;
+      } else if (Array.isArray(citiesResponse?.data)) {
+        citiesData = citiesResponse.data;
+      } else if (citiesResponse?.data) {
+        // Check all keys in data object
+        const dataKeys = Object.keys(citiesResponse.data);
+        for (const key of dataKeys) {
+          if (Array.isArray(citiesResponse.data[key])) {
+            citiesData = citiesResponse.data[key];
+            break;
+          }
+        }
+      }
+
+      setCommCities(citiesData);
+    } catch (error) {
+      console.error("Failed to fetch cities:", error);
+    } finally {
+      setLoadingCommCities(false);
+    }
+  };
+
+  // Handle permanent address country change
+  const handlePermCountryChange = (e) => {
+    const countryId = e.target.value;
+    setPermCountryId(countryId);
+    setPermStateId("");
+    setPermCityId("");
+    setPermStates([]);
+    setPermCities([]);
+    if (countryId) {
+      fetchPermStates(countryId);
+    }
+  };
+
+  // Handle permanent address state change
+  const handlePermStateChange = (e) => {
+    const stateId = e.target.value;
+    setPermStateId(stateId);
+    setPermCityId("");
+    setPermCities([]);
+    if (stateId) {
+      fetchPermCities(stateId);
+    }
+  };
+
+  // Handle communication address country change
+  const handleCommCountryChange = (e) => {
+    const countryId = e.target.value;
+    setCommCountryId(countryId);
+    setCommStateId("");
+    setCommCityId("");
+    setCommStates([]);
+    setCommCities([]);
+    if (countryId) {
+      fetchCommStates(countryId);
+    }
+  };
+
+  // Handle communication address state change
+  const handleCommStateChange = (e) => {
+    const stateId = e.target.value;
+    setCommStateId(stateId);
+    setCommCityId("");
+    setCommCities([]);
+    if (stateId) {
+      fetchCommCities(stateId);
+    }
+  };
+
+  // Handle save address
+  const handleSaveAddress = async () => {
+    try {
+      setAddressError("");
+
+      // Validation
+      if (!permCountryId) {
+        setAddressError("Please select permanent address country");
+        return;
+      }
+      if (!permPincode) {
+        setAddressError("Please enter permanent address pincode");
+        return;
+      }
+      if (!sameAsPermAddress) {
+        if (!commCountryId) {
+          setAddressError("Please select communication address country");
+          return;
+        }
+        if (!commPincode) {
+          setAddressError("Please enter communication address pincode");
+          return;
+        }
+      }
+
+      // Create FormData
+      const formData = new FormData();
+
+      // Permanent Address
+      formData.append("address1", permHouseNo || "");
+      formData.append("address2", permStreet || "");
+      formData.append("city", permCityId || "");
+      formData.append("state", permStateId || "");
+      formData.append("country", permCountryId || "");
+      formData.append("pincode", permPincode || "");
+
+      // Communication Address
+      formData.append("sameAsPermanent", sameAsPermAddress ? "1" : "0");
+      if (sameAsPermAddress) {
+        // If same as permanent, use permanent address values
+        formData.append("ca_address1", permHouseNo || "");
+        formData.append("ca_address2", permStreet || "");
+        formData.append("ca_city", permCityId || "");
+        formData.append("ca_state", permStateId || "");
+        formData.append("ca_country", permCountryId || "");
+        formData.append("ca_pincode", permPincode || "");
+      } else {
+        formData.append("ca_address1", commHouseNo || "");
+        formData.append("ca_address2", commStreet || "");
+        formData.append("ca_city", commCityId || "");
+        formData.append("ca_state", commStateId || "");
+        formData.append("ca_country", commCountryId || "");
+        formData.append("ca_pincode", commPincode || "");
+      }
+
+      // Nationality and Address Proof
+      formData.append("nationality", nationality || "");
+      formData.append("address_proof_type", addressProofType || "");
+      formData.append("address_proof_no", addressProofNo || "");
+
+      // Address Proof Document
+      if (addressProofDoc) {
+        formData.append("address_proof_doc_upload", addressProofDoc);
+      }
+
+      // Call API
+      const response = await authAPI.addressDetails(formData);
+
+      if (response) {
+        // Refresh profile data
+        const profileResponse = await authAPI.getProfile();
+        if (profileResponse?.data?.userData) {
+          const updatedUserData = profileResponse.data.userData[0];
+          localStorage.setItem("userData", JSON.stringify(updatedUserData));
+
+          // Update all states with fresh data
+          setPermHouseNo(updatedUserData.address1 || "");
+          setPermStreet(updatedUserData.address2 || "");
+          setPermCountryId(updatedUserData.country || "");
+          setPermStateId(updatedUserData.state || "");
+          setPermCityId(updatedUserData.city || "");
+          setPermPincode(updatedUserData.pincode || "");
+
+          setCommHouseNo(updatedUserData.ca_address1 || "");
+          setCommStreet(updatedUserData.ca_address2 || "");
+          setCommCountryId(updatedUserData.ca_country || "");
+          setCommStateId(updatedUserData.ca_state || "");
+          setCommCityId(updatedUserData.ca_city || "");
+          setCommPincode(updatedUserData.ca_pincode || "");
+
+          setNationality(updatedUserData.nationality || "");
+          setAddressProofType(updatedUserData.address_proof_type || "");
+          setAddressProofNo(updatedUserData.address_proof_no || "");
+          setSameAsPermAddress(
+            updatedUserData.sameAsPermanent === "1" ||
+              updatedUserData.sameAsPermanent === 1
+          );
+
+          // Reload states and cities for helper functions
+          if (updatedUserData.country) {
+            await fetchPermStates(updatedUserData.country);
+            if (updatedUserData.state) {
+              await fetchPermCities(updatedUserData.state);
+            }
+          }
+          if (updatedUserData.ca_country) {
+            await fetchCommStates(updatedUserData.ca_country);
+            if (updatedUserData.ca_state) {
+              await fetchCommCities(updatedUserData.ca_state);
+            }
+          }
+
+          // Trigger UI refresh
+          setRefreshTrigger((prev) => prev + 1);
+        }
+
+        setEditAddress(false);
+        setShowAddressSuccess(true);
+        setTimeout(() => setShowAddressSuccess(false), 3000);
+      }
+    } catch (error) {
+      console.error("Failed to save address:", error);
+      setAddressError(
+        error.message || "Failed to save address. Please try again."
+      );
+    }
+  };
+
+  // Helper functions to get names from IDs
+  const getCountryName = (countryId) => {
+    if (!countryId) return "";
+    const country = countries.find((c) => c.id === parseInt(countryId));
+    return country ? country.name : "";
+  };
+
+  const getStateName = (stateId, isComm = false) => {
+    if (!stateId) return "";
+    const statesList = isComm ? commStates : permStates;
+    const state = statesList.find((s) => s.id === parseInt(stateId));
+    return state ? state.name : "";
+  };
+
+  const getCityName = (cityId, isComm = false) => {
+    if (!cityId) return "";
+    const citiesList = isComm ? commCities : permCities;
+    const city = citiesList.find((c) => c.id === parseInt(cityId));
+    return city ? city.name : "";
+  };
+
+  // When editAddress is set to true, fetch states and cities if country/state already selected
+  useEffect(() => {
+    if (editAddress && permCountryId) {
+      fetchPermStates(permCountryId);
+    }
+  }, [editAddress, permCountryId]);
+
+  useEffect(() => {
+    if (editAddress && permStateId) {
+      fetchPermCities(permStateId);
+    }
+  }, [editAddress, permStateId]);
+
+  useEffect(() => {
+    if (editAddress && commCountryId) {
+      fetchCommStates(commCountryId);
+    }
+  }, [editAddress, commCountryId]);
+
+  useEffect(() => {
+    if (editAddress && commStateId) {
+      fetchCommCities(commStateId);
+    }
+  }, [editAddress, commStateId]);
+
   // When editBasic is set to true, initialize editDesignation from user data
   React.useEffect(() => {
     if (editBasic) {
@@ -752,6 +1471,39 @@ const Profile = () => {
           <span
             style={{ marginLeft: "auto", cursor: "pointer" }}
             onClick={() => setShowSuccess(false)}
+          >
+            ✖️
+          </span>
+        </div>
+      )}
+      {/* Address Success Popup */}
+      {showAddressSuccess && (
+        <div
+          style={{
+            position: "fixed",
+            top: 24,
+            right: 24,
+            zIndex: 9999,
+            background: "#22c55e",
+            color: "#fff",
+            padding: "18px 32px",
+            borderRadius: "12px",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+            fontWeight: 600,
+            fontSize: "1.1rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            minWidth: "260px",
+            maxWidth: "350px",
+            border: "2px solid #22c55e",
+          }}
+        >
+          <span style={{ fontSize: "1.5rem" }}>✔️</span>
+          Address updated successfully
+          <span
+            style={{ marginLeft: "auto", cursor: "pointer" }}
+            onClick={() => setShowAddressSuccess(false)}
           >
             ✖️
           </span>
@@ -904,10 +1656,10 @@ const Profile = () => {
                   <div className="progress-bar">
                     <div
                       className="progress-bar-fill"
-                      style={{ width: "25.89%" }}
+                      style={{ width: `${profileProgress}%` }}
                     ></div>
                   </div>
-                  <span className="progress-percent">25.89%</span>
+                  <span className="progress-percent">{profileProgress}%</span>
                 </div>
                 <div className="profile-info-section">
                   <div className="profile-info-title">Your Information</div>
@@ -947,159 +1699,9 @@ const Profile = () => {
               </div>
               <div className="profile-details">
                 {activeTab === "medical" && (
-                  <div className="medical-profile-section">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <h2 style={{ margin: 0 }}>Medical Profile</h2>
-                      <button
-                        className="profile-action-btn"
-                        style={{
-                          color: "red",
-                          border: "1px solid red",
-                          background: "white",
-                          borderRadius: "6px",
-                          padding: "6px 16px",
-                          cursor: "pointer",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        <span style={{ marginRight: "6px" }}>✏️</span>Edit
-                      </button>
-                    </div>
-                    <div
-                      style={{
-                        marginTop: "32px",
-                        marginBottom: "16px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Medical Details
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "24px",
-                        marginBottom: "24px",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
-                        <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
-                        >
-                          Blood Group
-                        </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
-                        <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
-                        >
-                          Any Medical Condition
-                        </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
-                        <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
-                        >
-                          Allergies
-                        </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
-                        <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
-                        >
-                          Current Medication
-                        </div>
-                        <div>NA</div>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        marginTop: "32px",
-                        marginBottom: "16px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Emergency Medical Contact
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "24px",
-                        marginBottom: "24px",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
-                        <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
-                        >
-                          Contact Name
-                        </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
-                        <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
-                        >
-                          Contact Number
-                        </div>
-                        <div>NA</div>
-                      </div>
-                    </div>
-                  </div>
+                  <MedicalProfile
+                    onUpdate={() => setRefreshTrigger((prev) => prev + 1)}
+                  />
                 )}
                 {activeTab === "personal" && (
                   <>
@@ -2140,281 +2742,870 @@ const Profile = () => {
                 )}
                 {activeTab === "address" && (
                   <div className="address-info-section">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <h2 style={{ margin: 0 }}>Your Address</h2>
-                      <button
-                        className="profile-action-btn"
-                        style={{
-                          color: "red",
-                          border: "1px solid red",
-                          background: "white",
-                          borderRadius: "6px",
-                          padding: "6px 16px",
-                          cursor: "pointer",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        <span style={{ marginRight: "6px" }}>✏️</span>Edit
-                      </button>
-                    </div>
-                    <div
-                      style={{
-                        marginTop: "32px",
-                        marginBottom: "16px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Permanent Address Details
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "24px",
-                        marginBottom: "24px",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
+                    {!editAddress ? (
+                      // View Mode
+                      <>
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
                         >
-                          Flat No./Building No.
+                          <h2 style={{ margin: 0 }}>Your Address</h2>
+                          <button
+                            type="button"
+                            className="profile-action-btn"
+                            style={{
+                              color: "red",
+                              border: "1px solid red",
+                              background: "white",
+                              borderRadius: "6px",
+                              padding: "6px 16px",
+                              cursor: "pointer",
+                              fontWeight: "bold",
+                            }}
+                            onClick={handleEditAddressClick}
+                          >
+                            <span style={{ marginRight: "6px" }}>✏️</span>Edit
+                          </button>
                         </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            marginTop: "32px",
+                            marginBottom: "16px",
+                            fontWeight: "bold",
+                          }}
                         >
-                          Street Name, Area Name/Colony
+                          Permanent Address Details
                         </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: "24px",
+                            marginBottom: "24px",
+                            textAlign: "center",
+                          }}
                         >
-                          City
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Flat No./Building No.
+                            </div>
+                            <div>{userData?.address1 || "NA"}</div>
+                          </div>
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Street Name, Area Name/Colony
+                            </div>
+                            <div>{userData?.address2 || "NA"}</div>
+                          </div>
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              City
+                            </div>
+                            <div>
+                              {getCityName(userData?.city, false) || "NA"}
+                            </div>
+                          </div>
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              State
+                            </div>
+                            <div>
+                              {getStateName(userData?.state, false) || "NA"}
+                            </div>
+                          </div>
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Country
+                            </div>
+                            <div>
+                              {getCountryName(userData?.country) || "NA"}
+                            </div>
+                          </div>
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Pincode
+                            </div>
+                            <div>{userData?.pincode || "NA"}</div>
+                          </div>
                         </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            marginTop: "32px",
+                            marginBottom: "16px",
+                            fontWeight: "bold",
+                          }}
                         >
-                          State
+                          Communication Address Details
                         </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: "24px",
+                            marginBottom: "24px",
+                            textAlign: "center",
+                          }}
                         >
-                          Country
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Flat No./Building No.
+                            </div>
+                            <div>{userData?.ca_address1 || "NA"}</div>
+                          </div>
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Street Name,Area Name/Colony
+                            </div>
+                            <div>{userData?.ca_address2 || "NA"}</div>
+                          </div>
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              City
+                            </div>
+                            <div>
+                              {getCityName(userData?.ca_city, true) || "NA"}
+                            </div>
+                          </div>
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              State
+                            </div>
+                            <div>
+                              {getStateName(userData?.ca_state, true) || "NA"}
+                            </div>
+                          </div>
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Country
+                            </div>
+                            <div>
+                              {getCountryName(userData?.ca_country) || "NA"}
+                            </div>
+                          </div>
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Pincode
+                            </div>
+                            <div>{userData?.ca_pincode || "NA"}</div>
+                          </div>
                         </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            marginTop: "32px",
+                            marginBottom: "16px",
+                            fontWeight: "bold",
+                          }}
                         >
-                          Pincode
+                          Address proof details
                         </div>
-                        <div>NA</div>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        marginTop: "32px",
-                        marginBottom: "16px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Communication Address Details
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "24px",
-                        marginBottom: "24px",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr",
+                            gap: "24px",
+                            marginBottom: "24px",
+                            textAlign: "center",
+                          }}
                         >
-                          Flat No./Building No.
+                          <div
+                            className="basic-info-card"
+                            style={{
+                              border: "0.5px solid #d9d6d6",
+                              borderRadius: "10px",
+                              padding: "13px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: "bold",
+                                marginBottom: "14px",
+                              }}
+                            >
+                              Nationality
+                            </div>
+                            <div>{userData?.nationality || "NA"}</div>
+                          </div>
                         </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
+                      </>
+                    ) : (
+                      // Edit Mode
+                      <div>
+                        {/* Permanent Address Section */}
+                        <div style={{ marginBottom: "32px" }}>
+                          <h3
+                            style={{ marginBottom: "16px", fontWeight: "bold" }}
+                          >
+                            Permanent Address Details
+                          </h3>
+                          <div
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "1fr 1fr",
+                              gap: "16px",
+                            }}
+                          >
+                            <div>
+                              <label
+                                style={{
+                                  display: "block",
+                                  marginBottom: "8px",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                Country<span style={{ color: "red" }}>*</span>
+                              </label>
+                              <select
+                                value={permCountryId}
+                                onChange={handlePermCountryChange}
+                                style={{
+                                  width: "100%",
+                                  padding: "10px",
+                                  border: "1px solid #d9d6d6",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                <option value="">Select Country</option>
+                                {countries.map((country) => (
+                                  <option key={country.id} value={country.id}>
+                                    {country.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label
+                                style={{
+                                  display: "block",
+                                  marginBottom: "8px",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                Pincode<span style={{ color: "red" }}>*</span>
+                              </label>
+                              <input
+                                type="text"
+                                value={permPincode}
+                                onChange={(e) => setPermPincode(e.target.value)}
+                                style={{
+                                  width: "100%",
+                                  padding: "10px",
+                                  border: "1px solid #d9d6d6",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label
+                                style={{
+                                  display: "block",
+                                  marginBottom: "8px",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                House No./Flat Block No.
+                                <span style={{ color: "red" }}>*</span>
+                              </label>
+                              <input
+                                type="text"
+                                value={permHouseNo}
+                                onChange={(e) => setPermHouseNo(e.target.value)}
+                                placeholder="Apartment"
+                                style={{
+                                  width: "100%",
+                                  padding: "10px",
+                                  border: "1px solid #d9d6d6",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label
+                                style={{
+                                  display: "block",
+                                  marginBottom: "8px",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                Street Name, Area Name/Colony
+                              </label>
+                              <input
+                                type="text"
+                                value={permStreet}
+                                onChange={(e) => setPermStreet(e.target.value)}
+                                placeholder="Apartment"
+                                style={{
+                                  width: "100%",
+                                  padding: "10px",
+                                  border: "1px solid #d9d6d6",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label
+                                style={{
+                                  display: "block",
+                                  marginBottom: "8px",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                State
+                              </label>
+                              <select
+                                value={permStateId}
+                                onChange={handlePermStateChange}
+                                disabled={!permCountryId || loadingPermStates}
+                                style={{
+                                  width: "100%",
+                                  padding: "10px",
+                                  border: "1px solid #d9d6d6",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                  backgroundColor: !permCountryId
+                                    ? "#f5f5f5"
+                                    : "white",
+                                }}
+                              >
+                                <option value="">
+                                  {loadingPermStates
+                                    ? "Loading..."
+                                    : "-- Select State --"}
+                                </option>
+                                {permStates.map((state) => (
+                                  <option key={state.id} value={state.id}>
+                                    {state.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label
+                                style={{
+                                  display: "block",
+                                  marginBottom: "8px",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                City
+                              </label>
+                              <select
+                                value={permCityId}
+                                onChange={(e) => setPermCityId(e.target.value)}
+                                disabled={!permStateId || loadingPermCities}
+                                style={{
+                                  width: "100%",
+                                  padding: "10px",
+                                  border: "1px solid #d9d6d6",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                  backgroundColor: !permStateId
+                                    ? "#f5f5f5"
+                                    : "white",
+                                }}
+                              >
+                                <option value="">
+                                  {loadingPermCities
+                                    ? "Loading..."
+                                    : "-- Select City --"}
+                                </option>
+                                {permCities.map((city) => (
+                                  <option key={city.id} value={city.id}>
+                                    {city.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Communication Address Section */}
+                        <div style={{ marginBottom: "32px" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              marginBottom: "16px",
+                            }}
+                          >
+                            <h3 style={{ margin: 0, fontWeight: "bold" }}>
+                              Communication Address Details
+                            </h3>
+                            <label
+                              style={{
+                                marginLeft: "16px",
+                                display: "flex",
+                                alignItems: "center",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={sameAsPermAddress}
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  setSameAsPermAddress(checked);
+                                  if (checked) {
+                                    setCommHouseNo(permHouseNo);
+                                    setCommStreet(permStreet);
+                                    setCommCountryId(permCountryId);
+                                    setCommStateId(permStateId);
+                                    setCommCityId(permCityId);
+                                    setCommPincode(permPincode);
+                                    if (permCountryId)
+                                      fetchCommStates(permCountryId);
+                                    if (permStateId)
+                                      fetchCommCities(permStateId);
+                                  }
+                                }}
+                                style={{ marginRight: "6px" }}
+                              />
+                              <span style={{ fontSize: "14px" }}>
+                                Same as Permanent Address
+                              </span>
+                            </label>
+                          </div>
+                          <div
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "1fr 1fr",
+                              gap: "16px",
+                            }}
+                          >
+                            <div>
+                              <label
+                                style={{
+                                  display: "block",
+                                  marginBottom: "8px",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                Country
+                              </label>
+                              <select
+                                value={commCountryId}
+                                onChange={handleCommCountryChange}
+                                disabled={sameAsPermAddress}
+                                style={{
+                                  width: "100%",
+                                  padding: "10px",
+                                  border: "1px solid #d9d6d6",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                  backgroundColor: sameAsPermAddress
+                                    ? "#f5f5f5"
+                                    : "white",
+                                }}
+                              >
+                                <option value="">Select Country</option>
+                                {countries.map((country) => (
+                                  <option key={country.id} value={country.id}>
+                                    {country.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label
+                                style={{
+                                  display: "block",
+                                  marginBottom: "8px",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                Pincode
+                              </label>
+                              <input
+                                type="text"
+                                value={commPincode}
+                                onChange={(e) => setCommPincode(e.target.value)}
+                                disabled={sameAsPermAddress}
+                                style={{
+                                  width: "100%",
+                                  padding: "10px",
+                                  border: "1px solid #d9d6d6",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                  backgroundColor: sameAsPermAddress
+                                    ? "#f5f5f5"
+                                    : "white",
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label
+                                style={{
+                                  display: "block",
+                                  marginBottom: "8px",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                House No./Flat Block No.
+                              </label>
+                              <input
+                                type="text"
+                                value={commHouseNo}
+                                onChange={(e) => setCommHouseNo(e.target.value)}
+                                disabled={sameAsPermAddress}
+                                placeholder="Apartment"
+                                style={{
+                                  width: "100%",
+                                  padding: "10px",
+                                  border: "1px solid #d9d6d6",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                  backgroundColor: sameAsPermAddress
+                                    ? "#f5f5f5"
+                                    : "white",
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label
+                                style={{
+                                  display: "block",
+                                  marginBottom: "8px",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                Street Name, Area Name/Colony
+                              </label>
+                              <input
+                                type="text"
+                                value={commStreet}
+                                onChange={(e) => setCommStreet(e.target.value)}
+                                disabled={sameAsPermAddress}
+                                placeholder="Apartment"
+                                style={{
+                                  width: "100%",
+                                  padding: "10px",
+                                  border: "1px solid #d9d6d6",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                  backgroundColor: sameAsPermAddress
+                                    ? "#f5f5f5"
+                                    : "white",
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label
+                                style={{
+                                  display: "block",
+                                  marginBottom: "8px",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                State
+                              </label>
+                              <select
+                                value={commStateId}
+                                onChange={handleCommStateChange}
+                                disabled={
+                                  sameAsPermAddress ||
+                                  !commCountryId ||
+                                  loadingCommStates
+                                }
+                                style={{
+                                  width: "100%",
+                                  padding: "10px",
+                                  border: "1px solid #d9d6d6",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                  backgroundColor:
+                                    sameAsPermAddress || !commCountryId
+                                      ? "#f5f5f5"
+                                      : "white",
+                                }}
+                              >
+                                <option value="">
+                                  {loadingCommStates
+                                    ? "Loading..."
+                                    : "-- Select State --"}
+                                </option>
+                                {commStates.map((state) => (
+                                  <option key={state.id} value={state.id}>
+                                    {state.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label
+                                style={{
+                                  display: "block",
+                                  marginBottom: "8px",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                City
+                              </label>
+                              <select
+                                value={commCityId}
+                                onChange={(e) => setCommCityId(e.target.value)}
+                                disabled={
+                                  sameAsPermAddress ||
+                                  !commStateId ||
+                                  loadingCommCities
+                                }
+                                style={{
+                                  width: "100%",
+                                  padding: "10px",
+                                  border: "1px solid #d9d6d6",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                  backgroundColor:
+                                    sameAsPermAddress || !commStateId
+                                      ? "#f5f5f5"
+                                      : "white",
+                                }}
+                              >
+                                <option value="">
+                                  {loadingCommCities
+                                    ? "Loading..."
+                                    : "-- Select City --"}
+                                </option>
+                                {commCities.map((city) => (
+                                  <option key={city.id} value={city.id}>
+                                    {city.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Nationality Field */}
+                        <div style={{ marginBottom: "32px" }}>
+                          <label
+                            style={{
+                              display: "block",
+                              marginBottom: "8px",
+                              fontSize: "14px",
+                            }}
+                          >
+                            Nationality
+                          </label>
+                          <input
+                            type="text"
+                            value={nationality}
+                            onChange={(e) => setNationality(e.target.value)}
+                            style={{
+                              width: "100%",
+                              padding: "10px",
+                              border: "1px solid #d9d6d6",
+                              borderRadius: "6px",
+                              fontSize: "14px",
+                            }}
+                          />
+                        </div>
+
+                        {/* Error Message */}
+                        {addressError && (
+                          <div
+                            style={{
+                              color: "red",
+                              marginBottom: "16px",
+                              fontSize: "14px",
+                            }}
+                          >
+                            {addressError}
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
                         <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
+                          style={{
+                            display: "flex",
+                            gap: "12px",
+                            justifyContent: "flex-end",
+                          }}
                         >
-                          Street Name,Area Name/Colony
+                          <button
+                            type="button"
+                            onClick={() => setEditAddress(false)}
+                            style={{
+                              padding: "10px 24px",
+                              border: "1px solid #d9d6d6",
+                              borderRadius: "6px",
+                              background: "white",
+                              cursor: "pointer",
+                              fontWeight: "600",
+                              fontSize: "14px",
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveAddress}
+                            disabled={savingAddress}
+                            style={{
+                              padding: "10px 24px",
+                              border: "none",
+                              borderRadius: "6px",
+                              background: "#e53935",
+                              color: "white",
+                              cursor: savingAddress ? "not-allowed" : "pointer",
+                              fontWeight: "600",
+                              fontSize: "14px",
+                            }}
+                          >
+                            {savingAddress ? "Saving..." : "Save"}
+                          </button>
                         </div>
-                        <div>NA</div>
                       </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
-                        <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
-                        >
-                          City
-                        </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
-                        <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
-                        >
-                          State
-                        </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
-                        <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
-                        >
-                          Country
-                        </div>
-                        <div>NA</div>
-                      </div>
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
-                        <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
-                        >
-                          Pincode
-                        </div>
-                        <div>NA</div>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        marginTop: "32px",
-                        marginBottom: "16px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Address proof details
-                    </div>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr",
-                        gap: "24px",
-                        marginBottom: "24px",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div
-                        className="basic-info-card"
-                        style={{
-                          border: "0.5px solid #d9d6d6",
-                          borderRadius: "10px",
-                          padding: "13px",
-                        }}
-                      >
-                        <div
-                          style={{ fontWeight: "bold", marginBottom: "14px" }}
-                        >
-                          Nationality
-                        </div>
-                        <div>NA</div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -583,6 +583,101 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Address Details API
+  addressDetails: async (formData) => {
+    try {
+      const response = await api.post("/address_details", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("AddressDetails API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Edit User Medical Profile
+  editUserMedical: async (medicalData) => {
+    try {
+      const response = await api.post("/edit_user_medical", medicalData);
+      return response.data;
+    } catch (error) {
+      console.error("EditUserMedical API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Follow/Unfollow Event API
+  followEvent: async (eventId, isFollow) => {
+    try {
+      const response = await api.post("/follow", {
+        event_id: eventId,
+        is_follow: isFollow, // 0 = follow, 1 = unfollow
+      });
+      return response.data;
+    } catch (error) {
+      console.error("FollowEvent API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Event Details API
+  getEventDetails: async (params = {}) => {
+    try {
+      const response = await api.post("/event_details_page", params);
+      return response.data;
+    } catch (error) {
+      console.error("GetEventDetails API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get User Followed Events API
+  getUserFollowedEvents: async () => {
+    try {
+      const response = await api.post("/userfollowevent");
+      return response.data;
+    } catch (error) {
+      console.error("GetUserFollowedEvents API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Popular Cities API
+  getPopularCities: async () => {
+    try {
+      const response = await api.get("/popular_cities");
+      return response.data;
+    } catch (error) {
+      console.error("GetPopularCities API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Location City API (Search Cities)
+  getLocationCity: async (params = {}) => {
+    try {
+      const response = await api.post("/location_city", params);
+      return response.data;
+    } catch (error) {
+      console.error("GetLocationCity API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Data Location Wise API (Location based events)
+  getDataLocationWise: async (params = {}) => {
+    try {
+      const response = await api.post("/get_data_location_wise", params);
+      return response.data;
+    } catch (error) {
+      console.error("GetDataLocationWise API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 // Token को axios header में set करें app load होते समय

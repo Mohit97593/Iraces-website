@@ -1,15 +1,27 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import TopNav from "../components/Navbar/TopNav";
 import "./SearchEvents.css";
 import { authAPI } from "../services/authAPI";
 
 export default function SearchEvents() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Set searchQuery from event_name param on initial load
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const eventNameParam = params.get("event_name");
+    if (eventNameParam) {
+      setSearchQuery(eventNameParam);
+    }
+  }, [location.search]);
   const [selectedCity, setSelectedCity] = useState("");
   const [cityInput, setCityInput] = useState("");
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [filteredCities, setFilteredCities] = useState([]);
-  const [selectedDistance, setSelectedDistance] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [regStartDate, setRegStartDate] = useState("");
   const [regEndDate, setRegEndDate] = useState("");
   const [dateFilter, setDateFilter] = useState(""); // New state for date-based filtering
@@ -31,6 +43,10 @@ export default function SearchEvents() {
   });
 
   const cityInputRef = useRef(null);
+  const hasAppliedUrlParams = useRef(false);
+
+  // Like state for each event
+  const [likedEvents, setLikedEvents] = useState({});
 
   // Helper function to get date range based on filter
   const getDateRange = (filter) => {
@@ -99,18 +115,7 @@ export default function SearchEvents() {
 
       if (searchQuery) params.event_name = searchQuery;
       if (selectedCity) params.city = selectedCity;
-      // --- TOGGLE FILTER PARAM ---
-      // Use only one of these at a time:
-      // 1. Use type_id (uncomment below to test)
-      if (selectedDistance) {
-        params.type_id = eventTypes.find(
-          (t) => t.name === selectedDistance
-        )?.id;
-      }
-      // 2. Use distance (uncomment below to test)
-      // if (selectedDistance) {
-      //   params.distance = selectedDistance;
-      // }
+      if (selectedCategoryId) params.category_id = selectedCategoryId;
 
       // Apply date filter if selected
       if (dateFilter) {
@@ -204,10 +209,56 @@ export default function SearchEvents() {
 
   // Initial data fetch
   useEffect(() => {
-    fetchEvents();
     fetchCities();
     fetchEventTypes();
   }, []);
+
+  // Apply filter from URL query params (when coming from Choose By Distance or Quick Selection)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const distanceParam = params.get("distance");
+    const dateFilterParam = params.get("dateFilter");
+
+    // Handle distance filter
+    if (
+      distanceParam &&
+      eventTypes.length > 0 &&
+      !hasAppliedUrlParams.current
+    ) {
+      // Find the matching event type by name
+      const matchingType = eventTypes.find(
+        (type) => type.name.toLowerCase() === distanceParam.toLowerCase()
+      );
+
+      if (matchingType) {
+        setSelectedCategoryId(matchingType.id.toString());
+        hasAppliedUrlParams.current = true;
+      }
+    }
+
+    // Handle date filter (This Week, This Month, This Quarter)
+    if (dateFilterParam && !hasAppliedUrlParams.current) {
+      setDateFilter(dateFilterParam);
+      hasAppliedUrlParams.current = true;
+    }
+  }, [location.search, eventTypes]);
+
+  // Fetch events when filters change or on initial load
+  useEffect(() => {
+    // Add a small delay to ensure state has updated
+    const timer = setTimeout(() => {
+      fetchEvents();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [
+    selectedCategoryId,
+    searchQuery,
+    selectedCity,
+    regStartDate,
+    regEndDate,
+    dateFilter,
+  ]);
 
   // Click outside to close city suggestions
   useEffect(() => {
@@ -225,6 +276,18 @@ export default function SearchEvents() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // When events change, initialize like state based on is_follow
+  useEffect(() => {
+    if (events && events.length > 0) {
+      const initialLiked = {};
+      events.forEach((ev) => {
+        // If event has is_follow property, use it; otherwise default to false
+        initialLiked[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
+      });
+      setLikedEvents(initialLiked);
+    }
+  }, [events]);
 
   // Apply filters
   const handleApplyFilters = () => {
@@ -257,21 +320,29 @@ export default function SearchEvents() {
     setShowCitySuggestions(false);
   };
 
-  // Handle filter changes
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchEvents(1);
-    }, 300);
+  // Toggle like for an event with API call
+  const handleToggleLike = async (eventId) => {
+    const currentLikeStatus = likedEvents[eventId];
+    const newLikeStatus = !currentLikeStatus;
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [
-    searchQuery,
-    selectedCity,
-    selectedDistance,
-    regStartDate,
-    regEndDate,
-    dateFilter,
-  ]);
+    // Optimistically update UI
+    setLikedEvents((prev) => ({ ...prev, [eventId]: newLikeStatus }));
+
+    try {
+      // Call follow/unfollow API
+      // is_follow: 0 = follow (like), 1 = unfollow (unlike)
+      const isFollow = newLikeStatus ? 0 : 1;
+      await authAPI.followEvent(eventId, isFollow);
+
+      // Refresh events to get updated is_follow status
+      fetchEvents(pagination.current_page);
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      // Revert on error
+      setLikedEvents((prev) => ({ ...prev, [eventId]: currentLikeStatus }));
+      alert("Failed to update favourite. Please try again.");
+    }
+  };
 
   const handleClearFilters = () => {
     setSearchQuery("");
@@ -279,7 +350,7 @@ export default function SearchEvents() {
     setCityInput("");
     setFilteredCities([]);
     setShowCitySuggestions(false);
-    setSelectedDistance("");
+    setSelectedCategoryId("");
     setRegStartDate("");
     setRegEndDate("");
     setDateFilter("");
@@ -392,36 +463,23 @@ export default function SearchEvents() {
                   )}
                 </div>
 
-                {/* Distance Filter */}
+                {/* Types Filter */}
                 <div className="form-group mb-3">
-                  <label>By Distance</label>
+                  <label>By Type</label>
                   <select
                     className="form-control"
-                    value={selectedDistance}
-                    onChange={(e) => {
-                      console.log("Selected type value:", e.target.value);
-                      setSelectedDistance(e.target.value);
-                    }}
+                    value={selectedCategoryId}
+                    onChange={(e) => setSelectedCategoryId(e.target.value)}
                   >
                     <option value="">Select Type</option>
                     {loadingTypes ? (
                       <option disabled>Loading types...</option>
                     ) : eventTypes && eventTypes.length > 0 ? (
-                      eventTypes.map((type, index) => {
-                        // Use name as value since backend expects distance name
-                        const typeValue =
-                          type.name || type.title || type.type_name || type.id;
-                        const typeLabel =
-                          type.name ||
-                          type.title ||
-                          type.type_name ||
-                          `Type ${index + 1}`;
-                        return (
-                          <option key={type.id || index} value={typeValue}>
-                            {typeLabel}
-                          </option>
-                        );
-                      })
+                      eventTypes.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.name}
+                        </option>
+                      ))
                     ) : (
                       <option disabled>No types available</option>
                     )}
@@ -532,10 +590,6 @@ export default function SearchEvents() {
                             src={event.banner_image || event.image}
                             alt={event.name}
                             className="event-card-img"
-                            onError={(e) => {
-                              e.target.src =
-                                "https://via.placeholder.com/400x250/1565c0/ffffff?text=Event+Image";
-                            }}
                           />
                           <span className="event-card-badge navi-mumbai-badge">
                             <i
@@ -544,6 +598,30 @@ export default function SearchEvents() {
                             ></i>
                             {event.city_name || "City"}
                           </span>
+                          <button
+                            className={`search-like-btn${
+                              likedEvents[event.id] ? " liked" : ""
+                            }`}
+                            onClick={() => handleToggleLike(event.id)}
+                            aria-label="Like"
+                          >
+                            <svg
+                              width="18"
+                              height="18"
+                              viewBox="0 0 20 20"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M10 17.5C9.7 17.5 9.4 17.4 9.2 17.2L3.1 11.5C1.2 9.7 1.2 6.7 3.1 4.9C4.1 3.9 5.4 3.4 6.7 3.4C7.8 3.4 8.9 3.8 9.8 4.6C10.7 3.8 11.8 3.4 12.9 3.4C14.2 3.4 15.5 3.9 16.5 4.9C18.4 6.7 18.4 9.7 16.5 11.5L10.8 17.2C10.6 17.4 10.3 17.5 10 17.5Z"
+                                fill={
+                                  likedEvents[event.id] ? "#da251c" : "#bbb"
+                                }
+                                stroke="#da251c"
+                                strokeWidth="1.2"
+                              />
+                            </svg>
+                          </button>
                         </div>
 
                         {/* Event Body */}
@@ -588,7 +666,12 @@ export default function SearchEvents() {
                                 Registration Open
                               </span>
                             )}
-                            <button className="btn btn-view">View</button>
+                            <button
+                              className="btn btn-view"
+                              onClick={() => navigate(`/event/${event.id}`)}
+                            >
+                              View
+                            </button>
                           </div>
                         </div>
                       </div>

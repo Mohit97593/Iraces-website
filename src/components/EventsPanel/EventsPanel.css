@@ -291,3 +291,33 @@
     padding: 6px 15px;
   }
 }
+
+/* Carousel indicators styling for upcoming events */
+#upcomingEventsCarousel .carousel-indicators {
+  position: relative;
+  margin-top: 30px;
+  margin-bottom: 0;
+  bottom: auto;
+}
+
+#upcomingEventsCarousel .carousel-indicators button {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #ccc;
+  border: none;
+  opacity: 1;
+  margin: 0 5px;
+  transition: all 0.3s ease;
+}
+
+#upcomingEventsCarousel .carousel-indicators button.active {
+  background-color: #da251c;
+  width: 14px;
+  height: 14px;
+}
+
+#upcomingEventsCarousel .carousel-indicators button:hover {
+  background-color: #da251c;
+  opacity: 0.8;
+}

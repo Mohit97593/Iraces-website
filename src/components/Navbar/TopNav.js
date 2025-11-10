@@ -1,23 +1,43 @@
 import React, { useState, useEffect, useRef } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import RunmateLogo from "../../assets/image/Runmate-Logo.png";
+import { authAPI } from "../../services/authAPI";
 import "./TopNav.css";
 
 export default function TopNav() {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showLocationOverlay, setShowLocationOverlay] = useState(false);
+  const [popularCities, setPopularCities] = useState([]);
+  const [searchCities, setSearchCities] = useState([]);
+  const [citySearchQuery, setCitySearchQuery] = useState("");
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const [eventSuggestions, setEventSuggestions] = useState([]);
+  const [showEventSuggestions, setShowEventSuggestions] = useState(false);
   const dropdownRef = useRef(null);
+  const searchInputRef = useRef(null);
+
+  // Show search bar and location icon only on landing page with /in/:citySlug route
+  const isLandingPage = location.pathname.startsWith("/in/");
 
   // Close dropdown and mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowProfileDropdown(false);
+      }
+      // Close event suggestions if clicking outside
+      if (
+        searchInputRef.current &&
+        !searchInputRef.current.contains(event.target)
+      ) {
+        setShowEventSuggestions(false);
       }
       // Close mobile menu if clicking outside (but not on hamburger button or mobile menu)
       if (
@@ -113,13 +133,269 @@ export default function TopNav() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Navigate to search events page
-    navigate("/search-events");
+    // Navigate to search events page with query
+    if (searchQuery.trim()) {
+      navigate(
+        `/search-events?event_name=${encodeURIComponent(searchQuery.trim())}`
+      );
+      setShowEventSuggestions(false);
+    } else {
+      navigate("/search-events");
+    }
   };
 
-  const handleSearchInputChange = (e) => {
-    setSearchQuery(e.target.value);
+  const handleSearchInputChange = async (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    if (value.trim().length > 0) {
+      try {
+        const response = await authAPI.getEvents({ event_name: value.trim() });
+        if (response && response.data && response.data.EventData) {
+          setEventSuggestions(response.data.EventData.slice(0, 5)); // Show max 5 suggestions
+          setShowEventSuggestions(true);
+        } else {
+          setEventSuggestions([]);
+          setShowEventSuggestions(false);
+        }
+      } catch (error) {
+        console.error("Error fetching event suggestions:", error);
+        setEventSuggestions([]);
+        setShowEventSuggestions(false);
+      }
+    } else {
+      setEventSuggestions([]);
+      setShowEventSuggestions(false);
+    }
   };
+
+  const handleEventSuggestionClick = (eventName) => {
+    setSearchQuery(eventName);
+    setShowEventSuggestions(false);
+    navigate(`/search-events?event_name=${encodeURIComponent(eventName)}`);
+  };
+
+  // Fetch Popular Cities when overlay opens
+  const fetchPopularCities = async () => {
+    try {
+      setIsLoadingCities(true);
+      const response = await authAPI.getPopularCities();
+      if (response.data && response.data.CityArr) {
+        setPopularCities(response.data.CityArr);
+      }
+    } catch (error) {
+      console.error("Error fetching popular cities:", error);
+    } finally {
+      setIsLoadingCities(false);
+    }
+  };
+
+  // Fetch all cities with country code
+  const fetchAllCities = async () => {
+    try {
+      const response = await authAPI.getLocationCity({
+        country_code: "in",
+      });
+      if (response.data && response.data.AllCities) {
+        setSearchCities(response.data.AllCities);
+      }
+    } catch (error) {
+      console.error("Error fetching all cities:", error);
+    }
+  };
+
+  // Fetch cities based on search query
+  const fetchSearchCities = async (query) => {
+    try {
+      setIsLoadingCities(true);
+      const response = await authAPI.getLocationCity({
+        search_city: query,
+        country_code: "in",
+      });
+      if (response.data && response.data.AllCities) {
+        setSearchCities(response.data.AllCities);
+      }
+    } catch (error) {
+      console.error("Error searching cities:", error);
+    } finally {
+      setIsLoadingCities(false);
+    }
+  };
+
+  // Handle opening location overlay
+  const handleOpenLocationOverlay = async () => {
+    setShowLocationOverlay(true);
+    setIsLoadingCities(true);
+    try {
+      // Fetch popular cities
+      const popRes = await authAPI.getPopularCities();
+      if (popRes.data && popRes.data.CityArr) {
+        setPopularCities(popRes.data.CityArr);
+      }
+      // Fetch all cities with country code
+      const locRes = await authAPI.getLocationCity({
+        country_code: "in",
+      });
+      if (locRes.data && locRes.data.AllCities) {
+        setSearchCities(locRes.data.AllCities);
+      }
+    } catch (error) {
+      console.error("Error fetching cities:", error);
+    } finally {
+      setIsLoadingCities(false);
+    }
+  };
+
+  // Handle city search input change
+  const handleCitySearchChange = (e) => {
+    const query = e.target.value;
+    setCitySearchQuery(query);
+
+    if (query.trim().length > 0) {
+      fetchSearchCities(query);
+    } else {
+      // Reset to all cities when search is cleared
+      fetchAllCities();
+    }
+  };
+
+  // Handle city search submit
+  const handleCitySearch = (e) => {
+    e.preventDefault();
+    if (citySearchQuery.trim()) {
+      fetchSearchCities(citySearchQuery);
+    }
+  };
+
+  // Handle city card click
+  const handleCityClick = (
+    cityId,
+    cityType,
+    cityName,
+    stateId = null,
+    countryId = null
+  ) => {
+    setShowLocationOverlay(false);
+
+    // Generate URL-friendly slug from city name
+    const citySlug = cityName
+      ? cityName
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(/[^\w-]/g, "")
+      : "";
+
+    // Store selected city in localStorage for homepage
+    if (cityType === "city") {
+      localStorage.setItem("selectedCityId", cityId);
+      localStorage.setItem("selectedCityName", cityName || "");
+      localStorage.setItem("selectedCitySlug", citySlug);
+      if (stateId) localStorage.setItem("selectedStateId", stateId);
+      if (countryId) localStorage.setItem("selectedCountryId", countryId);
+      if (!stateId) localStorage.removeItem("selectedStateId");
+
+      // Dispatch custom event for homepage to listen
+      window.dispatchEvent(
+        new CustomEvent("citySelected", {
+          detail: {
+            cityId,
+            cityType: "city",
+            cityName,
+            citySlug,
+            stateId,
+            countryId,
+          },
+        })
+      );
+    } else {
+      localStorage.setItem("selectedStateId", cityId);
+      localStorage.setItem("selectedCityName", cityName || "");
+      if (countryId) localStorage.setItem("selectedCountryId", countryId);
+      localStorage.removeItem("selectedCityId");
+      localStorage.removeItem("selectedCitySlug");
+
+      window.dispatchEvent(
+        new CustomEvent("citySelected", {
+          detail: { cityId, cityType: "state", cityName, countryId },
+        })
+      );
+    }
+
+    // Navigate based on current page
+    const currentPath = window.location.pathname;
+
+    // If on home page or already on /in/* route, navigate to /in/city-slug
+    if (currentPath === "/" || currentPath.startsWith("/in/")) {
+      // Navigate if we have a city slug (regardless of cityType value)
+      if (citySlug) {
+        navigate(`/in/${citySlug}`);
+      }
+    } else {
+      // If on other pages, navigate to search-events
+      if (cityType === "city" || cityId) {
+        navigate(`/search-events?city_id=${cityId}`);
+      } else {
+        navigate(`/search-events?state_id=${cityId}`);
+      }
+    }
+  };
+
+  // Handle delete my location
+  const handleDeleteLocation = async () => {
+    // Clear all location data from localStorage
+    localStorage.removeItem("selectedCityId");
+    localStorage.removeItem("selectedCityName");
+    localStorage.removeItem("selectedCitySlug");
+    localStorage.removeItem("selectedStateId");
+    localStorage.removeItem("selectedCountryId");
+    localStorage.removeItem("detectedCity");
+    localStorage.removeItem("detectedCitySlug");
+
+    // Close the overlay
+    setShowLocationOverlay(false);
+
+    // Detect current location via IP or navigate to default
+    try {
+      const response = await fetch("https://ipapi.co/json/");
+      const data = await response.json();
+      const detectedCityName = data.city || "India";
+      const detectedCitySlug = detectedCityName
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^\w-]/g, "");
+
+      // Store detected city
+      localStorage.setItem("detectedCity", detectedCityName);
+      localStorage.setItem("detectedCitySlug", detectedCitySlug);
+
+      // Dispatch event to update homepage
+      window.dispatchEvent(
+        new CustomEvent("locationDeleted", {
+          detail: { cityName: detectedCityName, citySlug: detectedCitySlug },
+        })
+      );
+
+      // Navigate to detected location
+      const currentPath = window.location.pathname;
+      if (currentPath === "/" || currentPath.startsWith("/in/")) {
+        navigate(`/in/${detectedCitySlug}`);
+      }
+    } catch (error) {
+      console.error("Error detecting location:", error);
+      // Fallback to default location
+      window.dispatchEvent(
+        new CustomEvent("locationDeleted", {
+          detail: { cityName: "India", citySlug: "india" },
+        })
+      );
+
+      const currentPath = window.location.pathname;
+      if (currentPath === "/" || currentPath.startsWith("/in/")) {
+        navigate("/in/india");
+      }
+    }
+  };
+
   return (
     <header className="topbar">
       <nav className="navbar">
@@ -162,63 +438,267 @@ export default function TopNav() {
             </span>
           </button>
 
-          {/* Desktop Search Bar Section */}
-          <div className="d-none d-lg-flex justify-content-center flex-grow-1">
-            <div className="search-container d-flex align-items-center">
-              <div className="location-icon-container">
-                <i className="fas fa-map-marker-alt text-muted"></i>
-              </div>
-              <form
-                onSubmit={handleSearch}
-                className="search-input-container flex-grow-1"
-              >
-                <input
-                  type="text"
-                  className="form-control search-input"
-                  placeholder="Explore Events..."
-                  value={searchQuery}
-                  onChange={handleSearchInputChange}
-                  style={{
-                    border: "none",
-                    outline: "none",
-                    backgroundColor: "transparent",
-                    fontSize: "16px",
-                    fontWeight: "400",
-                    color: "#666",
-                    padding: "8px 12px",
-                  }}
-                />
-              </form>
+          {/* Desktop Search Bar Section - Only show on landing page */}
+          {isLandingPage && (
+            <div className="d-none d-lg-flex justify-content-center flex-grow-1 align-items-center gap-3">
               <button
-                type="button"
-                className="search-btn"
-                onClick={handleSearch}
+                className="location-icon-btn"
+                onClick={handleOpenLocationOverlay}
                 style={{
-                  backgroundColor: "#da251c",
+                  background: "#fff",
                   border: "none",
-                  borderRadius: "50%",
-                  width: "40px",
-                  height: "40px",
+                  cursor: "pointer",
+                  borderRadius: "18px",
+                  padding: "13px 16px",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = "#b91e14";
-                  e.target.style.transform = "scale(1.05)";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = "#da251c";
-                  e.target.style.transform = "scale(1)";
+                  gap: "8px",
+                  color: "#da251c",
+                  fontSize: "16px",
+                  fontWeight: "500",
                 }}
               >
-                <i className="fas fa-search" style={{ fontSize: "16px" }}></i>
+                <i
+                  className="fas fa-map-marker-alt"
+                  style={{ fontSize: "18px" }}
+                ></i>
+                {/* <span>Detect my location</span> */}
               </button>
+              <div
+                className="search-container d-flex align-items-center"
+                style={{ position: "relative" }}
+              >
+                <div
+                  style={{ flexGrow: 1, position: "relative" }}
+                  ref={searchInputRef}
+                >
+                  <form
+                    onSubmit={handleSearch}
+                    className="search-input-container"
+                  >
+                    <input
+                      type="text"
+                      className="form-control search-input"
+                      placeholder="Search Here"
+                      value={searchQuery}
+                      onChange={handleSearchInputChange}
+                      style={{
+                        border: "none",
+                        outline: "none",
+                        backgroundColor: "transparent",
+                        fontSize: "16px",
+                        fontWeight: "400",
+                        color: "#666",
+                        padding: "8px 12px",
+                      }}
+                    />
+                  </form>
+                  {/* Event Suggestions Dropdown for Desktop */}
+                  {showEventSuggestions && eventSuggestions.length > 0 && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        backgroundColor: "white",
+                        border: "1px solid #ddd",
+                        borderRadius: "8px",
+                        marginTop: "5px",
+                        maxHeight: "250px",
+                        overflowY: "auto",
+                        zIndex: 1000,
+                        boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                      }}
+                    >
+                      {eventSuggestions.map((event) => (
+                        <div
+                          key={event.id}
+                          onClick={() => handleEventSuggestionClick(event.name)}
+                          style={{
+                            padding: "12px 15px",
+                            cursor: "pointer",
+                            borderBottom: "1px solid #f0f0f0",
+                            fontSize: "14px",
+                            color: "#333",
+                            transition: "background-color 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "#f8f9fa";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = "white";
+                          }}
+                        >
+                          <i
+                            className="fas fa-calendar-alt me-2"
+                            style={{ color: "#da251c" }}
+                          ></i>
+                          {event.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="search-btn"
+                  onClick={handleSearch}
+                  style={{
+                    backgroundColor: "#da251c",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "40px",
+                    height: "40px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = "#b91e14";
+                    e.target.style.transform = "scale(1.05)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = "#da251c";
+                    e.target.style.transform = "scale(1)";
+                  }}
+                >
+                  <i className="fas fa-search" style={{ fontSize: "16px" }}></i>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Popular Cities Overlay */}
+          {showLocationOverlay && (
+            <div className="location-overlay-wrapper">
+              <div className="location-overlay">
+                <button
+                  className="close-overlay-btn"
+                  onClick={() => setShowLocationOverlay(false)}
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+
+                <div className="overlay-top-section">
+                  <form
+                    onSubmit={handleCitySearch}
+                    className="overlay-search-bar"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Search Here"
+                      className="city-search-input"
+                      value={citySearchQuery}
+                      onChange={handleCitySearchChange}
+                    />
+                    <button type="submit" className="search-btn-overlay">
+                      <i className="fas fa-search"></i>
+                    </button>
+                  </form>
+                  {/* <button className="detect-location-btn-top">
+                    <i className="fas fa-crosshairs"></i>
+                    <span>Detect my location</span>
+                  </button> */}
+                  <button
+                    className="delete-location-btn-top"
+                    onClick={handleDeleteLocation}
+                  >
+                    <i className="fas fa-trash-alt"></i>
+                    <span>Detect my location</span>
+                  </button>
+                </div>
+
+                <div className="overlay-divider"></div>
+
+                {isLoadingCities ? (
+                  <div style={{ textAlign: "center", padding: "40px" }}>
+                    <i
+                      className="fas fa-spinner fa-spin"
+                      style={{ fontSize: "32px", color: "#da251c" }}
+                    ></i>
+                  </div>
+                ) : citySearchQuery.trim() && searchCities.length > 0 ? (
+                  <>
+                    <h2 className="overlay-title">Search Results</h2>
+                    <div className="cities-grid">
+                      {searchCities.map((city) => (
+                        <div
+                          key={city.id}
+                          className="city-card"
+                          onClick={() =>
+                            handleCityClick(
+                              city.id,
+                              "city",
+                              city.name,
+                              city.state_id,
+                              city.country_id
+                            )
+                          }
+                        >
+                          <div className="city-icon-wrapper">
+                            <i
+                              className="fas fa-city"
+                              style={{ fontSize: "60px", color: "#da251c" }}
+                            ></i>
+                          </div>
+                          <h4>{city.name}</h4>
+                          <p>{city.state_name || "India"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : citySearchQuery.trim() &&
+                  searchCities.length === 0 &&
+                  !isLoadingCities ? (
+                  <div style={{ textAlign: "center", padding: "40px" }}>
+                    <p style={{ fontSize: "18px", color: "#666" }}>
+                      No cities found
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <h2 className="overlay-title">Popular Cities</h2>
+                    <div className="cities-grid">
+                      {popularCities.map((city) => (
+                        <div
+                          key={city.id}
+                          className="city-card"
+                          onClick={() =>
+                            handleCityClick(
+                              city.id,
+                              city.type,
+                              city.city,
+                              city.state_id,
+                              city.country_id
+                            )
+                          }
+                        >
+                          <div className="city-icon-wrapper">
+                            <img
+                              src={city.image}
+                              alt={city.city}
+                              className="city-landmark-icon"
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                                e.target.parentElement.innerHTML =
+                                  '<i class="fas fa-building" style="font-size: 60px; color: #da251c;"></i>';
+                              }}
+                            />
+                          </div>
+                          <h4>{city.city}</h4>
+                          <p>{city.event_count} Events</p>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Mobile Sidebar Menu */}
           {showMobileMenu && (
@@ -259,7 +739,11 @@ export default function TopNav() {
 
                 {/* Search Bar */}
                 <div className="p-3 border-bottom">
-                  <div className="d-flex align-items-center bg-light rounded-pill px-3 py-2">
+                  <div
+                    className="d-flex align-items-center bg-light rounded-pill px-3 py-2"
+                    ref={searchInputRef}
+                    style={{ position: "relative" }}
+                  >
                     <i
                       className="fas fa-map-marker-alt me-2"
                       style={{ color: "#da251c" }}
@@ -296,6 +780,53 @@ export default function TopNav() {
                         style={{ fontSize: "12px" }}
                       ></i>
                     </button>
+                    {/* Event Suggestions Dropdown */}
+                    {showEventSuggestions && eventSuggestions.length > 0 && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "100%",
+                          left: 0,
+                          right: 0,
+                          backgroundColor: "white",
+                          border: "1px solid #ddd",
+                          borderRadius: "8px",
+                          marginTop: "5px",
+                          maxHeight: "200px",
+                          overflowY: "auto",
+                          zIndex: 1000,
+                          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                        }}
+                      >
+                        {eventSuggestions.map((event) => (
+                          <div
+                            key={event.id}
+                            onClick={() =>
+                              handleEventSuggestionClick(event.name)
+                            }
+                            style={{
+                              padding: "10px 15px",
+                              cursor: "pointer",
+                              borderBottom: "1px solid #f0f0f0",
+                              fontSize: "14px",
+                              color: "#333",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = "#f8f9fa";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "white";
+                            }}
+                          >
+                            <i
+                              className="fas fa-calendar-alt me-2"
+                              style={{ color: "#da251c" }}
+                            ></i>
+                            {event.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -541,7 +1072,7 @@ export default function TopNav() {
                     </NavLink>
 
                     <NavLink
-                      to="/bookings"
+                      to="/organiser-profile"
                       className="dropdown-item d-flex align-items-center gap-2 px-3 py-2"
                       style={{ textDecoration: "none", color: "#333" }}
                       onClick={() => setShowProfileDropdown(false)}
@@ -550,17 +1081,17 @@ export default function TopNav() {
                         className="fas fa-calendar-check"
                         style={{ width: "16px" }}
                       ></i>
-                      My Bookings
+                      Organiser Profile
                     </NavLink>
 
                     <NavLink
-                      to="/settings"
+                      to="/favourites"
                       className="dropdown-item d-flex align-items-center gap-2 px-3 py-2"
                       style={{ textDecoration: "none", color: "#333" }}
                       onClick={() => setShowProfileDropdown(false)}
                     >
                       <i className="fas fa-cog" style={{ width: "16px" }}></i>
-                      Settings
+                      My Favourites
                     </NavLink>
 
                     <div className="dropdown-divider"></div>
