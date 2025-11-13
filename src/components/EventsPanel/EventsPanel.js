@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import "./EventsPanel.css";
 import event2 from "../../assets/image/09cbb1e84b3bf91549ba83bb53aceeb0.jpg";
 
@@ -9,6 +10,8 @@ const EventsPanel = ({
   likedEvents = {},
   onToggleLike = () => {},
 }) => {
+  const navigate = useNavigate();
+
   return (
     <section className="events-panel py-5">
       <div className="container">
@@ -233,8 +236,13 @@ const EventsPanel = ({
                                           ? "Registration Open"
                                           : "Registration Closed"}
                                       </span>
-                                      <button className="btn btn-view">
-                                        Register
+                                      <button
+                                        className="btn btn-view"
+                                        onClick={() =>
+                                          navigate(`/event/${event.id}`)
+                                        }
+                                      >
+                                        {isOpen ? "Register" : "View"}
                                       </button>
                                     </div>
                                   </div>

@@ -670,7 +670,7 @@ export default function SearchEvents() {
                               className="btn btn-view"
                               onClick={() => navigate(`/event/${event.id}`)}
                             >
-                              View
+                              {registrationClosed ? "View" : "Register"}
                             </button>
                           </div>
                         </div>

@@ -22,6 +22,9 @@ import SearchEvents from "../pages/SearchEvents";
 import OrganiserProfile from "../pages/OrganiserProfile/OrganiserProfile";
 import Favourites from "../pages/Favourites/Favourites";
 import EventDetails from "../pages/EventDetails/EventDetails";
+import SecureCheckout from "../pages/SecureCheckout/SecureCheckout";
+import ParticipantDetails from "../pages/ParticipantDetails/ParticipantDetails";
+import CreateEvent from "../pages/CreateEvent/CreateEvent";
 
 const AppRouter = createBrowserRouter([
   {
@@ -178,6 +181,24 @@ const AppRouter = createBrowserRouter([
     errorElement: <NotFound />,
   },
   {
+    path: "/checkout/:eventId",
+    element: (
+      <ErrorBoundary>
+        <SecureCheckout />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/participant-details/:eventId",
+    element: (
+      <ErrorBoundary>
+        <ParticipantDetails />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
     path: "/favourites",
     element: (
       <ErrorBoundary>
@@ -197,6 +218,15 @@ const AppRouter = createBrowserRouter([
   {
     path: "/reset-password/:token",
     element: <ResetPasswordPage />,
+  },
+  {
+    path: "/create-event",
+    element: (
+      <ErrorBoundary>
+        <CreateEvent />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
   },
   {
     path: "*",

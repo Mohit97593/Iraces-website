@@ -59,7 +59,7 @@ export default function FAQPanel() {
               {faqList.map((faq) => (
                 <div
                   key={faq.id}
-                  className={`faq-item ${faq.isOpen ? "active" : ""}`}
+                  className={`faq-item1 ${faq.isOpen ? "active" : ""}`}
                 >
                   <button
                     className="faq-question"

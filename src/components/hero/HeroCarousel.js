@@ -22,6 +22,7 @@ import TestimonialsCarousel from "../TestimonialsCarousel/TestimonialsCarousel";
 import BlogPanel from "../BlogPanel/BlogPanel";
 import FAQPanel from "../FAQPanel/FAQPanel";
 import Footer from "../Footer/Footer";
+import YouCanRunBanner from "../YouCanRun";
 
 export default function HeroCarousel() {
   // Local state for API banners
@@ -1055,8 +1056,13 @@ export default function HeroCarousel() {
                                               ? "Registration Open"
                                               : "Registration Closed"}
                                           </span>
-                                          <button className="btn btn-view">
-                                            Register
+                                          <button
+                                            className="btn btn-view"
+                                            onClick={() =>
+                                              navigate(`/event/${event.id}`)
+                                            }
+                                          >
+                                            {isOpen ? "Register" : "View"}
                                           </button>
                                         </div>
                                       </div>
@@ -1252,7 +1258,11 @@ export default function HeroCarousel() {
         {/* <BlogPanel /> */}
 
         {/* FAQ Section */}
-        <FAQPanel />
+        {/* <FAQPanel /> */}
+
+        <YouCanRunBanner
+          logoSrc={require("../../assets/image/youcanrun-banner.png")}
+        />
       </section>
 
       <Footer />

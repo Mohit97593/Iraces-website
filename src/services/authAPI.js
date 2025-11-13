@@ -12,9 +12,6 @@ const api = axios.create({
     "X-Requested-With": "XMLHttpRequest",
   },
 });
-// ...existing code...
-
-// ...existing code...
 
 // Request interceptor - headers के लिए
 api.interceptors.request.use(
@@ -48,6 +45,18 @@ api.interceptors.response.use(
 
 // Auth API Functions
 export const authAPI = {
+  // Get Event Ticket API
+  getEventTicket: async (event_id) => {
+    try {
+      const payload = { event_id };
+      const response = await api.post("/get_event_ticket", payload);
+      return response.data;
+    } catch (error) {
+      console.error("getEventTicket API error:", error);
+      throw error.response?.data || error.message;
+      3;
+    }
+  },
   // Get Roles API
   getRoles: async () => {
     try {
@@ -59,6 +68,19 @@ export const authAPI = {
     }
   },
 
+  // Check User Last Login Details API
+  checkUserLastLoginDetails: async (user_id = null) => {
+    try {
+      const payload = {};
+      if (user_id) payload.user_id = user_id;
+      const response = await api.post("/checkUserLastLoginDetails", payload);
+      return response.data;
+    } catch (error) {
+      console.error("checkUserLastLogin API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Get Events API
   getEvents: async (params = {}) => {
     try {
@@ -66,6 +88,29 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       console.error("GetEvents API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Category API
+  getCategory: async () => {
+    try {
+      const response = await api.get("/category");
+      return response.data;
+    } catch (error) {
+      console.error("getCategory API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Event Details API
+  getEventDetails: async (event_id) => {
+    try {
+      const payload = { event_id };
+      const response = await api.post("/event_details", payload);
+      return response.data;
+    } catch (error) {
+      console.error("getEventDetails API error:", error);
       throw error.response?.data || error.message;
     }
   },
@@ -557,7 +602,7 @@ export const authAPI = {
       const response = await api.get("/types");
       return response.data;
     } catch (error) {
-      console.error("GetTypes API error:", error);
+      console.error("getTypes API error:", error);
       throw error.response?.data || error.message;
     }
   },
@@ -625,12 +670,12 @@ export const authAPI = {
   },
 
   // Get Event Details API
-  getEventDetails: async (params = {}) => {
+  getEventDetailsPage: async (params = {}) => {
     try {
       const response = await api.post("/event_details_page", params);
       return response.data;
     } catch (error) {
-      console.error("GetEventDetails API error:", error);
+      console.error("GetEventDetailsPage API error:", error);
       throw error.response?.data || error.message;
     }
   },

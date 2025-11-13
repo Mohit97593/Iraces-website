@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
 import { authAPI } from "../../services/authAPI";
+import Footer from "../../components/Footer/Footer";
 import "./EventDetails.css";
 
 export default function EventDetails() {
@@ -36,10 +37,10 @@ export default function EventDetails() {
       }
 
       // Then call event details page API
-      const detailsResponse = await authAPI.getEventDetails({
+      const detailsResponse = await authAPI.getEventDetailsPage({
         event_id: eventId,
       });
-      console.log("Event Details API Response:", detailsResponse);
+      console.log("Event Details Page API Response:", detailsResponse);
 
       if (detailsResponse && detailsResponse.data) {
         setEventDetails(detailsResponse.data);
@@ -353,12 +354,26 @@ export default function EventDetails() {
           {/* Right Column - Event Info Card */}
           <div className="col-lg-4 col-md-5">
             <div className="event-info-card">
-              {!registrationClosed && (
-                <div className="price-section">
-                  <span className="price-label">Registration Fee</span>
-                  <span className="price-value">₹{event.price || "499"}</span>
-                </div>
-              )}
+              {/* Registration Fee Box */}
+              {Array.isArray(event.TicketDetails) &&
+                event.TicketDetails.length > 0 &&
+                (() => {
+                  const prices = event.TicketDetails.map((t) =>
+                    Number(t.ticket_price)
+                  ).filter(Boolean);
+                  const minPrice = Math.min(...prices);
+                  const maxPrice = Math.max(...prices);
+                  return (
+                    <div className="registration-fee-box">
+                      <span className="fee-label">Registration Fee</span>
+                      <span className="fee-amount">
+                        ₹{minPrice}
+                        {minPrice !== maxPrice ? ` - ₹${maxPrice}` : ""}
+                      </span>
+                    </div>
+                  );
+                })()}
+
               <div className="registration-status-section">
                 {registrationClosed ? (
                   <div className="status-badge closed">
@@ -442,13 +457,20 @@ export default function EventDetails() {
                 </div>
               </div>
 
+              {/* Registration Button */}
               {!registrationClosed && (
-                <button className="btn-register">Register Now</button>
+                <button
+                  className="btn-register"
+                  onClick={() => navigate(`/checkout/${eventId}`)}
+                >
+                  Register Now
+                </button>
               )}
             </div>
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
