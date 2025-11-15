@@ -464,6 +464,12 @@ const Profile = () => {
       errors.addEmail = "Email is required";
     } else if (!/^\S+@\S+\.\S+$/.test(addEmail.trim())) {
       errors.addEmail = "Please enter a valid email address";
+    } else if (
+      orgUserDetails.some(
+        (user) => user.email?.toLowerCase() === addEmail.trim().toLowerCase()
+      )
+    ) {
+      errors.addEmail = "This email is already used by another organiser.";
     }
     if (!addDob.trim()) {
       errors.addDob = "Date of birth is required";
@@ -1297,6 +1303,12 @@ const Profile = () => {
         setAddressError("Please enter permanent address pincode");
         return;
       }
+      if (!permHouseNo) {
+        setAddressError(
+          "Please enter permanent address House No./Flat Block No."
+        );
+        return;
+      }
       if (!sameAsPermAddress) {
         if (!commCountryId) {
           setAddressError("Please select communication address country");
@@ -1304,6 +1316,12 @@ const Profile = () => {
         }
         if (!commPincode) {
           setAddressError("Please enter communication address pincode");
+          return;
+        }
+        if (!commHouseNo) {
+          setAddressError(
+            "Please enter communication address House No./Flat Block No."
+          );
           return;
         }
       }
@@ -2076,6 +2094,7 @@ const Profile = () => {
                               </label>
                               <input
                                 value={editFirstName}
+                                maxLength={25}
                                 onChange={(e) =>
                                   setEditFirstName(e.target.value)
                                 }
@@ -2111,6 +2130,7 @@ const Profile = () => {
                               </label>
                               <input
                                 value={editLastName}
+                                maxLength={50}
                                 onChange={(e) =>
                                   setEditLastName(e.target.value)
                                 }
@@ -3370,6 +3390,7 @@ const Profile = () => {
                               <input
                                 type="text"
                                 value={permPincode}
+                                maxLength={6}
                                 onChange={(e) => setPermPincode(e.target.value)}
                                 style={{
                                   width: "100%",
@@ -3394,6 +3415,7 @@ const Profile = () => {
                               <input
                                 type="text"
                                 value={permHouseNo}
+                                maxLength={30}
                                 onChange={(e) => setPermHouseNo(e.target.value)}
                                 placeholder="Apartment"
                                 style={{
@@ -3418,6 +3440,7 @@ const Profile = () => {
                               <input
                                 type="text"
                                 value={permStreet}
+                                maxLength={30}
                                 onChange={(e) => setPermStreet(e.target.value)}
                                 placeholder="Apartment"
                                 style={{
@@ -3543,6 +3566,15 @@ const Profile = () => {
                                       fetchCommStates(permCountryId);
                                     if (permStateId)
                                       fetchCommCities(permStateId);
+                                  } else {
+                                    setCommHouseNo("");
+                                    setCommStreet("");
+                                    setCommCountryId("");
+                                    setCommStateId("");
+                                    setCommCityId("");
+                                    setCommPincode("");
+                                    setCommStates([]);
+                                    // If you have setCommCities, also clear: setCommCities([]);
                                   }
                                 }}
                                 style={{ marginRight: "6px" }}
@@ -3567,7 +3599,7 @@ const Profile = () => {
                                   fontSize: "14px",
                                 }}
                               >
-                                Country
+                                Country <span style={{ color: "red" }}>*</span>
                               </label>
                               <select
                                 value={commCountryId}
@@ -3600,11 +3632,12 @@ const Profile = () => {
                                   fontSize: "14px",
                                 }}
                               >
-                                Pincode
+                                Pincode <span style={{ color: "red" }}>*</span>
                               </label>
                               <input
                                 type="text"
                                 value={commPincode}
+                                maxLenght={6}
                                 onChange={(e) => setCommPincode(e.target.value)}
                                 disabled={sameAsPermAddress}
                                 style={{
@@ -3627,11 +3660,13 @@ const Profile = () => {
                                   fontSize: "14px",
                                 }}
                               >
-                                House No./Flat Block No.
+                                House No./Flat Block No.{" "}
+                                <span style={{ color: "red" }}>*</span>
                               </label>
                               <input
                                 type="text"
                                 value={commHouseNo}
+                                maxLength={30}
                                 onChange={(e) => setCommHouseNo(e.target.value)}
                                 disabled={sameAsPermAddress}
                                 placeholder="Apartment"
@@ -3660,6 +3695,7 @@ const Profile = () => {
                               <input
                                 type="text"
                                 value={commStreet}
+                                maxLength={30}
                                 onChange={(e) => setCommStreet(e.target.value)}
                                 disabled={sameAsPermAddress}
                                 placeholder="Apartment"
@@ -4249,6 +4285,7 @@ const Profile = () => {
                       fontSize: "14px",
                     }}
                     value={addFirstName}
+                    maxLength={50}
                     onChange={(e) => setAddFirstName(e.target.value)}
                   />
                   {orgUserErrors.addFirstName && (
@@ -4285,6 +4322,7 @@ const Profile = () => {
                       fontSize: "14px",
                     }}
                     value={addLastName}
+                    maxLength={50}
                     onChange={(e) => setAddLastName(e.target.value)}
                   />
                   {orgUserErrors.addLastName && (

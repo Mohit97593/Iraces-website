@@ -308,11 +308,43 @@ export default function EventScheduling({ onBack, onNext }) {
 
         {/* Navigation Buttons */}
         <div className="form-navigation-buttons">
-          <button type="button" className="btn-back" onClick={onBack}>
+          <button
+            type="button"
+            className="btn-back"
+            style={{
+              minWidth: 100,
+              fontWeight: 600,
+              background: "#fff",
+              color: "#da251c",
+              border: "2px solid #da251c",
+              borderRadius: 8,
+              padding: "8px 20px",
+              fontSize: "1.1rem",
+              height: 42,
+              marginLeft: 8,
+              marginTop: "22px",
+            }}
+            onClick={onBack}
+          >
             Back
           </button>
-          <button type="submit" className="btn-save-continue">
-            Save & Next (2/11)
+          <button
+            type="button"
+            className="btn-save-continue"
+            style={{
+              minWidth: 120,
+              fontWeight: 600,
+              background: "#da251c",
+              color: "#fff",
+              borderRadius: 8,
+              border: "none",
+              padding: "10px 32px",
+              fontSize: "1.1rem",
+              height: 44,
+            }}
+            onClick={onNext}
+          >
+            Save & Next (3/11)
           </button>
         </div>
       </form>

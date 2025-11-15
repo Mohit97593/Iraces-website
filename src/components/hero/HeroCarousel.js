@@ -184,19 +184,8 @@ export default function HeroCarousel() {
           setCityName(data.data.CityName);
         }
 
-        // Set trending events (eventData from API) - show all events
-        // Even if local city has no events, API might return suggested events
+        // Set trending events (eventData from API) - show only events from selected city
         if (data.data.eventData && data.data.eventData.length > 0) {
-          setTrendingEvents(data.data.eventData);
-
-          // Initialize like state for trending events
-          const initialLiked = {};
-          data.data.eventData.forEach((ev) => {
-            initialLiked[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
-          });
-          setLikedEvents((prev) => ({ ...prev, ...initialLiked }));
-
-          // Check if any events are from the selected city
           const currentCityName =
             data.data.CityName || cityNameFromSlug || cityName;
           const localEvents = data.data.eventData.filter(
@@ -204,6 +193,14 @@ export default function HeroCarousel() {
               event.city_name &&
               event.city_name.toLowerCase() === currentCityName.toLowerCase()
           );
+          setTrendingEvents(localEvents);
+
+          // Initialize like state for trending events
+          const initialLiked = {};
+          localEvents.forEach((ev) => {
+            initialLiked[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
+          });
+          setLikedEvents((prev) => ({ ...prev, ...initialLiked }));
 
           // Set flag if selected city has events
           setHasLocalEvents(localEvents.length > 0);
@@ -1241,7 +1238,7 @@ export default function HeroCarousel() {
         {/* <TrainingPanel /> */}
 
         {/* Why Runmate section */}
-        <WhyRunmatePanel />
+        {/* <WhyRunmatePanel /> */}
 
         {/* Run Unintentionally section */}
         <RunUnintentionallyPanel />

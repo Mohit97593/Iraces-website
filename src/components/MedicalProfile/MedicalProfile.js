@@ -3,6 +3,8 @@ import "./MedicalProfile.css";
 import { authAPI } from "../../services/authAPI";
 
 const MedicalProfile = ({ onUpdate }) => {
+  const [heightError, setHeightError] = useState("");
+  const [weightError, setWeightError] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -634,9 +636,24 @@ const MedicalProfile = ({ onUpdate }) => {
                   type="number"
                   placeholder="Height(Cm)*"
                   value={height}
-                  onChange={(e) => setHeight(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "" || Number(val) > 0) {
+                      setHeight(val);
+                      setHeightError("");
+                    } else {
+                      setHeightError("Height must be a positive number");
+                    }
+                  }}
                   className="edit-input"
                 />
+                {heightError && (
+                  <div
+                    style={{ color: "red", fontSize: "12px", marginTop: "4px" }}
+                  >
+                    {heightError}
+                  </div>
+                )}
               </div>
               <div className="edit-field full-width">
                 <label>What is your current weight(Kg)</label>
@@ -644,9 +661,24 @@ const MedicalProfile = ({ onUpdate }) => {
                   type="number"
                   placeholder="Weight(Kg)*"
                   value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "" || Number(val) > 0) {
+                      setWeight(val);
+                      setWeightError("");
+                    } else {
+                      setWeightError("Weight must be a positive number");
+                    }
+                  }}
                   className="edit-input"
                 />
+                {weightError && (
+                  <div
+                    style={{ color: "red", fontSize: "12px", marginTop: "4px" }}
+                  >
+                    {weightError}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1040,6 +1072,7 @@ const MedicalProfile = ({ onUpdate }) => {
               <div className="edit-field">
                 <label>
                   Please provide the contact number of your family doctor:
+                  <span style={{ color: "red" }}>*</span>
                 </label>
                 <input
                   type="text"

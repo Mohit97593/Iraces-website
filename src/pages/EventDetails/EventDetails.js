@@ -17,6 +17,7 @@ export default function EventDetails() {
   const [organiserName, setOrganiserName] = useState("");
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     fetchEventDetails();
   }, [eventId]);
 

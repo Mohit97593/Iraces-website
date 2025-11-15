@@ -4,6 +4,9 @@ import TopNav from "../../components/Navbar/TopNav";
 import Footer from "../../components/Footer/Footer";
 import { authAPI } from "../../services/authAPI";
 import EventScheduling from "./EventScheduling";
+import EventImages from "./EventImages";
+import EventSettings from "./EventSettings";
+import RaceCategories from "./RaceCategories";
 import "./CreateEvent.css";
 
 export default function CreateEvent() {
@@ -19,6 +22,14 @@ export default function CreateEvent() {
   const [eventDetails, setEventDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [eventFormData, setEventFormData] = useState({});
+  const [savedSteps, setSavedSteps] = useState([
+    false,
+    false,
+    false,
+    false,
+    false,
+  ]); // Track saved status for each step
+  const [showPreview, setShowPreview] = useState(true);
   // Today's date and year
   const today = new Date();
   const day = today.getDate();
@@ -46,6 +57,13 @@ export default function CreateEvent() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    // Reset showPreview when changing steps
+    if (currentStep !== 5) {
+      setShowPreview(true);
+    }
+  }, [currentStep]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -131,6 +149,59 @@ export default function CreateEvent() {
     setCurrentStep(currentStep - 1);
   };
 
+  // Update save handlers for each step
+  const handleEssentialsSave = () => {
+    setSavedSteps((prev) => {
+      const updated = [...prev];
+      updated[0] = true;
+      return updated;
+    });
+    setCurrentStep(2);
+  };
+  const handleSchedulingSave = () => {
+    setSavedSteps((prev) => {
+      const updated = [...prev];
+      updated[1] = true;
+      return updated;
+    });
+    setCurrentStep(3);
+  };
+  const handleImagesSave = () => {
+    setSavedSteps((prev) => {
+      const updated = [...prev];
+      updated[2] = true;
+      return updated;
+    });
+    setCurrentStep(4);
+  };
+  const handleSettingsSave = () => {
+    setSavedSteps((prev) => {
+      const updated = [...prev];
+      updated[3] = true;
+      return updated;
+    });
+    setCurrentStep(5);
+  };
+
+  const handleRaceCategoriesSave = () => {
+    setSavedSteps((prev) => {
+      const updated = [...prev];
+      updated[4] = true;
+      return updated;
+    });
+    setCurrentStep(6);
+  };
+
+  // Step titles and their corresponding components
+  const steps = [
+    { title: "Event Essentials", component: "essentials" },
+    { title: "Event Scheduling", component: "scheduling" },
+    { title: "Event Description", component: "description" },
+    { title: "Event Settings", component: "settings" },
+    { title: "Race Categories", component: "racecategories" },
+    // Add more steps as needed
+  ];
+
   if (loading) {
     return (
       <div className="create-event-page">
@@ -193,73 +264,65 @@ export default function CreateEvent() {
             margin: "32px 0",
           }}
         >
-          {[
-            "Event Essentials",
-            "Event Scheduling",
-            "Event Details",
-            "Categories",
-            "Types",
-            "Preview",
-            "Payment",
-            "Confirmation",
-            "Publish",
-            "Done",
-          ].map((step, idx, arr) => {
-            const isCompleted = idx < currentStep - 1;
+          {steps.map((step, idx) => {
+            const isCompleted = savedSteps[idx];
             const isCurrent = idx === currentStep - 1;
             return (
-              <React.Fragment key={step}>
-                {isCompleted ? (
-                  <div
-                    className="event-step-pill"
-                    style={{
-                      background: "#43a047",
-                      color: "#fff",
-                      borderRadius: "24px",
-                      padding: "10px 24px",
-                      display: "flex",
-                      alignItems: "center",
-                      fontWeight: 600,
-                    }}
-                  >
+              <React.Fragment key={step.title}>
+                <div
+                  className={
+                    isCompleted
+                      ? "event-step-pill"
+                      : isCurrent
+                      ? "event-step-pill"
+                      : "event-step-circle"
+                  }
+                  style={
+                    isCompleted
+                      ? {
+                          background: "#43a047",
+                          color: "#fff",
+                          borderRadius: "24px",
+                          padding: "10px 24px",
+                          display: "flex",
+                          alignItems: "center",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }
+                      : isCurrent
+                      ? {
+                          background: "#da251c",
+                          color: "#fff",
+                          borderRadius: "24px",
+                          padding: "10px 24px",
+                          display: "flex",
+                          alignItems: "center",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }
+                      : {
+                          width: "44px",
+                          height: "44px",
+                          border: "2px solid #da251c",
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#da251c",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }
+                  }
+                  onClick={() => setCurrentStep(idx + 1)}
+                >
+                  {isCompleted ? (
                     <i className="fas fa-check" style={{ marginRight: 8 }}></i>
-                    {step}
-                  </div>
-                ) : isCurrent ? (
-                  <div
-                    className="event-step-pill"
-                    style={{
-                      background: "#da251c",
-                      color: "#fff",
-                      borderRadius: "24px",
-                      padding: "10px 24px",
-                      display: "flex",
-                      alignItems: "center",
-                      fontWeight: 600,
-                    }}
-                  >
+                  ) : isCurrent ? (
                     <i className="fas fa-circle" style={{ marginRight: 8 }}></i>
-                    {step}
-                  </div>
-                ) : (
-                  <div
-                    className="event-step-circle"
-                    style={{
-                      width: "44px",
-                      height: "44px",
-                      border: "2px solid #da251c",
-                      borderRadius: "50%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#da251c",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {/* Empty circle */}
-                  </div>
-                )}
-                {idx < arr.length - 1 && (
+                  ) : null}
+                  {isCompleted || isCurrent ? step.title : null}
+                </div>
+                {idx < steps.length - 1 && (
                   <div
                     style={{
                       width: "32px",
@@ -312,7 +375,12 @@ export default function CreateEvent() {
                   </div>
                 </div>
 
-                <form onSubmit={handleSubmit}>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleEssentialsSave();
+                  }}
+                >
                   {/* Event Name */}
                   <div className="form-group">
                     <label>
@@ -388,224 +456,394 @@ export default function CreateEvent() {
 
             {currentStep === 2 && (
               <EventScheduling
-                onBack={handleBack}
-                onNext={handleSchedulingNext}
+                onBack={() => setCurrentStep(1)}
+                onNext={handleSchedulingSave}
+              />
+            )}
+
+            {currentStep === 3 && (
+              <EventImages
+                onBack={() => setCurrentStep(2)}
+                onNext={handleImagesSave}
+              />
+            )}
+
+            {currentStep === 4 && (
+              <EventSettings
+                onBack={() => setCurrentStep(3)}
+                onNext={handleSettingsSave}
+              />
+            )}
+            {currentStep === 5 && (
+              <RaceCategories
+                onBack={() => setCurrentStep(4)}
+                onNext={handleRaceCategoriesSave}
+                setShowPreview={setShowPreview}
               />
             )}
           </div>
 
-          {/* Right Column - Preview */}
+          {/* Right Column - Preview or Money to you */}
           <div className="col-lg-4">
-            <div
-              style={{
-                width: "100%",
-                textAlign: "center",
-                fontWeight: "700",
-                fontSize: "1.2rem",
-                marginBottom: "10px",
-              }}
-            >
-              Event Preview
-            </div>
-            <div
-              className="event-card search-event-card"
-              style={{
-                background: "#fff",
-                borderRadius: "16px",
-                boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
-                padding: 0,
-                marginTop: 0,
-                marginBottom: 24,
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-                minHeight: "400px",
-              }}
-            >
-              <div
-                style={{
-                  position: "relative",
-                  width: "100%",
-                  height: "180px",
-                  background: "#eee",
-                }}
-              >
-                <img
-                  src={require("../../assets/image/event-view.jpg")}
-                  alt="Event Banner"
+            {(currentStep !== 5 || showPreview) && (
+              <>
+                <div
                   style={{
                     width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    borderTopLeftRadius: "16px",
-                    borderTopRightRadius: "16px",
-                  }}
-                />
-                <span
-                  style={{
-                    position: "absolute",
-                    top: 16,
-                    left: 16,
-                    background: "#da251c",
-                    color: "#fff",
-                    padding: "6px 18px",
-                    borderRadius: "16px",
-                    fontWeight: 600,
-                    fontSize: "1rem",
-                    zIndex: 2,
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                  }}
-                >
-                  City Name
-                </span>
-                <button
-                  className="search-like-btn"
-                  aria-label="Like"
-                  style={{
-                    position: "absolute",
-                    top: 16,
-                    right: 16,
-                    zIndex: 2,
-                    background: "#fff",
-                    border: "1.5px solid #da251c",
-                    borderRadius: "50%",
-                    width: "36px",
-                    height: "36px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: 0,
-                  }}
-                >
-                  <svg
-                    width="22"
-                    height="22"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M10 17.5C9.7 17.5 9.4 17.4 9.2 17.2L3.1 11.5C1.2 9.7 1.2 6.7 3.1 4.9C4.1 3.9 5.4 3.4 6.7 3.4C7.8 3.4 8.9 3.8 9.8 4.6C10.7 3.8 11.8 3.4 12.9 3.4C14.2 3.4 15.5 3.9 16.5 4.9C18.4 6.7 18.4 9.7 16.5 11.5L10.8 17.2C10.6 17.4 10.3 17.5 10 17.5Z"
-                      fill="#fff"
-                      stroke="#da251c"
-                      strokeWidth="1.5"
-                    />
-                  </svg>
-                </button>
-              </div>
-              <div
-                style={{
-                  padding: "20px 20px 0 20px",
-                  flex: "1 1 auto",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    marginBottom: "8px",
-                  }}
-                >
-                  <span
-                    style={{
-                      color: "#1565c0",
-                      fontWeight: 700,
-                      fontSize: "1.2rem",
-                    }}
-                  >
-                    {monthShort}
-                  </span>
-                  <span
-                    style={{
-                      color: "#da251c",
-                      fontWeight: 700,
-                      fontSize: "1.2rem",
-                    }}
-                  >
-                    {day}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "1.05rem",
-                      fontWeight: 700,
-                      color: "#333",
-                      marginLeft: "8px",
-                    }}
-                  >
-                    {currentStep === 2
-                      ? sessionStorage.getItem("eventName") ||
-                        eventName ||
-                        "Event Name"
-                      : "Event Name"}
-                  </span>
-                </div>
-                <hr
-                  style={{
-                    margin: "10px 0",
-                    border: "none",
-                    borderTop: "1px solid #e0e0e0",
-                  }}
-                />
-                <div
-                  style={{
-                    fontSize: "0.95rem",
-                    color: "#666",
+                    textAlign: "center",
+                    fontWeight: "700",
+                    fontSize: "1.2rem",
                     marginBottom: "10px",
                   }}
                 >
-                  Register By :{" "}
+                  Event Preview
+                </div>
+              </>
+            )}
+            {currentStep === 5 && !showPreview && (
+              <div
+                style={{
+                  background: "#fafafa",
+                  borderRadius: 16,
+                  padding: 24,
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+                }}
+              >
+                <h3
+                  style={{
+                    fontWeight: 700,
+                    fontSize: "1.4rem",
+                    marginBottom: 16,
+                  }}
+                >
+                  Money to you
+                </h3>
+                <div
+                  style={{
+                    fontSize: 32,
+                    fontWeight: "bold",
+                    marginBottom: 24,
+                    color: "#333",
+                  }}
+                >
+                  ₹0.00
+                </div>
+                <hr
+                  style={{
+                    margin: "16px 0",
+                    border: "none",
+                    borderTop: "1px solid #ddd",
+                  }}
+                />
+                <table
+                  style={{
+                    width: "100%",
+                    marginBottom: 16,
+                    fontSize: "0.95rem",
+                  }}
+                >
+                  <tbody>
+                    <tr>
+                      <td style={{ padding: "8px 0", color: "#666" }}>
+                        Base Registration Fee
+                      </td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>
+                        ₹0
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: "8px 0", color: "#666" }}>
+                        Convenience Fee
+                      </td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>
+                        ₹0.00
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: "8px 0", color: "#666" }}>
+                        Platform Fee
+                      </td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>
+                        ₹0.00
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: "8px 0", color: "#666" }}>
+                        Payment Gateway Charges (0%)
+                      </td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>
+                        ₹0.00
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: "8px 0", color: "#666" }}>
+                        Convenience Fee GST 18%
+                      </td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>
+                        ₹0.00
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: "8px 0", color: "#666" }}>
+                        Platform Fee GST 18%
+                      </td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>
+                        ₹0.00
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: "8px 0", color: "#666" }}>
+                        Payment Gateway GST 18%
+                      </td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>
+                        ₹0.00
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        style={{
+                          padding: "8px 0",
+                          paddingTop: 16,
+                          color: "#666",
+                        }}
+                      >
+                        Total Payable (By Participant)
+                      </td>
+                      <td
+                        style={{
+                          textAlign: "right",
+                          fontWeight: 600,
+                          paddingTop: 16,
+                        }}
+                      >
+                        ₹0.00
+                      </td>
+                    </tr>
+                    <tr style={{ borderTop: "2px solid #ddd" }}>
+                      <td
+                        style={{
+                          padding: "12px 0",
+                          fontWeight: 700,
+                          fontSize: "1.05rem",
+                        }}
+                      >
+                        Receivable Amount
+                      </td>
+                      <td
+                        style={{
+                          textAlign: "right",
+                          fontWeight: 700,
+                          fontSize: "1.05rem",
+                        }}
+                      >
+                        ₹0.00
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {(currentStep !== 5 || showPreview) && (
+              <div
+                className="event-card search-event-card"
+                style={{
+                  background: "#fff",
+                  borderRadius: "16px",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+                  padding: 0,
+                  marginTop: 0,
+                  marginBottom: 24,
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: "400px",
+                }}
+              >
+                <div
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    height: "180px",
+                    background: "#eee",
+                  }}
+                >
+                  <img
+                    src={require("../../assets/image/event-view.jpg")}
+                    alt="Event Banner"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      borderTopLeftRadius: "16px",
+                      borderTopRightRadius: "16px",
+                    }}
+                  />
                   <span
                     style={{
-                      color: "#da251c",
-                      fontWeight: 700,
+                      position: "absolute",
+                      top: 16,
+                      left: 16,
+                      background: "#da251c",
+                      color: "#fff",
+                      padding: "6px 18px",
+                      borderRadius: "16px",
+                      fontWeight: 600,
+                      fontSize: "1rem",
+                      zIndex: 2,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                     }}
                   >
-                    {registerBy}
+                    City Name
                   </span>
+                  <button
+                    className="search-like-btn"
+                    aria-label="Like"
+                    style={{
+                      position: "absolute",
+                      top: 16,
+                      right: 16,
+                      zIndex: 2,
+                      background: "#fff",
+                      border: "1.5px solid #da251c",
+                      borderRadius: "50%",
+                      width: "36px",
+                      height: "36px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 0,
+                    }}
+                  >
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M10 17.5C9.7 17.5 9.4 17.4 9.2 17.2L3.1 11.5C1.2 9.7 1.2 6.7 3.1 4.9C4.1 3.9 5.4 3.4 6.7 3.4C7.8 3.4 8.9 3.8 9.8 4.6C10.7 3.8 11.8 3.4 12.9 3.4C14.2 3.4 15.5 3.9 16.5 4.9C18.4 6.7 18.4 9.7 16.5 11.5L10.8 17.2C10.6 17.4 10.3 17.5 10 17.5Z"
+                        fill="#fff"
+                        stroke="#da251c"
+                        strokeWidth="1.5"
+                      />
+                    </svg>
+                  </button>
                 </div>
                 <div
                   style={{
+                    padding: "20px 20px 0 20px",
+                    flex: "1 1 auto",
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginTop: "18px",
+                    flexDirection: "column",
                   }}
                 >
-                  <span
+                  <div
                     style={{
-                      color: "green",
-                      fontWeight: 600,
-                      fontSize: "0.95rem",
                       display: "flex",
                       alignItems: "center",
+                      gap: "12px",
+                      marginBottom: "8px",
                     }}
                   >
-                    <i
-                      className="fas fa-check-circle"
-                      style={{ marginRight: 6 }}
-                    ></i>
-                    Registration Open
-                  </span>
-                  <button
+                    <span
+                      style={{
+                        color: "#1565c0",
+                        fontWeight: 700,
+                        fontSize: "1.2rem",
+                      }}
+                    >
+                      {monthShort}
+                    </span>
+                    <span
+                      style={{
+                        color: "#da251c",
+                        fontWeight: 700,
+                        fontSize: "1.2rem",
+                      }}
+                    >
+                      {day}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "1.05rem",
+                        fontWeight: 700,
+                        color: "#333",
+                        marginLeft: "8px",
+                      }}
+                    >
+                      {currentStep === 2
+                        ? sessionStorage.getItem("eventName") ||
+                          eventName ||
+                          "Event Name"
+                        : "Event Name"}
+                    </span>
+                  </div>
+                  <hr
                     style={{
-                      background: "transparent",
-                      border: "2px solid #da251c",
-                      color: "#da251c",
-                      borderRadius: "20px",
-                      padding: "6px 24px",
-                      fontWeight: 600,
-                      fontSize: "1rem",
-                      transition: "all 0.3s",
+                      margin: "10px 0",
+                      border: "none",
+                      borderTop: "1px solid #e0e0e0",
+                    }}
+                  />
+                  <div
+                    style={{
+                      fontSize: "0.95rem",
+                      color: "#666",
+                      marginBottom: "10px",
                     }}
                   >
-                    Register
-                  </button>
+                    Register By :{" "}
+                    <span
+                      style={{
+                        color: "#da251c",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {registerBy}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginTop: "18px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: "green",
+                        fontWeight: 600,
+                        fontSize: "0.95rem",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      <i
+                        className="fas fa-check-circle"
+                        style={{ marginRight: 6 }}
+                      ></i>
+                      Registration Open
+                    </span>
+                    <button
+                      style={{
+                        background: "transparent",
+                        border: "2px solid #da251c",
+                        color: "#da251c",
+                        borderRadius: "20px",
+                        padding: "6px 24px",
+                        fontWeight: 600,
+                        fontSize: "1rem",
+                        transition: "all 0.3s",
+                      }}
+                    >
+                      Register
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
