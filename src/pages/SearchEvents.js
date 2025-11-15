@@ -9,6 +9,11 @@ export default function SearchEvents() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   // Set searchQuery from event_name param on initial load
   useEffect(() => {
     const params = new URLSearchParams(location.search);
