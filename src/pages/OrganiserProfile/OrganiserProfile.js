@@ -1,29 +1,97 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import TopNav from "../../components/Navbar/TopNav";
+import { authAPI } from "../../services/authAPI";
 import "./OrganiserProfile.css";
+import "./error-msg.css";
 
 export default function OrganiserProfile() {
+  // Only allow numbers in mobile/contact number fields
+  const handleNumberInput = (e) => {
+    const { name, value } = e.target;
+    // Remove non-numeric characters
+    const numericValue = value.replace(/[^0-9]/g, "");
+    setProfileData((prev) => ({
+      ...prev,
+      [name]: numericValue,
+    }));
+    setErrors((prev) => ({ ...prev, [name]: undefined }));
+  };
+  // Helper to show NA for empty fields
+  const displayValue = (value) => {
+    if (typeof value === "string") {
+      return value.trim() ? value : "NA";
+    }
+    return value ? value : "NA";
+  };
   const [isEditing, setIsEditing] = useState(false);
   const [hasGST, setHasGST] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [errors, setErrors] = useState({});
   const [profileData, setProfileData] = useState({
-    organisationName: "sht",
-    email: "trr@gmail.com",
-    mobile: "4353453449",
-    about: "tetr",
-    contactPerson: "NA",
-    contactNumber: "NA",
+    organizerId: "",
+    organisationName: "",
+    email: "",
+    mobile: "",
+    about: "",
+    contactPerson: "",
+    contactNumber: "",
     logoImage: null,
     bannerImage: null,
     pancard: null,
     gstCertificate: null,
+    gstNumber: "",
+    gstPercentage: 18,
   });
 
-  const handleEdit = () => {
+  useEffect(() => {
+    fetchOrganizerData();
+  }, []);
+
+  const fetchOrganizerData = async () => {
+    try {
+      setLoading(true);
+      const response = await authAPI.getOrganizerDetails();
+      if (
+        response.data &&
+        response.data.organizerData &&
+        response.data.organizerData.length > 0
+      ) {
+        const data = response.data.organizerData[0];
+        setProfileData({
+          organizerId: data.id || "",
+          organisationName: data.name || "",
+          email: data.email || "",
+          mobile: data.mobile || "",
+          about: data.about?.replace(/<[^>]*>/g, "") || "", // Remove HTML tags
+          contactPerson: data.contact_person || "",
+          contactNumber: data.contact_no || "",
+          logoImage: data.logo_image || null,
+          bannerImage: data.banner_image || null,
+          pancard: data.company_pan || null,
+          gstCertificate: data.gst_certificate || null,
+          gstNumber: data.gst_number || "",
+          gstPercentage: data.gst_percentage || 18,
+        });
+        setHasGST(data.gst === 1);
+      }
+    } catch (error) {
+      console.error("Error fetching organizer data:", error);
+      alert("Failed to load organizer profile. Please login again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = async () => {
+    // Refetch data when edit is clicked
+    await fetchOrganizerData();
     setIsEditing(true);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
+    // Refetch to restore original data
+    fetchOrganizerData();
   };
 
   const handleChange = (e) => {
@@ -32,6 +100,7 @@ export default function OrganiserProfile() {
       ...prev,
       [name]: value,
     }));
+    setErrors((prev) => ({ ...prev, [name]: undefined })); // Clear error on change
   };
 
   const handleFileChange = (e, fieldName) => {
@@ -59,13 +128,106 @@ export default function OrganiserProfile() {
       ...prev,
       [fieldName]: file,
     }));
+    setErrors((prev) => ({ ...prev, [fieldName]: undefined })); // Clear error on file change
   };
 
-  const handleSave = () => {
-    // Add save logic here
-    setIsEditing(false);
-    console.log("Profile data saved:", profileData);
+  const handleSave = async () => {
+    // Validation
+    const newErrors = {};
+    const mobileRegex = /^[0-9]{10}$/;
+    if (!profileData.organisationName.trim())
+      newErrors.organisationName = "Organisation Name is required.";
+    if (!profileData.email.trim()) newErrors.email = "Email is required.";
+    if (!profileData.mobile.trim()) {
+      newErrors.mobile = "Mobile is required.";
+    } else if (!mobileRegex.test(profileData.mobile)) {
+      newErrors.mobile = "Enter a valid 10-digit mobile number.";
+    }
+    if (!profileData.about.trim()) newErrors.about = "About is required.";
+    if (hasGST && !profileData.gstNumber.trim())
+      newErrors.gstNumber = "GST Number is required.";
+    if (!profileData.logoImage) newErrors.logoImage = "Logo Image is required.";
+    if (
+      profileData.contactNumber &&
+      !mobileRegex.test(profileData.contactNumber)
+    ) {
+      newErrors.contactNumber = "Enter a valid 10-digit contact number.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const payload = {
+        oragniser_id: profileData.organizerId,
+        name: profileData.organisationName,
+        email: profileData.email,
+        mobile: profileData.mobile,
+        about: `<p>${profileData.about}</p>`,
+        gst: hasGST ? 1 : 0,
+        gst_number: profileData.gstNumber || "",
+        gst_percentage: profileData.gstPercentage || 18,
+        contact_person: profileData.contactPerson || "",
+        contact_no: profileData.contactNumber || "",
+      };
+      if (profileData.bannerImage instanceof File) {
+        payload.banner_image = profileData.bannerImage;
+      }
+      if (profileData.logoImage instanceof File) {
+        payload.logo_image = profileData.logoImage;
+      }
+      if (profileData.pancard instanceof File) {
+        payload.company_pancard = profileData.pancard;
+      }
+      if (profileData.gstCertificate instanceof File) {
+        payload.gst_certificate = profileData.gstCertificate;
+      }
+      const result = await authAPI.addEditOrganizer(payload);
+      if (result.message) {
+        alert(result.message);
+      }
+      setIsEditing(false);
+      await fetchOrganizerData();
+    } catch (error) {
+      console.error("Error saving organizer data:", error);
+      alert("Failed to save organizer profile. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <>
+        <TopNav />
+        <section className="organiser-hero">
+          <div className="organiser-hero-overlay"></div>
+          <div className="container">
+            <div className="row">
+              <div className="col-12">
+                <h1 className="organiser-hero-title">Organiser Profile</h1>
+                <nav className="organiser-breadcrumb">
+                  <span>Home</span>
+                  <span className="breadcrumb-separator">–</span>
+                  <span>Organiser Profile</span>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div className="organiser-profile-container">
+          <div style={{ textAlign: "center", padding: "50px" }}>
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -109,11 +271,15 @@ export default function OrganiserProfile() {
                   <input
                     type="text"
                     name="organisationName"
+                    maxLength={20}
                     value={profileData.organisationName}
                     onChange={handleChange}
                     className="form-input"
                     placeholder="Organisation Name"
                   />
+                  {errors.organisationName && (
+                    <div className="error-msg">{errors.organisationName}</div>
+                  )}
                 </div>
 
                 <div className="form-field">
@@ -128,6 +294,9 @@ export default function OrganiserProfile() {
                     className="form-input"
                     placeholder="Email ID"
                   />
+                  {errors.email && (
+                    <div className="error-msg">{errors.email}</div>
+                  )}
                 </div>
               </div>
 
@@ -140,10 +309,13 @@ export default function OrganiserProfile() {
                     type="text"
                     name="mobile"
                     value={profileData.mobile}
-                    onChange={handleChange}
+                    onChange={handleNumberInput}
                     className="form-input"
                     placeholder="Mobile"
                   />
+                  {errors.mobile && (
+                    <div className="error-msg">{errors.mobile}</div>
+                  )}
                 </div>
               </div>
 
@@ -155,11 +327,15 @@ export default function OrganiserProfile() {
                   <textarea
                     name="about"
                     value={profileData.about}
+                    maxLength={150}
                     onChange={handleChange}
                     className="form-textarea-simple"
                     rows="6"
                     placeholder="About"
                   />
+                  {errors.about && (
+                    <div className="error-msg">{errors.about}</div>
+                  )}
                 </div>
               </div>
 
@@ -190,6 +366,9 @@ export default function OrganiserProfile() {
                       placeholder="GST Number"
                       required
                     />
+                    {errors.gstNumber && (
+                      <div className="error-msg">{errors.gstNumber}</div>
+                    )}
                   </div>
                   <div className="form-field">
                     <label className="form-label">
@@ -206,6 +385,7 @@ export default function OrganiserProfile() {
                   <input
                     type="text"
                     name="contactPerson"
+                    maxLength={20}
                     value={profileData.contactPerson}
                     onChange={handleChange}
                     className="form-input"
@@ -219,10 +399,13 @@ export default function OrganiserProfile() {
                     type="text"
                     name="contactNumber"
                     value={profileData.contactNumber}
-                    onChange={handleChange}
+                    onChange={handleNumberInput}
                     className="form-input"
                     placeholder="Contact Number"
                   />
+                  {errors.contactNumber && (
+                    <div className="error-msg">{errors.contactNumber}</div>
+                  )}
                 </div>
               </div>
 
@@ -250,6 +433,9 @@ export default function OrganiserProfile() {
                       {profileData.logoImage?.name || "No file chosen"}
                     </span>
                   </div>
+                  {errors.logoImage && (
+                    <div className="error-msg">{errors.logoImage}</div>
+                  )}
                 </div>
 
                 <div className="form-field">
@@ -351,7 +537,7 @@ export default function OrganiserProfile() {
                   />
                 ) : (
                   <div className="screenshot-value">
-                    {profileData.organisationName}
+                    {displayValue(profileData.organisationName)}
                   </div>
                 )}
               </div>
@@ -368,7 +554,9 @@ export default function OrganiserProfile() {
                     className="field-input"
                   />
                 ) : (
-                  <div className="screenshot-value">{profileData.email}</div>
+                  <div className="screenshot-value">
+                    {displayValue(profileData.email)}
+                  </div>
                 )}
               </div>
 
@@ -384,7 +572,9 @@ export default function OrganiserProfile() {
                     className="field-input"
                   />
                 ) : (
-                  <div className="screenshot-value">{profileData.mobile}</div>
+                  <div className="screenshot-value">
+                    {displayValue(profileData.mobile)}
+                  </div>
                 )}
               </div>
 
@@ -400,7 +590,9 @@ export default function OrganiserProfile() {
                     rows="4"
                   />
                 ) : (
-                  <div className="screenshot-value">{profileData.about}</div>
+                  <div className="screenshot-value">
+                    {displayValue(profileData.about)}
+                  </div>
                 )}
               </div>
               {/* Contact Person */}
@@ -416,7 +608,7 @@ export default function OrganiserProfile() {
                   />
                 ) : (
                   <div className="screenshot-value">
-                    {profileData.contactPerson}
+                    {displayValue(profileData.contactPerson)}
                   </div>
                 )}
               </div>
@@ -434,7 +626,7 @@ export default function OrganiserProfile() {
                   />
                 ) : (
                   <div className="screenshot-value">
-                    {profileData.contactNumber}
+                    {displayValue(profileData.contactNumber)}
                   </div>
                 )}
               </div>

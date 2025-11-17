@@ -166,6 +166,36 @@ export const authAPI = {
     }
   },
 
+  // Get Organizer Details API
+  getOrganizerDetails: async () => {
+    try {
+      const response = await api.post("/get_organizer");
+      return response.data;
+    } catch (error) {
+      console.error("getOrganizerDetails API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Add/Edit Organizer API
+  addEditOrganizer: async (payload) => {
+    try {
+      const formData = new FormData();
+      Object.entries(payload).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          formData.append(key, value);
+        }
+      });
+      const response = await api.post("/add_edit_organizer", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("addEditOrganizer API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Reset Password
   resetPassword: async ({ token, new_password, confirm_new_password }) => {
     try {
