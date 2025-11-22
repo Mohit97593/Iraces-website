@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 
 export default function EventScheduling({ onBack, onNext }) {
-  const [formData, setFormData] = useState({
+  const defaultFormData = {
     timeZone: "",
     country: "",
     pincode: "",
@@ -18,20 +19,221 @@ export default function EventScheduling({ onBack, onNext }) {
     registrationStartTime: "",
     registrationEndDate: "",
     registrationEndTime: "",
-  });
+  };
+  const getInitialFormData = () => {
+    const saved = sessionStorage.getItem("eventSchedulingFormData");
+    if (saved) {
+      try {
+        return { ...defaultFormData, ...JSON.parse(saved) };
+      } catch {
+        return defaultFormData;
+      }
+    }
+    return defaultFormData;
+  };
+  const [timezones, setTimezones] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState(getInitialFormData());
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      sessionStorage.setItem(
+        "eventSchedulingFormData",
+        JSON.stringify(updated)
+      );
+      return updated;
+    });
   };
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      setLoading(true);
+      try {
+        // Fetch timezones
+        const timezonesRes = await authAPI.getTimezones();
+        if (
+          timezonesRes &&
+          timezonesRes.data &&
+          Array.isArray(timezonesRes.data.AllTimezones)
+        ) {
+          setTimezones(
+            timezonesRes.data.AllTimezones.filter(
+              (tz) => tz.area && tz.active === 1
+            )
+          );
+        }
+
+        // Fetch event details if event_id exists
+        const eventId = sessionStorage.getItem("event_id");
+        if (eventId) {
+          const eventDetailsRes = await authAPI.getEventDetails(eventId);
+          if (eventDetailsRes && eventDetailsRes.data) {
+            const details = eventDetailsRes.data;
+            if (!sessionStorage.getItem("eventSchedulingFormData")) {
+              setFormData({
+                ...defaultFormData,
+                timeZone: details.timezone || "",
+                country: details.country || "",
+                pincode: details.pincode || "",
+                state: details.state || "",
+                city: details.city || "",
+                googleMapLink: details.google_map_link || "",
+                eventAddress: details.event_address || "",
+                eventStartDate: details.event_start_date || "",
+                eventStartTime: details.event_start_time || "",
+                eventEndDate: details.event_end_date || "",
+                eventEndTime: details.event_end_time || "",
+                registrationStartDate: details.registration_start_date || "",
+                registrationStartTime: details.registration_start_time || "",
+                registrationEndDate: details.registration_end_date || "",
+                registrationEndTime: details.registration_end_time || "",
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching initial data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitialData();
+  }, []);
+
+  useEffect(() => {
+    // Fetch countries on mount
+    const fetchCountries = async () => {
+      try {
+        const res = await authAPI.getCountries();
+        let countryList = [];
+        if (res && res.data) {
+          if (Array.isArray(res.data.AllCountry)) {
+            countryList = res.data.AllCountry;
+          } else if (Array.isArray(res.data.AllCountries)) {
+            countryList = res.data.AllCountries;
+          }
+        }
+        setCountries(countryList.filter((country) => country.name));
+      } catch (err) {
+        setCountries([]);
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  useEffect(() => {
+    // Fetch states when country changes
+    if (!formData.country) {
+      setStates([]);
+      return;
+    }
+    const selectedCountry = countries.find((c) => c.name === formData.country);
+    const fetchStates = async () => {
+      try {
+        const res = await authAPI.getStates({
+          country_id: selectedCountry ? selectedCountry.id : null,
+        });
+        if (res && res.data && Array.isArray(res.data.AllState)) {
+          setStates(res.data.AllState);
+        } else {
+          setStates([]);
+        }
+      } catch (err) {
+        setStates([]);
+      }
+    };
+    fetchStates();
+  }, [formData.country, countries]);
+
+  useEffect(() => {
+    // Fetch cities when state changes
+    if (!formData.state) {
+      setCities([]);
+      return;
+    }
+    const selectedState = states.find((s) => s.name === formData.state);
+    const fetchCities = async () => {
+      try {
+        const res = await authAPI.getCities({
+          state_id: selectedState ? selectedState.id : null,
+        });
+        let cityList = [];
+        if (res && res.data) {
+          if (Array.isArray(res.data.AllCities)) {
+            cityList = res.data.AllCities;
+          } else if (Array.isArray(res.data.AllCity)) {
+            cityList = res.data.AllCity;
+          }
+        }
+        setCities(cityList.filter((city) => city.name));
+      } catch (err) {
+        setCities([]);
+      }
+    };
+    fetchCities();
+  }, [formData.state, states]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Event Scheduling Data:", formData);
-    onNext(formData);
+    const eventId = sessionStorage.getItem("event_id");
+    const selectedCountry = countries.find((c) => c.name === formData.country);
+    const selectedState = states.find((s) => s.name === formData.state);
+    const selectedCity = cities.find((c) => c.name === formData.city);
+    const selectedTimezone = timezones.find(
+      (tz) => tz.area === formData.timeZone
+    );
+    const payload = {
+      event_id: eventId,
+      timezone_id: selectedTimezone ? selectedTimezone.id : 0,
+      event_start_date: formData.eventStartDate,
+      event_start_time: formData.eventStartTime,
+      event_end_date: formData.eventEndDate,
+      event_end_time: formData.eventEndTime,
+      repeating_event: 0,
+      pincode: formData.pincode,
+      country_id: selectedCountry ? selectedCountry.id : 0,
+      state_id: selectedState ? selectedState.id : 0,
+      city_id: selectedCity ? selectedCity.id : 0,
+      address: formData.eventAddress,
+      latitude: formData.latitude || "",
+      longitude: formData.longitude || "",
+      registration_start_date: formData.registrationStartDate,
+      registration_start_time: formData.registrationStartTime,
+      registration_end_date: formData.registrationEndDate,
+      registration_end_time: formData.registrationEndTime,
+      google_map_link: formData.googleMapLink,
+    };
+    authAPI
+      .addEventDuration(payload)
+      .then((res) => {
+        if (res.success === 200) {
+          alert(res.message || "Event duration updated successfully");
+          // Save registration end date to sessionStorage
+          sessionStorage.setItem(
+            "registerEndDate",
+            formData.registrationEndDate
+          );
+          sessionStorage.setItem(
+            "registerEndTime",
+            formData.registrationEndTime
+          );
+          sessionStorage.setItem(
+            "registerEndDateDisplay",
+            `${formData.registrationEndDate} ${formData.registrationEndTime}`
+          );
+          onNext(formData);
+        } else {
+          alert(res.message || "Failed to update event duration");
+        }
+      })
+      .catch((err) => {
+        alert("Failed to update event duration");
+      });
   };
 
   return (
@@ -54,9 +256,15 @@ export default function EventScheduling({ onBack, onNext }) {
             required
           >
             <option value="">Select Time Zone</option>
-            <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-            <option value="America/New_York">America/New_York (EST)</option>
-            <option value="Europe/London">Europe/London (GMT)</option>
+            {Array.isArray(timezones) && timezones.length > 0 ? (
+              timezones.map((tz) => (
+                <option key={tz.id} value={tz.area}>
+                  {tz.area}
+                </option>
+              ))
+            ) : (
+              <option disabled>Loading timezones...</option>
+            )}
           </select>
         </div>
 
@@ -75,9 +283,15 @@ export default function EventScheduling({ onBack, onNext }) {
                 required
               >
                 <option value="">Select Country</option>
-                <option value="India">India</option>
-                <option value="USA">USA</option>
-                <option value="UK">UK</option>
+                {countries.length > 0 ? (
+                  countries.map((country) => (
+                    <option key={country.id} value={country.name}>
+                      {country.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>Loading countries...</option>
+                )}
               </select>
             </div>
           </div>
@@ -105,6 +319,14 @@ export default function EventScheduling({ onBack, onNext }) {
             <div className="form-group">
               <label>
                 State <span className="required">*</span>
+                {!formData.country && (
+                  <span
+                    className="info-icon"
+                    title="Please select Country before selecting State"
+                  >
+                    i
+                  </span>
+                )}
               </label>
               <select
                 className="form-control"
@@ -114,9 +336,15 @@ export default function EventScheduling({ onBack, onNext }) {
                 required
               >
                 <option value="">Select State</option>
-                <option value="Maharashtra">Maharashtra</option>
-                <option value="Delhi">Delhi</option>
-                <option value="Karnataka">Karnataka</option>
+                {states.length > 0 ? (
+                  states.map((state) => (
+                    <option key={state.id} value={state.name}>
+                      {state.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>Loading states...</option>
+                )}
               </select>
             </div>
           </div>
@@ -124,6 +352,14 @@ export default function EventScheduling({ onBack, onNext }) {
             <div className="form-group">
               <label>
                 City <span className="required">*</span>
+                {!formData.state && (
+                  <span
+                    className="info-icon"
+                    title="Please select State before selecting City"
+                  >
+                    i
+                  </span>
+                )}
               </label>
               <select
                 className="form-control"
@@ -133,9 +369,15 @@ export default function EventScheduling({ onBack, onNext }) {
                 required
               >
                 <option value="">Select City</option>
-                <option value="Mumbai">Mumbai</option>
-                <option value="Delhi">Delhi</option>
-                <option value="Bangalore">Bangalore</option>
+                {cities.length > 0 ? (
+                  cities.map((city) => (
+                    <option key={city.id} value={city.name}>
+                      {city.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>Loading cities...</option>
+                )}
               </select>
             </div>
           </div>
@@ -329,7 +571,7 @@ export default function EventScheduling({ onBack, onNext }) {
             Back
           </button>
           <button
-            type="button"
+            type="submit"
             className="btn-save-continue"
             style={{
               minWidth: 120,
@@ -342,7 +584,6 @@ export default function EventScheduling({ onBack, onNext }) {
               fontSize: "1.1rem",
               height: 44,
             }}
-            onClick={onNext}
           >
             Save & Next (3/11)
           </button>

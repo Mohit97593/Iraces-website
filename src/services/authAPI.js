@@ -7,7 +7,6 @@ const BASE_URL =
 const api = axios.create({
   baseURL: BASE_URL,
   headers: {
-    "Content-Type": "application/json",
     Accept: "application/json",
     "X-Requested-With": "XMLHttpRequest",
   },
@@ -45,6 +44,139 @@ api.interceptors.response.use(
 
 // Auth API Functions
 export const authAPI = {
+  // ...existing code...
+  // Add/Edit Age Criteria API
+  addEditAgeCriteria: async (payload) => {
+    try {
+      // Accept FormData directly
+      const response = await api.post("/add_edit_age_criteria", payload, {
+        headers:
+          payload instanceof FormData
+            ? {}
+            : { "Content-Type": "application/json" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("addEditAgeCriteria API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Get Ticket Detail API
+  getTicketDetail: async (ticket_id) => {
+    try {
+      const formData = new FormData();
+      formData.append("ticket_id", ticket_id.toString());
+      const response = await api.post("/get_ticket_detail", formData);
+      return response.data;
+    } catch (error) {
+      console.error("getTicketDetail API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Form common details (form master list / form actions)
+  formCommonDetails: async (formData) => {
+    try {
+      const response = await api.post("/FormCommonDetails", formData);
+      return response.data;
+    } catch (error) {
+      console.error("formCommonDetails API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // General Form Questions API
+  generalFormQuestions: async (formData) => {
+    try {
+      const response = await api.post("/GeneralFormQuestions", formData);
+      return response.data;
+    } catch (error) {
+      console.error("generalFormQuestions API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Add General Form Questions API
+  addGeneralFormQuestions: async (formData) => {
+    try {
+      const response = await api.post("/AddGeneralFormQuestions", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("addGeneralFormQuestions API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Delete Event Form Question API
+  deleteEventFormQuestions: async (formData) => {
+    try {
+      const response = await api.post("/deleteEventFormQuestions", formData);
+      return response.data;
+    } catch (error) {
+      console.error("deleteEventFormQuestions API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Delete Event Ticket API
+  deleteEventTicket: async (formData) => {
+    try {
+      const response = await api.post("/delete_event_ticket", formData);
+      return response.data;
+    } catch (error) {
+      console.error("deleteEventTicket API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Delete Event Communication/FAQ/Age Category API
+  deleteEventCommFqa: async (formData) => {
+    try {
+      const response = await api.post("/delete_event_comm_faq", formData);
+      return response.data;
+    } catch (error) {
+      console.error("deleteEventCommFqa API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Remove/Add Question Ticket PDF display flag
+  removeAddQuestionTicketPdf: async (formData) => {
+    try {
+      const response = await api.post("/removeAddQuestionTicketPdf", formData);
+      return response.data;
+    } catch (error) {
+      console.error("removeAddQuestionTicketPdf API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Add custom form question API
+  addCustomFormQuestions: async (formData) => {
+    try {
+      const response = await api.post("/AddCustomFormQuestions", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("addCustomFormQuestions API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Edit Event Communication/FAQ/Age Category API (fetch details for edit)
+  editEventCommFqa: async (formData) => {
+    try {
+      const response = await api.post("/edit_event_comm_faq", formData);
+      return response.data;
+    } catch (error) {
+      console.error("editEventCommFqa API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Get Timezones API
+  getTimezones: async (params = {}) => {
+    try {
+      const response = await api.post("/timezone", params);
+      return response.data;
+    } catch (error) {
+      console.error("GetTimezones API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
   // Get Event Ticket API
   getEventTicket: async (event_id) => {
     try {
@@ -55,6 +187,18 @@ export const authAPI = {
       console.error("getEventTicket API error:", error);
       throw error.response?.data || error.message;
       3;
+    }
+  },
+  // Add/Edit Coupon API
+  addEditCoupon: async (formData) => {
+    try {
+      const response = await api.post("/add_edit_coupon", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("addEditCoupon API error:", error);
+      throw error.response?.data || error.message;
     }
   },
   // Get Roles API
@@ -99,6 +243,35 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       console.error("getCategory API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Create Event Basic Info API
+  createEventBasicInfo: async (payload) => {
+    try {
+      const formData = new URLSearchParams();
+      Object.entries(payload).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach((item, index) => {
+            if (typeof item === "object") {
+              Object.entries(item).forEach(([subKey, subValue]) => {
+                formData.append(`${key}[${index}][${subKey}]`, subValue);
+              });
+            } else {
+              formData.append(`${key}[${index}]`, item);
+            }
+          });
+        } else {
+          formData.append(key, value);
+        }
+      });
+      const response = await api.post("/create_event", formData, {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("createEventBasicInfo API error:", error);
       throw error.response?.data || error.message;
     }
   },
@@ -750,6 +923,122 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       console.error("GetDataLocationWise API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Add Event Duration API
+  addEventDuration: async (payload) => {
+    try {
+      const response = await api.post("/event_duration", payload);
+      return response.data;
+    } catch (error) {
+      console.error("addEventDuration API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Add Event Description API
+  addEventDescription: async (formData) => {
+    try {
+      // Use multipart/form-data for file uploads
+      const response = await api.post("/event_description", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response;
+    } catch (error) {
+      console.error("AddEventDescription API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Add Event Setting API
+  addEventSetting: async (formData) => {
+    try {
+      const response = await api.post("/event_setting", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("addEventSetting API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Update GST and Price Taxes for Event
+  updateEventGstTaxes: async (payload) => {
+    try {
+      const formData = new FormData();
+      Object.entries(payload).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+      const response = await api.post("/delete_event_images", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("updateEventGstTaxes API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get All Events API
+  getAllEvents: async (params = {}) => {
+    try {
+      // Convert params to FormData
+      const formData = new FormData();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value);
+        }
+      });
+      const response = await api.post("/AllEventDetails", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("getAllEvents API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Add/Edit Event Ticket API
+  addEditEventTicket: async (payload) => {
+    try {
+      const formData = new FormData();
+      Object.entries(payload).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+      const response = await api.post("/add_edit_event_ticket", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("addEditEventTicket API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Change status (coupons / age criteria / faq / communication)
+  statusCoupon: async (formData) => {
+    try {
+      const response = await api.post("/status_coupon", formData);
+      return response.data;
+    } catch (error) {
+      console.error("statusCoupon API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Get Event Form Questions
+  eventFormQuestions: async (formData) => {
+    try {
+      const response = await api.post("/eventFormQuestions", formData);
+      return response.data;
+    } catch (error) {
+      console.error("eventFormQuestions API error:", error);
       throw error.response?.data || error.message;
     }
   },

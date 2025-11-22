@@ -168,6 +168,28 @@
   border-color: #da251c;
 }
 
+/* Small info icon used for dependent selects (country->state->city) */
+.info-icon {
+  display: inline-block;
+  margin-left: 8px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 50%;
+  background: #f0f0f0;
+  color: #333;
+  font-size: 12px;
+  cursor: default;
+  border: 1px solid #ddd;
+}
+
+.info-icon:hover {
+  background: #fff;
+  border-color: #da251c;
+  color: #da251c;
+}
+
 /* Category Grid */
 .category-grid {
   display: grid;

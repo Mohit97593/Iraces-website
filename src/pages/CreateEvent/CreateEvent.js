@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
 import Footer from "../../components/Footer/Footer";
 import { authAPI } from "../../services/authAPI";
@@ -8,6 +8,9 @@ import EventImages from "./EventImages";
 import EventSettings from "./EventSettings";
 import RaceCategories from "./RaceCategories";
 import "./CreateEvent.css";
+import FormQuestions from "./FormQuestions";
+import AgeCategory from "./AgeCategory";
+import DiscountCoupons from "./DiscountCoupons";
 
 export default function CreateEvent() {
   const navigate = useNavigate();
@@ -20,6 +23,8 @@ export default function CreateEvent() {
   const [categories, setCategories] = useState([]);
   const [types, setTypes] = useState([]);
   const [eventDetails, setEventDetails] = useState(null);
+  // Track last event_id to clear scheduling form data for new event
+  const [lastEventId, setLastEventId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [eventFormData, setEventFormData] = useState({});
   const [savedSteps, setSavedSteps] = useState([
@@ -28,8 +33,13 @@ export default function CreateEvent() {
     false,
     false,
     false,
+    false,
+    false,
+    false,
   ]); // Track saved status for each step
   const [showPreview, setShowPreview] = useState(true);
+  const [cityName, setCityName] = useState("");
+  const [paidType, setPaidType] = useState("");
   // Today's date and year
   const today = new Date();
   const day = today.getDate();
@@ -55,6 +65,18 @@ export default function CreateEvent() {
   ];
 
   useEffect(() => {
+    // If URL contains ?step=N, use it to open that step (useful when navigating back after save)
+    try {
+      const params = new URLSearchParams(window.location.search || "");
+      const s = params.get("step");
+      if (s) {
+        const n = Number(s);
+        if (!Number.isNaN(n) && n >= 1 && n <= 8) setCurrentStep(n);
+      }
+    } catch (e) {
+      console.error("Failed to parse step query param:", e);
+    }
+
     fetchData();
   }, []);
 
@@ -137,7 +159,15 @@ export default function CreateEvent() {
   };
 
   const handleSchedulingNext = (schedulingData) => {
-    console.log("Event Scheduling Data:", schedulingData);
+    if (schedulingData && schedulingData.city) {
+      setCityName(schedulingData.city);
+      sessionStorage.setItem("eventCityName", schedulingData.city);
+    }
+    setSavedSteps((prev) => {
+      const updated = [...prev];
+      updated[1] = true;
+      return updated;
+    });
     setEventFormData({
       ...eventFormData,
       ...schedulingData,
@@ -150,13 +180,84 @@ export default function CreateEvent() {
   };
 
   // Update save handlers for each step
-  const handleEssentialsSave = () => {
-    setSavedSteps((prev) => {
-      const updated = [...prev];
-      updated[0] = true;
-      return updated;
-    });
-    setCurrentStep(2);
+  const handleEssentialsSave = async () => {
+    try {
+      setLoading(true);
+
+      // Map status to numeric value (1=public, 2=private, 3=draft)
+      const statusMap = {
+        public: 1,
+        private: 2,
+        draft: 3,
+      };
+
+      // Prepare category_id array with checked status
+      const category_id = categories.map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        logo: cat.logo || cat.name,
+        active: cat.active || 1,
+        checked: selectedCategories.includes(cat.name) ? "true" : "false",
+      }));
+
+      // Prepare event_types array with checked status
+      const event_types = types.map((type) => ({
+        id: type.id,
+        name: type.name,
+        logo: type.logo || "",
+        show_as_home: type.show_as_home || 0,
+        sort_order: type.sort_order || 0,
+        active: type.active || 1,
+        checked: "false", // Default to false, update based on selection if needed
+      }));
+
+      const payload = {
+        event_info_status: statusMap[status],
+        event_name: eventName,
+        display_name_status: 0,
+        display_name: "",
+        event_type: 0,
+        category_id: category_id,
+        event_types: event_types,
+        created_by: profile?.user_id || "",
+        by_admin: "",
+        url_link: window.location.origin,
+      };
+
+      // If editing existing event, add event_id
+      if (eventDetails?.data?.event_id) {
+        payload.event_id = eventDetails.data.event_id;
+      }
+
+      const response = await authAPI.createEventBasicInfo(payload);
+
+      if (response.success === 200) {
+        // Store event_id in session storage
+        if (response.data?.event_id) {
+          sessionStorage.setItem("event_id", response.data.event_id);
+          // If new event_id, clear scheduling form data
+          if (lastEventId !== response.data.event_id) {
+            sessionStorage.removeItem("eventSchedulingFormData");
+            setLastEventId(response.data.event_id);
+          }
+        }
+
+        setSavedSteps((prev) => {
+          const updated = [...prev];
+          updated[0] = true;
+          return updated;
+        });
+        setCurrentStep(2);
+        alert(response.message || "Event basic info saved successfully");
+      } else {
+        alert(response.message || "Failed to save event basic info");
+      }
+    } catch (error) {
+      console.error("Error saving event essentials:", error);
+      alert("Failed to save event basic info. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
   const handleSchedulingSave = () => {
     setSavedSteps((prev) => {
@@ -166,7 +267,9 @@ export default function CreateEvent() {
     });
     setCurrentStep(3);
   };
-  const handleImagesSave = () => {
+  const [bannerImageUrl, setBannerImageUrl] = useState(null);
+  const handleImagesSave = (bannerUrl) => {
+    if (bannerUrl) setBannerImageUrl(bannerUrl);
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[2] = true;
@@ -182,7 +285,6 @@ export default function CreateEvent() {
     });
     setCurrentStep(5);
   };
-
   const handleRaceCategoriesSave = () => {
     setSavedSteps((prev) => {
       const updated = [...prev];
@@ -199,7 +301,9 @@ export default function CreateEvent() {
     { title: "Event Description", component: "description" },
     { title: "Event Settings", component: "settings" },
     { title: "Race Categories", component: "racecategories" },
-    // Add more steps as needed
+    { title: "Form Questions", component: "formquestions" },
+    { title: "Age Category", component: "agecategory" }, // 7th step
+    { title: "Discount Coupons", component: "discountcoupons" }, // 8th step
   ];
 
   if (loading) {
@@ -214,6 +318,18 @@ export default function CreateEvent() {
       </div>
     );
   }
+
+  // Get event name from sessionStorage if available
+  const eventNameDisplay =
+    sessionStorage.getItem("eventName") || eventName || "Event Name";
+
+  // Get register end date from sessionStorage if available
+  const registerEndDateDisplay =
+    sessionStorage.getItem("registerEndDateDisplay") || registerBy;
+
+  // Get city name from sessionStorage if available
+  const cityNameDisplay =
+    sessionStorage.getItem("eventCityName") || cityName || "City Name";
 
   return (
     <div className="create-event-page">
@@ -267,6 +383,8 @@ export default function CreateEvent() {
           {steps.map((step, idx) => {
             const isCompleted = savedSteps[idx];
             const isCurrent = idx === currentStep - 1;
+            // Disable navigation to steps 2+ if first step is not saved
+            const isDisabled = idx > 0 && !savedSteps[0];
             return (
               <React.Fragment key={step.title}>
                 <div
@@ -287,7 +405,8 @@ export default function CreateEvent() {
                           display: "flex",
                           alignItems: "center",
                           fontWeight: 600,
-                          cursor: "pointer",
+                          cursor: isDisabled ? "not-allowed" : "pointer",
+                          opacity: isDisabled ? 0.5 : 1,
                         }
                       : isCurrent
                       ? {
@@ -298,7 +417,8 @@ export default function CreateEvent() {
                           display: "flex",
                           alignItems: "center",
                           fontWeight: 600,
-                          cursor: "pointer",
+                          cursor: isDisabled ? "not-allowed" : "pointer",
+                          opacity: isDisabled ? 0.5 : 1,
                         }
                       : {
                           width: "44px",
@@ -310,10 +430,23 @@ export default function CreateEvent() {
                           justifyContent: "center",
                           color: "#da251c",
                           fontWeight: 600,
-                          cursor: "pointer",
+                          cursor: isDisabled ? "not-allowed" : "pointer",
+                          opacity: isDisabled ? 0.5 : 1,
                         }
                   }
-                  onClick={() => setCurrentStep(idx + 1)}
+                  title={step.title}
+                  role="button"
+                  tabIndex={isDisabled ? -1 : 0}
+                  aria-label={step.title}
+                  onClick={() => {
+                    if (!isDisabled) setCurrentStep(idx + 1);
+                  }}
+                  onKeyDown={(e) => {
+                    if (isDisabled) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      setCurrentStep(idx + 1);
+                    }
+                  }}
                 >
                   {isCompleted ? (
                     <i className="fas fa-check" style={{ marginRight: 8 }}></i>
@@ -457,17 +590,15 @@ export default function CreateEvent() {
             {currentStep === 2 && (
               <EventScheduling
                 onBack={() => setCurrentStep(1)}
-                onNext={handleSchedulingSave}
+                onNext={handleSchedulingNext}
               />
             )}
-
             {currentStep === 3 && (
               <EventImages
                 onBack={() => setCurrentStep(2)}
                 onNext={handleImagesSave}
               />
             )}
-
             {currentStep === 4 && (
               <EventSettings
                 onBack={() => setCurrentStep(3)}
@@ -479,6 +610,30 @@ export default function CreateEvent() {
                 onBack={() => setCurrentStep(4)}
                 onNext={handleRaceCategoriesSave}
                 setShowPreview={setShowPreview}
+                paidType={paidType}
+                setPaidType={setPaidType}
+                eventFormData={eventFormData}
+                setEventFormData={setEventFormData}
+              />
+            )}
+            {currentStep === 6 && (
+              <FormQuestions
+                onBack={() => setCurrentStep(5)}
+                onNext={() => {
+                  /* Next step logic */
+                }}
+              />
+            )}
+            {currentStep === 7 && (
+              <AgeCategory
+                onBack={() => setCurrentStep(6)}
+                onNext={() => setCurrentStep(8)}
+              />
+            )}
+            {currentStep === 8 && (
+              <DiscountCoupons
+                onBack={() => setCurrentStep(7)}
+                onNext={() => setCurrentStep(9)}
               />
             )}
           </div>
@@ -500,149 +655,220 @@ export default function CreateEvent() {
                 </div>
               </>
             )}
-            {currentStep === 5 && !showPreview && (
-              <div
-                style={{
-                  background: "#fafafa",
-                  borderRadius: 16,
-                  padding: 24,
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
-                }}
-              >
-                <h3
-                  style={{
-                    fontWeight: 700,
-                    fontSize: "1.4rem",
-                    marginBottom: 16,
-                  }}
-                >
-                  Money to you
-                </h3>
+            {currentStep === 5 &&
+              !showPreview &&
+              paidType &&
+              paidType.toLowerCase() === "paid" && (
                 <div
                   style={{
-                    fontSize: 32,
-                    fontWeight: "bold",
-                    marginBottom: 24,
-                    color: "#333",
+                    background: "#fafafa",
+                    borderRadius: 16,
+                    padding: 24,
+                    boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
                   }}
                 >
-                  ₹0.00
+                  {/* Payment calculation logic */}
+                  {(() => {
+                    let baseAmount = eventFormData.raceCategoryPrice
+                      ? Number(eventFormData.raceCategoryPrice)
+                      : 0;
+                    if (!baseAmount || baseAmount < 1) baseAmount = 0;
+                    const convenienceFeeFixed = baseAmount > 0 ? 20 : 0;
+                    const convenienceFeePercent =
+                      baseAmount > 0 ? 0.02 * baseAmount : 0;
+                    const convenienceFee =
+                      convenienceFeeFixed + convenienceFeePercent;
+                    const platformFee = baseAmount > 0 ? 5 : 0;
+                    const paymentGatewayFeeRaw =
+                      baseAmount > 0 ? 0.0185 * baseAmount : 0;
+                    const paymentGatewayFee =
+                      baseAmount > 0
+                        ? Math.round(paymentGatewayFeeRaw * 20) / 20
+                        : 0;
+                    const convenienceFeeGST =
+                      baseAmount > 0
+                        ? Math.round(convenienceFee * 0.18 * 100) / 100
+                        : 0;
+                    const platformFeeGST =
+                      baseAmount > 0
+                        ? Math.round(platformFee * 0.18 * 100) / 100
+                        : 0;
+                    const paymentGatewayGST =
+                      baseAmount > 0
+                        ? Math.round(paymentGatewayFee * 0.18 * 100) / 100
+                        : 0;
+                    const totalPayable =
+                      baseAmount +
+                      convenienceFee +
+                      platformFee +
+                      paymentGatewayFee +
+                      convenienceFeeGST +
+                      platformFeeGST +
+                      paymentGatewayGST;
+                    const receivableAmount = baseAmount;
+                    return (
+                      <>
+                        <h3
+                          style={{
+                            fontWeight: 700,
+                            fontSize: "1.4rem",
+                            marginBottom: 16,
+                          }}
+                        >
+                          Money to you
+                        </h3>
+                        <div
+                          style={{
+                            fontSize: 32,
+                            fontWeight: "bold",
+                            marginBottom: 24,
+                            color: "#333",
+                          }}
+                        >
+                          ₹{receivableAmount.toFixed(2)}
+                        </div>
+                        <hr
+                          style={{
+                            margin: "16px 0",
+                            border: "none",
+                            borderTop: "1px solid #ddd",
+                          }}
+                        />
+                        <table
+                          style={{
+                            width: "100%",
+                            marginBottom: 16,
+                            fontSize: "0.95rem",
+                          }}
+                        >
+                          <tbody>
+                            <tr>
+                              <td style={{ padding: "8px 0", color: "#666" }}>
+                                Base Registration Fee
+                              </td>
+                              <td
+                                style={{ textAlign: "right", fontWeight: 600 }}
+                              >
+                                ₹{baseAmount.toFixed(2)}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style={{ padding: "8px 0", color: "#666" }}>
+                                Convenience Fee
+                              </td>
+                              <td
+                                style={{ textAlign: "right", fontWeight: 600 }}
+                              >
+                                ₹{convenienceFee.toFixed(2)}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style={{ padding: "8px 0", color: "#666" }}>
+                                Platform Fee
+                              </td>
+                              <td
+                                style={{ textAlign: "right", fontWeight: 600 }}
+                              >
+                                ₹{platformFee.toFixed(2)}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style={{ padding: "8px 0", color: "#666" }}>
+                                Payment Gateway Charges
+                              </td>
+                              <td
+                                style={{ textAlign: "right", fontWeight: 600 }}
+                              >
+                                ₹{paymentGatewayFee.toFixed(2)}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style={{ padding: "8px 0", color: "#666" }}>
+                                Convenience Fee GST 18%
+                              </td>
+                              <td
+                                style={{ textAlign: "right", fontWeight: 600 }}
+                              >
+                                ₹{convenienceFeeGST.toFixed(2)}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style={{ padding: "8px 0", color: "#666" }}>
+                                Platform Fee GST 18%
+                              </td>
+                              <td
+                                style={{ textAlign: "right", fontWeight: 600 }}
+                              >
+                                ₹{platformFeeGST.toFixed(2)}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style={{ padding: "8px 0", color: "#666" }}>
+                                Payment Gateway GST 18%
+                              </td>
+                              <td
+                                style={{ textAlign: "right", fontWeight: 600 }}
+                              >
+                                ₹{paymentGatewayGST.toFixed(2)}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        {/* Add summary section below table */}
+                        <div
+                          style={{
+                            marginTop: 24,
+                            padding: "12px 0",
+                            borderTop: "1px solid #eee",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              marginBottom: 8,
+                            }}
+                          >
+                            <span style={{ fontWeight: 600, color: "#222" }}>
+                              Total Payable (By Participant)
+                            </span>
+                            <span
+                              style={{
+                                fontWeight: 700,
+                                color: "#da251c",
+                                fontSize: "1.15rem",
+                              }}
+                            >
+                              ₹{totalPayable.toFixed(2)}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            <span style={{ fontWeight: 600, color: "#222" }}>
+                              Receivable Amount
+                            </span>
+                            <span
+                              style={{
+                                fontWeight: 700,
+                                color: "#43a047",
+                                fontSize: "1.15rem",
+                              }}
+                            >
+                              ₹{receivableAmount.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
-                <hr
-                  style={{
-                    margin: "16px 0",
-                    border: "none",
-                    borderTop: "1px solid #ddd",
-                  }}
-                />
-                <table
-                  style={{
-                    width: "100%",
-                    marginBottom: 16,
-                    fontSize: "0.95rem",
-                  }}
-                >
-                  <tbody>
-                    <tr>
-                      <td style={{ padding: "8px 0", color: "#666" }}>
-                        Base Registration Fee
-                      </td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>
-                        ₹0
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: "8px 0", color: "#666" }}>
-                        Convenience Fee
-                      </td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>
-                        ₹0.00
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: "8px 0", color: "#666" }}>
-                        Platform Fee
-                      </td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>
-                        ₹0.00
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: "8px 0", color: "#666" }}>
-                        Payment Gateway Charges (0%)
-                      </td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>
-                        ₹0.00
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: "8px 0", color: "#666" }}>
-                        Convenience Fee GST 18%
-                      </td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>
-                        ₹0.00
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: "8px 0", color: "#666" }}>
-                        Platform Fee GST 18%
-                      </td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>
-                        ₹0.00
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: "8px 0", color: "#666" }}>
-                        Payment Gateway GST 18%
-                      </td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>
-                        ₹0.00
-                      </td>
-                    </tr>
-                    <tr>
-                      <td
-                        style={{
-                          padding: "8px 0",
-                          paddingTop: 16,
-                          color: "#666",
-                        }}
-                      >
-                        Total Payable (By Participant)
-                      </td>
-                      <td
-                        style={{
-                          textAlign: "right",
-                          fontWeight: 600,
-                          paddingTop: 16,
-                        }}
-                      >
-                        ₹0.00
-                      </td>
-                    </tr>
-                    <tr style={{ borderTop: "2px solid #ddd" }}>
-                      <td
-                        style={{
-                          padding: "12px 0",
-                          fontWeight: 700,
-                          fontSize: "1.05rem",
-                        }}
-                      >
-                        Receivable Amount
-                      </td>
-                      <td
-                        style={{
-                          textAlign: "right",
-                          fontWeight: 700,
-                          fontSize: "1.05rem",
-                        }}
-                      >
-                        ₹0.00
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            )}
+              )}
             {(currentStep !== 5 || showPreview) && (
               <div
                 className="event-card search-event-card"
@@ -668,7 +894,10 @@ export default function CreateEvent() {
                   }}
                 >
                   <img
-                    src={require("../../assets/image/event-view.jpg")}
+                    src={
+                      bannerImageUrl ||
+                      require("../../assets/image/event-view.jpg")
+                    }
                     alt="Event Banner"
                     style={{
                       width: "100%",
@@ -693,7 +922,7 @@ export default function CreateEvent() {
                       boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                     }}
                   >
-                    City Name
+                    {cityNameDisplay}
                   </span>
                   <button
                     className="search-like-btn"
@@ -772,11 +1001,7 @@ export default function CreateEvent() {
                         marginLeft: "8px",
                       }}
                     >
-                      {currentStep === 2
-                        ? sessionStorage.getItem("eventName") ||
-                          eventName ||
-                          "Event Name"
-                        : "Event Name"}
+                      {eventNameDisplay}
                     </span>
                   </div>
                   <hr
@@ -800,7 +1025,7 @@ export default function CreateEvent() {
                         fontWeight: 700,
                       }}
                     >
-                      {registerBy}
+                      {registerEndDateDisplay}
                     </span>
                   </div>
                   <div

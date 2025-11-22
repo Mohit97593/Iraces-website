@@ -1,9 +1,82 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { authAPI } from "../../services/authAPI";
 
 export default function EventSettings({ onBack, onNext }) {
+  // Clear localStorage for eventSettingsFormData if event id changes (new event)
+  useEffect(() => {
+    const eventId = sessionStorage.getItem("event_id");
+    const lastEventId = localStorage.getItem("eventSettingsLastEventId");
+    if (eventId && eventId !== lastEventId) {
+      localStorage.removeItem("eventSettingsFormData");
+      localStorage.setItem("eventSettingsLastEventId", eventId);
+    }
+  }, []);
   const [limit, setLimit] = useState("");
   const [registrationType, setRegistrationType] = useState("multiple");
   const [uniqueOnly, setUniqueOnly] = useState(false);
+  const [eventDetails, setEventDetails] = useState(null);
+
+  useEffect(() => {
+    const eventId = sessionStorage.getItem("event_id");
+    if (eventId) {
+      authAPI.getEventDetails(eventId).then((res) => {
+        if (res && res.data && res.data.EventData && res.data.EventData[0]) {
+          setEventDetails(res.data.EventData[0]);
+        }
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    // Restore form data from localStorage if available
+    const saved = localStorage.getItem("eventSettingsFormData");
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        setLimit(data.limit || "");
+        setRegistrationType(data.registrationType || "multiple");
+        setUniqueOnly(data.uniqueOnly || false);
+      } catch {}
+    }
+  }, []);
+
+  const handleSaveSettings = async () => {
+    const eventId = eventDetails?.id;
+    let userId = sessionStorage.getItem("user_id");
+    // Fallback: try to get user_id from eventDetails if not in sessionStorage
+    if (!userId || userId === "null") {
+      userId = eventDetails?.user_id || "";
+    }
+    const formData = new FormData();
+    formData.append("event_id", eventId);
+    formData.append("user_id", userId);
+    formData.append("overall_limit", limit);
+    formData.append("allow_unique_registration", uniqueOnly ? 1 : 0);
+    formData.append(
+      "event_registration_status",
+      registrationType === "single" ? 1 : 2
+    );
+    try {
+      const res = await authAPI.addEventSetting(formData);
+      if (res.success === 200) {
+        alert(res.message || "Event settings updated successfully");
+        // Save form data to localStorage on save
+        localStorage.setItem(
+          "eventSettingsFormData",
+          JSON.stringify({
+            limit,
+            registrationType,
+            uniqueOnly,
+          })
+        );
+        if (typeof onNext === "function") onNext();
+      } else {
+        alert(res.message || "Failed to update event settings");
+      }
+    } catch (err) {
+      alert("Error updating event settings");
+    }
+  };
 
   return (
     <div className="event-form-section">
@@ -11,6 +84,7 @@ export default function EventSettings({ onBack, onNext }) {
         Event Settings
       </h3>
       <form style={{ maxWidth: 900 }}>
+        {/* You can use eventDetails here if needed */}
         <div
           style={{
             display: "flex",
@@ -211,7 +285,7 @@ export default function EventSettings({ onBack, onNext }) {
               fontSize: "1.1rem",
               height: 44,
             }}
-            onClick={onNext}
+            onClick={handleSaveSettings}
           >
             Save & Next (4/11)
           </button>

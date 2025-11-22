@@ -31,6 +31,12 @@ const authService = {
       if (data.token) {
         localStorage.setItem("auth_token", data.token);
       }
+      // Store user_id if provided
+      if (data.user_id) {
+        localStorage.setItem("user_id", data.user_id);
+      } else if (data.user && data.user.id) {
+        localStorage.setItem("user_id", data.user.id);
+      }
 
       return data;
     } catch (error) {
@@ -59,6 +65,12 @@ const authService = {
       // Store token if provided
       if (data.token) {
         localStorage.setItem("auth_token", data.token);
+      }
+      // Store user_id if provided
+      if (data.user_id) {
+        localStorage.setItem("user_id", data.user_id);
+      } else if (data.user && data.user.id) {
+        localStorage.setItem("user_id", data.user.id);
       }
 
       return data;

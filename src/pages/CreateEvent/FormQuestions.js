@@ -1,0 +1,785 @@
+import React, { useState, useEffect } from "react";
+import "./CreateEvent.css";
+import GeneralFormQuestions from "./GeneralFormQuestions";
+import { authAPI } from "../../services/authAPI";
+
+const FormQuestions = ({ onBack, onNext }) => {
+  const [showGeneralForm, setShowGeneralForm] = useState(false);
+  const [questions, setQuestions] = useState([]);
+  const [formCommon, setFormCommon] = useState(null);
+  const [eventDetails, setEventDetails] = useState(null);
+  const [localToggleMap, setLocalToggleMap] = useState({});
+  const [lastToggledId, setLastToggledId] = useState(null);
+
+  useEffect(() => {
+    // load questions initially; fetchQuestions defined below so other handlers can reuse it
+    fetchQuestions();
+  }, []);
+
+  // Reusable fetchQuestions so we can refresh after delete
+  async function fetchQuestions() {
+    const eventId =
+      sessionStorage.getItem("event_id") ||
+      localStorage.getItem("event_id") ||
+      "";
+    if (!eventId) return;
+    try {
+      const fd = new FormData();
+      fd.append("event_id", eventId);
+      console.log("Fetching event form questions for event_id=", eventId);
+      const res = await authAPI.eventFormQuestions(fd);
+      if (res && res.data && res.data.form_question) {
+        // Prefer grouped event_form_details if present
+        const grouped = res.data.form_question.event_form_details || {};
+        setQuestions(grouped);
+        // Debug: log server status for a few items and check last toggled id
+        try {
+          const renderList = (() => {
+            if (!grouped) return [];
+            if (Array.isArray(grouped)) return grouped;
+            const arr = [];
+            Object.values(grouped).forEach((v) => {
+              if (Array.isArray(v)) arr.push(...v);
+            });
+            return arr;
+          })();
+          const sample = renderList.slice(0, 6).map((qq) => ({
+            id: getQId(qq),
+            serverValue: qq.event_form_status,
+          }));
+          console.log(
+            "fetchQuestions: sample statuses:",
+            sample,
+            "lastToggledId:",
+            lastToggledId,
+            "localToggleMap:",
+            localToggleMap
+          );
+          if (lastToggledId) {
+            const found = renderList.find((qq) => getQId(qq) === lastToggledId);
+            console.log("fetchQuestions: last toggled server entry:", found);
+          }
+        } catch (e) {
+          console.error("fetchQuestions debug failed:", e);
+        }
+      }
+
+      // Fetch full event details as well
+      try {
+        const ev = await authAPI.getEventDetails(eventId);
+        console.log("getEventDetails response:", ev);
+        setEventDetails(ev);
+      } catch (err) {
+        console.error("Failed to load event details:", err);
+      }
+    } catch (err) {
+      console.error("Failed to load form questions:", err);
+    }
+  }
+
+  const handleDeleteQuestion = async (q) => {
+    const ok = window.confirm("Are you sure you want to delete this question?");
+    if (!ok) return;
+    try {
+      const fd = new FormData();
+      fd.append(
+        "event_id",
+        sessionStorage.getItem("event_id") ||
+          localStorage.getItem("event_id") ||
+          ""
+      );
+      // general_form_id should be the template id or the saved question id depending on backend
+      fd.append(
+        "general_form_id",
+        q.general_form_id || q.general_form || q.id || ""
+      );
+      fd.append(
+        "question_form_name",
+        q.question_form_name || q.question_label || q.label || ""
+      );
+
+      const res = await authAPI.deleteEventFormQuestions(fd);
+
+      console.log("deleteEventFormQuestions response:", res);
+
+      // Show message if available
+      // Treat responses that include a success code OR have a message/data as success
+      if (
+        res &&
+        (res.success === 200 ||
+          String(res.success) === "1" ||
+          res.data ||
+          res.message)
+      ) {
+        alert(res.message || "Question removed successfully");
+      } else {
+        alert(res?.message || "Failed to remove question");
+      }
+
+      // Refresh questions regardless of the response structure so UI stays in sync
+      try {
+        await fetchQuestions();
+      } catch (err) {
+        console.error("fetchQuestions after delete failed:", err);
+      }
+
+      // Always attempt to refresh form common details after delete
+      try {
+        console.log("Refreshing form common details after delete...");
+        const fdCommon = new FormData();
+        fdCommon.append("form_name", "");
+        fdCommon.append("form_edit_id", "0");
+        fdCommon.append("form_action_flag", "form_details");
+        fdCommon.append("form_flag", "general_form");
+        const commonRes = await authAPI.formCommonDetails(fdCommon);
+        console.log("formCommonDetails response after delete:", commonRes);
+        if (commonRes && commonRes.data) setFormCommon(commonRes.data);
+      } catch (err) {
+        console.error("Failed to refresh form common details:", err);
+      }
+    } catch (err) {
+      console.error("deleteEventFormQuestions failed:", err);
+      alert("Failed to delete question. See console for details.");
+    }
+  };
+
+  useEffect(() => {
+    const fetchFormCommon = async () => {
+      try {
+        const fd = new FormData();
+        fd.append("form_name", "");
+        fd.append("form_edit_id", "0");
+        fd.append("form_action_flag", "form_details");
+        fd.append("form_flag", "general_form");
+        console.log("Fetching form common details");
+        const res = await authAPI.formCommonDetails(fd);
+        console.log("formCommonDetails response:", res);
+        if (res && res.data) setFormCommon(res.data);
+      } catch (err) {
+        console.error("Failed to load form common details:", err);
+      }
+    };
+    fetchFormCommon();
+  }, []);
+
+  const handleAddQuestions = () => {
+    setShowGeneralForm(true);
+  };
+
+  const handleSaveQuestions = (newQuestions) => {
+    setQuestions(newQuestions);
+    setShowGeneralForm(false);
+    console.log("Saved questions:", newQuestions);
+  };
+
+  const getRenderList = () => {
+    if (!questions) return [];
+    if (Array.isArray(questions)) return questions;
+    if (typeof questions === "object") {
+      // If questions is grouped by section name, flatten arrays
+      const arr = [];
+      Object.values(questions).forEach((v) => {
+        if (Array.isArray(v)) arr.push(...v);
+      });
+      return arr;
+    }
+    return [];
+  };
+
+  const isMandatory = (q) => {
+    if (!q) return false;
+    const valCandidates = [
+      q.is_mandatory,
+      q.is_manadatory,
+      q.isManadatory,
+      q.mandatory,
+      q.question_mandatory_status,
+      q.question_mandatory,
+      q.mandatory_flag,
+      q.required,
+    ];
+    for (const v of valCandidates) {
+      if (
+        v === "1" ||
+        v === 1 ||
+        v === true ||
+        String(v).toLowerCase() === "yes" ||
+        String(v).toLowerCase() === "true"
+      )
+        return true;
+    }
+    return false;
+  };
+
+  // Helper: convert various server values to boolean (true => server says "enabled")
+  // NOTE: backend stores the opposite meaning for visual toggle: when server value is true,
+  // the visual should be OFF. So UI visual = !serverBool.
+  const parseServerBool = (val) => {
+    return (
+      val === "1" ||
+      val === 1 ||
+      val === true ||
+      String(val).toLowerCase() === "true"
+    );
+  };
+
+  // Helper: stable id string for a question (use the same fields everywhere)
+  const getQId = (q) => {
+    return String(q && (q.general_form_id || q.general_form || q.id || ""));
+  };
+
+  // local optimistic toggle: newVisualState = true => visual ON (red)
+  const handleToggleEventFormStatus = async (q, newVisualState) => {
+    const id = getQId(q);
+    const serverBoolBefore = parseServerBool(q.event_form_status);
+    console.log("Toggling question", id, { newVisualState, serverBoolBefore });
+
+    // optimistic update
+    setLocalToggleMap((s) => ({ ...s, [id]: !!newVisualState }));
+    setLastToggledId(id);
+
+    try {
+      const fd = new FormData();
+      fd.append("coupon_id", id);
+      // inverted mapping: visual ON -> send false, visual OFF -> send true
+      fd.append("event_form_status", newVisualState ? "false" : "true");
+      fd.append("action_flag", "event_form_changes_status");
+      const res = await authAPI.statusCoupon(fd);
+      console.log(
+        "statusCoupon response:",
+        res,
+        "for id",
+        id,
+        "sent event_form_status",
+        newVisualState ? "false" : "true"
+      );
+      if (
+        res &&
+        (res.success === 200 ||
+          String(res.success) === "1" ||
+          res.data ||
+          res.message)
+      ) {
+        // refresh data in background
+        try {
+          await fetchQuestions();
+          const fdCommon = new FormData();
+          fdCommon.append("form_name", "");
+          fdCommon.append("form_edit_id", "0");
+          fdCommon.append("form_action_flag", "form_details");
+          fdCommon.append("form_flag", "general_form");
+          const commonRes = await authAPI.formCommonDetails(fdCommon);
+          if (commonRes && commonRes.data) setFormCommon(commonRes.data);
+          // server confirmed; keep optimistic override so UI remains in user's chosen state
+          setLocalToggleMap((s) => ({ ...s, [id]: !!newVisualState }));
+        } catch (err) {
+          console.error("Failed to refresh after toggle:", err);
+        }
+      } else {
+        // revert optimistic
+        setLocalToggleMap((s) => ({ ...s, [id]: !newVisualState }));
+        alert(res?.message || "Failed to update status");
+      }
+    } catch (err) {
+      setLocalToggleMap((s) => ({ ...s, [id]: !newVisualState }));
+      console.error("Failed to toggle event form status:", err);
+      alert("Failed to update status. See console.");
+    }
+  };
+
+  // Wrapper to show a confirmation before toggling
+  const handleToggleClick = (q) => {
+    const id = getQId(q);
+    const serverBool = parseServerBool(q.event_form_status);
+    const current = id in localToggleMap ? !!localToggleMap[id] : !serverBool;
+    const newVisualState = !current;
+    const msg = newVisualState
+      ? "Are you sure you want to change status this record?"
+      : "Are you sure you want to change status this record?";
+    const ok = window.confirm(msg);
+    if (!ok) return;
+    handleToggleEventFormStatus(q, newVisualState);
+  };
+
+  // Confirm then change ticket-pdf checkbox
+  const handleTicketCheckboxConfirm = (q, checked) => {
+    const msg = checked
+      ? "Are you sure you want to show this question on the Ticket PDF?"
+      : "Are you sure you want to hide this question from the Ticket PDF?";
+    const ok = window.confirm(msg);
+    if (!ok) return;
+    handleTicketCheckboxChange(q, checked);
+  };
+
+  // Performs optimistic update and calls API to set ticket PDF flag
+  const handleTicketCheckboxChange = async (q, checked) => {
+    const newFlag = checked ? 1 : 0;
+    const fd = new FormData();
+    fd.append(
+      "event_id",
+      sessionStorage.getItem("event_id") ||
+        localStorage.getItem("event_id") ||
+        ""
+    );
+    fd.append(
+      "general_form_id",
+      q.general_form_id || q.general_form || q.id || ""
+    );
+    fd.append("ticket_pdf_show_flag", newFlag);
+    fd.append("child_question_ids", q.child_question_ids || "");
+
+    // optimistic UI: update local copy of questions so checkbox updates immediately
+    setQuestions((prev) => {
+      try {
+        const list = getRenderList();
+        return list.map((qq) => {
+          if (
+            (qq.general_form_id || qq.general_form || qq.id) ==
+            (q.general_form_id || q.general_form || q.id)
+          ) {
+            return { ...qq, show_on_ticket_pdf: newFlag };
+          }
+          return qq;
+        });
+      } catch (err) {
+        return prev;
+      }
+    });
+
+    try {
+      const res = await authAPI.removeAddQuestionTicketPdf(fd);
+      console.log("removeAddQuestionTicketPdf response:", res);
+      // on success refresh questions
+      await fetchQuestions();
+    } catch (err) {
+      console.error("Failed to update ticket pdf flag:", err);
+      alert("Failed to update ticket pdf flag. See console.");
+      // revert UI
+      await fetchQuestions();
+    }
+  };
+
+  return (
+    <div
+      className="form-questions-section"
+      style={{ maxWidth: 900, margin: "0 auto" }}
+    >
+      {!showGeneralForm && (
+        <>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <h2
+              style={{ fontWeight: 700, fontSize: "1.6rem", marginBottom: 0 }}
+            >
+              Event Form Questions
+              <span title="You can sort order for the following question. Just Drag and Drop.">
+                <i className="fas fa-info-circle"></i>
+              </span>
+            </h2>
+            <button
+              onClick={handleAddQuestions}
+              style={{
+                border: "1.5px solid #da251c",
+                color: "#da251c",
+                background: "#fff",
+                borderRadius: 6,
+                padding: "8px 22px",
+                fontWeight: 600,
+                fontSize: "1rem",
+                cursor: "pointer",
+              }}
+            >
+              + Add Questions
+            </button>
+          </div>
+          <div
+            style={{
+              color: "#888",
+              margin: "8px 0 24px 0",
+              fontSize: "1.05rem",
+            }}
+          >
+            You can sort order for the following question. Just Drag and Drop.
+          </div>
+        </>
+      )}
+      <div style={{ display: "flex", gap: 32 }}>
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 16,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+              padding: 0,
+              marginTop: 0,
+              marginBottom: 24,
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+              minHeight: "260px",
+              border: "1px solid #eee",
+              position: "relative",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                left: -20,
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: 40,
+                height: 80,
+                background: "#fff",
+                borderRadius: "50%",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                border: "1px solid #eee",
+              }}
+            ></div>
+            <div
+              style={{
+                position: "absolute",
+                right: -20,
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: 40,
+                height: 80,
+                background: "#fff",
+                borderRadius: "50%",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                border: "1px solid #eee",
+              }}
+            ></div>
+            <div style={{ padding: "32px 24px", textAlign: "center" }}>
+              {!showGeneralForm ? (
+                (() => {
+                  const renderList = getRenderList();
+                  if (renderList && renderList.length > 0) {
+                    return (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 16,
+                        }}
+                      >
+                        {renderList.map((q, i) => (
+                          <div
+                            key={getQId(q) || i}
+                            style={{
+                              border: "1.5px solid #da251c",
+                              borderRadius: 12,
+                              padding: 12,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              background: "#fff",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: 16,
+                                  height: 24,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  color: "#666",
+                                }}
+                              >
+                                <span style={{ fontSize: 18 }}>⋮⋮</span>
+                              </div>
+                              <div
+                                style={{
+                                  background: "#f0f4f6",
+                                  padding: "10px 22px",
+                                  borderRadius: 8,
+                                }}
+                              >
+                                <span
+                                  style={{ color: "#333", fontWeight: 600 }}
+                                >
+                                  {q.question_label ||
+                                    q.label ||
+                                    q.display_label_name ||
+                                    "Question"}
+                                </span>
+                                {isMandatory(q) && (
+                                  <span
+                                    style={{
+                                      color: "#d9534f",
+                                      marginLeft: 8,
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    (Mandatory)
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                              }}
+                            >
+                              <div style={{ display: "flex", gap: 8 }}>
+                                {/* <button
+                                  title="Confirm"
+                                  style={{
+                                    width: 34,
+                                    height: 34,
+                                    borderRadius: 18,
+                                    background: "#2ecc71",
+                                    border: "none",
+                                    color: "#fff",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  ✓
+                                </button> */}
+                                <button
+                                  title="Delete"
+                                  onClick={() => handleDeleteQuestion(q)}
+                                  style={{
+                                    width: 34,
+                                    height: 34,
+                                    borderRadius: 18,
+                                    background: "#fff",
+                                    border: "1px solid #e74c3c",
+                                    color: "#e74c3c",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  🗑
+                                </button>
+                              </div>
+                              <div>
+                                <label
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={() => handleToggleClick(q)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      handleToggleClick(q);
+                                    }
+                                  }}
+                                  style={{
+                                    display: "inline-block",
+                                    width: 46,
+                                    height: 28,
+                                    borderRadius: 18,
+                                    background: (() => {
+                                      const id = getQId(q);
+                                      const serverBool = parseServerBool(
+                                        q.event_form_status
+                                      );
+                                      const val =
+                                        id in localToggleMap
+                                          ? localToggleMap[id]
+                                          : !serverBool;
+                                      return val ? "#da251c" : "#fff";
+                                    })(),
+                                    border: "2px solid #da251c",
+                                    position: "relative",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      position: "absolute",
+                                      left: (() => {
+                                        const id = getQId(q);
+                                        const serverBool = parseServerBool(
+                                          q.event_form_status
+                                        );
+                                        const val =
+                                          id in localToggleMap
+                                            ? localToggleMap[id]
+                                            : !serverBool;
+                                        return val ? 20 : 4;
+                                      })(),
+                                      top: 3,
+                                      width: 20,
+                                      height: 20,
+                                      background: (() => {
+                                        const id = getQId(q);
+                                        const serverBool = parseServerBool(
+                                          q.event_form_status
+                                        );
+                                        const val =
+                                          id in localToggleMap
+                                            ? localToggleMap[id]
+                                            : !serverBool;
+                                        return val ? "#fff" : "#da251c";
+                                      })(),
+                                      borderRadius: 10,
+                                      display: "inline-block",
+                                    }}
+                                  ></span>
+                                </label>
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 8,
+                                }}
+                              >
+                                <label
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  <input
+                                    style={{ width: 25, height: 25 }}
+                                    type="checkbox"
+                                    checked={
+                                      q.show_on_ticket_pdf === "1" ||
+                                      q.show_on_ticket_pdf === 1 ||
+                                      q.show_on_ticket_pdf === true
+                                        ? true
+                                        : false
+                                    }
+                                    onChange={(e) =>
+                                      handleTicketCheckboxConfirm(
+                                        q,
+                                        e.target.checked
+                                      )
+                                    }
+                                  />
+                                  {/* <span style={{ userSelect: "none" }}>
+                                    Show on Ticket PDF
+                                  </span> */}
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <>
+                      <h3
+                        style={{
+                          fontWeight: 700,
+                          fontSize: "1.4rem",
+                          marginBottom: 12,
+                        }}
+                      >
+                        NO QUESTIONS ADDED
+                      </h3>
+                      <hr
+                        style={{
+                          margin: "16px 0",
+                          border: "none",
+                          borderTop: "1px solid #ddd",
+                        }}
+                      />
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          fontSize: "1.15rem",
+                          marginBottom: 18,
+                        }}
+                      >
+                        PLEASE CLICK ON ADD " NEW QUESTIONS" BUTTON TO ADD NEW
+                        QUESTIONS
+                      </div>
+                      <button
+                        onClick={handleAddQuestions}
+                        style={{
+                          border: "1.5px solid #da251c",
+                          color: "#da251c",
+                          background: "#fff",
+                          borderRadius: 6,
+                          padding: "12px 32px",
+                          fontWeight: 600,
+                          fontSize: "1.15rem",
+                          cursor: "pointer",
+                        }}
+                      >
+                        + NEW QUESTIONS
+                      </button>
+                    </>
+                  );
+                })()
+              ) : (
+                <GeneralFormQuestions
+                  onSave={handleSaveQuestions}
+                  questions={questions}
+                  eventDetails={eventDetails}
+                />
+              )}
+            </div>
+          </div>
+
+          {!showGeneralForm && (
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 12,
+                  marginTop: 24,
+                }}
+              >
+                <button
+                  onClick={onBack}
+                  style={{
+                    border: "1.5px solid #da251c",
+                    color: "#da251c",
+                    background: "#fff",
+                    borderRadius: 6,
+                    padding: "10px 32px",
+                    fontWeight: 600,
+                    fontSize: "1.1rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Back
+                </button>
+                <button
+                  className="next-btn"
+                  onClick={onNext}
+                  style={{
+                    background: "#da251c",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 6,
+                    padding: "10px 32px",
+                    fontWeight: 600,
+                    fontSize: "1.1rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Save & Next (6/11)
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Only show GeneralFormQuestions inside the card above, not here */}
+    </div>
+  );
+};
+
+export default FormQuestions;

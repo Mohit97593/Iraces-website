@@ -54,10 +54,6 @@
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
-.my-events-type-btn.public {
-  background: #e53935;
-  color: #fff;
-}
 .my-events-type-btn.private {
   background: #fff;
   color: #e53935;
@@ -65,6 +61,11 @@
 .my-events-type-btn.draft {
   background: #fff;
   color: #e53935;
+}
+.my-events-type-btn.active-red {
+  background: #e53935;
+  color: #fff;
+  border: none;
 }
 .my-events-empty {
   display: flex;
