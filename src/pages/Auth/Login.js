@@ -674,7 +674,10 @@ export default function Login() {
                       <div className="input-icon">
                         <i className="fas fa-lock"></i>
                       </div>
-                      <div className="position-relative">
+                      <div
+                        className="position-relative"
+                        style={{ width: "100%" }}
+                      >
                         <input
                           type={showPassword ? "text" : "password"}
                           name="password"
