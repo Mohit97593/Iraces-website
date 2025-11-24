@@ -3,7 +3,12 @@ import AddCustomForm from "./AddCustomForm";
 import "./GeneralFormQuestions.css";
 import { authAPI } from "../../services/authAPI";
 
-const GeneralFormQuestions = ({ onSave, questions, eventDetails }) => {
+const GeneralFormQuestions = ({
+  onSave,
+  questions,
+  eventDetails,
+  initialEditQuestion,
+}) => {
   const [customQuestions, setCustomQuestions] = useState([]);
   const [apiQuestions, setApiQuestions] = useState(null);
   const [formCommon, setFormCommon] = useState(null);
@@ -295,6 +300,20 @@ const GeneralFormQuestions = ({ onSave, questions, eventDetails }) => {
     setSelectedQuestion(cloned);
     setShowModal(true);
   };
+
+  // If parent requests editing a specific question, open modal with that data
+  useEffect(() => {
+    if (initialEditQuestion) {
+      // reuse handleToggleClick logic to normalize the object before showing modal
+      try {
+        handleToggleClick(initialEditQuestion);
+      } catch (err) {
+        // fallback: set selectedQuestion raw
+        setSelectedQuestion(initialEditQuestion);
+        setShowModal(true);
+      }
+    }
+  }, [initialEditQuestion]);
 
   const toggleRaceMode = (mode) => {
     setRaceCategoryMode(mode);
@@ -614,7 +633,12 @@ const GeneralFormQuestions = ({ onSave, questions, eventDetails }) => {
           refreshed?.form_question ||
           refreshed;
         try {
-          onSave(grouped);
+          // pass both grouped data and the single updated question for instant UI merge
+          const updatedQuestion =
+            (res && res.data && res.data.updated_question) ||
+            selectedQuestion ||
+            null;
+          onSave(grouped, updatedQuestion);
         } catch (err) {
           console.warn("onSave callback failed:", err);
         }
@@ -746,7 +770,7 @@ const GeneralFormQuestions = ({ onSave, questions, eventDetails }) => {
               </div>
 
               {/* Hint Type and Question Hint */}
-              <div className="form-row">
+              <div className="form-row1">
                 <div className="form-group" style={{ flex: 1 }}>
                   <label className="form-label">Hint Type*</label>
                   <select

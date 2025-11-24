@@ -307,7 +307,7 @@ input[type="file"].form-input.compact {
   border-color: #da251c;
 }
 
-.form-row {
+.form-row1 {
   display: flex;
   gap: 16px;
 }

@@ -135,6 +135,20 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+  // Convenience helper to delete coupon (sends FormData)
+  deleteCoupon: async (event_id, event_comm_id) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", event_id);
+      formData.append("event_comm_id", event_comm_id);
+      formData.append("common_flag", "coupon_delete");
+      const response = await api.post("/delete_event_comm_faq", formData);
+      return response.data;
+    } catch (error) {
+      console.error("deleteCoupon API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
   // Remove/Add Question Ticket PDF display flag
   removeAddQuestionTicketPdf: async (formData) => {
     try {
@@ -190,11 +204,15 @@ export const authAPI = {
     }
   },
   // Add/Edit Coupon API
+  
   addEditCoupon: async (formData) => {
     try {
-      const response = await api.post("/add_edit_coupon", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      // Let axios set multipart/form-data and boundary when sending FormData
+      const config =
+        formData instanceof FormData
+          ? {}
+          : { headers: { "Content-Type": "application/json" } };
+      const response = await api.post("/add_edit_coupon", formData, config);
       return response.data;
     } catch (error) {
       console.error("addEditCoupon API error:", error);

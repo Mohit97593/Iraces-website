@@ -97,6 +97,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
 
     // refresh when user navigates back or page becomes visible
     const handleRefresh = () => {
+      20;
       fetchEventDetails();
     };
 
@@ -114,6 +115,39 @@ const DiscountCoupons = ({ onBack, onNext }) => {
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, []);
+
+  // const handleDeleteCoupon = async (couponId) => {
+  //   if (!window.confirm("Are you sure you want to delete this coupon?")) return;
+  //   try {
+  //     const eventId = sessionStorage.getItem("event_id") || "";
+  //     const res = await authAPI.deleteCoupon(eventId, String(couponId));
+  //     if (res && res.success) {
+  //       alert(res.message || "Coupon removed");
+  //       // refresh event details
+  //       const eventId = sessionStorage.getItem("event_id");
+  //       if (eventId) {
+  //         const detailsRes = await authAPI.getEventDetails(eventId);
+  //         const payload =
+  //           detailsRes && detailsRes.data ? detailsRes.data : detailsRes;
+  //         if (payload && payload.EventData && payload.EventData[0]) {
+  //           const couponArr = Array.isArray(payload.coupon_details)
+  //             ? payload.coupon_details
+  //             : Array.isArray(payload.EventData[0].coupon_details)
+  //             ? payload.EventData[0].coupon_details
+  //             : [];
+  //           setCouponDetails(uniqueCoupons(couponArr));
+  //         } else if (Array.isArray(payload.coupon_details)) {
+  //           setCouponDetails(uniqueCoupons(payload.coupon_details));
+  //         }
+  //       }
+  //     } else {
+  //       alert(res.message || "Failed to delete coupon");
+  //     }
+  //   } catch (err) {
+  //     console.error("deleteEventCommFqa error:", err);
+  //     alert(err.message || "Failed to delete coupon");
+  //   }
+  // };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -915,8 +949,10 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                       "";
                     fd.append("user_id", String(derivedUserId));
                     // also include created_by for backend which uses this value when inserting
-                    if (derivedUserId)
-                      fd.append("created_by", String(derivedUserId));
+                    // ensure created_by is always present (fallback to '0')
+                    const createdBy =
+                      derivedUserId || localStorage.getItem("user_id") || "0";
+                    fd.append("created_by", String(createdBy));
                     // Determine discount type and map fields per rules:
                     // discount_type: '1' => amount, '2' => percentage
                     // If discount_type == '1' send value in discount_amount; discount_percentage empty
@@ -1013,6 +1049,35 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                     fd.append("show_public", showPublic ? "1" : "0");
                     fd.append("user_email_address", formData.userEmail || "");
                     fd.append("coupon_id", formData.coupon_id || "");
+
+                    // Preflight: ensure event_id exists and log FormData for debugging
+                    const eventIdForSave =
+                      sessionStorage.getItem("event_id") ||
+                      localStorage.getItem("event_id") ||
+                      (eventDetails &&
+                        (eventDetails.id ||
+                          eventDetails.event_id ||
+                          (eventDetails.data && eventDetails.data.event_id))) ||
+                      "";
+                    if (!eventIdForSave) {
+                      alert("Event ID missing. Please save the event first.");
+                      return;
+                    }
+
+                    // Log FormData keys (files shown as File objects)
+                    try {
+                      for (const pair of fd.entries()) {
+                        const key = pair[0];
+                        const val = pair[1];
+                        if (val instanceof File) {
+                          console.log("FD:", key, "= File(" + val.name + ")");
+                        } else {
+                          console.log("FD:", key, "=", val);
+                        }
+                      }
+                    } catch (logErr) {
+                      console.log("Failed to inspect FormData", logErr);
+                    }
 
                     try {
                       const res = await authAPI.addEditCoupon(fd);
@@ -1264,6 +1329,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
 
                         <button
                           title="Delete"
+                          onClick={() => handleDeleteCoupon(c.id)}
                           style={{
                             width: 40,
                             height: 40,
