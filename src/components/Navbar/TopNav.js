@@ -744,10 +744,28 @@ export default function TopNav() {
                     ref={searchInputRef}
                     style={{ position: "relative" }}
                   >
-                    <i
-                      className="fas fa-map-marker-alt me-2"
-                      style={{ color: "#da251c" }}
-                    ></i>
+                    <button
+                      type="button"
+                      aria-label="Choose location"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenLocationOverlay();
+                        setShowMobileMenu(false);
+                      }}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        padding: 0,
+                        marginRight: 8,
+                        color: "#da251c",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <i
+                        className="fas fa-map-marker-alt"
+                        style={{ color: "#da251c" }}
+                      ></i>
+                    </button>
                     <form onSubmit={handleSearch} className="flex-grow-1">
                       <input
                         type="text"
