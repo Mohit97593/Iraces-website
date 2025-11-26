@@ -336,9 +336,9 @@ export default function CreateEvent() {
     );
   }
 
-  // Get event name from sessionStorage if available
-  const eventNameDisplay =
-    sessionStorage.getItem("eventName") || eventName || "Event Name";
+  // Get event name from sessionStorage if available (show across all steps)
+  const storedEventName = sessionStorage.getItem("eventName") || "";
+  const headerTitle = storedEventName || eventName || "Design Your Event";
 
   // Get register end date from sessionStorage if available
   const registerEndDateDisplay =
@@ -369,13 +369,7 @@ export default function CreateEvent() {
         <div className="container">
           <div className="row">
             <div className="col-12">
-              <h1 className="contact-hero-title">
-                {currentStep === 2
-                  ? sessionStorage.getItem("eventName") ||
-                    eventName ||
-                    "Design Your Event"
-                  : "Design Your Event"}
-              </h1>
+              <h1 className="contact-hero-title">{headerTitle}</h1>
               <nav className="contact-breadcrumb">
                 <span onClick={() => navigate("/")}>Home</span>
                 <span className="breadcrumb-separator">→</span>
@@ -717,11 +711,9 @@ export default function CreateEvent() {
                       ? Number(eventFormData.raceCategoryPrice)
                       : 0;
                     if (!baseAmount || baseAmount < 1) baseAmount = 0;
-                    const convenienceFeeFixed = baseAmount > 0 ? 20 : 0;
-                    const convenienceFeePercent =
-                      baseAmount > 0 ? 0.02 * baseAmount : 0;
+                    // Convenience fee: 2% of base amount capped at ₹40
                     const convenienceFee =
-                      convenienceFeeFixed + convenienceFeePercent;
+                      baseAmount > 0 ? Math.min(0.02 * baseAmount, 40) : 0;
                     const platformFee = baseAmount > 0 ? 5 : 0;
                     const paymentGatewayFeeRaw =
                       baseAmount > 0 ? 0.0185 * baseAmount : 0;
@@ -741,6 +733,11 @@ export default function CreateEvent() {
                       baseAmount > 0
                         ? Math.round(paymentGatewayFee * 0.18 * 100) / 100
                         : 0;
+                    // Registration GST: 18% of base registration fee
+                    const registrationGST =
+                      baseAmount > 0
+                        ? Math.round(baseAmount * 0.18 * 100) / 100
+                        : 0;
                     const totalPayable =
                       baseAmount +
                       convenienceFee +
@@ -748,7 +745,8 @@ export default function CreateEvent() {
                       paymentGatewayFee +
                       convenienceFeeGST +
                       platformFeeGST +
-                      paymentGatewayGST;
+                      paymentGatewayGST +
+                      registrationGST;
                     const receivableAmount = baseAmount;
                     return (
                       <>
@@ -818,7 +816,17 @@ export default function CreateEvent() {
                             </tr>
                             <tr>
                               <td style={{ padding: "8px 0", color: "#666" }}>
-                                Payment Gateway Charges
+                                Registration Fee GST 18%
+                              </td>
+                              <td
+                                style={{ textAlign: "right", fontWeight: 600 }}
+                              >
+                                ₹{registrationGST.toFixed(2)}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style={{ padding: "8px 0", color: "#666" }}>
+                                Payment Gateway Charge 2%
                               </td>
                               <td
                                 style={{ textAlign: "right", fontWeight: 600 }}
@@ -1045,7 +1053,7 @@ export default function CreateEvent() {
                         marginLeft: "8px",
                       }}
                     >
-                      {eventNameDisplay}
+                      {headerTitle}
                     </span>
                   </div>
                   <hr

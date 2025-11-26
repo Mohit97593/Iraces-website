@@ -397,10 +397,9 @@ const RaceCategoryForm = ({
                     handleChange("raceCategoryPrice", e.target.value);
 
                     // Calculate all fees and update eventFormData
-                    const convenienceFeeFixed = price > 0 ? 20 : 0;
-                    const convenienceFeePercent = price > 0 ? 0.02 * price : 0;
+                    // Convenience fee: 2% of price capped at ₹40
                     const convenienceFee =
-                      convenienceFeeFixed + convenienceFeePercent;
+                      price > 0 ? Math.min(0.02 * price, 40) : 0;
                     const platformFee = price > 0 ? 5 : 0;
                     const paymentGatewayFeeRaw = price > 0 ? 0.0185 * price : 0;
                     const paymentGatewayFee =
@@ -419,6 +418,10 @@ const RaceCategoryForm = ({
                       price > 0
                         ? Math.round(paymentGatewayFee * 0.18 * 100) / 100
                         : 0;
+                    // Registration GST: 18% of base registration fee
+                    const registrationGST =
+                      price > 0 ? Math.round(price * 0.18 * 100) / 100 : 0;
+
                     const totalPayable =
                       price +
                       convenienceFee +
@@ -426,15 +429,15 @@ const RaceCategoryForm = ({
                       paymentGatewayFee +
                       convenienceFeeGST +
                       platformFeeGST +
-                      paymentGatewayGST;
+                      paymentGatewayGST +
+                      registrationGST;
 
                     setEventFormData({
                       ...eventFormData,
                       raceCategoryPrice: e.target.value,
                       ticketCalculation: {
                         baseAmount: price,
-                        convenienceFeeBase:
-                          convenienceFeeFixed + convenienceFeePercent,
+                        convenienceFeeBase: convenienceFee,
                         convenienceFee: convenienceFee,
                         convenienceFeeGST: convenienceFeeGST,
                         totalConvenienceFees:
@@ -447,7 +450,7 @@ const RaceCategoryForm = ({
                         paymentGatewayGST: paymentGatewayGST,
                         totalPG: paymentGatewayFee + paymentGatewayGST,
                         registrationAmount: price,
-                        registrationGST: 0,
+                        registrationGST: registrationGST,
                         netRegistrationAmount:
                           price + convenienceFee + convenienceFeeGST,
                         totalPayable: totalPayable,
