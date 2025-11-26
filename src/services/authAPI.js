@@ -135,6 +135,16 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+  // Alternate wrapper with snake_case name required by caller
+  delete_event_comm_faq: async (formData) => {
+    try {
+      const response = await api.post("/delete_event_comm_faq", formData);
+      return response.data;
+    } catch (error) {
+      console.error("delete_event_comm_faq API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
   // Convenience helper to delete coupon (sends FormData)
   deleteCoupon: async (event_id, event_comm_id) => {
     try {
@@ -181,6 +191,26 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+  // Add/Edit Terms & Conditions API
+  addEditTermsConditions: async (formData) => {
+    try {
+      const response = await api.post("/add_edit_terms_conditions", formData);
+      return response.data;
+    } catch (error) {
+      console.error("addEditTermsConditions API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Add Event FAQ API
+  addEventFaq: async (formData) => {
+    try {
+      const response = await api.post("/event_faq", formData);
+      return response.data;
+    } catch (error) {
+      console.error("addEventFaq API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
   // Get Timezones API
   getTimezones: async (params = {}) => {
     try {
@@ -204,7 +234,7 @@ export const authAPI = {
     }
   },
   // Add/Edit Coupon API
-  
+
   addEditCoupon: async (formData) => {
     try {
       // Let axios set multipart/form-data and boundary when sending FormData

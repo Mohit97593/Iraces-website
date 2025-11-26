@@ -116,38 +116,110 @@ const DiscountCoupons = ({ onBack, onNext }) => {
     };
   }, []);
 
-  // const handleDeleteCoupon = async (couponId) => {
-  //   if (!window.confirm("Are you sure you want to delete this coupon?")) return;
-  //   try {
-  //     const eventId = sessionStorage.getItem("event_id") || "";
-  //     const res = await authAPI.deleteCoupon(eventId, String(couponId));
-  //     if (res && res.success) {
-  //       alert(res.message || "Coupon removed");
-  //       // refresh event details
-  //       const eventId = sessionStorage.getItem("event_id");
-  //       if (eventId) {
-  //         const detailsRes = await authAPI.getEventDetails(eventId);
-  //         const payload =
-  //           detailsRes && detailsRes.data ? detailsRes.data : detailsRes;
-  //         if (payload && payload.EventData && payload.EventData[0]) {
-  //           const couponArr = Array.isArray(payload.coupon_details)
-  //             ? payload.coupon_details
-  //             : Array.isArray(payload.EventData[0].coupon_details)
-  //             ? payload.EventData[0].coupon_details
-  //             : [];
-  //           setCouponDetails(uniqueCoupons(couponArr));
-  //         } else if (Array.isArray(payload.coupon_details)) {
-  //           setCouponDetails(uniqueCoupons(payload.coupon_details));
-  //         }
-  //       }
-  //     } else {
-  //       alert(res.message || "Failed to delete coupon");
-  //     }
-  //   } catch (err) {
-  //     console.error("deleteEventCommFqa error:", err);
-  //     alert(err.message || "Failed to delete coupon");
-  //   }
-  // };
+  const handleDeleteCoupon = async (couponId) => {
+    if (!window.confirm("Are you sure you want to delete this coupon?")) return;
+    try {
+      const eventId = sessionStorage.getItem("event_id") || "";
+      const res = await authAPI.deleteCoupon(eventId, String(couponId));
+      if (res && (res.success || res.status === "success")) {
+        alert(res.message || "Coupon removed");
+        // refresh event details
+        const eventIdForRefresh = sessionStorage.getItem("event_id");
+        if (eventIdForRefresh) {
+          try {
+            const detailsRes = await authAPI.getEventDetails(eventIdForRefresh);
+            const payload =
+              detailsRes && detailsRes.data ? detailsRes.data : detailsRes;
+            if (payload && payload.EventData && payload.EventData[0]) {
+              const couponArr = Array.isArray(payload.coupon_details)
+                ? payload.coupon_details
+                : Array.isArray(payload.EventData[0].coupon_details)
+                ? payload.EventData[0].coupon_details
+                : [];
+              setCouponDetails(uniqueCoupons(couponArr));
+              if (Array.isArray(payload.EventData[0].EventTickets))
+                setTickets(payload.EventData[0].EventTickets);
+            } else if (Array.isArray(payload.coupon_details)) {
+              setCouponDetails(uniqueCoupons(payload.coupon_details));
+              if (Array.isArray(payload.EventTickets))
+                setTickets(payload.EventTickets);
+            }
+          } catch (e) {
+            console.error("Failed to refresh event details after delete", e);
+          }
+        }
+      } else {
+        alert((res && res.message) || "Failed to delete coupon");
+      }
+    } catch (err) {
+      console.error("deleteEventCommFqa error:", err);
+      alert(err.message || "Failed to delete coupon");
+    }
+  };
+
+  const handleEditCoupon = async (coupon) => {
+    try {
+      const eventId = sessionStorage.getItem("event_id") || "";
+      const fd = new FormData();
+      fd.append("event_id", eventId);
+      fd.append("event_comm_id", coupon.id || coupon.coupon_id || "");
+      fd.append("coupon_id", coupon.coupon_id || "");
+      fd.append("event_edit_flag", "coupon_edit");
+
+      const res = await authAPI.editEventCommFqa(fd);
+      // server returns data in res.data or res; our API wrapper returns response.data already
+      const payload = res && res.communication_edit_details ? res : res;
+      // coupon_edit_details expected
+      const couponDetailsResp =
+        (res && res.coupon_edit_details) ||
+        (res && res.data && res.data.coupon_edit_details) ||
+        [];
+      if (Array.isArray(couponDetailsResp) && couponDetailsResp.length > 0) {
+        const c = couponDetailsResp[0];
+        // Map server fields to formData state keys used in this component
+        setFormData((prev) => ({
+          ...prev,
+          edit_coupon_id: c.id || prev.edit_coupon_id,
+          coupon_id: c.id || prev.coupon_id,
+          discountName: c.discount_name || prev.discountName,
+          description: c.description || prev.description,
+          have_list_codes: c.have_list_codes || prev.have_list_codes,
+          noOfDiscounts: c.no_of_discount || prev.noOfDiscounts,
+          discountsCode: c.discount_code || prev.discountsCode,
+          discountsPrefix: c.prefix_code || prev.discountsPrefix,
+          discountAmountValue: c.discount_amount || prev.discountAmountValue,
+          discountPercentage: c.discount_percentage || prev.discountPercentage,
+          codeType: c.code_type === "2" ? "list" : "single",
+          discountAvailedFromDate:
+            c.discount_from_date || prev.discountAvailedFromDate,
+          discountAvailedFromTime:
+            c.discount_from_time || prev.discountAvailedFromTime,
+          discountAvailedToDate:
+            c.discount_to_date || prev.discountAvailedToDate,
+          discountAvailedToTime:
+            c.discount_to_time || prev.discountAvailedToTime,
+          userEmail: c.user_email_address || prev.userEmail,
+        }));
+        // set selected tickets based on edit_ticket_details if available
+        if (
+          Array.isArray(c.edit_ticket_details) &&
+          c.edit_ticket_details.length > 0
+        ) {
+          const ticketIds = c.edit_ticket_details
+            .filter(Boolean)
+            .map((t) => t.id);
+          setSelectedTickets(ticketIds);
+          setApplyToCategories("selected");
+        }
+        setShowForm(true);
+      } else {
+        alert("No coupon details returned for edit.");
+      }
+    } catch (err) {
+      console.error("editEventCommFqa error:", err);
+      alert(err.message || "Failed to load coupon for editing");
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -1294,22 +1366,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                       >
                         <button
                           title="Edit"
-                          onClick={() => {
-                            setShowForm(true);
-                            setFormData((prev) => ({
-                              ...prev,
-                              edit_coupon_id: c.id,
-                              discountName: c.discount_name || "",
-                              noOfDiscounts: c.no_of_discount || "",
-                              discountsCode:
-                                (c.multiple_coupon_details &&
-                                  c.multiple_coupon_details[0] &&
-                                  c.multiple_coupon_details[0].name) ||
-                                c.discount_code ||
-                                "",
-                              coupon_id: c.id,
-                            }));
-                          }}
+                          onClick={() => handleEditCoupon(c)}
                           style={{
                             width: 40,
                             height: 40,

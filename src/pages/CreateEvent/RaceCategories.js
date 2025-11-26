@@ -183,8 +183,15 @@ export default function RaceCategories({
               New Race Category
             </button>
           </div>
-          <div style={{ display: "flex", gap: 32, marginBottom: 32 }}>
-            <div style={{ flex: 1, minWidth: 260 }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 24,
+              marginBottom: 32,
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ flex: "1 1 320px", minWidth: 260 }}>
               <div style={{ fontWeight: 600, marginBottom: 12 }}>
                 Do you want to collect GST on Registration Fee?
               </div>
@@ -228,7 +235,10 @@ export default function RaceCategories({
                   No
                 </button>
               </div>
-              <div style={{ fontWeight: 600, marginTop: 18 }}>
+            </div>
+
+            <div style={{ flex: "1 1 320px", minWidth: 260 }}>
+              <div style={{ fontWeight: 600, marginBottom: 12 }}>
                 The basic registration fee will be :
               </div>
               <div style={{ display: "flex", gap: 12, marginTop: 8 }}>

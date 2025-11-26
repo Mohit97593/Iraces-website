@@ -463,3 +463,193 @@
     padding: 20px;
   }
 }
+
+/* Communications cards styling */
+.comm-card {
+  border: 1px solid transparent;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease,
+    transform 0.12s ease;
+  position: relative;
+  border-radius: 8px;
+}
+.comm-card.hover,
+.comm-card:hover {
+  border-color: #da251c;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
+}
+.comm-actions {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+.comm-actions.visible,
+.comm-card.hover .comm-actions,
+.comm-card:hover .comm-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.comm-actions button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #da251c;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(218, 37, 28, 0.18);
+}
+.comm-actions button[title="Delete"] {
+  background: #da251c;
+}
+.comm-actions button[title="Edit"] {
+  background: #f05a4e;
+}
+
+/* toggle styles inside card (simple) */
+.comm-card .toggle,
+.faq-card .toggle {
+  width: 54px;
+  height: 30px;
+  background: #eee;
+  border-radius: 30px;
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+.comm-card .toggle .knob,
+.faq-card .toggle .knob {
+  width: 22px;
+  height: 22px;
+  background: #fff;
+  border-radius: 50%;
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  transition: transform 140ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    box-shadow 120ms ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+.comm-card .toggle.on,
+.faq-card .toggle.on {
+  background: #da251c;
+}
+.comm-card .toggle.on .knob,
+.faq-card .toggle.on .knob {
+  transform: translateX(24px);
+}
+
+/* FAQ card styles (same visual language as comm-card) */
+.faq-card {
+  background: #fff;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 28px;
+  min-height: 120px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  transition: transform 0.12s ease, box-shadow 0.18s ease,
+    border-color 0.18s ease;
+  position: relative;
+}
+.faq-card.hover {
+  border-color: #da251c;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+.faq-card.adding {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+  pointer-events: auto;
+}
+.faq-actions {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+.faq-actions.visible,
+.faq-card.hover .faq-actions,
+.faq-card:hover .faq-actions,
+/* always show actions for temporary items */
+.faq-card.temp .faq-actions {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 50;
+}
+.faq-actions button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #da251c;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* inline small action buttons shown next to toggle for new items */
+.faq-card .temp-inline-actions button {
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  border: none;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.faq-card .temp-inline-actions button[title="Edit"] {
+  background: #f05a4e;
+}
+.faq-card .temp-inline-actions button[title="Delete"] {
+  background: #da251c;
+}
+
+/* simple modal for edit dialog */
+.ce-modal-overlay {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+.ce-modal {
+  background: #fff;
+  padding: 22px;
+  border-radius: 10px;
+  width: 720px;
+  max-width: calc(100% - 32px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+/* Inline editor panel (embedded in page) */
+.ce-inline-editor {
+  background: #fff;
+  border: 1px solid #eee;
+  padding: 18px;
+  border-radius: 10px;
+  margin: 8px 0 18px 0;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+}

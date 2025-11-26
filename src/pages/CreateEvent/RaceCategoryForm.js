@@ -302,7 +302,7 @@ const RaceCategoryForm = ({
             <label
               style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
             >
-              Race Category Name *
+              Race Category Name <span className="required">*</span>
             </label>
             <input
               type="text"
@@ -322,7 +322,7 @@ const RaceCategoryForm = ({
             <label
               style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
             >
-              Category *
+              Category <span className="required">*</span>
             </label>
             <select
               required
@@ -352,7 +352,7 @@ const RaceCategoryForm = ({
             <label
               style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
             >
-              Maximum Registration *
+              Maximum Registration <span className="required">*</span>
             </label>
             <input
               type="number"
@@ -375,7 +375,7 @@ const RaceCategoryForm = ({
                 <label
                   style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
                 >
-                  Race Category Price *
+                  Race Category Price <span className="required">*</span>
                 </label>
                 <input
                   type="number"
@@ -466,7 +466,7 @@ const RaceCategoryForm = ({
             <label
               style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
             >
-              Minimum per booking count *
+              Minimum per booking count <span className="required">*</span>
             </label>
             <input
               type="number"
@@ -486,7 +486,7 @@ const RaceCategoryForm = ({
             <label
               style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
             >
-              Allow registrations upto *
+              Allow registrations upto <span className="required">*</span>
             </label>
             <input
               type="number"
@@ -509,7 +509,7 @@ const RaceCategoryForm = ({
             <label
               style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
             >
-              Registration Starts From *
+              Registration Starts From <span className="required">*</span>
             </label>
             <input
               type="date"
@@ -532,7 +532,7 @@ const RaceCategoryForm = ({
             <label
               style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
             >
-              Start Time *
+              Start Time <span className="required">*</span>
             </label>
             <input
               type="time"
@@ -557,13 +557,13 @@ const RaceCategoryForm = ({
             <label
               style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
             >
-              Registration Ends on *
+              Registration Ends on <span className="required">*</span>
             </label>
             <input
               type="date"
               placeholder="dd-mm-yyyy"
               required
-              min={todayDate}
+              min={formData.registrationStartDate || todayDate}
               value={formData.registrationEndDate}
               onChange={(e) =>
                 handleChange("registrationEndDate", e.target.value)
@@ -580,13 +580,18 @@ const RaceCategoryForm = ({
             <label
               style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
             >
-              End Time *
+              End Time <span className="required">*</span>
             </label>
             <input
               type="time"
               placeholder="--:--"
               required
               value={formData.registrationEndTime}
+              min={
+                formData.registrationEndDate === formData.registrationStartDate
+                  ? formData.registrationStartTime || undefined
+                  : undefined
+              }
               onChange={(e) =>
                 handleChange("registrationEndTime", e.target.value)
               }
@@ -664,7 +669,8 @@ const RaceCategoryForm = ({
                 <label
                   style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
                 >
-                  Who will pay Convenience Fee *
+                  Who will pay Convenience Fee{" "}
+                  <span className="required">*</span>
                 </label>
                 <select
                   required
@@ -687,7 +693,8 @@ const RaceCategoryForm = ({
                 <label
                   style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
                 >
-                  Who will pay Payment Gateway fee *
+                  Who will pay Payment Gateway fee{" "}
+                  <span className="required">*</span>
                 </label>
                 <select
                   required
@@ -712,7 +719,7 @@ const RaceCategoryForm = ({
                 <label
                   style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
                 >
-                  Description *
+                  Description <span className="required">*</span>
                 </label>
                 <textarea
                   placeholder="Description *"
@@ -813,7 +820,7 @@ const RaceCategoryForm = ({
                 <label
                   style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
                 >
-                  Age Start *
+                  Age Start <span className="required">*</span>
                 </label>
                 <select
                   required
@@ -838,7 +845,7 @@ const RaceCategoryForm = ({
                 <label
                   style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
                 >
-                  Age End *
+                  Age End <span className="required">*</span>
                 </label>
                 <select
                   required
@@ -931,7 +938,8 @@ const RaceCategoryForm = ({
                       fontWeight: 500,
                     }}
                   >
-                    No of Registrations Limit *
+                    No of Registrations Limit{" "}
+                    <span className="required">*</span>
                   </label>
                   <input
                     type="number"
@@ -986,7 +994,7 @@ const RaceCategoryForm = ({
                       fontWeight: 500,
                     }}
                   >
-                    Discount Value *
+                    Discount Value <span className="required">*</span>
                   </label>
                   <input
                     type="number"
@@ -1014,7 +1022,7 @@ const RaceCategoryForm = ({
                       fontWeight: 500,
                     }}
                   >
-                    Start Date *
+                    Start Date <span className="required">*</span>
                   </label>
                   <input
                     type="date"
@@ -1041,7 +1049,7 @@ const RaceCategoryForm = ({
                       fontWeight: 500,
                     }}
                   >
-                    Start Time *
+                    Start Time <span className="required">*</span>
                   </label>
                   <input
                     type="time"
@@ -1069,13 +1077,13 @@ const RaceCategoryForm = ({
                       fontWeight: 500,
                     }}
                   >
-                    End Date *
+                    End Date <span className="required">*</span>
                   </label>
                   <input
                     type="date"
                     placeholder="dd-mm-yyyy"
                     required
-                    min={todayDate}
+                    min={formData.ebStartDate || todayDate}
                     value={formData.ebEndDate}
                     onChange={(e) => handleChange("ebEndDate", e.target.value)}
                     style={{
@@ -1094,13 +1102,18 @@ const RaceCategoryForm = ({
                       fontWeight: 500,
                     }}
                   >
-                    End Time *
+                    End Time <span className="required">*</span>
                   </label>
                   <input
                     type="time"
                     placeholder="--:--"
                     required
                     value={formData.ebEndTime}
+                    min={
+                      formData.ebEndDate === formData.ebStartDate
+                        ? formData.ebStartTime || undefined
+                        : undefined
+                    }
                     onChange={(e) => handleChange("ebEndTime", e.target.value)}
                     style={{
                       width: "100%",

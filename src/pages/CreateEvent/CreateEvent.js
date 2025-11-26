@@ -11,6 +11,9 @@ import "./CreateEvent.css";
 import FormQuestions from "./FormQuestions";
 import AgeCategory from "./AgeCategory";
 import DiscountCoupons from "./DiscountCoupons";
+import CommunicationsStep from "./CommunicationsStep";
+import FAQsStep from "./FAQsStep";
+import Integrations from "./Integrations";
 
 export default function CreateEvent() {
   const navigate = useNavigate();
@@ -27,16 +30,7 @@ export default function CreateEvent() {
   const [lastEventId, setLastEventId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [eventFormData, setEventFormData] = useState({});
-  const [savedSteps, setSavedSteps] = useState([
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-  ]); // Track saved status for each step
+  const [savedSteps, setSavedSteps] = useState(new Array(11).fill(false)); // Track saved status for each step (now 11 steps)
   const [showPreview, setShowPreview] = useState(true);
   const [cityName, setCityName] = useState("");
   const [paidType, setPaidType] = useState("");
@@ -158,6 +152,14 @@ export default function CreateEvent() {
     setCurrentStep(2);
   };
 
+  // sanitize event name to allow letters, numbers, spaces and -, @, comma, single and double quotes
+  const sanitizeEventName = (value) => {
+    if (!value && value !== "") return value;
+    // allow letters, numbers, spaces, hyphen, at, comma, single quote, double quote
+    const allowed = value.replace(/[^0-9A-Za-z \-@,\'\"]/g, "");
+    return allowed;
+  };
+
   const handleSchedulingNext = (schedulingData) => {
     if (schedulingData && schedulingData.city) {
       setCityName(schedulingData.city);
@@ -177,6 +179,18 @@ export default function CreateEvent() {
 
   const handleBack = () => {
     setCurrentStep(currentStep - 1);
+  };
+
+  // Mark the current step as saved (for progress) and move to a target step
+  const markCurrentSavedAndGo = (targetStep) => {
+    setSavedSteps((prev) => {
+      const updated = [...prev];
+      // mark current as saved
+      if (currentStep - 1 >= 0 && currentStep - 1 < updated.length)
+        updated[currentStep - 1] = true;
+      return updated;
+    });
+    setCurrentStep(targetStep);
   };
 
   // Update save handlers for each step
@@ -213,7 +227,7 @@ export default function CreateEvent() {
 
       const payload = {
         event_info_status: statusMap[status],
-        event_name: eventName,
+        event_name: sanitizeEventName(eventName),
         display_name_status: 0,
         display_name: "",
         event_type: 0,
@@ -304,6 +318,9 @@ export default function CreateEvent() {
     { title: "Form Questions", component: "formquestions" },
     { title: "Age Category", component: "agecategory" }, // 7th step
     { title: "Discount Coupons", component: "discountcoupons" }, // 8th step
+    { title: "Communications", component: "communications" }, // 9th step
+    { title: "FAQ's", component: "faqs" }, // 10th step
+    { title: "Integrations", component: "integrations" }, // 11th step
   ];
 
   if (loading) {
@@ -524,7 +541,16 @@ export default function CreateEvent() {
                       className="form-control"
                       placeholder={`(Allowed only this special characters - , @ , ' , " )`}
                       value={eventName}
-                      onChange={(e) => setEventName(e.target.value)}
+                      onChange={(e) =>
+                        setEventName(sanitizeEventName(e.target.value))
+                      }
+                      onPaste={(e) => {
+                        const pasted = (
+                          e.clipboardData || window.clipboardData
+                        ).getData("text");
+                        e.preventDefault();
+                        setEventName(sanitizeEventName(pasted));
+                      }}
                       required
                     />
                   </div>
@@ -627,13 +653,31 @@ export default function CreateEvent() {
             {currentStep === 7 && (
               <AgeCategory
                 onBack={() => setCurrentStep(6)}
-                onNext={() => setCurrentStep(8)}
+                onNext={() => markCurrentSavedAndGo(8)}
               />
             )}
             {currentStep === 8 && (
               <DiscountCoupons
                 onBack={() => setCurrentStep(7)}
-                onNext={() => setCurrentStep(9)}
+                onNext={() => markCurrentSavedAndGo(9)}
+              />
+            )}
+            {currentStep === 9 && (
+              <CommunicationsStep
+                onBack={() => setCurrentStep(8)}
+                onNext={() => markCurrentSavedAndGo(10)}
+              />
+            )}
+            {currentStep === 10 && (
+              <FAQsStep
+                onBack={() => setCurrentStep(9)}
+                onNext={() => markCurrentSavedAndGo(11)}
+              />
+            )}
+            {currentStep === 11 && (
+              <Integrations
+                onBack={() => setCurrentStep(10)}
+                onNext={() => markCurrentSavedAndGo(12)}
               />
             )}
           </div>

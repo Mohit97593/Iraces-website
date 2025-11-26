@@ -37,6 +37,15 @@ export default function EventScheduling({ onBack, onNext }) {
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState(getInitialFormData());
+  const [errors, setErrors] = useState({});
+  const getTodayString = () => {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+  const minStartDate = getTodayString();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -46,8 +55,19 @@ export default function EventScheduling({ onBack, onNext }) {
         "eventSchedulingFormData",
         JSON.stringify(updated)
       );
+      // clear error for this field when user updates it
+      setErrors((prevErr) => ({ ...prevErr, [name]: "" }));
       return updated;
     });
+  };
+
+  const renderError = (field) => {
+    if (!errors || !errors[field]) return null;
+    return (
+      <div style={{ color: "#d9534f", marginTop: 6, fontSize: "0.9rem" }}>
+        {errors[field]}
+      </div>
+    );
   };
 
   useEffect(() => {
@@ -180,6 +200,97 @@ export default function EventScheduling({ onBack, onNext }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // client-side validation for required fields
+    const requiredFields = [
+      "timeZone",
+      "country",
+      "pincode",
+      "state",
+      "city",
+      "eventAddress",
+      "eventStartDate",
+      "eventStartTime",
+      "eventEndDate",
+      "eventEndTime",
+      "registrationStartDate",
+      "registrationStartTime",
+      "registrationEndDate",
+      "registrationEndTime",
+    ];
+    const newErrors = {};
+    requiredFields.forEach((f) => {
+      if (
+        !formData[f] ||
+        (typeof formData[f] === "string" && formData[f].trim() === "")
+      ) {
+        newErrors[f] = "This field is required";
+      }
+    });
+
+    // simple date ordering checks
+    if (formData.eventStartDate) {
+      const todayDate = new Date();
+      todayDate.setHours(0, 0, 0, 0);
+      const startDateOnly = new Date(`${formData.eventStartDate}T00:00`);
+      if (startDateOnly < todayDate) {
+        newErrors.eventStartDate = "Event start date cannot be in the past";
+      }
+    }
+    if (formData.eventStartDate && formData.eventEndDate) {
+      const start = new Date(
+        `${formData.eventStartDate}T${formData.eventStartTime || "00:00"}`
+      );
+      const end = new Date(
+        `${formData.eventEndDate}T${formData.eventEndTime || "00:00"}`
+      );
+      if (start > end) {
+        newErrors.eventEndDate = "Event end must be after start";
+      }
+    }
+    if (formData.registrationStartDate && formData.registrationEndDate) {
+      const rstart = new Date(
+        `${formData.registrationStartDate}T${
+          formData.registrationStartTime || "00:00"
+        }`
+      );
+      const rend = new Date(
+        `${formData.registrationEndDate}T${
+          formData.registrationEndTime || "00:00"
+        }`
+      );
+      if (rstart > rend) {
+        newErrors.registrationEndDate = "Registration end must be after start";
+      }
+    }
+
+    // registration should not start or end before the event start date
+    if (formData.eventStartDate && formData.registrationStartDate) {
+      const eventStartOnly = new Date(`${formData.eventStartDate}T00:00`);
+      const regStartOnly = new Date(`${formData.registrationStartDate}T00:00`);
+      if (regStartOnly < eventStartOnly) {
+        newErrors.registrationStartDate =
+          "Registration cannot start before event start date";
+      }
+    }
+    if (formData.eventStartDate && formData.registrationEndDate) {
+      const eventStartOnly = new Date(`${formData.eventStartDate}T00:00`);
+      const regEndOnly = new Date(`${formData.registrationEndDate}T00:00`);
+      if (regEndOnly < eventStartOnly) {
+        newErrors.registrationEndDate =
+          "Registration end cannot be before event start date";
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      // scroll to first error field (optional)
+      const firstKey = Object.keys(newErrors)[0];
+      const el = document.getElementsByName(firstKey)[0];
+      if (el && el.scrollIntoView)
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
     const eventId = sessionStorage.getItem("event_id");
     const selectedCountry = countries.find((c) => c.name === formData.country);
     const selectedState = states.find((s) => s.name === formData.state);
@@ -242,7 +353,7 @@ export default function EventScheduling({ onBack, onNext }) {
         <h3>Event Scheduling</h3>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         {/* Time Zone */}
         <div className="form-group">
           <label>
@@ -266,6 +377,7 @@ export default function EventScheduling({ onBack, onNext }) {
               <option disabled>Loading timezones...</option>
             )}
           </select>
+          {renderError("timeZone")}
         </div>
 
         {/* Country and Pincode */}
@@ -293,6 +405,7 @@ export default function EventScheduling({ onBack, onNext }) {
                   <option disabled>Loading countries...</option>
                 )}
               </select>
+              {renderError("country")}
             </div>
           </div>
           <div className="col-md-6">
@@ -309,6 +422,7 @@ export default function EventScheduling({ onBack, onNext }) {
                 onChange={handleChange}
                 required
               />
+              {renderError("pincode")}
             </div>
           </div>
         </div>
@@ -346,6 +460,7 @@ export default function EventScheduling({ onBack, onNext }) {
                   <option disabled>Loading states...</option>
                 )}
               </select>
+              {renderError("state")}
             </div>
           </div>
           <div className="col-md-6">
@@ -379,6 +494,7 @@ export default function EventScheduling({ onBack, onNext }) {
                   <option disabled>Loading cities...</option>
                 )}
               </select>
+              {renderError("city")}
             </div>
           </div>
         </div>
@@ -410,6 +526,7 @@ export default function EventScheduling({ onBack, onNext }) {
             rows="4"
             required
           />
+          {renderError("eventAddress")}
         </div>
 
         {/* Event Start Date and Time */}
@@ -425,8 +542,10 @@ export default function EventScheduling({ onBack, onNext }) {
                 name="eventStartDate"
                 value={formData.eventStartDate}
                 onChange={handleChange}
+                min={minStartDate}
                 required
               />
+              {renderError("eventStartDate")}
             </div>
           </div>
           <div className="col-md-6">
@@ -442,6 +561,7 @@ export default function EventScheduling({ onBack, onNext }) {
                 onChange={handleChange}
                 required
               />
+              {renderError("eventStartTime")}
             </div>
           </div>
         </div>
@@ -459,8 +579,10 @@ export default function EventScheduling({ onBack, onNext }) {
                 name="eventEndDate"
                 value={formData.eventEndDate}
                 onChange={handleChange}
+                min={formData.eventStartDate || minStartDate}
                 required
               />
+              {renderError("eventEndDate")}
             </div>
           </div>
           <div className="col-md-6">
@@ -476,6 +598,7 @@ export default function EventScheduling({ onBack, onNext }) {
                 onChange={handleChange}
                 required
               />
+              {renderError("eventEndTime")}
             </div>
           </div>
         </div>
@@ -493,8 +616,10 @@ export default function EventScheduling({ onBack, onNext }) {
                 name="registrationStartDate"
                 value={formData.registrationStartDate}
                 onChange={handleChange}
+                min={formData.eventStartDate || minStartDate}
                 required
               />
+              {renderError("registrationStartDate")}
             </div>
           </div>
           <div className="col-md-6">
@@ -510,6 +635,7 @@ export default function EventScheduling({ onBack, onNext }) {
                 onChange={handleChange}
                 required
               />
+              {renderError("registrationStartTime")}
             </div>
           </div>
         </div>
@@ -527,8 +653,14 @@ export default function EventScheduling({ onBack, onNext }) {
                 name="registrationEndDate"
                 value={formData.registrationEndDate}
                 onChange={handleChange}
+                min={
+                  formData.eventStartDate ||
+                  formData.registrationStartDate ||
+                  minStartDate
+                }
                 required
               />
+              {renderError("registrationEndDate")}
             </div>
           </div>
           <div className="col-md-6">
@@ -544,6 +676,7 @@ export default function EventScheduling({ onBack, onNext }) {
                 onChange={handleChange}
                 required
               />
+              {renderError("registrationEndTime")}
             </div>
           </div>
         </div>

@@ -19,6 +19,7 @@ const GeneralFormQuestions = ({
   const [raceTickets, setRaceTickets] = useState([]);
   const [raceCategoryMode, setRaceCategoryMode] = useState("all");
   const [showAddCustomForm, setShowAddCustomForm] = useState(false);
+  const [displayNameError, setDisplayNameError] = useState("");
 
   const normalizeKey = (s) =>
     String(s || "")
@@ -299,6 +300,7 @@ const GeneralFormQuestions = ({
 
     setSelectedQuestion(cloned);
     setShowModal(true);
+    setDisplayNameError("");
   };
 
   // If parent requests editing a specific question, open modal with that data
@@ -434,6 +436,11 @@ const GeneralFormQuestions = ({
   const handleSaveQuestion = async () => {
     // Build FormData payload according to backend expected fields
     if (!selectedQuestion) return;
+    // Validate display name required
+    if (!selectedQuestion.question_label || String(selectedQuestion.question_label).trim() === "") {
+      setDisplayNameError("Display name is required");
+      return;
+    }
     const eventId = sessionStorage.getItem("event_id") || "";
     const userId = localStorage.getItem("user_id") || "";
     let res = null;
@@ -701,15 +708,21 @@ const GeneralFormQuestions = ({
 
               {/* Display Name */}
               <div className="form-group">
-                <label className="form-label">Display Name*</label>
+                <label className="form-label">
+                  Display Name <span className="required" style={{ color: "#da251c" }}>*</span>
+                </label>
                 <input
                   type="text"
                   className="form-input compact"
                   value={selectedQuestion.question_label || ""}
-                  onChange={(e) =>
-                    handleChangeField("question_label", e.target.value)
-                  }
+                  onChange={(e) => {
+                    handleChangeField("question_label", e.target.value);
+                    if (e.target.value && String(e.target.value).trim() !== "") setDisplayNameError("");
+                  }}
                 />
+                {displayNameError && (
+                  <div style={{ color: "#d9534f", marginTop: 8 }}>{displayNameError}</div>
+                )}
               </div>
 
               {/* Choose Form */}

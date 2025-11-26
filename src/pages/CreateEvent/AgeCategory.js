@@ -4,6 +4,7 @@ import AddAgeCategoryForm from "./AddAgeCategoryForm";
 import "./CreateEvent.css";
 
 const AgeCategory = ({ onBack, onNext }) => {
+  const [hovered, setHovered] = useState(null);
   const [eventDetails, setEventDetails] = useState(null);
   const [eventTickets, setEventTickets] = useState([]);
   const [ageCategories, setAgeCategories] = useState([]);
@@ -207,174 +208,66 @@ const AgeCategory = ({ onBack, onNext }) => {
                     {ageCategories.map((cat, idx) => (
                       <div
                         key={cat.id || idx}
-                        className="age-category-card"
+                        onMouseEnter={() => setHovered(cat.id)}
+                        onMouseLeave={() => setHovered(null)}
+                        className={`comm-card ${
+                          hovered === cat.id ? "hover" : ""
+                        }`}
                         style={{
+                          padding: 24,
+                          borderRadius: 8,
                           background: "#fff",
-                          borderRadius: 12,
-                          border: "2px solid #eee",
-                          padding: "24px 18px 18px 18px",
-                          marginBottom: 0,
+                          boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
                           position: "relative",
-                          minHeight: 90,
-                          boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+                          minHeight: 107,
                           display: "flex",
                           alignItems: "center",
-                          justifyContent: "flex-start",
-                          transition: "border-color 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = "#da251c";
-                          const icons =
-                            e.currentTarget.querySelector(".card-icons");
-                          if (icons) icons.style.display = "flex";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = "#eee";
-                          const icons =
-                            e.currentTarget.querySelector(".card-icons");
-                          if (icons) icons.style.display = "none";
                         }}
                       >
-                        {/* Edit/Delete icons in red circles at top right, hidden by default, shown on hover */}
-                        <div
-                          className="card-icons"
-                          style={{
-                            position: "absolute",
-                            top: 10,
-                            right: 10,
-                            display: "none",
-                            gap: 8,
-                          }}
-                        >
-                          <button
-                            style={{
-                              background: "#da251c",
-                              border: "none",
-                              borderRadius: "50%",
-                              width: 36,
-                              height: 36,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              boxShadow: "0 2px 8px rgba(218,37,28,0.12)",
-                              cursor: "pointer",
-                            }}
-                            onClick={() => handleEditAgeCategory(cat.id)}
-                            disabled={loadingEditId === cat.id}
-                            title={
-                              loadingEditId === cat.id ? "Loading..." : "Edit"
-                            }
-                          >
-                            <span
-                              role="img"
-                              aria-label="edit"
-                              style={{ fontSize: 20, color: "#fff" }}
-                            >
-                              ✏️
-                            </span>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteAgeCategory(cat.id)}
-                            disabled={deletingId === cat.id}
-                            style={{
-                              background: "#da251c",
-                              border: "none",
-                              borderRadius: "50%",
-                              width: 36,
-                              height: 36,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              boxShadow: "0 2px 8px rgba(218,37,28,0.12)",
-                              cursor:
-                                deletingId === cat.id
-                                  ? "not-allowed"
-                                  : "pointer",
-                              opacity: deletingId === cat.id ? 0.6 : 1,
-                            }}
-                          >
-                            <span
-                              role="img"
-                              aria-label="delete"
-                              style={{ fontSize: 20, color: "#fff" }}
-                            >
-                              🗑️
-                            </span>
-                          </button>
-                        </div>
-                        {/* Card content */}
                         <div
                           style={{
-                            flex: 1,
                             display: "flex",
+                            justifyContent: "space-between",
                             alignItems: "center",
-                            gap: 24,
+                            width: "100%",
                           }}
                         >
                           <div
-                            style={{
-                              fontSize: "1.25rem",
-                              fontWeight: 600,
-                              color: "#222",
-                            }}
+                            style={{ fontWeight: 600, fontSize: 18, flex: 1 }}
                           >
                             {cat.age_category || "-"}
                           </div>
-                          {/* Custom toggle switch styled as in screenshot */}
-                          <div
-                            style={{
-                              marginLeft: 24,
-                              display: "flex",
-                              alignItems: "center",
-                            }}
-                          >
-                            <label
-                              style={{
-                                position: "relative",
-                                display: "inline-block",
-                                width: 44,
-                                height: 24,
-                              }}
+                          <div style={{ marginLeft: 12 }}>
+                            <div
+                              className={`toggle ${cat.status ? "on" : ""}`}
+                              role="button"
+                              aria-label="toggle"
+                              onClick={() =>
+                                handleToggleStatus(cat.id, !cat.status)
+                              }
                             >
-                              <input
-                                type="checkbox"
-                                checked={!!cat.status}
-                                style={{ display: "none" }}
-                                onChange={() =>
-                                  handleToggleStatus(cat.id, !cat.status)
-                                }
-                                disabled={togglingId === cat.id}
-                              />
-                              <span
-                                style={{
-                                  position: "absolute",
-                                  cursor: "pointer",
-                                  top: 0,
-                                  left: 0,
-                                  right: 0,
-                                  bottom: 0,
-                                  background: !!cat.status ? "#da251c" : "#eee",
-                                  borderRadius: 20,
-                                  transition: "background 0.2s",
-                                  display: "block",
-                                }}
-                              ></span>
-                              <span
-                                style={{
-                                  position: "absolute",
-                                  left: !!cat.status ? 22 : 2,
-                                  top: 2,
-                                  width: 20,
-                                  height: 20,
-                                  background: "#fff",
-                                  borderRadius: "50%",
-                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
-                                  transition: "left 0.2s",
-                                  display: "block",
-                                }}
-                              ></span>
-                            </label>
+                              <div className="knob" />
+                            </div>
                           </div>
+                        </div>
+
+                        <div
+                          className={`comm-actions ${
+                            hovered === cat.id ? "visible" : ""
+                          }`}
+                        >
+                          <button
+                            title="Edit"
+                            onClick={() => handleEditAgeCategory(cat.id)}
+                          >
+                            ✎
+                          </button>
+                          <button
+                            title="Delete"
+                            onClick={() => handleDeleteAgeCategory(cat.id)}
+                          >
+                            🗑
+                          </button>
                         </div>
                       </div>
                     ))}

@@ -219,7 +219,9 @@ const AddCustomForm = ({ onCancel }) => {
           <div className="modal-card">
             <h3>Form Details</h3>
             <div className="form-group">
-              <label className="form-label">Form Name *</label>
+              <label className="form-label">
+                Form Name <span className="required">*</span>
+              </label>
               <input
                 className="form-input compact"
                 value={newFormName}
@@ -280,7 +282,9 @@ const AddCustomForm = ({ onCancel }) => {
       )}
       <div style={{ marginTop: 18 }}>
         <div className="form-group">
-          <label className="form-label">Choose Form*</label>
+          <label className="form-label">
+            Choose Form <span className="required">*</span>
+          </label>
           <select
             className="form-input compact"
             value={selectedFormId}
@@ -297,12 +301,16 @@ const AddCustomForm = ({ onCancel }) => {
           </select>
         </div>
         <div className="form-group">
-          <label className="form-label">Question Title *</label>
+          <label className="form-label">
+            Question Title <span className="required">*</span>
+          </label>
           <input className="form-input compact" />
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
           <div style={{ flex: 0.3 }} className="form-group">
-            <label className="form-label">Hint Type*</label>
+            <label className="form-label">
+              Hint Type <span className="required">*</span>
+            </label>
             <select
               className="form-input compact"
               value={hintType}
@@ -338,7 +346,9 @@ const AddCustomForm = ({ onCancel }) => {
           </div>
         </div>
         <div className="form-group">
-          <label className="form-label">Question Type*</label>
+          <label className="form-label">
+            Question Type <span className="required">*</span>
+          </label>
           <select
             className="form-input compact"
             value={questionType}
