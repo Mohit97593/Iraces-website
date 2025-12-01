@@ -437,7 +437,10 @@ const GeneralFormQuestions = ({
     // Build FormData payload according to backend expected fields
     if (!selectedQuestion) return;
     // Validate display name required
-    if (!selectedQuestion.question_label || String(selectedQuestion.question_label).trim() === "") {
+    if (
+      !selectedQuestion.question_label ||
+      String(selectedQuestion.question_label).trim() === ""
+    ) {
       setDisplayNameError("Display name is required");
       return;
     }
@@ -684,7 +687,7 @@ const GeneralFormQuestions = ({
             </div>
             <div className="modal-body">
               {/* Question Status */}
-              <div className="form-group">
+              <div className="form-group2">
                 <label className="form-label">Question Status</label>
                 <div className="status-toggle">
                   <button
@@ -707,9 +710,12 @@ const GeneralFormQuestions = ({
               </div>
 
               {/* Display Name */}
-              <div className="form-group">
+              <div className="form-group2">
                 <label className="form-label">
-                  Display Name <span className="required" style={{ color: "#da251c" }}>*</span>
+                  Display Name{" "}
+                  <span className="required" style={{ color: "#da251c" }}>
+                    *
+                  </span>
                 </label>
                 <input
                   type="text"
@@ -717,16 +723,19 @@ const GeneralFormQuestions = ({
                   value={selectedQuestion.question_label || ""}
                   onChange={(e) => {
                     handleChangeField("question_label", e.target.value);
-                    if (e.target.value && String(e.target.value).trim() !== "") setDisplayNameError("");
+                    if (e.target.value && String(e.target.value).trim() !== "")
+                      setDisplayNameError("");
                   }}
                 />
                 {displayNameError && (
-                  <div style={{ color: "#d9534f", marginTop: 8 }}>{displayNameError}</div>
+                  <div style={{ color: "#d9534f", marginTop: 8 }}>
+                    {displayNameError}
+                  </div>
                 )}
               </div>
 
               {/* Choose Form */}
-              <div className="form-group">
+              <div className="form-group2">
                 <label className="form-label">Choose Form</label>
                 <select
                   className="form-input compact"
@@ -751,7 +760,7 @@ const GeneralFormQuestions = ({
               </div>
 
               {/* Field Mapping */}
-              <div className="form-group">
+              <div className="form-group2">
                 <label className="form-label">Field Mapping</label>
                 <select
                   className="form-input compact"
@@ -784,7 +793,7 @@ const GeneralFormQuestions = ({
 
               {/* Hint Type and Question Hint */}
               <div className="form-row1">
-                <div className="form-group" style={{ flex: 1 }}>
+                <div className="form-group2" style={{ flex: 1 }}>
                   <label className="form-label">Hint Type*</label>
                   <select
                     className="form-input compact"
@@ -797,7 +806,7 @@ const GeneralFormQuestions = ({
                     <option value="image">Image</option>
                   </select>
                 </div>
-                <div className="form-group" style={{ flex: 1 }}>
+                <div className="form-group2" style={{ flex: 1 }}>
                   <label className="form-label">Question Hint</label>
                   {(selectedQuestion.hint_type || "text") === "image" ? (
                     <input
@@ -825,7 +834,7 @@ const GeneralFormQuestions = ({
               {/* Limit Length - only show for text type questions */}
               {(selectedQuestion.question_form_type || "").toLowerCase() ===
                 "text" && (
-                <div className="form-group">
+                <div className="form-group2">
                   <div className="limit-length-row">
                     <label className="form-label-inline">
                       <input
@@ -884,7 +893,7 @@ const GeneralFormQuestions = ({
               {/* Radio / Option type: show Add Subquestions toggle and options dropdown */}
               {(selectedQuestion.question_form_type || "").toLowerCase() ===
                 "radio" && (
-                <div className="form-group">
+                <div className="form-group2">
                   <label
                     className="form-label-inline"
                     style={{ display: "flex", marginTop: -12 }}
@@ -934,7 +943,7 @@ const GeneralFormQuestions = ({
               {/* Select type: same UI as radio for subquestions + dropdown populated from options */}
               {(selectedQuestion.question_form_type || "").toLowerCase() ===
                 "select" && (
-                <div className="form-group">
+                <div className="form-group2">
                   <label
                     className="form-label-inline"
                     style={{ display: "flex", marginTop: -12 }}
@@ -982,7 +991,7 @@ const GeneralFormQuestions = ({
               )}
 
               {/* Race Categories */}
-              <div className="form-group">
+              <div className="form-group2">
                 <label className="form-label">Race Categories</label>
                 <div className="race-category-toggle">
                   <button
@@ -1029,7 +1038,7 @@ const GeneralFormQuestions = ({
               {/* Date Range - only for date type questions */}
               {(selectedQuestion.question_form_type || "").toLowerCase() ===
                 "date" && (
-                <div className="form-group">
+                <div className="form-group2">
                   <label className="form-label">Date Range</label>
                   <div className="email-toggle-group">
                     <button
@@ -1089,7 +1098,7 @@ const GeneralFormQuestions = ({
               {/* Email Domain Validation - only for email type questions */}
               {(selectedQuestion.question_form_type || "").toLowerCase() ===
                 "email" && (
-                <div className="form-group">
+                <div className="form-group2">
                   <label className="form-label">
                     Apply Validation For Specific Domain
                   </label>
@@ -1122,7 +1131,7 @@ const GeneralFormQuestions = ({
 
                   {selectedQuestion.email_validation_enabled && (
                     <div
-                      className="form-group email-validation-input"
+                      className="form-group2 email-validation-input"
                       style={{ marginTop: 12 }}
                     >
                       <label className="form-label">Domain Name</label>
@@ -1141,7 +1150,7 @@ const GeneralFormQuestions = ({
               )}
 
               {/* Limit Length */}
-              {/* <div className="form-group">
+              {/* <div className="form-group2">
                 <label className="form-label-inline">
                   <input type="checkbox" className="checkbox" />
                   <span>Limit Length</span>

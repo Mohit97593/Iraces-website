@@ -64,13 +64,14 @@ export default function SecureCheckout() {
     try {
       // Step 1: Fetch event details from events API
       const eventsResponse = await authAPI.getEvents({ event_id: eventId });
+      let eventData = null;
       if (
         eventsResponse &&
         eventsResponse.data &&
         eventsResponse.data.EventData &&
         eventsResponse.data.EventData.length > 0
       ) {
-        const eventData = eventsResponse.data.EventData[0];
+        eventData = eventsResponse.data.EventData[0];
         setEvent(eventData);
       }
 
@@ -82,6 +83,14 @@ export default function SecureCheckout() {
         // Get event_tickets array from response
         const eventTickets = ticketResponse.data.event_tickets || [];
         setTickets(eventTickets);
+        // If events API did not return event data, try to use EventData from ticket response
+        if (
+          !eventData &&
+          ticketResponse.data.EventData &&
+          ticketResponse.data.EventData.length > 0
+        ) {
+          setEvent(ticketResponse.data.EventData[0]);
+        }
       }
     } catch (error) {
       console.error("Error fetching event details:", error);

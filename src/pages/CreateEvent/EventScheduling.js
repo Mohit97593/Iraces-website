@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 
-export default function EventScheduling({ onBack, onNext }) {
+export default function EventScheduling({ onBack, onNext, initialFormData }) {
   const defaultFormData = {
     timeZone: "",
     country: "",
@@ -125,6 +125,37 @@ export default function EventScheduling({ onBack, onNext }) {
     fetchInitialData();
   }, []);
 
+  // Re-read sessionStorage when parent finishes prefill (covers race where child mounted early)
+  useEffect(() => {
+    const onPrefill = () => {
+      const saved = sessionStorage.getItem("eventSchedulingFormData");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setFormData((prev) => ({ ...prev, ...parsed }));
+        } catch (e) {
+          // ignore parse errors
+        }
+      }
+    };
+    window.addEventListener("createEventPrefillDone", onPrefill);
+    return () =>
+      window.removeEventListener("createEventPrefillDone", onPrefill);
+  }, []);
+
+  // If parent provides scheduling data (initialFormData) after async fetch in parent,
+  // apply it to local form state so the UI reflects saved values when editing.
+  useEffect(() => {
+    if (
+      initialFormData &&
+      Object.keys(initialFormData).length > 0 &&
+      JSON.stringify(initialFormData) !== JSON.stringify(getInitialFormData())
+    ) {
+      setFormData((prev) => ({ ...prev, ...initialFormData }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFormData]);
+
   useEffect(() => {
     // Fetch countries on mount
     const fetchCountries = async () => {
@@ -169,6 +200,92 @@ export default function EventScheduling({ onBack, onNext }) {
     };
     fetchStates();
   }, [formData.country, countries]);
+
+  // Reconcile saved scheduling values to option names when options are available
+  useEffect(() => {
+    // Only attempt when we have options
+    if (!timezones || !countries) return;
+    let updated = false;
+    const savedRaw = sessionStorage.getItem("eventSchedulingFormData");
+    if (!savedRaw) return;
+    try {
+      const saved = JSON.parse(savedRaw);
+      const next = { ...formData };
+
+      // Timezone: saved may be numeric id or area string
+      if (saved.timeZone && timezones.length > 0) {
+        const byArea = timezones.find((tz) => tz.area === saved.timeZone);
+        const byId = timezones.find(
+          (tz) => String(tz.id) === String(saved.timeZone)
+        );
+        if (byArea) {
+          next.timeZone = byArea.area;
+          updated = true;
+        } else if (byId) {
+          next.timeZone = byId.area;
+          updated = true;
+        }
+      }
+
+      // Country: saved may be id or name
+      if (saved.country && countries.length > 0) {
+        const byName = countries.find(
+          (c) =>
+            c.name === saved.country ||
+            String(c.name).toLowerCase() === String(saved.country).toLowerCase()
+        );
+        const byId = countries.find(
+          (c) => String(c.id) === String(saved.country)
+        );
+        if (byName) {
+          next.country = byName.name;
+          updated = true;
+        } else if (byId) {
+          next.country = byId.name;
+          updated = true;
+        }
+      }
+
+      // State: find by name or id within states list
+      if (saved.state && states.length > 0) {
+        const byName = states.find(
+          (s) =>
+            s.name === saved.state ||
+            String(s.name).toLowerCase() === String(saved.state).toLowerCase()
+        );
+        const byId = states.find((s) => String(s.id) === String(saved.state));
+        if (byName) {
+          next.state = byName.name;
+          updated = true;
+        } else if (byId) {
+          next.state = byId.name;
+          updated = true;
+        }
+      }
+
+      // City: find by name or id within cities list
+      if (saved.city && cities.length > 0) {
+        const byName = cities.find(
+          (c) =>
+            c.name === saved.city ||
+            String(c.name).toLowerCase() === String(saved.city).toLowerCase()
+        );
+        const byId = cities.find((c) => String(c.id) === String(saved.city));
+        if (byName) {
+          next.city = byName.name;
+          updated = true;
+        } else if (byId) {
+          next.city = byId.name;
+          updated = true;
+        }
+      }
+
+      if (updated) setFormData((prev) => ({ ...prev, ...next }));
+    } catch (e) {
+      // ignore JSON parse errors
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timezones, countries, states, cities]);
 
   useEffect(() => {
     // Fetch cities when state changes

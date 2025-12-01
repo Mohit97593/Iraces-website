@@ -247,7 +247,7 @@
 }
 
 /* Left align labels and reduce spacing like the page screenshot */
-.form-group {
+.form-group2 {
   display: flex;
   flex-direction: column;
   align-items: flex-start;

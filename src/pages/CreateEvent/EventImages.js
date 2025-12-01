@@ -45,6 +45,26 @@ export default function EventImages({ onBack, onNext }) {
     }
   }, [eventDetails]);
 
+  // Listen for parent prefill completion and re-apply saved images data
+  useEffect(() => {
+    const onPrefill = () => {
+      const saved = sessionStorage.getItem("eventImagesFormData");
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          setDescription(data.description || "");
+          setKeywords(data.keywords || "");
+          setBackgroundColor(data.backgroundColor || "#030303");
+          setBackgroundStatus(data.backgroundStatus || 1);
+          setBannerBg(data.bannerBg || false);
+        } catch (e) {}
+      }
+    };
+    window.addEventListener("createEventPrefillDone", onPrefill);
+    return () =>
+      window.removeEventListener("createEventPrefillDone", onPrefill);
+  }, []);
+
   const handleSave = async () => {
     setErrorMsg("");
     // Validation

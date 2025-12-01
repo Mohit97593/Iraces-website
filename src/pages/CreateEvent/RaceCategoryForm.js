@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { authAPI } from "../../services/authAPI";
 
@@ -15,17 +15,30 @@ const RaceCategoryForm = ({
   setEventFormData,
   editTicket,
 }) => {
-  // Get categories from sessionStorage
-  let eventCategories = [];
-  try {
-    const stored = sessionStorage.getItem("event_categories");
-    if (stored) {
-      eventCategories = JSON.parse(stored);
-    }
-  } catch (e) {
-    eventCategories = [];
-  }
   const [loading, setLoading] = useState(false);
+  const [eventCategories, setEventCategories] = useState([]);
+
+  // Read initial categories from sessionStorage
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("event_categories");
+      if (stored) setEventCategories(JSON.parse(stored));
+    } catch (e) {
+      setEventCategories([]);
+    }
+
+    const onPrefill = () => {
+      try {
+        const stored = sessionStorage.getItem("event_categories");
+        if (stored) setEventCategories(JSON.parse(stored));
+      } catch (e) {
+        setEventCategories([]);
+      }
+    };
+    window.addEventListener("createEventPrefillDone", onPrefill);
+    return () =>
+      window.removeEventListener("createEventPrefillDone", onPrefill);
+  }, []);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [applyAgeLimit, setApplyAgeLimit] = useState(false);
   const [earlyBird, setEarlyBird] = useState(false);

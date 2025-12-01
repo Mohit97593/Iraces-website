@@ -30,10 +30,12 @@ export default function CreateEvent() {
   const [lastEventId, setLastEventId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [eventFormData, setEventFormData] = useState({});
+  const [nameError, setNameError] = useState("");
   const [savedSteps, setSavedSteps] = useState(new Array(11).fill(false)); // Track saved status for each step (now 11 steps)
   const [showPreview, setShowPreview] = useState(true);
   const [cityName, setCityName] = useState("");
   const [paidType, setPaidType] = useState("");
+  const [bannerImageUrl, setBannerImageUrl] = useState(null);
   // Today's date and year
   const today = new Date();
   const day = today.getDate();
@@ -63,6 +65,476 @@ export default function CreateEvent() {
     try {
       const params = new URLSearchParams(window.location.search || "");
       const s = params.get("step");
+      // If event_id present in URL, store it and fetch details
+      const eid = params.get("event_id");
+      // If no event_id in URL, clear any stale per-event sessionStorage so
+      // a "new event" flow is not treated as editing an old event.
+      if (!eid) {
+        try {
+          sessionStorage.removeItem("event_id");
+          sessionStorage.removeItem("eventSchedulingFormData");
+          sessionStorage.removeItem("eventImagesFormData");
+          sessionStorage.removeItem("event_categories");
+          sessionStorage.removeItem("eventCategories");
+          sessionStorage.removeItem("eventCityName");
+          sessionStorage.removeItem("registerEndDateDisplay");
+          sessionStorage.removeItem("eventSettingsFormData");
+          sessionStorage.removeItem("eventStatus");
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      if (eid) {
+        // If switching to edit a different event, clear per-event sessionStorage
+        try {
+          const prev = sessionStorage.getItem("event_id");
+          if (prev && String(prev) !== String(eid)) {
+            try {
+              sessionStorage.removeItem("eventSchedulingFormData");
+              sessionStorage.removeItem("eventImagesFormData");
+              sessionStorage.removeItem("event_categories");
+              sessionStorage.removeItem("eventCategories");
+              sessionStorage.removeItem("eventCityName");
+              sessionStorage.removeItem("registerEndDateDisplay");
+              sessionStorage.removeItem("eventSettingsFormData");
+              sessionStorage.removeItem("eventStatus");
+              // keep eventName until new details arrive; it's fine to overwrite later
+            } catch (e) {}
+          }
+          sessionStorage.setItem("event_id", String(eid));
+        } catch (e) {}
+        // fetch event details and prefill basic fields
+        (async () => {
+          try {
+            const det = await authAPI.getEventDetails(eid);
+            if (det && det.data) {
+              setEventDetails(det);
+              // Normalize details object: prefer EventData[0] when present
+              const details =
+                (det.data.EventData && det.data.EventData[0]) || det.data || {};
+
+              // try to set eventName and status if available
+              const name =
+                details.event_name || details.eventName || details.name || "";
+              if (name) {
+                setEventName(name);
+                try {
+                  sessionStorage.setItem("eventName", name);
+                } catch (e) {}
+              }
+
+              // Populate selectedCategories for step 1 so previously selected
+              // categories show up in the UI immediately.
+              try {
+                let selected = [];
+                if (
+                  Array.isArray(details.categories) &&
+                  details.categories.length > 0
+                ) {
+                  selected = details.categories
+                    .map((c) =>
+                      typeof c === "string"
+                        ? c
+                        : c.name || c.category_name || ""
+                    )
+                    .filter(Boolean);
+                } else if (
+                  Array.isArray(details.event_categories) &&
+                  details.event_categories.length > 0
+                ) {
+                  selected = details.event_categories
+                    .map((c) =>
+                      typeof c === "string"
+                        ? c
+                        : c.name || c.category_name || ""
+                    )
+                    .filter(Boolean);
+                }
+                // If server returns AllCategory with checked flags, use those
+                else if (det.data && Array.isArray(det.data.AllCategory)) {
+                  try {
+                    const checked = det.data.AllCategory.filter(
+                      (c) =>
+                        c.checked ||
+                        c.checked === true ||
+                        String(c.checked) === "1"
+                    );
+                    if (checked.length > 0) {
+                      selected = checked.map((c) => c.name).filter(Boolean);
+                    }
+                  } catch (e) {}
+                }
+                if (selected.length > 0) {
+                  setSelectedCategories(selected);
+                  try {
+                    sessionStorage.setItem(
+                      "eventCategories",
+                      JSON.stringify(selected)
+                    );
+                  } catch (e) {}
+                }
+              } catch (e) {
+                console.error(
+                  "Error setting selected categories from details:",
+                  e
+                );
+              }
+
+              const st =
+                details.event_info_status ||
+                details.status ||
+                det.data.status ||
+                null;
+              if (st !== null && st !== undefined) {
+                if (Number(st) === 1) setStatus("public");
+                else if (Number(st) === 2) setStatus("private");
+                else if (Number(st) === 3) setStatus("draft");
+              }
+
+              // Persist canonical event_id
+              try {
+                const canonicalId =
+                  details.event_id ||
+                  details.id ||
+                  det.data.event_id ||
+                  det.event_id ||
+                  null;
+                if (canonicalId)
+                  sessionStorage.setItem("event_id", String(canonicalId));
+              } catch (e) {}
+
+              // Prefill scheduling step data used by EventScheduling
+              try {
+                const sched = {
+                  timeZone:
+                    details.time_zone_name ||
+                    details.timezone_name ||
+                    details.timezone ||
+                    details.timeZone ||
+                    details.time_zone ||
+                    "",
+                  country:
+                    details.country_name ||
+                    (typeof details.country === "string"
+                      ? details.country
+                      : "") ||
+                    details.country ||
+                    "",
+                  pincode:
+                    details.pincode ||
+                    details.pin_code ||
+                    details.pincode ||
+                    "",
+                  state:
+                    details.state_name ||
+                    (typeof details.state === "string" ? details.state : "") ||
+                    details.state ||
+                    "",
+                  city:
+                    details.city_name ||
+                    (typeof details.city === "string" ? details.city : "") ||
+                    details.city ||
+                    "",
+                  googleMapLink:
+                    details.google_map_link ||
+                    details.googleMapLink ||
+                    details.google_map_link ||
+                    "",
+                  eventAddress: details.event_address || details.address || "",
+                  // server uses start_date / start_time_event in this response
+                  eventStartDate:
+                    details.event_start_date || details.start_date || "",
+                  eventStartTime:
+                    details.event_start_time || details.start_time_event || "",
+                  eventEndDate:
+                    details.event_end_date || details.end_date || "",
+                  eventEndTime:
+                    details.event_end_time || details.end_time_event || "",
+                  registrationStartDate:
+                    details.registration_start_date ||
+                    details.diplay_registration_start_date ||
+                    "",
+                  registrationStartTime:
+                    details.registration_start_time ||
+                    details.diplay_registration_start_time ||
+                    "",
+                  registrationEndDate:
+                    details.registration_end_date ||
+                    details.registration_end_date ||
+                    details.diplay_registration_end_date ||
+                    "",
+                  registrationEndTime:
+                    details.registration_end_time ||
+                    details.diplay_registration_end_time ||
+                    "",
+                };
+                // Only set if there's at least one value
+                if (Object.values(sched).some((v) => v)) {
+                  // Store in local eventFormData too so child components that read
+                  // props (or parent state) can access scheduling values faster.
+                  try {
+                    setEventFormData((prev) => ({ ...prev, ...sched }));
+                  } catch (e) {}
+                  sessionStorage.setItem(
+                    "eventSchedulingFormData",
+                    JSON.stringify(sched)
+                  );
+                }
+              } catch (e) {}
+
+              // Prefill images/description step
+              try {
+                const imagesData = {
+                  event_id: details.id || details.event_id || null,
+                  description:
+                    details.event_description || details.description || "",
+                  keywords: details.event_keywords || details.keywords || "",
+                  backgroundColor:
+                    details.background_color ||
+                    details.bg_color ||
+                    details.banner_bg_color ||
+                    "",
+                  backgroundStatus:
+                    details.background_status || details.banner_bg_status || 1,
+                  bannerBg: details.banner_bg || false,
+                };
+                if (imagesData.event_id) {
+                  sessionStorage.setItem(
+                    "eventImagesFormData",
+                    JSON.stringify(imagesData)
+                  );
+                }
+                // set banner image for preview in parent
+                if (details.banner_image)
+                  setBannerImageUrl(details.banner_image);
+                else if (
+                  det.data.PreviewEventDetails &&
+                  det.data.PreviewEventDetails.banner_img
+                )
+                  setBannerImageUrl(det.data.PreviewEventDetails.banner_img);
+              } catch (e) {}
+
+              // Prefill categories (RaceCategories expects 'event_categories' in sessionStorage sometimes)
+              try {
+                if (
+                  det.data.AllEventTypes &&
+                  Array.isArray(det.data.AllEventTypes)
+                ) {
+                  sessionStorage.setItem(
+                    "event_categories",
+                    JSON.stringify(det.data.AllEventTypes)
+                  );
+                }
+                // Also store eventCategories if available
+                if (details.categories || details.event_categories) {
+                  sessionStorage.setItem(
+                    "eventCategories",
+                    JSON.stringify(
+                      details.categories || details.event_categories
+                    )
+                  );
+                }
+              } catch (e) {}
+
+              // Misc UI values
+              try {
+                if (details.city_name || details.city) {
+                  sessionStorage.setItem(
+                    "eventCityName",
+                    details.city_name || details.city
+                  );
+                }
+                if (
+                  details.diplay_registration_end_date ||
+                  details.diplay_registration_end_time ||
+                  details.registration_end_date ||
+                  details.registration_end_time
+                ) {
+                  const rd =
+                    details.diplay_registration_end_date ||
+                    details.registration_end_date ||
+                    "";
+                  const rt =
+                    details.diplay_registration_end_time ||
+                    details.registration_end_time ||
+                    "";
+                  sessionStorage.setItem(
+                    "registerEndDateDisplay",
+                    rd && rt ? `${rd} ${rt}` : rd || rt || ""
+                  );
+                }
+                // Persist event settings if present in response
+                try {
+                  if (
+                    det.data &&
+                    Array.isArray(det.data.event_setting_details) &&
+                    det.data.event_setting_details.length > 0
+                  ) {
+                    const s = det.data.event_setting_details[0];
+                    try {
+                      sessionStorage.setItem(
+                        "eventSettingsFormData",
+                        JSON.stringify(s)
+                      );
+                    } catch (e) {}
+                  }
+                } catch (e) {}
+                // Persist event status if available
+                try {
+                  const evStatus =
+                    details.event_info_status ||
+                    details.status ||
+                    det.data.status ||
+                    null;
+                  if (evStatus !== null && evStatus !== undefined) {
+                    let mapped = "draft";
+                    if (Number(evStatus) === 1) mapped = "public";
+                    else if (Number(evStatus) === 2) mapped = "private";
+                    else if (Number(evStatus) === 3) mapped = "draft";
+                    sessionStorage.setItem("eventStatus", String(mapped));
+                    setStatus(mapped);
+                  }
+                } catch (e) {}
+
+                // Mark which steps are already saved based on presence of data
+                try {
+                  const stepSaved = new Array(11).fill(false);
+                  // Step 1 - Essentials: event exists => saved
+                  stepSaved[0] = true;
+
+                  // Helper to check presence in details or top-level det.data
+                  const hasAny = (keys) => {
+                    for (const k of keys) {
+                      if (
+                        (details &&
+                          details[k] !== undefined &&
+                          details[k] !== null &&
+                          details[k] !== "") ||
+                        (det.data &&
+                          det.data[k] !== undefined &&
+                          det.data[k] !== null &&
+                          det.data[k] !== "")
+                      )
+                        return true;
+                    }
+                    return false;
+                  };
+
+                  // Step 2 - Scheduling
+                  if (
+                    hasAny([
+                      "event_start_date",
+                      "event_start_time",
+                      "event_end_date",
+                      "registration_start_date",
+                      "registration_end_date",
+                      "timezone",
+                      "timeZone",
+                      "city",
+                      "city_name",
+                    ])
+                  )
+                    stepSaved[1] = true;
+
+                  // Step 3 - Description / Images
+                  if (
+                    hasAny([
+                      "banner_image",
+                      "event_description",
+                      "description",
+                      "event_keywords",
+                    ])
+                  )
+                    stepSaved[2] = true;
+
+                  // Step 4 - Settings (heuristic keys)
+                  if (
+                    hasAny([
+                      "payment_type",
+                      "paid_status",
+                      "settings",
+                      "event_settings",
+                      "refund_policy",
+                    ])
+                  )
+                    stepSaved[3] = true;
+
+                  // Step 5 - Race Categories
+                  if (
+                    (det.data &&
+                      det.data.AllEventTypes &&
+                      det.data.AllEventTypes.length > 0) ||
+                    hasAny([
+                      "categories",
+                      "event_categories",
+                      "race_categories",
+                    ])
+                  )
+                    stepSaved[4] = true;
+
+                  // Step 6 - Form Questions
+                  if (
+                    hasAny([
+                      "form_questions",
+                      "event_form_questions",
+                      "formQuestions",
+                    ])
+                  )
+                    stepSaved[5] = true;
+
+                  // Step 7 - Age Category
+                  if (
+                    hasAny(["age_categories", "AllAgeCategory", "ageCategory"])
+                  )
+                    stepSaved[6] = true;
+
+                  // Step 8 - Discount Coupons
+                  if (hasAny(["coupons", "event_coupons", "discounts"]))
+                    stepSaved[7] = true;
+
+                  // Step 9 - Communications
+                  if (
+                    hasAny([
+                      "communications",
+                      "event_comm",
+                      "event_communications",
+                    ])
+                  )
+                    stepSaved[8] = true;
+
+                  // Step 10 - FAQs
+                  if (hasAny(["faqs", "EventFaq", "event_faqs"]))
+                    stepSaved[9] = true;
+
+                  // Step 11 - Integrations
+                  if (hasAny(["integrations", "event_integrations"]))
+                    stepSaved[10] = true;
+
+                  setSavedSteps(stepSaved);
+                } catch (e) {
+                  console.error(
+                    "Error computing saved steps from event details:",
+                    e
+                  );
+                }
+
+                // Notify child components that prefill is complete so they can re-read sessionStorage
+                try {
+                  const evt = new CustomEvent("createEventPrefillDone", {
+                    detail: { event_id: sessionStorage.getItem("event_id") },
+                  });
+                  window.dispatchEvent(evt);
+                } catch (e) {
+                  // ignore
+                }
+              } catch (e) {}
+            }
+          } catch (e) {
+            console.error("Failed to fetch event details for edit route:", e);
+          }
+        })();
+      }
       if (s) {
         const n = Number(s);
         if (!Number.isNaN(n) && n >= 1 && n <= 8) setCurrentStep(n);
@@ -80,6 +552,11 @@ export default function CreateEvent() {
       setShowPreview(true);
     }
   }, [currentStep]);
+
+  useEffect(() => {
+    const s = sessionStorage.getItem("eventName") || "";
+    if (s && s !== eventName) setEventName(s);
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -100,6 +577,61 @@ export default function CreateEvent() {
       const categoryRes = await authAPI.getCategory();
       if (categoryRes && categoryRes.data && categoryRes.data.Allcategory) {
         setCategories(categoryRes.data.Allcategory);
+        // Reconcile any stored eventCategories (ids, objects or names) into names
+        try {
+          const stored =
+            sessionStorage.getItem("eventCategories") ||
+            sessionStorage.getItem("event_categories");
+          if (stored) {
+            let parsed = [];
+            try {
+              parsed = JSON.parse(stored);
+            } catch (e) {
+              // if not JSON, try comma-separated
+              parsed = String(stored)
+                .split(",")
+                .map((s) => s.trim());
+            }
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const names = parsed
+                .map((p) => {
+                  if (!p && p !== 0) return null;
+                  if (typeof p === "string") {
+                    // maybe a name or numeric string id
+                    if (/^\d+$/.test(p)) {
+                      const byId = categoryRes.data.Allcategory.find(
+                        (c) => String(c.id) === p
+                      );
+                      return byId ? byId.name : p;
+                    }
+                    return p;
+                  }
+                  if (typeof p === "number") {
+                    const byId = categoryRes.data.Allcategory.find(
+                      (c) => c.id === p
+                    );
+                    return byId ? byId.name : String(p);
+                  }
+                  // object shape: try id -> name
+                  if (typeof p === "object") {
+                    const id = p.id || p.category_id || p.categoryId || null;
+                    if (id) {
+                      const byId = categoryRes.data.Allcategory.find(
+                        (c) => String(c.id) === String(id)
+                      );
+                      if (byId) return byId.name;
+                    }
+                    return p.name || p.category_name || null;
+                  }
+                  return null;
+                })
+                .filter(Boolean);
+              if (names.length > 0) setSelectedCategories(names);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to reconcile stored eventCategories:", e);
+        }
       }
 
       // Call get types API
@@ -108,18 +640,33 @@ export default function CreateEvent() {
         setTypes(typesRes.data.Alltypes);
       }
 
-      // Call event details API after all others
-      if (
-        eventsRes &&
-        eventsRes.data &&
-        eventsRes.data.EventData &&
-        eventsRes.data.EventData.length > 0
-      ) {
-        const eventId = eventsRes.data.EventData[0].id;
-        const eventDetailsRes = await authAPI.getEventDetails(eventId);
-        if (eventDetailsRes) {
-          setEventDetails(eventDetailsRes);
+      // Call event details API after all others only when not editing an explicit event
+      // If an edit flow is in progress and sessionStorage.event_id is set, do not
+      // auto-load the first event (this was causing the page to pick a default id
+      // like 14 and overwrite the intended event being edited).
+      try {
+        const editingEventId = sessionStorage.getItem("event_id");
+        if (!editingEventId) {
+          if (
+            eventsRes &&
+            eventsRes.data &&
+            eventsRes.data.EventData &&
+            eventsRes.data.EventData.length > 0
+          ) {
+            const eventId = eventsRes.data.EventData[0].id;
+            const eventDetailsRes = await authAPI.getEventDetails(eventId);
+            if (eventDetailsRes) {
+              setEventDetails(eventDetailsRes);
+            }
+          }
+        } else {
+          console.log(
+            "CreateEvent: editingEventId present, skipping auto-load of first event:",
+            editingEventId
+          );
         }
+      } catch (e) {
+        console.error("Error during conditional event details fetch:", e);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -238,21 +785,107 @@ export default function CreateEvent() {
         url_link: window.location.origin,
       };
 
-      // If editing existing event, add event_id
-      if (eventDetails?.data?.event_id) {
-        payload.event_id = eventDetails.data.event_id;
+      // If editing existing event, add event_id. Prefer canonical places, fallback to sessionStorage.
+      const editingEventId =
+        eventDetails?.data?.event_id ||
+        eventDetails?.data?.id ||
+        eventDetails?.event_id ||
+        eventDetails?.id ||
+        sessionStorage.getItem("event_id") ||
+        null;
+      if (editingEventId) {
+        payload.event_id = editingEventId;
+      }
+
+      // Client-side validation: prevent creating a new event with the same name
+      try {
+        const allEventsRes = await authAPI.getEvents({});
+        if (
+          allEventsRes &&
+          allEventsRes.data &&
+          Array.isArray(allEventsRes.data.EventData)
+        ) {
+          const nameToCheck = (payload.event_name || eventName || "")
+            .trim()
+            .toLowerCase();
+          const conflict = allEventsRes.data.EventData.find((ev) => {
+            const n = (ev.event_name || ev.name || ev.event_display_name || "")
+              .trim()
+              .toLowerCase();
+            // If we're editing, allow same event id
+            const evId = ev.event_id || ev.id || null;
+            const editingId =
+              payload.event_id || sessionStorage.getItem("event_id") || null;
+            if (!n) return false;
+            if (n === nameToCheck) {
+              // if editing same event (by id from payload or sessionStorage), it's fine
+              if (editingId && String(editingId) === String(evId)) return false;
+              return true;
+            }
+            return false;
+          });
+          if (conflict) {
+            const msg =
+              "Event with the same name already exists. Please choose a different name or edit the existing event.";
+            setNameError(msg);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (e) {
+        // ignore validation failures and proceed to server-side handling
       }
 
       const response = await authAPI.createEventBasicInfo(payload);
+      // Flexible success detection to support different backend response shapes
+      const successFlag =
+        (response && response.success === 200) ||
+        (response && response.status === 200) ||
+        response === 200 ||
+        response === "success" ||
+        response?.success === true ||
+        response?.validate === 0 ||
+        response?.data?.status === 200;
 
-      if (response.success === 200) {
-        // Store event_id in session storage
-        if (response.data?.event_id) {
-          sessionStorage.setItem("event_id", response.data.event_id);
-          // If new event_id, clear scheduling form data
-          if (lastEventId !== response.data.event_id) {
-            sessionStorage.removeItem("eventSchedulingFormData");
-            setLastEventId(response.data.event_id);
+      // Try to find event id in common locations
+      const newEventId =
+        response?.data?.event_id ||
+        response?.event_id ||
+        response?.data?.data?.event_id ||
+        null;
+
+      // If backend returned a duplicate-name style message, treat it as a validation error
+      if (
+        response &&
+        response.message &&
+        /same name|already exists|already exist/i.test(response.message)
+      ) {
+        const msg =
+          response.message ||
+          "Event with the same name already exists. Please choose a different name or edit the existing event.";
+        setNameError(msg);
+        setLoading(false);
+        return;
+      }
+
+      if (successFlag) {
+        // Persist event name so header and preview update immediately
+        try {
+          const nameToStore = payload.event_name || eventName || "";
+          sessionStorage.setItem("eventName", nameToStore);
+          setEventName(nameToStore);
+        } catch (e) {}
+
+        // Store event_id in session storage if returned
+        if (newEventId) {
+          try {
+            sessionStorage.setItem("event_id", String(newEventId));
+          } catch (e) {}
+          if (lastEventId !== String(newEventId)) {
+            try {
+              sessionStorage.removeItem("eventSchedulingFormData");
+            } catch (e) {}
+            setLastEventId(String(newEventId));
           }
         }
 
@@ -262,9 +895,9 @@ export default function CreateEvent() {
           return updated;
         });
         setCurrentStep(2);
-        alert(response.message || "Event basic info saved successfully");
+        alert(response?.message || "Event basic info saved successfully");
       } else {
-        alert(response.message || "Failed to save event basic info");
+        alert(response?.message || "Failed to save event basic info");
       }
     } catch (error) {
       console.error("Error saving event essentials:", error);
@@ -281,7 +914,6 @@ export default function CreateEvent() {
     });
     setCurrentStep(3);
   };
-  const [bannerImageUrl, setBannerImageUrl] = useState(null);
   const handleImagesSave = (bannerUrl) => {
     if (bannerUrl) setBannerImageUrl(bannerUrl);
     setSavedSteps((prev) => {
@@ -335,7 +967,6 @@ export default function CreateEvent() {
       </div>
     );
   }
-
   // Get event name from sessionStorage if available (show across all steps)
   const storedEventName = sessionStorage.getItem("eventName") || "";
   const headerTitle = storedEventName || eventName || "Design Your Event";
@@ -535,9 +1166,10 @@ export default function CreateEvent() {
                       className="form-control"
                       placeholder={`(Allowed only this special characters - , @ , ' , " )`}
                       value={eventName}
-                      onChange={(e) =>
-                        setEventName(sanitizeEventName(e.target.value))
-                      }
+                      onChange={(e) => {
+                        setEventName(sanitizeEventName(e.target.value));
+                        if (nameError) setNameError("");
+                      }}
                       onPaste={(e) => {
                         const pasted = (
                           e.clipboardData || window.clipboardData
@@ -547,6 +1179,11 @@ export default function CreateEvent() {
                       }}
                       required
                     />
+                    {nameError ? (
+                      <div style={{ color: "#d32f2f", marginTop: 8 }}>
+                        {nameError}
+                      </div>
+                    ) : null}
                   </div>
 
                   {/* Event Category */}
@@ -611,6 +1248,7 @@ export default function CreateEvent() {
               <EventScheduling
                 onBack={() => setCurrentStep(1)}
                 onNext={handleSchedulingNext}
+                initialFormData={eventFormData}
               />
             )}
             {currentStep === 3 && (
@@ -641,6 +1279,12 @@ export default function CreateEvent() {
                 onBack={() => setCurrentStep(5)}
                 onNext={() => {
                   /* Next step logic */
+                  setSavedSteps((prev) => {
+                    const updated = [...prev];
+                    updated[5] = true;
+                    return updated;
+                  });
+                  setCurrentStep(7);
                 }}
               />
             )}

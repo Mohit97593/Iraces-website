@@ -44,6 +44,28 @@ api.interceptors.response.use(
 
 // Auth API Functions
 export const authAPI = {
+  // All Event Details API (for MyEvents page)
+  allEventDetails: async (payload) => {
+    try {
+      // Accepts either FormData or plain object
+      let formData;
+      if (payload instanceof FormData) {
+        formData = payload;
+      } else {
+        formData = new FormData();
+        if (payload) {
+          Object.keys(payload).forEach((key) => {
+            formData.append(key, payload[key]);
+          });
+        }
+      }
+      const response = await api.post("/AllEventDetails", formData);
+      return response.data;
+    } catch (error) {
+      console.error("allEventDetails API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
   // ...existing code...
   // Add/Edit Age Criteria API
   addEditAgeCriteria: async (payload) => {
@@ -208,6 +230,41 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       console.error("addEventFaq API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Event Integration API - toggle popup flag for event
+  eventIntegration: async (event_id, popup_flag = 0) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", String(event_id));
+      formData.append("popup_flag", String(popup_flag));
+      const response = await api.post("/event_integration", formData);
+      return response.data;
+    } catch (error) {
+      console.error("eventIntegration API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Event delete or change status API
+  eventDeleteChangeStatus: async (payload) => {
+    try {
+      // Accepts either FormData or plain object
+      let formData;
+      if (payload instanceof FormData) {
+        formData = payload;
+      } else {
+        formData = new FormData();
+        if (payload) {
+          Object.keys(payload).forEach((key) => {
+            formData.append(key, payload[key]);
+          });
+        }
+      }
+      const response = await api.post("/EventDeleteChangeStatus", formData);
+      return response.data;
+    } catch (error) {
+      console.error("eventDeleteChangeStatus API error:", error);
       throw error.response?.data || error.message;
     }
   },
