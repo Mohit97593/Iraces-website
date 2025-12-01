@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { authAPI } from "../../services/authAPI";
 
 export default function EventImages({ onBack, onNext }) {
@@ -9,18 +9,35 @@ export default function EventImages({ onBack, onNext }) {
   const [backgroundColor, setBackgroundColor] = useState("#030303");
   const [backgroundStatus, setBackgroundStatus] = useState(1);
   const [eventBanner, setEventBanner] = useState(null);
+  const [eventBannerPreview, setEventBannerPreview] = useState(null);
   const [descriptionImage, setDescriptionImage] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const prevObjectUrl = useRef(null);
 
   useEffect(() => {
     const eventId = sessionStorage.getItem("event_id");
     if (eventId) {
       authAPI.getEventDetails(eventId).then((res) => {
         if (res && res.data && res.data.EventData && res.data.EventData[0]) {
-          setEventDetails(res.data.EventData[0]);
+          const details = res.data.EventData[0];
+          setEventDetails(details);
+          // If server already has a banner image, show it as preview
+          if (details.banner_image) setEventBannerPreview(details.banner_image);
         }
       });
     }
+  }, []);
+
+  // Cleanup object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (prevObjectUrl.current) {
+        try {
+          URL.revokeObjectURL(prevObjectUrl.current);
+        } catch (e) {}
+        prevObjectUrl.current = null;
+      }
+    };
   }, []);
 
   // For persisting form data
@@ -40,6 +57,7 @@ export default function EventImages({ onBack, onNext }) {
           setBackgroundColor(data.backgroundColor || "#030303");
           setBackgroundStatus(data.backgroundStatus || 1);
           setBannerBg(data.bannerBg || false);
+          if (data.bannerImageUrl) setEventBannerPreview(data.bannerImageUrl);
         }
       } catch {}
     }
@@ -57,6 +75,7 @@ export default function EventImages({ onBack, onNext }) {
           setBackgroundColor(data.backgroundColor || "#030303");
           setBackgroundStatus(data.backgroundStatus || 1);
           setBannerBg(data.bannerBg || false);
+          if (data.bannerImageUrl) setEventBannerPreview(data.bannerImageUrl);
         } catch (e) {}
       }
     };
@@ -80,7 +99,7 @@ export default function EventImages({ onBack, onNext }) {
       setErrorMsg("Keywords/Metatags are required.");
       return;
     }
-    if (!eventBanner) {
+    if (!eventBanner && !eventBannerPreview) {
       setErrorMsg("Banner image is required.");
       return;
     }
@@ -98,6 +117,13 @@ export default function EventImages({ onBack, onNext }) {
         backgroundColor,
         backgroundStatus,
         bannerBg,
+        // persist only remote/server preview URLs, not local object URLs
+        bannerImageUrl:
+          eventBannerPreview &&
+          (eventBannerPreview.startsWith("http") ||
+            eventBannerPreview.startsWith("/"))
+            ? eventBannerPreview
+            : null,
       })
     );
     const formData = new FormData();
@@ -127,8 +153,10 @@ export default function EventImages({ onBack, onNext }) {
             detailsRes.data.EventData &&
             detailsRes.data.EventData[0]
           ) {
-            setEventDetails(detailsRes.data.EventData[0]);
-            bannerImage = detailsRes.data.EventData[0].banner_image || null;
+            const details2 = detailsRes.data.EventData[0];
+            setEventDetails(details2);
+            bannerImage = details2.banner_image || null;
+            if (bannerImage) setEventBannerPreview(bannerImage);
           }
         }
         // Pass banner image to parent (CreateEvent) if available
@@ -242,9 +270,19 @@ export default function EventImages({ onBack, onNext }) {
                   setErrorMsg("Banner image must be 5MB or less.");
                   e.target.value = null;
                   setEventBanner(null);
-                } else {
+                } else if (file) {
                   setErrorMsg("");
                   setEventBanner(file);
+                  // revoke previous object URL if any
+                  if (prevObjectUrl.current) {
+                    try {
+                      URL.revokeObjectURL(prevObjectUrl.current);
+                    } catch (e) {}
+                    prevObjectUrl.current = null;
+                  }
+                  const url = URL.createObjectURL(file);
+                  prevObjectUrl.current = url;
+                  setEventBannerPreview(url);
                 }
               }}
               required
@@ -274,6 +312,50 @@ export default function EventImages({ onBack, onNext }) {
               </div>
             )}
             <small>In jpg, jpeg, png formats. Max upto 5MB.</small>
+            {eventBannerPreview && (
+              <div
+                style={{
+                  marginTop: 8,
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "center",
+                }}
+              >
+                <img
+                  src={eventBannerPreview}
+                  alt="Banner preview"
+                  style={{
+                    maxWidth: 240,
+                    maxHeight: 140,
+                    objectFit: "cover",
+                    borderRadius: 6,
+                    border: "1px solid #ccc",
+                  }}
+                />
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                >
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      // Remove preview and file selection
+                      setEventBanner(null);
+                      if (prevObjectUrl.current) {
+                        try {
+                          URL.revokeObjectURL(prevObjectUrl.current);
+                        } catch (e) {}
+                        prevObjectUrl.current = null;
+                      }
+                      setEventBannerPreview(null);
+                    }}
+                    style={{ padding: "6px 10px", borderRadius: 6 }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="form-group" style={{ flex: 1 }}>
             <label>Event Communication Creatives</label>
