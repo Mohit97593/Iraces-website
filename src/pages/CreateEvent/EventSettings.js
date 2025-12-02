@@ -36,7 +36,7 @@ export default function EventSettings({ onBack, onNext }) {
         setLimit(data.limit || "");
         setRegistrationType(data.registrationType || "multiple");
         setUniqueOnly(data.uniqueOnly || false);
-      } catch {}
+      } catch { }
     }
   }, []);
 
@@ -96,7 +96,7 @@ export default function EventSettings({ onBack, onNext }) {
         >
           <input
             type="number"
-            className="form-control"
+            className="form-controll"
             value={limit}
             onChange={(e) => setLimit(e.target.value)}
             style={{

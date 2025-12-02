@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { authAPI } from "../../services/authAPI";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 
 export default function EventImages({ onBack, onNext }) {
   const [bannerBg, setBannerBg] = useState(false);
@@ -13,6 +15,35 @@ export default function EventImages({ onBack, onNext }) {
   const [descriptionImage, setDescriptionImage] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const prevObjectUrl = useRef(null);
+
+  const stripHtml = (html) => {
+    if (!html) return "";
+    try {
+      const tmp = document.createElement("div");
+      tmp.innerHTML = html;
+      return tmp.textContent || tmp.innerText || "";
+    } catch (e) {
+      return html.replace(/<[^>]*>?/gm, "");
+    }
+  };
+
+  // Ensure the CKEditor editable area is tall enough (matches screenshot)
+  useEffect(() => {
+    const styleId = "eventimages-ckeditor-style";
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.innerHTML = `
+        /* Increase CKEditor editable height for Event Description */
+        .eventimages-ckeditor .ck-editor__editable_inline {
+          min-height: 360px !important;
+          max-height: 720px;
+          overflow: auto;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
 
   useEffect(() => {
     const eventId = sessionStorage.getItem("event_id");
@@ -34,7 +65,7 @@ export default function EventImages({ onBack, onNext }) {
       if (prevObjectUrl.current) {
         try {
           URL.revokeObjectURL(prevObjectUrl.current);
-        } catch (e) {}
+        } catch (e) { }
         prevObjectUrl.current = null;
       }
     };
@@ -59,7 +90,7 @@ export default function EventImages({ onBack, onNext }) {
           setBannerBg(data.bannerBg || false);
           if (data.bannerImageUrl) setEventBannerPreview(data.bannerImageUrl);
         }
-      } catch {}
+      } catch { }
     }
   }, [eventDetails]);
 
@@ -76,7 +107,7 @@ export default function EventImages({ onBack, onNext }) {
           setBackgroundStatus(data.backgroundStatus || 1);
           setBannerBg(data.bannerBg || false);
           if (data.bannerImageUrl) setEventBannerPreview(data.bannerImageUrl);
-        } catch (e) {}
+        } catch (e) { }
       }
     };
     window.addEventListener("createEventPrefillDone", onPrefill);
@@ -120,8 +151,8 @@ export default function EventImages({ onBack, onNext }) {
         // persist only remote/server preview URLs, not local object URLs
         bannerImageUrl:
           eventBannerPreview &&
-          (eventBannerPreview.startsWith("http") ||
-            eventBannerPreview.startsWith("/"))
+            (eventBannerPreview.startsWith("http") ||
+              eventBannerPreview.startsWith("/"))
             ? eventBannerPreview
             : null,
       })
@@ -185,7 +216,7 @@ export default function EventImages({ onBack, onNext }) {
           </label>
           <input
             type="text"
-            className="form-control"
+            className="form-controll"
             value={
               eventDetails && eventDetails.new_event_url
                 ? eventDetails.new_event_url
@@ -211,13 +242,16 @@ export default function EventImages({ onBack, onNext }) {
           <label>
             Description <span style={{ color: "#da251c" }}>*</span>
           </label>
-          <textarea
-            className="form-control"
-            rows={5}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-          />
+          <div className="eventimages-ckeditor" style={{ marginTop: 8 }}>
+            <CKEditor
+              editor={ClassicEditor}
+              data={description}
+              onChange={(event, editor) => {
+                const data = editor.getData();
+                setDescription(data);
+              }}
+            />
+          </div>
           {errorMsg === "Description is required." && (
             <div
               style={{
@@ -237,7 +271,7 @@ export default function EventImages({ onBack, onNext }) {
           </label>
           <input
             type="text"
-            className="form-control"
+            className="form-controll"
             value={keywords}
             onChange={(e) => setKeywords(e.target.value)}
             required
@@ -262,7 +296,7 @@ export default function EventImages({ onBack, onNext }) {
             </label>
             <input
               type="file"
-              className="form-control"
+              className="form-controll"
               accept=".jpg,.jpeg,.png"
               onChange={(e) => {
                 const file = e.target.files[0];
@@ -277,7 +311,7 @@ export default function EventImages({ onBack, onNext }) {
                   if (prevObjectUrl.current) {
                     try {
                       URL.revokeObjectURL(prevObjectUrl.current);
-                    } catch (e) {}
+                    } catch (e) { }
                     prevObjectUrl.current = null;
                   }
                   const url = URL.createObjectURL(file);
@@ -344,7 +378,7 @@ export default function EventImages({ onBack, onNext }) {
                       if (prevObjectUrl.current) {
                         try {
                           URL.revokeObjectURL(prevObjectUrl.current);
-                        } catch (e) {}
+                        } catch (e) { }
                         prevObjectUrl.current = null;
                       }
                       setEventBannerPreview(null);
@@ -359,7 +393,7 @@ export default function EventImages({ onBack, onNext }) {
           </div>
           <div className="form-group" style={{ flex: 1 }}>
             <label>Event Communication Creatives</label>
-            <input type="file" className="form-control" multiple />
+            <input type="file" className="form-controll" multiple />
             <small>You can choose multiple files.</small>
           </div>
         </div>
@@ -433,7 +467,7 @@ export default function EventImages({ onBack, onNext }) {
           <label>Description Image</label>
           <input
             type="file"
-            className="form-control"
+            className="form-controll"
             accept=".jpg,.jpeg,.png"
             onChange={(e) => setDescriptionImage(e.target.files[0])}
           />

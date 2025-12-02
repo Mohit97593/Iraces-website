@@ -100,10 +100,10 @@ export default function CreateEvent() {
               sessionStorage.removeItem("eventSettingsFormData");
               sessionStorage.removeItem("eventStatus");
               // keep eventName until new details arrive; it's fine to overwrite later
-            } catch (e) {}
+            } catch (e) { }
           }
           sessionStorage.setItem("event_id", String(eid));
-        } catch (e) {}
+        } catch (e) { }
         // fetch event details and prefill basic fields
         (async () => {
           try {
@@ -121,7 +121,7 @@ export default function CreateEvent() {
                 setEventName(name);
                 try {
                   sessionStorage.setItem("eventName", name);
-                } catch (e) {}
+                } catch (e) { }
               }
 
               // Populate selectedCategories for step 1 so previously selected
@@ -163,7 +163,7 @@ export default function CreateEvent() {
                     if (checked.length > 0) {
                       selected = checked.map((c) => c.name).filter(Boolean);
                     }
-                  } catch (e) {}
+                  } catch (e) { }
                 }
                 if (selected.length > 0) {
                   setSelectedCategories(selected);
@@ -172,7 +172,7 @@ export default function CreateEvent() {
                       "eventCategories",
                       JSON.stringify(selected)
                     );
-                  } catch (e) {}
+                  } catch (e) { }
                 }
               } catch (e) {
                 console.error(
@@ -202,7 +202,7 @@ export default function CreateEvent() {
                   null;
                 if (canonicalId)
                   sessionStorage.setItem("event_id", String(canonicalId));
-              } catch (e) {}
+              } catch (e) { }
 
               // Prefill scheduling step data used by EventScheduling
               try {
@@ -275,13 +275,13 @@ export default function CreateEvent() {
                   // props (or parent state) can access scheduling values faster.
                   try {
                     setEventFormData((prev) => ({ ...prev, ...sched }));
-                  } catch (e) {}
+                  } catch (e) { }
                   sessionStorage.setItem(
                     "eventSchedulingFormData",
                     JSON.stringify(sched)
                   );
                 }
-              } catch (e) {}
+              } catch (e) { }
 
               // Prefill images/description step
               try {
@@ -313,7 +313,7 @@ export default function CreateEvent() {
                   det.data.PreviewEventDetails.banner_img
                 )
                   setBannerImageUrl(det.data.PreviewEventDetails.banner_img);
-              } catch (e) {}
+              } catch (e) { }
 
               // Prefill categories (RaceCategories expects 'event_categories' in sessionStorage sometimes)
               try {
@@ -335,7 +335,7 @@ export default function CreateEvent() {
                     )
                   );
                 }
-              } catch (e) {}
+              } catch (e) { }
 
               // Misc UI values
               try {
@@ -377,9 +377,9 @@ export default function CreateEvent() {
                         "eventSettingsFormData",
                         JSON.stringify(s)
                       );
-                    } catch (e) {}
+                    } catch (e) { }
                   }
-                } catch (e) {}
+                } catch (e) { }
                 // Persist event status if available
                 try {
                   const evStatus =
@@ -395,7 +395,7 @@ export default function CreateEvent() {
                     sessionStorage.setItem("eventStatus", String(mapped));
                     setStatus(mapped);
                   }
-                } catch (e) {}
+                } catch (e) { }
 
                 // Mark which steps are already saved based on presence of data
                 try {
@@ -528,7 +528,7 @@ export default function CreateEvent() {
                 } catch (e) {
                   // ignore
                 }
-              } catch (e) {}
+              } catch (e) { }
             }
           } catch (e) {
             console.error("Failed to fetch event details for edit route:", e);
@@ -874,17 +874,17 @@ export default function CreateEvent() {
           const nameToStore = payload.event_name || eventName || "";
           sessionStorage.setItem("eventName", nameToStore);
           setEventName(nameToStore);
-        } catch (e) {}
+        } catch (e) { }
 
         // Store event_id in session storage if returned
         if (newEventId) {
           try {
             sessionStorage.setItem("event_id", String(newEventId));
-          } catch (e) {}
+          } catch (e) { }
           if (lastEventId !== String(newEventId)) {
             try {
               sessionStorage.removeItem("eventSchedulingFormData");
-            } catch (e) {}
+            } catch (e) { }
             setLastEventId(String(newEventId));
           }
         }
@@ -1034,24 +1034,24 @@ export default function CreateEvent() {
                     isCompleted
                       ? "event-step-pill"
                       : isCurrent
-                      ? "event-step-pill"
-                      : "event-step-circle"
+                        ? "event-step-pill"
+                        : "event-step-circle"
                   }
                   style={
                     isCompleted
                       ? {
-                          background: "#43a047",
-                          color: "#fff",
-                          borderRadius: "24px",
-                          padding: "10px 24px",
-                          display: "flex",
-                          alignItems: "center",
-                          fontWeight: 600,
-                          cursor: isDisabled ? "not-allowed" : "pointer",
-                          opacity: isDisabled ? 0.5 : 1,
-                        }
+                        background: "#43a047",
+                        color: "#fff",
+                        borderRadius: "24px",
+                        padding: "10px 24px",
+                        display: "flex",
+                        alignItems: "center",
+                        fontWeight: 600,
+                        cursor: isDisabled ? "not-allowed" : "pointer",
+                        opacity: isDisabled ? 0.5 : 1,
+                      }
                       : isCurrent
-                      ? {
+                        ? {
                           background: "#da251c",
                           color: "#fff",
                           borderRadius: "24px",
@@ -1062,7 +1062,7 @@ export default function CreateEvent() {
                           cursor: isDisabled ? "not-allowed" : "pointer",
                           opacity: isDisabled ? 0.5 : 1,
                         }
-                      : {
+                        : {
                           width: "44px",
                           height: "44px",
                           border: "2px solid #da251c",
@@ -1124,25 +1124,22 @@ export default function CreateEvent() {
                   <h3>Event Essentials</h3>
                   <div className="status-buttons">
                     <button
-                      className={`status-btn ${
-                        status === "public" ? "active" : ""
-                      }`}
+                      className={`status-btn ${status === "public" ? "active" : ""
+                        }`}
                       onClick={() => setStatus("public")}
                     >
                       <i className="fas fa-globe"></i> Public
                     </button>
                     <button
-                      className={`status-btn ${
-                        status === "private" ? "active" : ""
-                      }`}
+                      className={`status-btn ${status === "private" ? "active" : ""
+                        }`}
                       onClick={() => setStatus("private")}
                     >
                       <i className="fas fa-lock"></i> Private
                     </button>
                     <button
-                      className={`status-btn ${
-                        status === "draft" ? "active" : ""
-                      }`}
+                      className={`status-btn ${status === "draft" ? "active" : ""
+                        }`}
                       onClick={() => setStatus("draft")}
                     >
                       <i className="fas fa-file-alt"></i> Draft
@@ -1163,7 +1160,7 @@ export default function CreateEvent() {
                     </label>
                     <input
                       type="text"
-                      className="form-control"
+                      className="form-controll"
                       placeholder={`(Allowed only this special characters - , @ , ' , " )`}
                       value={eventName}
                       onChange={(e) => {
@@ -1200,11 +1197,10 @@ export default function CreateEvent() {
                           return (
                             <div
                               key={cat.id || index}
-                              className={`category-card ${
-                                selectedCategories.includes(cat.name)
+                              className={`category-card ${selectedCategories.includes(cat.name)
                                   ? "selected"
                                   : ""
-                              }`}
+                                }`}
                               onClick={() => handleCategoryToggle(cat.name)}
                             >
                               {isLogoImage ? (
@@ -1226,7 +1222,7 @@ export default function CreateEvent() {
                               <input
                                 type="checkbox"
                                 checked={selectedCategories.includes(cat.name)}
-                                onChange={() => {}}
+                                onChange={() => { }}
                               />
                             </div>
                           );

@@ -174,21 +174,25 @@
   left: 6px;
   animation-delay: 0s;
 }
+
 .steam-2 {
   left: 11px;
   animation-delay: 0.5s;
 }
+
 .steam-3 {
   left: 16px;
   animation-delay: 1s;
 }
 
 @keyframes steam {
+
   0%,
   100% {
     transform: translateY(0) scale(1);
     opacity: 0.6;
   }
+
   50% {
     transform: translateY(-10px) scale(1.2);
     opacity: 0.2;
@@ -220,10 +224,12 @@
   left: 2px;
   transform: rotate(-20deg);
 }
+
 .leaf-2 {
   left: 6px;
   transform: rotate(0deg);
 }
+
 .leaf-3 {
   left: 10px;
   transform: rotate(20deg);
@@ -289,16 +295,20 @@
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0px) rotate(0deg);
   }
+
   25% {
     transform: translateY(-20px) rotate(90deg);
   }
+
   50% {
     transform: translateY(-40px) rotate(180deg);
   }
+
   75% {
     transform: translateY(-20px) rotate(270deg);
   }
@@ -379,9 +389,9 @@
 }
 
 .auth-input {
-  padding: 15px 15px 15px 10px;
+  padding: 12px 12px;
   border: 2px solid #e9ecef;
-  border-radius: 15px;
+  border-radius: 8px;
   font-size: 16px;
   background: #f8f9fa;
   transition: all 0.3s ease;
@@ -463,11 +473,11 @@ select.auth-input option {
   transition: all 0.3s ease;
 }
 
-.checkbox-container:hover input ~ .checkmark {
+.checkbox-container:hover input~.checkmark {
   background-color: #e9ecef;
 }
 
-.checkbox-container input:checked ~ .checkmark {
+.checkbox-container input:checked~.checkmark {
   background: #da251c;
   border-color: #da251c;
 }
@@ -478,7 +488,7 @@ select.auth-input option {
   display: none;
 }
 
-.checkbox-container input:checked ~ .checkmark:after {
+.checkbox-container input:checked~.checkmark:after {
   display: block;
 }
 
@@ -648,11 +658,13 @@ select.auth-input option {
 }
 
 @media (max-width: 767px) {
+
   /* Force all login inputs to single column in mobile view */
   .auth-form .row {
     display: block !important;
     margin: 0 !important;
   }
+
   .auth-form .col-6,
   .auth-form .col-md-6 {
     width: 100% !important;
@@ -662,6 +674,7 @@ select.auth-input option {
     padding-left: 0 !important;
     padding-right: 0 !important;
   }
+
   .pink-shape-top {
     width: 300px;
     height: 250px;
@@ -684,11 +697,13 @@ select.auth-input option {
 
   .auth-title {
     font-size: 1.8rem;
+
     /* Force all inputs to single column in mobile view */
     .auth-form .row {
       display: block !important;
       margin: 0 !important;
     }
+
     .auth-form .col-6 {
       width: 100% !important;
       max-width: 100% !important;

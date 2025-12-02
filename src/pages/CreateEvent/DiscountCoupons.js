@@ -29,6 +29,41 @@ const DiscountCoupons = ({ onBack, onNext }) => {
     user_id: "",
     have_list_codes: "0",
   };
+
+  // Toggle coupon status handler
+  const handleToggleCoupon = async (coupon) => {
+    const current = !!coupon.coupon_status;
+    const newLocal = !current; // UI value after click
+
+    // Per your request: when toggled OFF -> send true; when toggled ON -> send false
+    const payloadStatus = !newLocal;
+
+    const fd = new FormData();
+    fd.append("coupon_id", String(coupon.id || coupon.coupon_id || ""));
+    fd.append("coupon_status", payloadStatus ? "true" : "false");
+
+    try {
+      // Optimistic UI update
+      setCouponDetails((prev) =>
+        prev.map((c) =>
+          c.id === coupon.id ? { ...c, coupon_status: newLocal } : c
+        )
+      );
+
+      const res = await authAPI.statusCoupon(fd);
+      console.log("statusCoupon response:", res);
+      // Optionally reconcile with server response if needed
+    } catch (err) {
+      console.error("statusCoupon error:", err);
+      // Revert UI on failure
+      setCouponDetails((prev) =>
+        prev.map((c) =>
+          c.id === coupon.id ? { ...c, coupon_status: current } : c
+        )
+      );
+      alert("Failed to update coupon status. Please try again.");
+    }
+  };
   const [formData, setFormData] = useState(initialFormState);
   const [showCSVModal, setShowCSVModal] = useState(false);
   const [eventDetails, setEventDetails] = useState(null);
@@ -36,6 +71,110 @@ const DiscountCoupons = ({ onBack, onNext }) => {
   const [selectedTickets, setSelectedTickets] = useState([]);
   const [couponDetails, setCouponDetails] = useState([]);
   const [hoveredCoupon, setHoveredCoupon] = useState(null);
+  const [saveErrors, setSaveErrors] = useState({});
+  const [attemptedSave, setAttemptedSave] = useState(false);
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  const getNextDayStr = (dateStr) => {
+    try {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + 1);
+      return d.toISOString().slice(0, 10);
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
+  const validateCouponForm = () => {
+    const errors = {};
+    // Discount Name required
+    if (!formData.discountName || String(formData.discountName).trim() === "") {
+      errors.discountName = "Discount name is required";
+    }
+    // No. of Discounts required
+    if (!formData.noOfDiscounts || Number(formData.noOfDiscounts) <= 0) {
+      errors.noOfDiscounts = "Enter number of discounts";
+    }
+    // Discount value required depending on type
+    if (formData.discountAmount === "percentage") {
+      if (
+        !formData.discountPercentage ||
+        String(formData.discountPercentage).trim() === ""
+      ) {
+        errors.discountPercentage = "Enter discount percentage";
+      } else if (Number(formData.discountPercentage) <= 0) {
+        errors.discountPercentage = "Percentage must be greater than 0";
+      }
+    } else {
+      if (
+        !formData.discountAmountValue ||
+        String(formData.discountAmountValue).trim() === ""
+      ) {
+        errors.discountAmountValue = "Enter discount amount";
+      } else if (Number(formData.discountAmountValue) <= 0) {
+        errors.discountAmountValue = "Amount must be greater than 0";
+      }
+    }
+
+    // Dates: from date cannot be before today
+    if (!formData.discountAvailedFromDate) {
+      errors.discountAvailedFromDate = "Start date is required";
+    } else {
+      const from = new Date(formData.discountAvailedFromDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      from.setHours(0, 0, 0, 0);
+      if (from < today) {
+        errors.discountAvailedFromDate = "Start date cannot be before today";
+      }
+    }
+
+    // End date required
+    if (!formData.discountAvailedToDate) {
+      errors.discountAvailedToDate = "End date is required";
+    }
+
+    // Times: require both from/to times and validate ordering when possible
+    if (!formData.discountAvailedFromTime) {
+      errors.discountAvailedFromTime = "Start time is required";
+    }
+    if (!formData.discountAvailedToTime) {
+      errors.discountAvailedToTime = "End time is required";
+    }
+
+    // If both dates present, ensure logical ordering. Allow same-day if end time is later.
+    if (formData.discountAvailedFromDate && formData.discountAvailedToDate) {
+      const fromDate = new Date(formData.discountAvailedFromDate);
+      const toDate = new Date(formData.discountAvailedToDate);
+      fromDate.setHours(0, 0, 0, 0);
+      toDate.setHours(0, 0, 0, 0);
+      if (toDate < fromDate) {
+        errors.discountAvailedToDate = "End date cannot be before start date";
+      } else if (toDate.getTime() === fromDate.getTime()) {
+        // same date -> require times and ensure end time > start time
+        if (
+          formData.discountAvailedFromTime &&
+          formData.discountAvailedToTime
+        ) {
+          const parseTimeToMinutes = (t) => {
+            const parts = String(t).split(":");
+            const hh = Number(parts[0] || 0);
+            const mm = Number(parts[1] || 0);
+            return hh * 60 + mm;
+          };
+          const fromM = parseTimeToMinutes(formData.discountAvailedFromTime);
+          const toM = parseTimeToMinutes(formData.discountAvailedToTime);
+          if (toM <= fromM) {
+            errors.discountAvailedToTime = "End time must be after start time";
+          }
+        }
+      }
+    }
+
+    setSaveErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const uniqueCoupons = (arr) => {
     if (!Array.isArray(arr)) return [];
@@ -211,6 +350,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
           setSelectedTickets(ticketIds);
           setApplyToCategories("selected");
         }
+        setAttemptedSave(false);
         setShowForm(true);
       } else {
         alert("No coupon details returned for edit.");
@@ -264,6 +404,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                   // clear csv input if any
                   const csvInput = document.getElementById("csvUpload");
                   if (csvInput) csvInput.value = "";
+                  setAttemptedSave(false);
                   setShowForm(true);
                 }}
                 style={{
@@ -343,7 +484,10 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                     type="text"
                     name="discountName"
                     value={formData.discountName}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      setSaveErrors((s) => ({ ...s, discountName: undefined }));
+                    }}
                     style={{
                       width: "100%",
                       padding: "10px",
@@ -352,6 +496,11 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                       boxSizing: "border-box",
                     }}
                   />
+                  {attemptedSave && saveErrors.discountName && (
+                    <div style={{ color: "red", fontSize: 12, marginTop: 6 }}>
+                      {saveErrors.discountName}
+                    </div>
+                  )}
                 </div>
 
                 {/* Show Public */}
@@ -432,7 +581,13 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                         type="number"
                         name="discountPercentage"
                         value={formData.discountPercentage}
-                        onChange={handleInputChange}
+                        onChange={(e) => {
+                          handleInputChange(e);
+                          setSaveErrors((s) => ({
+                            ...s,
+                            discountPercentage: undefined,
+                          }));
+                        }}
                         style={{
                           width: "100%",
                           padding: "10px",
@@ -440,7 +595,16 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                           border: "1px solid #ddd",
                           boxSizing: "border-box",
                         }}
+                        min="0.01"
+                        step="0.01"
                       />
+                      {attemptedSave && saveErrors.discountPercentage && (
+                        <div
+                          style={{ color: "red", fontSize: 12, marginTop: 6 }}
+                        >
+                          {saveErrors.discountPercentage}
+                        </div>
+                      )}
                     </>
                   ) : (
                     <>
@@ -451,7 +615,13 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                         type="number"
                         name="discountAmountValue"
                         value={formData.discountAmountValue}
-                        onChange={handleInputChange}
+                        onChange={(e) => {
+                          handleInputChange(e);
+                          setSaveErrors((s) => ({
+                            ...s,
+                            discountAmountValue: undefined,
+                          }));
+                        }}
                         placeholder="Enter fixed amount"
                         style={{
                           width: "100%",
@@ -460,7 +630,16 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                           border: "1px solid #ddd",
                           boxSizing: "border-box",
                         }}
+                        min="0.01"
+                        step="0.01"
                       />
+                      {attemptedSave && saveErrors.discountAmountValue && (
+                        <div
+                          style={{ color: "red", fontSize: 12, marginTop: 6 }}
+                        >
+                          {saveErrors.discountAmountValue}
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -603,7 +782,13 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                     type="number"
                     name="noOfDiscounts"
                     value={formData.noOfDiscounts}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      setSaveErrors((s) => ({
+                        ...s,
+                        noOfDiscounts: undefined,
+                      }));
+                    }}
                     style={{
                       width: "100%",
                       padding: "10px",
@@ -611,7 +796,13 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                       border: "1px solid #ddd",
                       boxSizing: "border-box",
                     }}
+                    min="1"
                   />
+                  {attemptedSave && saveErrors.noOfDiscounts && (
+                    <div style={{ color: "red", fontSize: 12, marginTop: 6 }}>
+                      {saveErrors.noOfDiscounts}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -668,8 +859,15 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                     type="date"
                     name="discountAvailedFromDate"
                     value={formData.discountAvailedFromDate}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      setSaveErrors((s) => ({
+                        ...s,
+                        discountAvailedFromDate: undefined,
+                      }));
+                    }}
                     placeholder="dd-mm-yyyy"
+                    min={todayStr}
                     style={{
                       width: "100%",
                       padding: "10px",
@@ -678,6 +876,11 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                       boxSizing: "border-box",
                     }}
                   />
+                  {attemptedSave && saveErrors.discountAvailedFromDate && (
+                    <div style={{ color: "red", fontSize: 12, marginTop: 6 }}>
+                      {saveErrors.discountAvailedFromDate}
+                    </div>
+                  )}
                 </div>
 
                 {/* Discount Availed From Time */}
@@ -690,7 +893,13 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                     type="time"
                     name="discountAvailedFromTime"
                     value={formData.discountAvailedFromTime}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      setSaveErrors((s) => ({
+                        ...s,
+                        discountAvailedFromTime: undefined,
+                      }));
+                    }}
                     placeholder="--:--"
                     style={{
                       width: "100%",
@@ -700,6 +909,11 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                       boxSizing: "border-box",
                     }}
                   />
+                  {attemptedSave && saveErrors.discountAvailedFromTime && (
+                    <div style={{ color: "red", fontSize: 12, marginTop: 6 }}>
+                      {saveErrors.discountAvailedFromTime}
+                    </div>
+                  )}
                 </div>
 
                 {/* Discount Availed To Date */}
@@ -712,8 +926,15 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                     type="date"
                     name="discountAvailedToDate"
                     value={formData.discountAvailedToDate}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      setSaveErrors((s) => ({
+                        ...s,
+                        discountAvailedToDate: undefined,
+                      }));
+                    }}
                     placeholder="dd-mm-yyyy"
+                    min={formData.discountAvailedFromDate || todayStr}
                     style={{
                       width: "100%",
                       padding: "10px",
@@ -722,6 +943,11 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                       boxSizing: "border-box",
                     }}
                   />
+                  {attemptedSave && saveErrors.discountAvailedToDate && (
+                    <div style={{ color: "red", fontSize: 12, marginTop: 6 }}>
+                      {saveErrors.discountAvailedToDate}
+                    </div>
+                  )}
                 </div>
 
                 {/* Discount Availed To Time */}
@@ -734,7 +960,13 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                     type="time"
                     name="discountAvailedToTime"
                     value={formData.discountAvailedToTime}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      setSaveErrors((s) => ({
+                        ...s,
+                        discountAvailedToTime: undefined,
+                      }));
+                    }}
                     placeholder="--:--"
                     style={{
                       width: "100%",
@@ -744,6 +976,11 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                       boxSizing: "border-box",
                     }}
                   />
+                  {attemptedSave && saveErrors.discountAvailedToTime && (
+                    <div style={{ color: "red", fontSize: 12, marginTop: 6 }}>
+                      {saveErrors.discountAvailedToTime}
+                    </div>
+                  )}
                 </div>
 
                 {/* Description */}
@@ -969,6 +1206,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                     setSelectedTickets(tickets.map((t) => t.id));
                     const csvInput = document.getElementById("csvUpload");
                     if (csvInput) csvInput.value = "";
+                    setAttemptedSave(false);
                   }}
                   style={{
                     border: "1.5px solid #666",
@@ -993,6 +1231,10 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                     cursor: "pointer",
                   }}
                   onClick={async () => {
+                    setAttemptedSave(true);
+                    if (!validateCouponForm()) {
+                      return;
+                    }
                     // prepare form data according to backend expectations
                     const fd = new FormData();
                     // include values from formData state
@@ -1162,6 +1404,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                         setUseType("oneTime");
                         setShowPublic(true);
                         setSelectedTickets(tickets.map((t) => t.id));
+                        setAttemptedSave(false);
                         const csvInput = document.getElementById("csvUpload");
                         if (csvInput) csvInput.value = "";
                         // refresh event details to reflect new coupon
@@ -1420,6 +1663,9 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                         {/* toggle switch */}
                         <div style={{ marginLeft: 12 }}>
                           <div
+                            role="button"
+                            aria-label="Toggle coupon status"
+                            onClick={() => handleToggleCoupon(c)}
                             style={{
                               width: 48,
                               marginTop: 12,

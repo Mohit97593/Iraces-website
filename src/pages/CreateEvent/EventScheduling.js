@@ -31,7 +31,23 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
     }
     return defaultFormData;
   };
+  const getPrevDayStr = (dateStr) => {
+    if (!dateStr) return "";
+    try {
+      const d = new Date(`${dateStr}T00:00`);
+      d.setDate(d.getDate() - 1);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    } catch (e) {
+      return "";
+    }
+  };
   const [timezones, setTimezones] = useState([]);
+  const [tzSearch, setTzSearch] = useState("");
+  const [showTzDropdown, setShowTzDropdown] = useState(false);
+  const [filteredTimezones, setFilteredTimezones] = useState([]);
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
@@ -50,7 +66,59 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => {
-      const updated = { ...prev, [name]: value };
+      let updated = { ...prev, [name]: value };
+
+      // If event start date was changed and existing event end is before new start,
+      // clear the event end date/time so user must pick a new valid end.
+      if (name === "eventStartDate" && updated.eventEndDate) {
+        try {
+          const start = new Date(`${value}T00:00`);
+          const end = new Date(`${updated.eventEndDate}T00:00`);
+          if (end < start) {
+            updated.eventEndDate = "";
+            updated.eventEndTime = "";
+          }
+        } catch (e) {
+          // ignore parse errors
+        }
+      }
+
+      // If registration start date changed and registration end is before new start,
+      // clear registration end date/time.
+      if (name === "registrationStartDate" && updated.registrationEndDate) {
+        try {
+          const rstart = new Date(`${value}T00:00`);
+          const rend = new Date(`${updated.registrationEndDate}T00:00`);
+          if (rend < rstart) {
+            updated.registrationEndDate = "";
+            updated.registrationEndTime = "";
+          }
+        } catch (e) { }
+      }
+
+      // If user directly selected an end date that is before the start, clear it as well.
+      if (name === "eventEndDate" && updated.eventStartDate) {
+        try {
+          const start = new Date(`${updated.eventStartDate}T00:00`);
+          const end = new Date(`${value}T00:00`);
+          if (end < start) {
+            updated.eventEndDate = "";
+            updated.eventEndTime = "";
+          }
+        } catch (e) { }
+      }
+
+      if (name === "registrationEndDate" && updated.registrationStartDate) {
+        try {
+          const rstart = new Date(`${updated.registrationStartDate}T00:00`);
+          const rend = new Date(`${value}T00:00`);
+          if (rend < rstart) {
+            updated.registrationEndDate = "";
+            updated.registrationEndTime = "";
+          }
+        } catch (e) { }
+      }
+
       sessionStorage.setItem(
         "eventSchedulingFormData",
         JSON.stringify(updated)
@@ -69,6 +137,31 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
       </div>
     );
   };
+
+  useEffect(() => {
+    // update filtered list when timezones or search term changes
+    if (!tzSearch || !Array.isArray(timezones) || timezones.length === 0) {
+      setFilteredTimezones(timezones || []);
+    } else {
+      const q = String(tzSearch).toLowerCase();
+      setFilteredTimezones(
+        (timezones || []).filter(
+          (tz) =>
+            String(tz.area || "")
+              .toLowerCase()
+              .indexOf(q) !== -1
+        )
+      );
+    }
+  }, [tzSearch, timezones]);
+
+  // initialize tzSearch from formData.timeZone when available (but don't override user typing)
+  useEffect(() => {
+    if ((!tzSearch || tzSearch === "") && formData.timeZone) {
+      setTzSearch(formData.timeZone);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.timeZone]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -318,6 +411,10 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     // client-side validation for required fields
+    const registrationEnabled = !!(
+      formData.eventStartDate && formData.eventEndDate
+    );
+
     const requiredFields = [
       "timeZone",
       "country",
@@ -329,11 +426,17 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
       "eventStartTime",
       "eventEndDate",
       "eventEndTime",
-      "registrationStartDate",
-      "registrationStartTime",
-      "registrationEndDate",
-      "registrationEndTime",
     ];
+
+    // Only require registration fields when event start/end are set
+    if (registrationEnabled) {
+      requiredFields.push(
+        "registrationStartDate",
+        "registrationStartTime",
+        "registrationEndDate",
+        "registrationEndTime"
+      );
+    }
     const newErrors = {};
     requiredFields.forEach((f) => {
       if (
@@ -354,47 +457,82 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
       }
     }
     if (formData.eventStartDate && formData.eventEndDate) {
-      const start = new Date(
-        `${formData.eventStartDate}T${formData.eventStartTime || "00:00"}`
-      );
-      const end = new Date(
-        `${formData.eventEndDate}T${formData.eventEndTime || "00:00"}`
-      );
-      if (start > end) {
-        newErrors.eventEndDate = "Event end must be after start";
+      // Compare dates only (ignore times) so same-day events are allowed
+      const startDateOnly = new Date(`${formData.eventStartDate}T00:00`);
+      const endDateOnly = new Date(`${formData.eventEndDate}T00:00`);
+      if (endDateOnly < startDateOnly) {
+        newErrors.eventEndDate = "Event end must be on or after start";
+      }
+      // If start and end are the same date, enforce time-level ordering
+      if (
+        formData.eventStartDate === formData.eventEndDate &&
+        formData.eventStartTime &&
+        formData.eventEndTime
+      ) {
+        const [sh, sm] = String(formData.eventStartTime).split(":").map(Number);
+        const [eh, em] = String(formData.eventEndTime).split(":").map(Number);
+        const startMinutes = sh * 60 + sm;
+        const endMinutes = eh * 60 + em;
+        if (endMinutes <= startMinutes) {
+          newErrors.eventEndTime =
+            "Event end time must be after start time for same-day events";
+        }
       }
     }
     if (formData.registrationStartDate && formData.registrationEndDate) {
       const rstart = new Date(
-        `${formData.registrationStartDate}T${
-          formData.registrationStartTime || "00:00"
+        `${formData.registrationStartDate}T${formData.registrationStartTime || "00:00"
         }`
       );
+      // If user did not provide an end time, assume end-of-day so same-date registration
+      // is allowed while still enforcing that the end is strictly after the start.
       const rend = new Date(
-        `${formData.registrationEndDate}T${
-          formData.registrationEndTime || "00:00"
+        `${formData.registrationEndDate}T${formData.registrationEndTime || "23:59"
         }`
       );
-      if (rstart > rend) {
-        newErrors.registrationEndDate = "Registration end must be after start";
+      if (rstart >= rend) {
+        // If the registration start and end dates are the same, set a time-specific error
+        if (formData.registrationStartDate === formData.registrationEndDate) {
+          newErrors.registrationEndTime =
+            "Registration end time must be after start time for same-day registrations";
+        } else {
+          newErrors.registrationEndDate =
+            "Registration end must be after start";
+        }
       }
     }
 
-    // registration should not start or end before the event start date
-    if (formData.eventStartDate && formData.registrationStartDate) {
-      const eventStartOnly = new Date(`${formData.eventStartDate}T00:00`);
+    // (Allow registration to start before event start date.)
+    // registration dates must fall on or before the event end date (if set)
+    if (formData.eventEndDate && formData.registrationStartDate) {
+      const eventEndOnly = new Date(`${formData.eventEndDate}T23:59`);
       const regStartOnly = new Date(`${formData.registrationStartDate}T00:00`);
-      if (regStartOnly < eventStartOnly) {
+      if (regStartOnly > eventEndOnly) {
         newErrors.registrationStartDate =
-          "Registration cannot start before event start date";
+          "Registration start cannot be after the event end date";
       }
     }
-    if (formData.eventStartDate && formData.registrationEndDate) {
-      const eventStartOnly = new Date(`${formData.eventStartDate}T00:00`);
+    if (formData.eventEndDate && formData.registrationEndDate) {
+      const eventEndOnly = new Date(`${formData.eventEndDate}T23:59`);
       const regEndOnly = new Date(`${formData.registrationEndDate}T00:00`);
-      if (regEndOnly < eventStartOnly) {
+      if (regEndOnly > eventEndOnly) {
         newErrors.registrationEndDate =
-          "Registration end cannot be before event start date";
+          "Registration end cannot be after the event end date";
+      }
+      // If registration end date equals event end date, registration end time must be before event end time
+      if (
+        formData.registrationEndDate === formData.eventEndDate &&
+        formData.registrationEndTime &&
+        formData.eventEndTime
+      ) {
+        const [reh, rem] = String(formData.registrationEndTime).split(":").map(Number);
+        const [eeh, eem] = String(formData.eventEndTime).split(":").map(Number);
+        const regEndMinutes = reh * 60 + rem;
+        const eventEndMinutes = eeh * 60 + eem;
+        if (regEndMinutes >= eventEndMinutes) {
+          newErrors.registrationEndTime =
+            "Registration end time must be before event end time when dates are the same";
+        }
       }
     }
 
@@ -430,10 +568,19 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
       address: formData.eventAddress,
       latitude: formData.latitude || "",
       longitude: formData.longitude || "",
-      registration_start_date: formData.registrationStartDate,
-      registration_start_time: formData.registrationStartTime,
-      registration_end_date: formData.registrationEndDate,
-      registration_end_time: formData.registrationEndTime,
+      // Include registration fields only if enabled; otherwise send empty values
+      registration_start_date: registrationEnabled
+        ? formData.registrationStartDate
+        : "",
+      registration_start_time: registrationEnabled
+        ? formData.registrationStartTime
+        : "",
+      registration_end_date: registrationEnabled
+        ? formData.registrationEndDate
+        : "",
+      registration_end_time: registrationEnabled
+        ? formData.registrationEndTime
+        : "",
       google_map_link: formData.googleMapLink,
     };
     authAPI
@@ -471,29 +618,98 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
       </div>
 
       <form onSubmit={handleSubmit} noValidate>
-        {/* Time Zone */}
-        <div className="form-group">
+        {/* Time Zone - searchable combobox */}
+        <div className="form-group" style={{ position: "relative" }}>
           <label>
             Time Zone <span className="required">*</span>
           </label>
-          <select
-            className="form-control"
-            name="timeZone"
-            value={formData.timeZone}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select Time Zone</option>
-            {Array.isArray(timezones) && timezones.length > 0 ? (
-              timezones.map((tz) => (
-                <option key={tz.id} value={tz.area}>
-                  {tz.area}
-                </option>
-              ))
-            ) : (
-              <option disabled>Loading timezones...</option>
-            )}
-          </select>
+          <input
+            type="text"
+            name="timeZoneInput"
+            className="form-controll"
+            placeholder="Search or select time zone"
+            value={tzSearch}
+            onChange={(e) => {
+              const v = e.target.value;
+              setTzSearch(v);
+              setShowTzDropdown(true);
+              // clear previous timezone error when user types
+              setErrors((prev) => ({ ...prev, timeZone: "" }));
+              // if user cleared the input, also clear selected timezone in formData so they can search again
+              if (v === "") {
+                setFormData((prev) => {
+                  const updated = { ...prev, timeZone: "" };
+                  sessionStorage.setItem(
+                    "eventSchedulingFormData",
+                    JSON.stringify(updated)
+                  );
+                  return updated;
+                });
+              }
+            }}
+            onFocus={() => setShowTzDropdown(true)}
+            onBlur={() => {
+              // small timeout to allow click on dropdown item
+              setTimeout(() => setShowTzDropdown(false), 150);
+            }}
+          />
+
+          {showTzDropdown && (
+            <div
+              style={{
+                position: "absolute",
+                zIndex: 60,
+                left: 0,
+                right: 0,
+                background: "#fff",
+                border: "1px solid #ddd",
+                maxHeight: 220,
+                overflow: "auto",
+                borderRadius: 6,
+                boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
+                marginTop: 6,
+              }}
+            >
+              {Array.isArray(filteredTimezones) &&
+                filteredTimezones.length > 0 ? (
+                filteredTimezones.map((tz) => (
+                  <div
+                    key={tz.id}
+                    role="button"
+                    tabIndex={0}
+                    onMouseDown={(ev) => ev.preventDefault()}
+                    onClick={() => {
+                      // select timezone
+                      setFormData((prev) => {
+                        const updated = { ...prev, timeZone: tz.area };
+                        sessionStorage.setItem(
+                          "eventSchedulingFormData",
+                          JSON.stringify(updated)
+                        );
+                        return updated;
+                      });
+                      setTzSearch(tz.area);
+                      setShowTzDropdown(false);
+                    }}
+                    style={{
+                      padding: "8px 12px",
+                      cursor: "pointer",
+                      borderBottom: "1px solid #f2f2f2",
+                    }}
+                  >
+                    {tz.area}
+                  </div>
+                ))
+              ) : (
+                <div style={{ padding: 12, color: "#666" }}>
+                  {Array.isArray(timezones) && timezones.length === 0
+                    ? "Loading timezones..."
+                    : "No matches"}
+                </div>
+              )}
+            </div>
+          )}
+
           {renderError("timeZone")}
         </div>
 
@@ -505,7 +721,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                 Country <span className="required">*</span>
               </label>
               <select
-                className="form-control"
+                className="form-controll"
                 name="country"
                 value={formData.country}
                 onChange={handleChange}
@@ -532,7 +748,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
               </label>
               <input
                 type="text"
-                className="form-control"
+                className="form-controll"
                 placeholder="Enter Pincode"
                 name="pincode"
                 value={formData.pincode}
@@ -560,7 +776,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                 )}
               </label>
               <select
-                className="form-control"
+                className="form-controll"
                 name="state"
                 value={formData.state}
                 onChange={handleChange}
@@ -594,7 +810,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                 )}
               </label>
               <select
-                className="form-control"
+                className="form-controll"
                 name="city"
                 value={formData.city}
                 onChange={handleChange}
@@ -621,7 +837,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
           <label>Google Map Embed Code</label>
           <input
             type="text"
-            className="form-control"
+            className="form-controll"
             placeholder="Enter Google Map Link"
             name="googleMapLink"
             value={formData.googleMapLink}
@@ -635,7 +851,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
             Event Address <span className="required">*</span>
           </label>
           <textarea
-            className="form-control"
+            className="form-controll"
             placeholder="Enter Event Address"
             name="eventAddress"
             value={formData.eventAddress}
@@ -655,7 +871,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
               </label>
               <input
                 type="date"
-                className="form-control"
+                className="form-controll"
                 name="eventStartDate"
                 value={formData.eventStartDate}
                 onChange={handleChange}
@@ -672,7 +888,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
               </label>
               <input
                 type="time"
-                className="form-control"
+                className="form-controll"
                 name="eventStartTime"
                 value={formData.eventStartTime}
                 onChange={handleChange}
@@ -692,7 +908,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
               </label>
               <input
                 type="date"
-                className="form-control"
+                className="form-controll"
                 name="eventEndDate"
                 value={formData.eventEndDate}
                 onChange={handleChange}
@@ -709,7 +925,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
               </label>
               <input
                 type="time"
-                className="form-control"
+                className="form-controll"
                 name="eventEndTime"
                 value={formData.eventEndTime}
                 onChange={handleChange}
@@ -729,12 +945,16 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
               </label>
               <input
                 type="date"
-                className="form-control"
+                className="form-controll"
                 name="registrationStartDate"
                 value={formData.registrationStartDate}
                 onChange={handleChange}
-                min={formData.eventStartDate || minStartDate}
-                required
+                min={minStartDate}
+                max={formData.eventEndDate ? formData.eventEndDate : ""}
+                required={
+                  !!(formData.eventStartDate && formData.eventEndDate)
+                }
+                disabled={!(formData.eventStartDate && formData.eventEndDate)}
               />
               {renderError("registrationStartDate")}
             </div>
@@ -746,11 +966,14 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
               </label>
               <input
                 type="time"
-                className="form-control"
+                className="form-controll"
                 name="registrationStartTime"
                 value={formData.registrationStartTime}
                 onChange={handleChange}
-                required
+                required={
+                  !!(formData.eventStartDate && formData.eventEndDate)
+                }
+                disabled={!(formData.eventStartDate && formData.eventEndDate)}
               />
               {renderError("registrationStartTime")}
             </div>
@@ -766,16 +989,16 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
               </label>
               <input
                 type="date"
-                className="form-control"
+                className="form-controll"
                 name="registrationEndDate"
                 value={formData.registrationEndDate}
                 onChange={handleChange}
-                min={
-                  formData.eventStartDate ||
-                  formData.registrationStartDate ||
-                  minStartDate
+                min={formData.registrationStartDate || minStartDate}
+                max={formData.eventEndDate ? formData.eventEndDate : ""}
+                required={
+                  !!(formData.eventStartDate && formData.eventEndDate)
                 }
-                required
+                disabled={!(formData.eventStartDate && formData.eventEndDate)}
               />
               {renderError("registrationEndDate")}
             </div>
@@ -787,16 +1010,32 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
               </label>
               <input
                 type="time"
-                className="form-control"
+                className="form-controll"
                 name="registrationEndTime"
                 value={formData.registrationEndTime}
                 onChange={handleChange}
-                required
+                max={
+                  formData.registrationEndDate === formData.eventEndDate &&
+                    formData.eventEndTime
+                    ? formData.eventEndTime
+                    : ""
+                }
+                required={
+                  !!(formData.eventStartDate && formData.eventEndDate)
+                }
+                disabled={!(formData.eventStartDate && formData.eventEndDate)}
               />
               {renderError("registrationEndTime")}
             </div>
           </div>
         </div>
+        {/* Show helper text when registration dates are disabled */}
+        {!(formData.eventStartDate && formData.eventEndDate) && (
+          <div style={{ color: "#666", marginTop: 6 }}>
+            Enter Event Start Date and Event End Date to enable registration
+            dates.
+          </div>
+        )}
 
         {/* Navigation Buttons */}
         <div className="form-navigation-buttons">
@@ -838,6 +1077,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
             Save & Next (3/11)
           </button>
         </div>
+
       </form>
     </div>
   );

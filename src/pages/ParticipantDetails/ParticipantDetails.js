@@ -139,8 +139,8 @@ export default function ParticipantDetails() {
         profile.gender === 1
           ? "Male"
           : profile.gender === 2
-          ? "Female"
-          : "Other";
+            ? "Female"
+            : "Other";
 
       // Set country first
       setFormData((prev) => ({
@@ -476,7 +476,7 @@ export default function ParticipantDetails() {
                       <input
                         type="text"
                         name="firstName"
-                        className="form-control"
+                        className="form-control3"
                         placeholder="first name "
                         value={formData.firstName}
                         onChange={handleInputChange}
@@ -494,7 +494,7 @@ export default function ParticipantDetails() {
                       <input
                         type="text"
                         name="lastName"
-                        className="form-control"
+                        className="form-control3"
                         placeholder="last name"
                         value={formData.lastName}
                         onChange={handleInputChange}
@@ -516,7 +516,7 @@ export default function ParticipantDetails() {
                       <input
                         type="email"
                         name="email"
-                        className="form-control"
+                        className="form-control3"
                         placeholder="email"
                         value={formData.email}
                         onChange={handleInputChange}
@@ -534,7 +534,7 @@ export default function ParticipantDetails() {
                       <input
                         type="tel"
                         name="mobile"
-                        className="form-control"
+                        className="form-control3"
                         placeholder="mobile number"
                         value={formData.mobile}
                         onChange={handleInputChange}
@@ -596,7 +596,7 @@ export default function ParticipantDetails() {
                   <input
                     type="date"
                     name="dob"
-                    className="form-control"
+                    className="form-control3"
                     placeholder="dd-mm-yyyy"
                     value={formData.dob}
                     onChange={handleInputChange}
@@ -613,7 +613,7 @@ export default function ParticipantDetails() {
                   <label>Address Line 1*</label>
                   <textarea
                     name="addressLine1"
-                    className="form-control"
+                    className="form-control3"
                     rows="3"
                     value={formData.addressLine1}
                     onChange={handleInputChange}
@@ -630,7 +630,7 @@ export default function ParticipantDetails() {
                   <label>Address Line 2</label>
                   <textarea
                     name="addressLine2"
-                    className="form-control"
+                    className="form-control3"
                     rows="3"
                     value={formData.addressLine2}
                     onChange={handleInputChange}
@@ -750,7 +750,7 @@ export default function ParticipantDetails() {
                       <input
                         type="text"
                         name="pincode"
-                        className="form-control"
+                        className="form-control3"
                         value={formData.pincode}
                         onChange={handleInputChange}
                       />
@@ -847,7 +847,7 @@ export default function ParticipantDetails() {
                       <input
                         type="file"
                         name="idProofFile"
-                        className="form-control"
+                        className="form-control3"
                         onChange={handleInputChange}
                       />
                     </div>
@@ -862,7 +862,7 @@ export default function ParticipantDetails() {
                       <input
                         type="text"
                         name="emergencyContactName"
-                        className="form-control"
+                        className="form-control3"
                         value={formData.emergencyContactName}
                         onChange={handleInputChange}
                       />
@@ -879,7 +879,7 @@ export default function ParticipantDetails() {
                       <input
                         type="tel"
                         name="emergencyContactNumber"
-                        className="form-control"
+                        className="form-control3"
                         value={formData.emergencyContactNumber}
                         onChange={handleInputChange}
                       />
