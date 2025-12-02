@@ -22,20 +22,45 @@ export default function Footer() {
               complete running events back-office service provider.
             </p>
             <div className="footer-social">
-              <a href="#" className="social-link linkedin">
+              <a
+                href="https://www.linkedin.com/company/youtoocanrun/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-link linkedin"
+              >
                 <i className="fab fa-linkedin-in"></i>
               </a>
-              <a href="#" className="social-link facebook">
+              <a
+                href="https://www.facebook.com/youtoocanrunsmpl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-link facebook"
+              >
                 <i className="fab fa-facebook-f"></i>
               </a>
-              <a href="#" className="social-link instagram">
+              <a
+                href="https://www.instagram.com/youtoocanrun/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-link instagram"
+              >
                 <i className="fab fa-instagram"></i>
               </a>
-              <a href="#" className="social-link twitter">
+              <a
+                href="https://x.com/youtoocanrun"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-link twitter"
+              >
                 <i className="fab fa-twitter"></i>
               </a>
-              <a href="#" className="social-link reddit">
-                <i className="fab fa-reddit-alien"></i>
+              <a
+                href="https://www.youtube.com/user/YouTooCanRun"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="social-link youtube"
+              >
+                <i className="fab fa-youtube"></i>
               </a>
             </div>
           </div>

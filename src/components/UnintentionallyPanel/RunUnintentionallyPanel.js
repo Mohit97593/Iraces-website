@@ -19,9 +19,10 @@ export default function RunUnintentionallyPanel() {
               FEEL THE DIFFERENCE
             </h1>
             <p className="run-description">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit
-              tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo. Class
-              aptent taciti sociosqu ad litora torquent.
+              RACES (YouTooCanRun) brings runners together — find local races,
+              manage registrations easily, and access training tips from
+              experienced coaches. Join our community to stay motivated,
+              discover events near you, and celebrate every milestone.
             </p>
           </div>
 

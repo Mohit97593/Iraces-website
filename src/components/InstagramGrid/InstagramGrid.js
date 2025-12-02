@@ -59,10 +59,21 @@ const InstagramGrid = () => (
                 Follow Our Instagram
               </h4>
               <p className="mb-4">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit
-                tellus, luctus nec ullamcorper mattis.
+                RACES (YouTooCanRun) is India’s leading running events platform
+                — discover upcoming races, manage registrations, and join a
+                thriving community of runners across cities. Follow us on
+                Instagram for event highlights, training tips, and
+                behind-the-scenes stories.
               </p>
-              <button className="btn-follow">Follow Us</button>
+              <a
+                className="btn-follow"
+                href="https://www.instagram.com/youtoocanrun/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow YouTooCanRun on Instagram"
+              >
+                Follow Us
+              </a>
             </div>
           </div>
         </div>

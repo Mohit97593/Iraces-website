@@ -390,6 +390,12 @@ export default function HeroCarousel() {
   const staticSubtitle =
     "Join our vibrant running club and conquer every mile – from weekend jogs to marathon triumphs.";
 
+  // Pick the nearest upcoming event (by start_time) if available
+  const nextUpcomingEvent =
+    Array.isArray(upcomingEvents) && upcomingEvents.length > 0
+      ? upcomingEvents.reduce((a, b) => (a.start_time < b.start_time ? a : b))
+      : null;
+
   // Handle distance card click
   const handleDistanceClick = (distanceName) => {
     // Navigate to search events page with distance filter as query param
@@ -454,44 +460,122 @@ export default function HeroCarousel() {
 
                 <div className="col-lg-5 d-flex justify-content-end align-items-center">
                   <div className={animate ? "animated slide-in-right" : ""}>
-                    <div className="upcoming-card">
-                      <img src={logo} alt="event" className="upcoming-image" />
-                      <div className="upcoming-content">
-                        <div className="upcoming-header">
-                          <div className="badge">- UPCOMING RACES -</div>
-                          <h4>
-                            RACES CITY
-                            <br />
-                            SPRINT 10K
-                          </h4>
-                        </div>
-                        <div className="info-box mt-3 p-3">
-                          <div className="info-row">
-                            <i
-                              className="info-icon fa-regular fa-calendar"
-                              aria-hidden="true"
-                            ></i>
-                            <span>
-                              <strong>September 20, 2025</strong>
-                            </span>
+                    {nextUpcomingEvent ? (
+                      <div className="upcoming-card">
+                        <img
+                          src={
+                            nextUpcomingEvent.banner_image
+                              ? nextUpcomingEvent.banner_image
+                              : logo
+                          }
+                          alt={nextUpcomingEvent.name}
+                          className="upcoming-image"
+                        />
+                        <div className="upcoming-content">
+                          <div className="upcoming-header">
+                            <div className="badge">- UPCOMING RACES -</div>
+                            <h4>{nextUpcomingEvent.name}</h4>
                           </div>
-                          <div className="info-row">
-                            <i
-                              className="info-icon fa-regular fa-clock"
-                              aria-hidden="true"
-                            ></i>
-                            <span>Start 05:00 AM - Finish 10:00 AM</span>
-                          </div>
-                          <div className="info-row">
-                            <i
-                              className="info-icon fa-solid fa-location-dot"
-                              aria-hidden="true"
-                            ></i>
-                            <span>South Jekardah</span>
+                          <div className="info-box mt-3 p-3">
+                            <div className="info-row">
+                              <i
+                                className="info-icon fa-regular fa-calendar"
+                                aria-hidden="true"
+                              ></i>
+                              <span>
+                                <strong>
+                                  {nextUpcomingEvent.start_date ||
+                                    new Date(
+                                      nextUpcomingEvent.start_time * 1000
+                                    ).toLocaleDateString("en-US", {
+                                      day: "2-digit",
+                                      month: "long",
+                                      year: "numeric",
+                                    })}
+                                </strong>
+                              </span>
+                            </div>
+                            <div className="info-row">
+                              <i
+                                className="info-icon fa-regular fa-clock"
+                                aria-hidden="true"
+                              ></i>
+                              <span>
+                                {nextUpcomingEvent.start_time_event ||
+                                  new Date(
+                                    nextUpcomingEvent.start_time * 1000
+                                  ).toLocaleTimeString("en-US", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                -{" "}
+                                {nextUpcomingEvent.end_date_event ||
+                                  (nextUpcomingEvent.end_time
+                                    ? new Date(
+                                        nextUpcomingEvent.end_time * 1000
+                                      ).toLocaleTimeString("en-US", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })
+                                    : "")}
+                              </span>
+                            </div>
+                            <div className="info-row">
+                              <i
+                                className="info-icon fa-solid fa-location-dot"
+                                aria-hidden="true"
+                              ></i>
+                              <span>
+                                {nextUpcomingEvent.city_name || cityName}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="upcoming-card">
+                        <img
+                          src={logo}
+                          alt="event"
+                          className="upcoming-image"
+                        />
+                        <div className="upcoming-content">
+                          <div className="upcoming-header">
+                            <div className="badge">- UPCOMING RACES -</div>
+                            <h4>
+                              RACES CITY
+                              <br />
+                              SPRINT 10K
+                            </h4>
+                          </div>
+                          <div className="info-box mt-3 p-3">
+                            <div className="info-row">
+                              <i
+                                className="info-icon fa-regular fa-calendar"
+                                aria-hidden="true"
+                              ></i>
+                              <span>
+                                <strong>September 20, 2025</strong>
+                              </span>
+                            </div>
+                            <div className="info-row">
+                              <i
+                                className="info-icon fa-regular fa-clock"
+                                aria-hidden="true"
+                              ></i>
+                              <span>Start 05:00 AM - Finish 10:00 AM</span>
+                            </div>
+                            <div className="info-row">
+                              <i
+                                className="info-icon fa-solid fa-location-dot"
+                                aria-hidden="true"
+                              ></i>
+                              <span>South Jekardah</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -502,7 +586,7 @@ export default function HeroCarousel() {
         <div className="social-vertical">
           <a
             className="social-btn"
-            href="https://www.facebook.com"
+            href=" https://www.facebook.com/youtoocanrunsmpl"
             target="_blank"
             rel="noreferrer"
             aria-label="Facebook"
@@ -512,7 +596,7 @@ export default function HeroCarousel() {
 
           <a
             className="social-btn"
-            href="https://www.instagram.com"
+            href="https://www.instagram.com/youtoocanrun/"
             target="_blank"
             rel="noreferrer"
             aria-label="Instagram"
@@ -522,18 +606,18 @@ export default function HeroCarousel() {
 
           <a
             className="social-btn"
-            href="https://www.threads.net"
+            href="https://www.linkedin.com/company/youtoocanrun/"
             target="_blank"
             rel="noreferrer"
-            aria-label="Threads"
+            aria-label="LinkedIn"
           >
             {/* Font Awesome may not include an official Threads icon depending on version; using 'fa-x' (or update FA) */}
-            <i className="fab fa-x" aria-hidden="true" />
+            <i className="fab fa-linkedin-in" aria-hidden="true" />
           </a>
 
           <a
             className="social-btn"
-            href="https://twitter.com"
+            href=" https://x.com/youtoocanrun"
             target="_blank"
             rel="noreferrer"
             aria-label="Twitter"
@@ -553,7 +637,7 @@ export default function HeroCarousel() {
         </div>
 
         {/* --- Numbers / Stats section (matches provided screenshot) --- */}
-        <section ref={numbersRef} className="numbers-section container mt-5">
+        {/* <section ref={numbersRef} className="numbers-section container mt-5">
           <div className="row align-items-start">
             <div className="col-md-3 d-none d-md-block">
               <div className="numbers-pill">- RACES IN NUMBERS -</div>
@@ -622,7 +706,7 @@ export default function HeroCarousel() {
               </div>
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* --- Feature / About section (images left/center, text right) --- */}
         {/* <section className="feature-section my-5">

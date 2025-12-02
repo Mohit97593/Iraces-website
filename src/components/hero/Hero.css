@@ -191,7 +191,7 @@
   /* make info-box fill remaining vertical space and be bigger */
   flex: 1 1 auto;
   padding: 18px;
-  min-height: 160px;
+  min-height: 122px;
 }
 
 /* image placed to the right of the upcoming card, matching its height */
@@ -199,7 +199,7 @@
   width: 320px;
   height: 100%;
   border-radius: 12px;
-  object-fit: cover;
+  object-fit: fill;
   display: block;
 }
 .upcoming-content {
@@ -622,9 +622,13 @@
     line-height: 36px !important;
   }
 
+  /* Keep desktop look unchanged; make card height adapt on small screens */
   .upcoming-card {
     width: 95%;
-    height: 403px;
+    height: auto; /* allow content to define height on small devices */
+    flex-direction: column;
+    margin-top: 18px;
+    padding: 0;
   }
 
   .hero-controls {
