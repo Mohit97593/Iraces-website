@@ -439,7 +439,7 @@ export default function RaceCategories({
                       top: 0,
                       right: 0,
                       bottom: 0,
-                      width: 50,
+                      width: 68,
                       background: "rgba(255,255,255,0.2)",
                       display: "flex",
                       flexDirection: "column",

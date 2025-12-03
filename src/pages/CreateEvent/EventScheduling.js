@@ -426,9 +426,13 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
       "eventStartTime",
       "eventEndDate",
       "eventEndTime",
+      "registrationStartDate",
+      "registrationStartTime",
+      "registrationEndDate",
+      "registrationEndTime"
     ];
 
-    // Only require registration fields when event start/end are set
+    // Only require registration fields when event start / end are set
     if (registrationEnabled) {
       requiredFields.push(
         "registrationStartDate",

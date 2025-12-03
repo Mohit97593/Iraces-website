@@ -14,6 +14,10 @@ export default function EventImages({ onBack, onNext }) {
   const [eventBannerPreview, setEventBannerPreview] = useState(null);
   const [descriptionImage, setDescriptionImage] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [isHovered, setIsHovered] = useState(false);
+  const [creatives, setCreatives] = useState([]);
+  const [creativesPreviews, setCreativesPreviews] = useState([]);
+  const [hoveredCreativeIndex, setHoveredCreativeIndex] = useState(null);
   const prevObjectUrl = useRef(null);
 
   const stripHtml = (html) => {
@@ -350,10 +354,13 @@ export default function EventImages({ onBack, onNext }) {
               <div
                 style={{
                   marginTop: 8,
-                  display: "flex",
-                  gap: 12,
-                  alignItems: "center",
+                  position: "relative",
+                  width: "fit-content",
+                  borderRadius: 6,
+                  overflow: "hidden",
                 }}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
               >
                 <img
                   src={eventBannerPreview}
@@ -362,39 +369,246 @@ export default function EventImages({ onBack, onNext }) {
                     maxWidth: 240,
                     maxHeight: 140,
                     objectFit: "cover",
-                    borderRadius: 6,
-                    border: "1px solid #ccc",
+                    display: "block",
                   }}
                 />
-                <div
-                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
-                >
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      // Remove preview and file selection
-                      setEventBanner(null);
-                      if (prevObjectUrl.current) {
-                        try {
-                          URL.revokeObjectURL(prevObjectUrl.current);
-                        } catch (e) { }
-                        prevObjectUrl.current = null;
-                      }
-                      setEventBannerPreview(null);
+                {isHovered && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      background: "rgba(0,0,0,0.5)",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      gap: 16,
                     }}
-                    style={{ padding: "6px 10px", borderRadius: 6 }}
                   >
-                    Remove
-                  </button>
-                </div>
+                    {/* View Icon */}
+                    <div
+                      title="View"
+                      style={{
+                        cursor: "pointer",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "rgba(255,255,255,0.2)",
+                        borderRadius: "50%",
+                        width: 32,
+                        height: 32,
+                      }}
+                      onClick={() => window.open(eventBannerPreview, "_blank")}
+                    >
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                    </div>
+                    {/* Delete Icon */}
+                    <div
+                      title="Delete"
+                      style={{
+                        cursor: "pointer",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "rgba(255,255,255,0.2)",
+                        borderRadius: "50%",
+                        width: 32,
+                        height: 32,
+                      }}
+                      onClick={() => {
+                        setEventBanner(null);
+                        if (prevObjectUrl.current) {
+                          try {
+                            URL.revokeObjectURL(prevObjectUrl.current);
+                          } catch (e) { }
+                          prevObjectUrl.current = null;
+                        }
+                        setEventBannerPreview(null);
+                      }}
+                    >
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                      </svg>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
           <div className="form-group" style={{ flex: 1 }}>
             <label>Event Communication Creatives</label>
-            <input type="file" className="form-controll" multiple />
+            <input
+              type="file"
+              className="form-controll"
+              multiple
+              accept=".jpg,.jpeg,.png"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  const files = Array.from(e.target.files);
+                  const newPreviews = files.map((file) =>
+                    URL.createObjectURL(file)
+                  );
+                  setCreatives((prev) => [...prev, ...files]);
+                  setCreativesPreviews((prev) => [...prev, ...newPreviews]);
+                  // Clear input value to allow re-selecting same file if needed
+                  e.target.value = null;
+                }
+              }}
+            />
             <small>You can choose multiple files.</small>
+            {creativesPreviews.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 12,
+                  marginTop: 8,
+                }}
+              >
+                {creativesPreviews.map((preview, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      position: "relative",
+                      width: "fit-content",
+                      borderRadius: 6,
+                      overflow: "hidden",
+                    }}
+                    onMouseEnter={() => setHoveredCreativeIndex(index)}
+                    onMouseLeave={() => setHoveredCreativeIndex(null)}
+                  >
+                    <img
+                      src={preview}
+                      alt={`Creative ${index + 1}`}
+                      style={{
+                        width: 100,
+                        height: 100,
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                    />
+                    {hoveredCreativeIndex === index && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: "100%",
+                          background: "rgba(0,0,0,0.5)",
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        {/* View Icon */}
+                        <div
+                          title="View"
+                          style={{
+                            cursor: "pointer",
+                            color: "#fff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "rgba(255,255,255,0.2)",
+                            borderRadius: "50%",
+                            width: 28,
+                            height: 28,
+                          }}
+                          onClick={() => window.open(preview, "_blank")}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>
+                        </div>
+                        {/* Delete Icon */}
+                        <div
+                          title="Delete"
+                          style={{
+                            cursor: "pointer",
+                            color: "#fff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "rgba(255,255,255,0.2)",
+                            borderRadius: "50%",
+                            width: 28,
+                            height: 28,
+                          }}
+                          onClick={() => {
+                            // Remove from state
+                            const newCreatives = [...creatives];
+                            newCreatives.splice(index, 1);
+                            setCreatives(newCreatives);
+
+                            const newPreviews = [...creativesPreviews];
+                            // Revoke URL
+                            URL.revokeObjectURL(newPreviews[index]);
+                            newPreviews.splice(index, 1);
+                            setCreativesPreviews(newPreviews);
+                          }}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <div className="form-group">
@@ -463,7 +677,7 @@ export default function EventImages({ onBack, onNext }) {
             )}
           </div>
         </div>
-        <div className="form-group">
+        {/* <div className="form-group">
           <label>Description Image</label>
           <input
             type="file"
@@ -471,7 +685,7 @@ export default function EventImages({ onBack, onNext }) {
             accept=".jpg,.jpeg,.png"
             onChange={(e) => setDescriptionImage(e.target.files[0])}
           />
-        </div>
+        </div> */}
         <div
           style={{
             display: "flex",
