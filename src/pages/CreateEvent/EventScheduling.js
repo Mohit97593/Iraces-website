@@ -54,6 +54,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState(getInitialFormData());
   const [errors, setErrors] = useState({});
+  const [pincodeLoading, setPincodeLoading] = useState(false);
   const getTodayString = () => {
     const d = new Date();
     const yyyy = d.getFullYear();
@@ -127,6 +128,86 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
       setErrors((prevErr) => ({ ...prevErr, [name]: "" }));
       return updated;
     });
+  };
+
+  const handlePincodeChange = async (e) => {
+    const { value } = e.target;
+    // Update pincode in formData
+    setFormData((prev) => {
+      const updated = { ...prev, pincode: value };
+      sessionStorage.setItem(
+        "eventSchedulingFormData",
+        JSON.stringify(updated)
+      );
+      return updated;
+    });
+    // Clear error for pincode field
+    setErrors((prevErr) => ({ ...prevErr, pincode: "" }));
+
+    // If pincode is less than 6 digits or empty, clear state and city
+    if (value.length < 6) {
+      setFormData((prev) => {
+        const updated = {
+          ...prev,
+          state: "",
+          city: "",
+        };
+        sessionStorage.setItem(
+          "eventSchedulingFormData",
+          JSON.stringify(updated)
+        );
+        return updated;
+      });
+      return; // Exit early, don't make API call
+    }
+
+    // If pincode is 6 digits, fetch location data
+    if (value.length === 6 && /^\d{6}$/.test(value)) {
+      setPincodeLoading(true);
+      try {
+        const response = await fetch(
+          `https://api.postalpincode.in/pincode/${value}`
+        );
+        const data = await response.json();
+
+        if (
+          data &&
+          data[0] &&
+          data[0].Status === "Success" &&
+          data[0].PostOffice &&
+          data[0].PostOffice.length > 0
+        ) {
+          const postOffice = data[0].PostOffice[0];
+          const stateName = postOffice.State;
+          const countryName = postOffice.Country;
+          const cityName = postOffice.District || postOffice.Name;
+
+          // Find matching country in the countries list (exact match only)
+          const matchedCountry = countries.find(
+            (c) => c.name.toLowerCase() === countryName.toLowerCase()
+          );
+
+          // Update formData with country, state, and city
+          setFormData((prev) => {
+            const updated = {
+              ...prev,
+              country: matchedCountry ? matchedCountry.name : countryName,
+              state: stateName,
+              city: cityName,
+            };
+            sessionStorage.setItem(
+              "eventSchedulingFormData",
+              JSON.stringify(updated)
+            );
+            return updated;
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching pincode data:", error);
+      } finally {
+        setPincodeLoading(false);
+      }
+    }
   };
 
   const renderError = (field) => {
@@ -429,7 +510,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
       "registrationStartDate",
       "registrationStartTime",
       "registrationEndDate",
-      "registrationEndTime"
+      "registrationEndTime",
     ];
 
     // Only require registration fields when event start / end are set
@@ -529,7 +610,9 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
         formData.registrationEndTime &&
         formData.eventEndTime
       ) {
-        const [reh, rem] = String(formData.registrationEndTime).split(":").map(Number);
+        const [reh, rem] = String(formData.registrationEndTime)
+          .split(":")
+          .map(Number);
         const [eeh, eem] = String(formData.eventEndTime).split(":").map(Number);
         const regEndMinutes = reh * 60 + rem;
         const eventEndMinutes = eeh * 60 + eem;
@@ -753,12 +836,18 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
               <input
                 type="text"
                 className="form-controll"
-                placeholder="Enter Pincode"
+                placeholder="Enter 6-digit Pincode"
                 name="pincode"
                 value={formData.pincode}
-                onChange={handleChange}
+                onChange={handlePincodeChange}
+                maxLength="6"
                 required
               />
+              {pincodeLoading && (
+                <div style={{ color: "#666", marginTop: 6, fontSize: "0.9rem" }}>
+                  Fetching location details...
+                </div>
+              )}
               {renderError("pincode")}
             </div>
           </div>
@@ -770,33 +859,24 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
             <div className="form-group">
               <label>
                 State <span className="required">*</span>
-                {!formData.country && (
-                  <span
-                    className="info-icon"
-                    title="Please select Country before selecting State"
-                  >
-                    i
-                  </span>
-                )}
+                <span style={{ fontSize: "0.85rem", color: "#666", fontWeight: "normal" }}>
+                  {" "}(Auto-filled from Pincode)
+                </span>
               </label>
-              <select
+              <input
+                type="text"
                 className="form-controll"
                 name="state"
                 value={formData.state}
-                onChange={handleChange}
+                placeholder="Enter pincode to auto-fill"
+                disabled
                 required
-              >
-                <option value="">Select State</option>
-                {states.length > 0 ? (
-                  states.map((state) => (
-                    <option key={state.id} value={state.name}>
-                      {state.name}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>Loading states...</option>
-                )}
-              </select>
+                style={{
+                  backgroundColor: "#f5f5f5",
+                  cursor: "not-allowed",
+                  color: "#333"
+                }}
+              />
               {renderError("state")}
             </div>
           </div>
@@ -804,33 +884,24 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
             <div className="form-group">
               <label>
                 City <span className="required">*</span>
-                {!formData.state && (
-                  <span
-                    className="info-icon"
-                    title="Please select State before selecting City"
-                  >
-                    i
-                  </span>
-                )}
+                <span style={{ fontSize: "0.85rem", color: "#666", fontWeight: "normal" }}>
+                  {" "}(Auto-filled from Pincode)
+                </span>
               </label>
-              <select
+              <input
+                type="text"
                 className="form-controll"
                 name="city"
                 value={formData.city}
-                onChange={handleChange}
+                placeholder="Enter pincode to auto-fill"
+                disabled
                 required
-              >
-                <option value="">Select City</option>
-                {cities.length > 0 ? (
-                  cities.map((city) => (
-                    <option key={city.id} value={city.name}>
-                      {city.name}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>Loading cities...</option>
-                )}
-              </select>
+                style={{
+                  backgroundColor: "#f5f5f5",
+                  cursor: "not-allowed",
+                  color: "#333"
+                }}
+              />
               {renderError("city")}
             </div>
           </div>
@@ -955,9 +1026,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                 onChange={handleChange}
                 min={minStartDate}
                 max={formData.eventEndDate ? formData.eventEndDate : ""}
-                required={
-                  !!(formData.eventStartDate && formData.eventEndDate)
-                }
+                required={!!(formData.eventStartDate && formData.eventEndDate)}
                 disabled={!(formData.eventStartDate && formData.eventEndDate)}
               />
               {renderError("registrationStartDate")}
@@ -974,9 +1043,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                 name="registrationStartTime"
                 value={formData.registrationStartTime}
                 onChange={handleChange}
-                required={
-                  !!(formData.eventStartDate && formData.eventEndDate)
-                }
+                required={!!(formData.eventStartDate && formData.eventEndDate)}
                 disabled={!(formData.eventStartDate && formData.eventEndDate)}
               />
               {renderError("registrationStartTime")}
@@ -999,9 +1066,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                 onChange={handleChange}
                 min={formData.registrationStartDate || minStartDate}
                 max={formData.eventEndDate ? formData.eventEndDate : ""}
-                required={
-                  !!(formData.eventStartDate && formData.eventEndDate)
-                }
+                required={!!(formData.eventStartDate && formData.eventEndDate)}
                 disabled={!(formData.eventStartDate && formData.eventEndDate)}
               />
               {renderError("registrationEndDate")}
@@ -1024,9 +1089,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                     ? formData.eventEndTime
                     : ""
                 }
-                required={
-                  !!(formData.eventStartDate && formData.eventEndDate)
-                }
+                required={!!(formData.eventStartDate && formData.eventEndDate)}
                 disabled={!(formData.eventStartDate && formData.eventEndDate)}
               />
               {renderError("registrationEndTime")}
@@ -1081,7 +1144,6 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
             Save & Next (3/11)
           </button>
         </div>
-
       </form>
     </div>
   );
