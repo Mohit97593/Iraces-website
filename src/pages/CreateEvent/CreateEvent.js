@@ -1198,8 +1198,8 @@ export default function CreateEvent() {
                             <div
                               key={cat.id || index}
                               className={`category-card ${selectedCategories.includes(cat.name)
-                                  ? "selected"
-                                  : ""
+                                ? "selected"
+                                : ""
                                 }`}
                               onClick={() => handleCategoryToggle(cat.name)}
                             >
@@ -1339,10 +1339,10 @@ export default function CreateEvent() {
               paidType.toLowerCase() === "paid" && (
                 <div
                   style={{
-                    background: "#fafafa",
+                    background: "#fff",
                     borderRadius: 16,
-                    padding: 24,
-                    boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+                    padding: 32,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                   }}
                 >
                   {/* Payment calculation logic */}
@@ -1390,128 +1390,221 @@ export default function CreateEvent() {
                     const receivableAmount = baseAmount;
                     return (
                       <>
-                        <h3
-                          style={{
-                            fontWeight: 700,
-                            fontSize: "1.4rem",
-                            marginBottom: 16,
-                          }}
-                        >
-                          Money to you
-                        </h3>
+                        {/* Header Section */}
                         <div
                           style={{
-                            fontSize: 32,
-                            fontWeight: "bold",
-                            marginBottom: 24,
-                            color: "#333",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: 32,
                           }}
                         >
-                          ₹{receivableAmount.toFixed(2)}
+                          <h3
+                            style={{
+                              fontWeight: 700,
+                              fontSize: "1.5rem",
+                              margin: 0,
+                              color: "#000",
+                            }}
+                          >
+                            Money to you
+                          </h3>
+                          <div
+                            style={{
+                              fontSize: "1.8rem",
+                              fontWeight: 700,
+                              color: "#000",
+                            }}
+                          >
+                            ₹{receivableAmount.toFixed(2)}
+                          </div>
                         </div>
-                        <hr
+
+                        {/* Base Registration Fee */}
+                        <div
                           style={{
-                            margin: "16px 0",
-                            border: "none",
-                            borderTop: "1px solid #ddd",
-                          }}
-                        />
-                        <table
-                          style={{
-                            width: "100%",
-                            marginBottom: 16,
-                            fontSize: "0.95rem",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "16px 0",
+                            borderBottom: "1px solid #e0e0e0",
                           }}
                         >
-                          <tbody>
-                            <tr>
-                              <td style={{ padding: "8px 0", color: "#666" }}>
-                                Base Registration Fee
-                              </td>
-                              <td
-                                style={{ textAlign: "right", fontWeight: 600 }}
-                              >
-                                ₹{baseAmount.toFixed(2)}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td style={{ padding: "8px 0", color: "#666" }}>
-                                Convenience Fee
-                              </td>
-                              <td
-                                style={{ textAlign: "right", fontWeight: 600 }}
-                              >
-                                ₹{convenienceFee.toFixed(2)}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td style={{ padding: "8px 0", color: "#666" }}>
-                                Platform Fee
-                              </td>
-                              <td
-                                style={{ textAlign: "right", fontWeight: 600 }}
-                              >
-                                ₹{platformFee.toFixed(2)}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td style={{ padding: "8px 0", color: "#666" }}>
-                                Registration Fee GST 18%
-                              </td>
-                              <td
-                                style={{ textAlign: "right", fontWeight: 600 }}
-                              >
-                                ₹{registrationGST.toFixed(2)}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td style={{ padding: "8px 0", color: "#666" }}>
-                                Payment Gateway Charge 2%
-                              </td>
-                              <td
-                                style={{ textAlign: "right", fontWeight: 600 }}
-                              >
-                                ₹{paymentGatewayFee.toFixed(2)}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td style={{ padding: "8px 0", color: "#666" }}>
-                                Convenience Fee GST 18%
-                              </td>
-                              <td
-                                style={{ textAlign: "right", fontWeight: 600 }}
-                              >
-                                ₹{convenienceFeeGST.toFixed(2)}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td style={{ padding: "8px 0", color: "#666" }}>
-                                Platform Fee GST 18%
-                              </td>
-                              <td
-                                style={{ textAlign: "right", fontWeight: 600 }}
-                              >
-                                ₹{platformFeeGST.toFixed(2)}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td style={{ padding: "8px 0", color: "#666" }}>
-                                Payment Gateway GST 18%
-                              </td>
-                              <td
-                                style={{ textAlign: "right", fontWeight: 600 }}
-                              >
-                                ₹{paymentGatewayGST.toFixed(2)}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                        {/* Add summary section below table */}
+                          <span style={{ fontSize: "1rem", color: "#000" }}>
+                            Base Registration Fee
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "1rem",
+                              fontWeight: 600,
+                              color: "#000",
+                            }}
+                          >
+                            ₹{baseAmount.toFixed(0)}
+                          </span>
+                        </div>
+
+                        {/* Fee Details Group */}
+                        <div style={{ marginTop: 16 }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "8px 0",
+                            }}
+                          >
+                            <span style={{ fontSize: "0.95rem", color: "#666" }}>
+                              Convenience Fee
+                            </span>
+                            <span
+                              style={{
+                                fontSize: "0.95rem",
+                                fontWeight: 500,
+                                color: "#000",
+                              }}
+                            >
+                              ₹{convenienceFee.toFixed(2)}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "8px 0",
+                            }}
+                          >
+                            <span style={{ fontSize: "0.95rem", color: "#666" }}>
+                              Platform Fee
+                            </span>
+                            <span
+                              style={{
+                                fontSize: "0.95rem",
+                                fontWeight: 500,
+                                color: "#000",
+                              }}
+                            >
+                              ₹{platformFee.toFixed(2)}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "8px 0",
+                            }}
+                          >
+                            <span style={{ fontSize: "0.95rem", color: "#666" }}>
+                              Payment Gateway Charges (1.85%)
+                            </span>
+                            <span
+                              style={{
+                                fontSize: "0.95rem",
+                                fontWeight: 500,
+                                color: "#000",
+                              }}
+                            >
+                              ₹{paymentGatewayFee.toFixed(2)}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "8px 0",
+                            }}
+                          >
+                            <span style={{ fontSize: "0.95rem", color: "#666" }}>
+                              Registration Fee GST 18%
+                            </span>
+                            <span
+                              style={{
+                                fontSize: "0.95rem",
+                                fontWeight: 500,
+                                color: "#000",
+                              }}
+                            >
+                              ₹{registrationGST.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* GST Details Group */}
+                        <div style={{ marginTop: 16 }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "8px 0",
+                            }}
+                          >
+                            <span style={{ fontSize: "0.95rem", color: "#666" }}>
+                              Convenience Fee GST 18%
+                            </span>
+                            <span
+                              style={{
+                                fontSize: "0.95rem",
+                                fontWeight: 500,
+                                color: "#000",
+                              }}
+                            >
+                              ₹{convenienceFeeGST.toFixed(2)}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "8px 0",
+                            }}
+                          >
+                            <span style={{ fontSize: "0.95rem", color: "#666" }}>
+                              Platform Fee GST 18%
+                            </span>
+                            <span
+                              style={{
+                                fontSize: "0.95rem",
+                                fontWeight: 500,
+                                color: "#000",
+                              }}
+                            >
+                              ₹{platformFeeGST.toFixed(2)}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "8px 0",
+                            }}
+                          >
+                            <span style={{ fontSize: "0.95rem", color: "#666" }}>
+                              Payment Gateway GST 18%
+                            </span>
+                            <span
+                              style={{
+                                fontSize: "0.95rem",
+                                fontWeight: 500,
+                                color: "#000",
+                              }}
+                            >
+                              ₹{paymentGatewayGST.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Summary Section */}
                         <div
                           style={{
                             marginTop: 24,
-                            padding: "12px 0",
-                            borderTop: "1px solid #eee",
+                            paddingTop: 16,
+                            borderTop: "1px solid #e0e0e0",
                           }}
                         >
                           <div
@@ -1519,17 +1612,17 @@ export default function CreateEvent() {
                               display: "flex",
                               justifyContent: "space-between",
                               alignItems: "center",
-                              marginBottom: 8,
+                              marginBottom: 12,
                             }}
                           >
-                            <span style={{ fontWeight: 600, color: "#222" }}>
+                            <span style={{ fontWeight: 600, fontSize: "1rem", color: "#000" }}>
                               Total Payable (By Participant)
                             </span>
                             <span
                               style={{
                                 fontWeight: 700,
-                                color: "#da251c",
-                                fontSize: "1.15rem",
+                                fontSize: "1rem",
+                                color: "#000",
                               }}
                             >
                               ₹{totalPayable.toFixed(2)}
@@ -1542,14 +1635,14 @@ export default function CreateEvent() {
                               alignItems: "center",
                             }}
                           >
-                            <span style={{ fontWeight: 600, color: "#222" }}>
+                            <span style={{ fontWeight: 700, fontSize: "1rem", color: "#000" }}>
                               Receivable Amount
                             </span>
                             <span
                               style={{
                                 fontWeight: 700,
-                                color: "#43a047",
-                                fontSize: "1.15rem",
+                                fontSize: "1rem",
+                                color: "#000",
                               }}
                             >
                               ₹{receivableAmount.toFixed(2)}

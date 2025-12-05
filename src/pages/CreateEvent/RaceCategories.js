@@ -21,6 +21,7 @@ export default function RaceCategories({
     fetchEventDetails();
   }, []);
   const [editTicket, setEditTicket] = useState(null);
+  const [hoveredTicketId, setHoveredTicketId] = useState(null);
 
   const fetchEventDetails = () => {
     const eventId = sessionStorage.getItem("event_id");
@@ -151,18 +152,17 @@ export default function RaceCategories({
         />
       ) : (
         <>
-          <h3 style={{ fontWeight: 700, fontSize: "1.6rem", marginBottom: 32 }}>
-            Race Category
-          </h3>
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: 24,
+              marginBottom: 32,
             }}
           >
-            <div></div>
+            <h3 style={{ fontWeight: 700, fontSize: "1.6rem", margin: 0 }}>
+              Race Category
+            </h3>
             <button
               type="button"
               style={{
@@ -176,10 +176,24 @@ export default function RaceCategories({
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#000";
+                e.currentTarget.style.color = "#fff";
+                e.currentTarget.style.border = "2px solid #000";
+                e.currentTarget.querySelector("i").style.color = "#fff";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#fff";
+                e.currentTarget.style.color = "#da251c";
+                e.currentTarget.style.border = "2px solid #da251c";
+                e.currentTarget.querySelector("i").style.color = "#da251c";
               }}
               onClick={handleNewClick}
             >
-              <i className="fas fa-users" style={{ color: "#da251c" }}></i> +
+              <i className="fas fa-users" style={{ color: "#da251c", transition: "color 0.3s ease" }}></i> +
               New Race Category
             </button>
           </div>
@@ -191,95 +205,155 @@ export default function RaceCategories({
               flexWrap: "wrap",
             }}
           >
-            <div style={{ flex: "1 1 320px", minWidth: 260 }}>
-              <div style={{ fontWeight: 600, marginBottom: 12 }}>
+            <div
+              style={{
+                flex: "1 1 320px",
+                minWidth: 260,
+                padding: "24px",
+                borderRadius: 12,
+                border: "2px solid transparent",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.border = "2px solid #da251c";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.border = "2px solid transparent";
+              }}
+            >
+              <div style={{ fontWeight: 600, marginBottom: 12, textAlign: "center" }}>
                 Do you want to collect GST on Registration Fee?
               </div>
-              <div style={{ display: "flex", gap: 12 }}>
-                <button
-                  type="button"
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <div
                   style={{
-                    background: gst ? "#da251c" : "#fff",
-                    color: gst ? "#fff" : "#da251c",
+                    display: "inline-flex",
                     border: "2px solid #da251c",
                     borderRadius: 24,
-                    fontWeight: 600,
-                    padding: "10px 32px",
-                    fontSize: "1.1rem",
-                    minWidth: 90,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
+                    overflow: "hidden",
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
                   }}
-                  onClick={() => handleGstChange(true)}
                 >
-                  Yes
-                </button>
-                <button
-                  type="button"
-                  style={{
-                    background: !gst ? "#da251c" : "#fff",
-                    color: !gst ? "#fff" : "#da251c",
-                    border: "2px solid #da251c",
-                    borderRadius: 24,
-                    fontWeight: 600,
-                    padding: "10px 32px",
-                    fontSize: "1.1rem",
-                    minWidth: 90,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                  onClick={() => handleGstChange(false)}
-                >
-                  No
-                </button>
+                  <button
+                    type="button"
+                    style={{
+                      background: gst ? "#da251c" : "#fff",
+                      color: gst ? "#fff" : "#da251c",
+                      border: "none",
+                      borderRadius: 0,
+                      fontWeight: 600,
+                      padding: "8px 20px",
+                      fontSize: "0.95rem",
+                      minWidth: 70,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                    }}
+                    onClick={() => handleGstChange(true)}
+                  >
+                    <i className="fas fa-check-circle"></i> Yes
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      background: !gst ? "#da251c" : "#fff",
+                      color: !gst ? "#fff" : "#da251c",
+                      border: "none",
+                      borderRadius: 0,
+                      fontWeight: 600,
+                      padding: "8px 20px",
+                      fontSize: "0.95rem",
+                      minWidth: 70,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                    }}
+                    onClick={() => handleGstChange(false)}
+                  >
+                    <i className="fas fa-lock"></i> No
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div style={{ flex: "1 1 320px", minWidth: 260 }}>
-              <div style={{ fontWeight: 600, marginBottom: 12 }}>
+            <div
+              style={{
+                flex: "1 1 320px",
+                minWidth: 260,
+                padding: "18px",
+                borderRadius: 12,
+                border: "2px solid transparent",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.border = "2px solid #da251c";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.border = "2px solid transparent";
+              }}
+            >
+              <div style={{ fontWeight: 600, marginBottom: 12, textAlign: "center" }}>
                 The basic registration fee will be :
               </div>
-              <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-                <button
-                  type="button"
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <div
                   style={{
-                    background: taxType === "inclusive" ? "#da251c" : "#fff",
-                    color: taxType === "inclusive" ? "#fff" : "#da251c",
+                    display: "inline-flex",
                     border: "2px solid #da251c",
                     borderRadius: 24,
-                    fontWeight: 600,
-                    padding: "10px 32px",
-                    fontSize: "1.1rem",
-                    minWidth: 90,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
+                    overflow: "hidden",
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
                   }}
-                  onClick={() => handleTaxTypeChange("inclusive")}
                 >
-                  Inclusive
-                </button>
-                <button
-                  type="button"
-                  style={{
-                    background: taxType === "exclusive" ? "#da251c" : "#fff",
-                    color: taxType === "exclusive" ? "#fff" : "#da251c",
-                    border: "2px solid #da251c",
-                    borderRadius: 24,
-                    fontWeight: 600,
-                    padding: "10px 32px",
-                    fontSize: "1.1rem",
-                    minWidth: 90,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                  onClick={() => handleTaxTypeChange("exclusive")}
-                >
-                  Exclusive
-                </button>
+                  <button
+                    type="button"
+                    style={{
+                      background: taxType === "inclusive" ? "#da251c" : "#fff",
+                      color: taxType === "inclusive" ? "#fff" : "#da251c",
+                      border: "none",
+                      borderRadius: 0,
+                      fontWeight: 600,
+                      padding: "8px 18px",
+                      fontSize: "0.95rem",
+                      minWidth: 70,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                    }}
+                    onClick={() => handleTaxTypeChange("inclusive")}
+                  >
+                    <i className="fas fa-check-circle"></i> Inclusive Taxes
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      background: taxType === "exclusive" ? "#da251c" : "#fff",
+                      color: taxType === "exclusive" ? "#fff" : "#da251c",
+                      border: "none",
+                      borderRadius: 0,
+                      fontWeight: 600,
+                      padding: "8px 20px",
+                      fontSize: "0.95rem",
+                      minWidth: 70,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                    }}
+                    onClick={() => handleTaxTypeChange("exclusive")}
+                  >
+                    <i className="fas fa-lock"></i> Exclusive Taxes
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -302,12 +376,19 @@ export default function RaceCategories({
                     background:
                       "linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%)",
                     borderRadius: 16,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    boxShadow:
+                      hoveredTicketId === ticket.id
+                        ? "0 8px 20px rgba(0,0,0,0.20)"
+                        : "0 2px 8px rgba(0,0,0,0.3)",
                     padding: 0,
                     position: "relative",
                     overflow: "hidden",
                     display: "flex",
+                    transition: "all 0.3s ease",
+                    cursor: "pointer",
                   }}
+                  onMouseEnter={() => setHoveredTicketId(ticket.id)}
+                  onMouseLeave={() => setHoveredTicketId(null)}
                 >
                   {/* Left side with perforation */}
                   <div
@@ -392,9 +473,11 @@ export default function RaceCategories({
                         fontSize: "1.5rem",
                         fontWeight: 700,
                         marginBottom: 8,
-                        color: "#2d3436",
+                        color:
+                          hoveredTicketId === ticket.id ? "#da251c" : "#2d3436",
                         marginTop: 24,
                         textTransform: "uppercase",
+                        transition: "color 0.3s ease",
                       }}
                     >
                       {ticket.ticket_name || "N/A"}
@@ -530,25 +613,68 @@ export default function RaceCategories({
               style={{
                 background: "#fff",
                 borderRadius: 16,
-                boxShadow: "0 2px 12px #eee",
-                padding: "32px 0",
+                boxShadow: hoveredTicketId === "empty-state"
+                  ? "0 8px 20px rgba(0,0,0,0.20)"
+                  : "0 2px 8px rgba(0,0,0,0.3)",
+                padding: "48px 32px",
                 marginBottom: 32,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                border: "1.5px dashed #eee",
+                border: "2px solid #e0e0e0",
+                position: "relative",
+                transition: "all 0.3s ease",
               }}
+              onMouseEnter={() => setHoveredTicketId("empty-state")}
+              onMouseLeave={() => setHoveredTicketId(null)}
             >
+              {/* Left side cutout */}
               <div
-                style={{ fontWeight: 700, fontSize: "1.2rem", marginBottom: 8 }}
+                style={{
+                  position: "absolute",
+                  left: -15,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: 30,
+                  height: 30,
+                  background: "#f5f5f5",
+                  borderRadius: "50%",
+                }}
+              />
+              {/* Right side cutout */}
+              <div
+                style={{
+                  position: "absolute",
+                  right: -15,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: 30,
+                  height: 30,
+                  background: "#f5f5f5",
+                  borderRadius: "50%",
+                }}
+              />
+
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: "1.4rem",
+                  marginBottom: 12,
+                  color: hoveredTicketId === "empty-state" ? "#da251c" : "#000",
+                  transition: "color 0.3s ease",
+                  textAlign: "center",
+                }}
               >
                 NO RACE CATEGORIES ADDED
               </div>
               <div
                 style={{
                   fontWeight: 500,
-                  fontSize: "1.05rem",
-                  marginBottom: 18,
+                  fontSize: "1rem",
+                  marginBottom: 24,
+                  color: "#666",
+                  textAlign: "center",
+                  maxWidth: "600px",
                 }}
               >
                 PLEASE CLICK ON ADD "+ NEW RACE CATEGORY" BUTTON TO ADD NEW RACE
@@ -562,15 +688,29 @@ export default function RaceCategories({
                   background: "#fff",
                   borderRadius: 8,
                   fontWeight: 600,
-                  padding: "8px 24px",
-                  fontSize: "1.1rem",
+                  padding: "10px 28px",
+                  fontSize: "1rem",
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#000";
+                  e.currentTarget.style.color = "#fff";
+                  e.currentTarget.style.border = "2px solid #000";
+                  e.currentTarget.querySelector("i").style.color = "#fff";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#fff";
+                  e.currentTarget.style.color = "#da251c";
+                  e.currentTarget.style.border = "2px solid #da251c";
+                  e.currentTarget.querySelector("i").style.color = "#da251c";
                 }}
                 onClick={handleNewClick}
               >
-                <i className="fas fa-users" style={{ color: "#da251c" }}></i>{" "}
+                <i className="fas fa-users" style={{ color: "#da251c", transition: "color 0.3s ease" }}></i>
                 +NEW RACE CATEGORY
               </button>
             </div>
@@ -616,7 +756,8 @@ export default function RaceCategories({
             </button>
           </div>
         </>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }

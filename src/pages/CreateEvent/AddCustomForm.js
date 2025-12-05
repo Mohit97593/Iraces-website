@@ -126,8 +126,22 @@ const AddCustomForm = ({ onCancel }) => {
     setOptions((prev) => {
       const next = [...prev];
       next[index] = value;
-      // if last input has value, append a new empty input
-      if (index === prev.length - 1 && value.trim() !== "") next.push("");
+
+      // Agar kisi bhi option mein value hai aur uske baad koi khali option nahi hai,
+      // to ek naya khali option add karo
+      if (value.trim() !== "") {
+        const hasEmptyAfter = next.slice(index + 1).some(opt => opt.trim() === "");
+        if (!hasEmptyAfter) {
+          next.push("");
+        }
+      }
+
+      // Agar pehla option khali ho gaya aur doosre options hain,
+      // to pehle option ko hata do
+      if (index === 0 && value.trim() === "" && next.length > 1) {
+        return next.filter((_, i) => i !== 0);
+      }
+
       return next;
     });
   };
@@ -352,7 +366,14 @@ const AddCustomForm = ({ onCancel }) => {
           <select
             className="form-input compact"
             value={questionType}
-            onChange={(e) => setQuestionType(e.target.value)}
+            onChange={(e) => {
+              const newType = e.target.value;
+              setQuestionType(newType);
+              // Jab checkbox, radio, ya select choose karein to ek khali option dikhayen
+              if (newType === "radio" || newType === "checkboxes" || newType === "select") {
+                setOptions([""]);
+              }
+            }}
           >
             <option value="">-- Select --</option>
             <option value="text">Text</option>
@@ -369,7 +390,7 @@ const AddCustomForm = ({ onCancel }) => {
           </select>
         </div>
 
-        {(questionType === "radio" || questionType === "checkboxes") && (
+        {(questionType === "radio" || questionType === "checkboxes" || questionType === "select") && (
           <div style={{ marginTop: 12 }} className="form-group">
             <label className="form-label">Options</label>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -385,7 +406,8 @@ const AddCustomForm = ({ onCancel }) => {
                     onChange={(e) => updateOption(idx, e.target.value)}
                     style={{ flex: 1 }}
                   />
-                  {!(idx === options.length - 1 && opt.trim() === "") && (
+                  {/* Sirf pehle option (idx 0) ko chhod kar sabhi mein delete button */}
+                  {idx !== 0 && (
                     <button
                       type="button"
                       onClick={() => removeOption(idx)}

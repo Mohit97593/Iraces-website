@@ -458,9 +458,9 @@ const GeneralFormQuestions = ({
       formData.append(
         "general_form_id",
         selectedQuestion.id ||
-          selectedQuestion.general_form_id ||
-          selectedQuestion.form_id ||
-          ""
+        selectedQuestion.general_form_id ||
+        selectedQuestion.form_id ||
+        ""
       );
       formData.append(
         "sub_question_id",
@@ -484,8 +484,8 @@ const GeneralFormQuestions = ({
       formData.append(
         "field_mapping",
         selectedQuestion.field_mapping_original ||
-          selectedQuestion.field_mapping ||
-          ""
+        selectedQuestion.field_mapping ||
+        ""
       );
       formData.append(
         "sub_question_flag",
@@ -545,15 +545,15 @@ const GeneralFormQuestions = ({
       // Main hint type and main hint text/file
       const hintTypeValue =
         selectedQuestion.hint_type === "image" ||
-        selectedQuestion.hint_type === "2"
+          selectedQuestion.hint_type === "2"
           ? "2"
           : "1";
       formData.append("hint_type", hintTypeValue);
       formData.append(
         "main_question_hint",
         selectedQuestion.question_hint ||
-          selectedQuestion.main_question_hint ||
-          ""
+        selectedQuestion.main_question_hint ||
+        ""
       );
       // Accept both question_hint_file and upload_hint_file keys from modal
       const mainHintFile =
@@ -577,14 +577,14 @@ const GeneralFormQuestions = ({
       formData.append(
         "sub_que_hint_type",
         selectedQuestion.sub_que_hint_type ||
-          selectedQuestion.subQueHintType ||
-          "1"
+        selectedQuestion.subQueHintType ||
+        "1"
       );
       formData.append(
         "question_hint",
         selectedQuestion.sub_question_hint ||
-          selectedQuestion.question_hint ||
-          ""
+        selectedQuestion.question_hint ||
+        ""
       );
       const subHintFile =
         selectedQuestion.upload_sub_hint_file ||
@@ -691,17 +691,15 @@ const GeneralFormQuestions = ({
                 <label className="form-label">Question Status</label>
                 <div className="status-toggle">
                   <button
-                    className={`status-btn ${
-                      selectedQuestion.is_mandatory === "1" ? "active" : ""
-                    }`}
+                    className={`status-btn ${selectedQuestion.is_mandatory === "1" ? "active" : ""
+                      }`}
                     onClick={() => handleSetMandatory(true)}
                   >
                     <span className="star-icon">★</span> Mandatory
                   </button>
                   <button
-                    className={`status-btn ${
-                      selectedQuestion.is_mandatory !== "1" ? "active" : ""
-                    }`}
+                    className={`status-btn ${selectedQuestion.is_mandatory !== "1" ? "active" : ""
+                      }`}
                     onClick={() => handleSetMandatory(false)}
                   >
                     <span className="star-icon">☆</span> Optional
@@ -744,17 +742,17 @@ const GeneralFormQuestions = ({
                 >
                   <option value="">Do Not Have Form</option>
                   {formCommon &&
-                  (formCommon.form_details || formCommon) &&
-                  Array.isArray(formCommon.form_details || formCommon)
+                    (formCommon.form_details || formCommon) &&
+                    Array.isArray(formCommon.form_details || formCommon)
                     ? (formCommon.form_details || formCommon)
-                        .filter(
-                          (f) => (f.form_name || "") !== "Do Not Have Form"
-                        )
-                        .map((f) => (
-                          <option key={f.id} value={f.id}>
-                            {f.form_name}
-                          </option>
-                        ))
+                      .filter(
+                        (f) => (f.form_name || "") !== "Do Not Have Form"
+                      )
+                      .map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.form_name}
+                        </option>
+                      ))
                     : null}
                 </select>
               </div>
@@ -772,10 +770,10 @@ const GeneralFormQuestions = ({
                   <option value="">Do Not Map</option>
                   {Array.isArray(fieldMappings) && fieldMappings.length > 0
                     ? fieldMappings.map((name) => (
-                        <option key={name} value={normalizeKey(name)}>
-                          {name}
-                        </option>
-                      ))
+                      <option key={name} value={normalizeKey(name)}>
+                        {name}
+                      </option>
+                    ))
                     : null}
                   {/* include current mapping if it's not in the list */}
                   {selectedQuestion.field_mapping &&
@@ -831,181 +829,20 @@ const GeneralFormQuestions = ({
                 </div>
               </div>
 
-              {/* Limit Length - only show for text type questions */}
-              {(selectedQuestion.question_form_type || "").toLowerCase() ===
-                "text" && (
-                <div className="form-group2">
-                  <div className="limit-length-row">
-                    <label className="form-label-inline">
-                      <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={!!selectedQuestion.limit_length_enabled}
-                        onChange={(e) =>
-                          handleChangeField(
-                            "limit_length_enabled",
-                            e.target.checked
-                          )
-                        }
-                      />
-                      <span>Limit Length</span>
-                    </label>
-
-                    <div
-                      className="limit-length-inputs"
-                      style={{
-                        display: selectedQuestion.limit_length_enabled
-                          ? "flex"
-                          : "none",
-                      }}
-                    >
-                      <div className="input-group">
-                        <label className="sub-label">Min Length*</label>
-                        <input
-                          type="number"
-                          min="0"
-                          className="form-input-small"
-                          placeholder=""
-                          value={selectedQuestion.min_length || ""}
-                          onChange={(e) =>
-                            handleChangeField("min_length", e.target.value)
-                          }
-                        />
-                      </div>
-                      <div className="input-group">
-                        <label className="sub-label">Max Length*</label>
-                        <input
-                          type="number"
-                          min="0"
-                          className="form-input-small"
-                          placeholder=""
-                          value={selectedQuestion.max_length || ""}
-                          onChange={(e) =>
-                            handleChangeField("max_length", e.target.value)
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Radio / Option type: show Add Subquestions toggle and options dropdown */}
-              {(selectedQuestion.question_form_type || "").toLowerCase() ===
-                "radio" && (
-                <div className="form-group2">
-                  <label
-                    className="form-label-inline"
-                    style={{ display: "flex", marginTop: -12 }}
-                  >
-                    <input
-                      type="checkbox"
-                      className="checkbox"
-                      checked={!!selectedQuestion.add_subquestions}
-                      onChange={(e) =>
-                        handleChangeField("add_subquestions", e.target.checked)
-                      }
-                    />
-                    <span>Add Subquestions</span>
-                  </label>
-
-                  <div
-                    className="subquestions-input"
-                    style={{
-                      display: selectedQuestion.add_subquestions
-                        ? "block"
-                        : "none",
-                      marginTop: 12,
-                    }}
-                  >
-                    <label className="form-label" style={{ display: "flex" }}>
-                      Question Option Type *
-                    </label>
-                    <select
-                      className="form-input compact"
-                      value={selectedQuestion.selected_option_id || ""}
-                      onChange={(e) =>
-                        handleChangeField("selected_option_id", e.target.value)
-                      }
-                    >
-                      <option value="">-- Select --</option>
-                      {Array.isArray(selectedQuestion.question_form_option) &&
-                        selectedQuestion.question_form_option.map((opt) => (
-                          <option key={opt.id} value={String(opt.id)}>
-                            {opt.label}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {/* Select type: same UI as radio for subquestions + dropdown populated from options */}
-              {(selectedQuestion.question_form_type || "").toLowerCase() ===
-                "select" && (
-                <div className="form-group2">
-                  <label
-                    className="form-label-inline"
-                    style={{ display: "flex", marginTop: -12 }}
-                  >
-                    <input
-                      type="checkbox"
-                      className="checkbox"
-                      checked={!!selectedQuestion.add_subquestions}
-                      onChange={(e) =>
-                        handleChangeField("add_subquestions", e.target.checked)
-                      }
-                    />
-                    <span>Add Subquestions</span>
-                  </label>
-
-                  <div
-                    className="subquestions-input"
-                    style={{
-                      display: selectedQuestion.add_subquestions
-                        ? "block"
-                        : "none",
-                      marginTop: 12,
-                    }}
-                  >
-                    <label className="form-label" style={{ display: "flex" }}>
-                      Question Option Type *
-                    </label>
-                    <select
-                      className="form-input compact"
-                      value={selectedQuestion.selected_option_id || ""}
-                      onChange={(e) =>
-                        handleChangeField("selected_option_id", e.target.value)
-                      }
-                    >
-                      <option value="">-- Select --</option>
-                      {Array.isArray(selectedQuestion.question_form_option) &&
-                        selectedQuestion.question_form_option.map((opt) => (
-                          <option key={opt.id} value={String(opt.id)}>
-                            {opt.label}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                </div>
-              )}
-
               {/* Race Categories */}
               <div className="form-group2">
                 <label className="form-label">Race Categories</label>
                 <div className="race-category-toggle">
                   <button
-                    className={`race-btn ${
-                      raceCategoryMode === "all" ? "active" : ""
-                    }`}
+                    className={`race-btn ${raceCategoryMode === "all" ? "active" : ""
+                      }`}
                     onClick={() => toggleRaceMode("all")}
                   >
                     <span className="icon">🔊</span> All Race Categories
                   </button>
                   <button
-                    className={`race-btn ${
-                      raceCategoryMode === "selected" ? "active" : ""
-                    }`}
+                    className={`race-btn ${raceCategoryMode === "selected" ? "active" : ""
+                      }`}
                     onClick={() => toggleRaceMode("selected")}
                   >
                     <span className="icon">🔒</span> Selected Race Categories
@@ -1035,119 +872,276 @@ const GeneralFormQuestions = ({
                 )}
               </div>
 
+              {/* Limit Length - only show for text type questions */}
+              {(selectedQuestion.question_form_type || "").toLowerCase() ===
+                "text" && (
+                  <div className="form-group2">
+                    <div className="limit-length-row">
+                      <label className="form-label-inline">
+                        <input
+                          type="checkbox"
+                          className="checkbox"
+                          checked={!!selectedQuestion.limit_length_enabled}
+                          onChange={(e) =>
+                            handleChangeField(
+                              "limit_length_enabled",
+                              e.target.checked
+                            )
+                          }
+                        />
+                        <span>Limit Length</span>
+                      </label>
+
+                      <div
+                        className="limit-length-inputs"
+                        style={{
+                          display: selectedQuestion.limit_length_enabled
+                            ? "flex"
+                            : "none",
+                        }}
+                      >
+                        <div className="input-group">
+                          <label className="sub-label">Min Length*</label>
+                          <input
+                            type="number"
+                            min="0"
+                            className="form-input-small"
+                            placeholder=""
+                            value={selectedQuestion.min_length || ""}
+                            onChange={(e) =>
+                              handleChangeField("min_length", e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="input-group">
+                          <label className="sub-label">Max Length*</label>
+                          <input
+                            type="number"
+                            min="0"
+                            className="form-input-small"
+                            placeholder=""
+                            value={selectedQuestion.max_length || ""}
+                            onChange={(e) =>
+                              handleChangeField("max_length", e.target.value)
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              {/* Radio / Option type: show Add Subquestions toggle and options dropdown */}
+              {(selectedQuestion.question_form_type || "").toLowerCase() ===
+                "radio" && (
+                  <div className="form-group2">
+                    <label
+                      className="form-label-inline"
+                      style={{ display: "flex", marginTop: 22 }}
+                    >
+                      <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={!!selectedQuestion.add_subquestions}
+                        onChange={(e) =>
+                          handleChangeField("add_subquestions", e.target.checked)
+                        }
+                      />
+                      <span>Add Subquestions</span>
+                    </label>
+
+                    <div
+                      className="subquestions-input"
+                      style={{
+                        display: selectedQuestion.add_subquestions
+                          ? "block"
+                          : "none",
+                        marginTop: 12,
+                      }}
+                    >
+                      <label className="form-label" style={{ display: "flex" }}>
+                        Question Option Type *
+                      </label>
+                      <select
+                        className="form-input compact"
+                        value={selectedQuestion.selected_option_id || ""}
+                        onChange={(e) =>
+                          handleChangeField("selected_option_id", e.target.value)
+                        }
+                      >
+                        <option value="">-- Select --</option>
+                        {Array.isArray(selectedQuestion.question_form_option) &&
+                          selectedQuestion.question_form_option.map((opt) => (
+                            <option key={opt.id} value={String(opt.id)}>
+                              {opt.label}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+              {/* Select type: same UI as radio for subquestions + dropdown populated from options */}
+              {(selectedQuestion.question_form_type || "").toLowerCase() ===
+                "select" && (
+                  <div className="form-group2">
+                    <label
+                      className="form-label-inline"
+                      style={{ display: "flex", marginTop: -12 }}
+                    >
+                      <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={!!selectedQuestion.add_subquestions}
+                        onChange={(e) =>
+                          handleChangeField("add_subquestions", e.target.checked)
+                        }
+                      />
+                      <span>Add Subquestions</span>
+                    </label>
+
+                    <div
+                      className="subquestions-input"
+                      style={{
+                        display: selectedQuestion.add_subquestions
+                          ? "block"
+                          : "none",
+                        marginTop: 12,
+                      }}
+                    >
+                      <label className="form-label" style={{ display: "flex" }}>
+                        Question Option Type *
+                      </label>
+                      <select
+                        className="form-input compact"
+                        value={selectedQuestion.selected_option_id || ""}
+                        onChange={(e) =>
+                          handleChangeField("selected_option_id", e.target.value)
+                        }
+                      >
+                        <option value="">-- Select --</option>
+                        {Array.isArray(selectedQuestion.question_form_option) &&
+                          selectedQuestion.question_form_option.map((opt) => (
+                            <option key={opt.id} value={String(opt.id)}>
+                              {opt.label}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+
+
               {/* Date Range - only for date type questions */}
               {(selectedQuestion.question_form_type || "").toLowerCase() ===
                 "date" && (
-                <div className="form-group2">
-                  <label className="form-label">Date Range</label>
-                  <div className="email-toggle-group">
-                    <button
-                      className={`email-toggle-btn ${
-                        !selectedQuestion.date_range_enabled ? "active" : ""
-                      }`}
-                      onClick={() =>
-                        handleChangeField("date_range_enabled", false)
-                      }
-                    >
-                      <span className="unlock-icon">🔓</span> No
-                    </button>
-                    <button
-                      className={`email-toggle-btn ${
-                        selectedQuestion.date_range_enabled ? "active yes" : ""
-                      }`}
-                      onClick={() =>
-                        handleChangeField("date_range_enabled", true)
-                      }
-                    >
-                      <span className="lock-icon">🔒</span> Yes
-                    </button>
-                  </div>
-
-                  {selectedQuestion.date_range_enabled && (
-                    <div
-                      className="limit-length-inputs"
-                      style={{ marginTop: 12 }}
-                    >
-                      <div className="input-group">
-                        <label className="sub-label">Start Date</label>
-                        <input
-                          type="date"
-                          className="form-input compact"
-                          value={selectedQuestion.start_date || ""}
-                          onChange={(e) =>
-                            handleChangeField("start_date", e.target.value)
-                          }
-                        />
-                      </div>
-                      <div className="input-group">
-                        <label className="sub-label">End Date</label>
-                        <input
-                          type="date"
-                          className="form-input compact"
-                          value={selectedQuestion.end_date || ""}
-                          onChange={(e) =>
-                            handleChangeField("end_date", e.target.value)
-                          }
-                        />
-                      </div>
+                  <div className="form-group2">
+                    <label className="form-label">Date Range</label>
+                    <div className="email-toggle-group">
+                      <button
+                        className={`email-toggle-btn ${!selectedQuestion.date_range_enabled ? "active" : ""
+                          }`}
+                        onClick={() =>
+                          handleChangeField("date_range_enabled", false)
+                        }
+                      >
+                        <span className="unlock-icon">🔓</span> No
+                      </button>
+                      <button
+                        className={`email-toggle-btn ${selectedQuestion.date_range_enabled ? "active yes" : ""
+                          }`}
+                        onClick={() =>
+                          handleChangeField("date_range_enabled", true)
+                        }
+                      >
+                        <span className="lock-icon">🔒</span> Yes
+                      </button>
                     </div>
-                  )}
-                </div>
-              )}
+
+                    {selectedQuestion.date_range_enabled && (
+                      <div
+                        className="limit-length-inputs"
+                        style={{ marginTop: 12 }}
+                      >
+                        <div className="input-group">
+                          <label className="sub-label">Start Date</label>
+                          <input
+                            type="date"
+                            className="form-input compact"
+                            value={selectedQuestion.start_date || ""}
+                            onChange={(e) =>
+                              handleChangeField("start_date", e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="input-group">
+                          <label className="sub-label">End Date</label>
+                          <input
+                            type="date"
+                            className="form-input compact"
+                            value={selectedQuestion.end_date || ""}
+                            onChange={(e) =>
+                              handleChangeField("end_date", e.target.value)
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
               {/* Email Domain Validation - only for email type questions */}
               {(selectedQuestion.question_form_type || "").toLowerCase() ===
                 "email" && (
-                <div className="form-group2">
-                  <label className="form-label">
-                    Apply Validation For Specific Domain
-                  </label>
-                  <div className="email-toggle-group">
-                    <button
-                      className={`email-toggle-btn ${
-                        !selectedQuestion.email_validation_enabled
+                  <div className="form-group2">
+                    <label className="form-label">
+                      Apply Validation For Specific Domain
+                    </label>
+                    <div className="email-toggle-group">
+                      <button
+                        className={`email-toggle-btn ${!selectedQuestion.email_validation_enabled
                           ? "active"
                           : ""
-                      }`}
-                      onClick={() =>
-                        handleChangeField("email_validation_enabled", false)
-                      }
-                    >
-                      <span className="unlock-icon">🔓</span> No
-                    </button>
-                    <button
-                      className={`email-toggle-btn ${
-                        selectedQuestion.email_validation_enabled
+                          }`}
+                        onClick={() =>
+                          handleChangeField("email_validation_enabled", false)
+                        }
+                      >
+                        <span className="unlock-icon">🔓</span> No
+                      </button>
+                      <button
+                        className={`email-toggle-btn ${selectedQuestion.email_validation_enabled
                           ? "active yes"
                           : ""
-                      }`}
-                      onClick={() =>
-                        handleChangeField("email_validation_enabled", true)
-                      }
-                    >
-                      <span className="lock-icon">🔒</span> Yes
-                    </button>
-                  </div>
-
-                  {selectedQuestion.email_validation_enabled && (
-                    <div
-                      className="form-group2 email-validation-input"
-                      style={{ marginTop: 12 }}
-                    >
-                      <label className="form-label">Domain Name</label>
-                      <input
-                        type="text"
-                        className="form-input compact full-width"
-                        value={selectedQuestion.email_domain || ""}
-                        onChange={(e) =>
-                          handleChangeField("email_domain", e.target.value)
+                          }`}
+                        onClick={() =>
+                          handleChangeField("email_validation_enabled", true)
                         }
-                        placeholder="example.com"
-                      />
+                      >
+                        <span className="lock-icon">🔒</span> Yes
+                      </button>
                     </div>
-                  )}
-                </div>
-              )}
+
+                    {selectedQuestion.email_validation_enabled && (
+                      <div
+                        className="form-group2 email-validation-input"
+                        style={{ marginTop: 12 }}
+                      >
+                        <label className="form-label">Domain Name</label>
+                        <input
+                          type="text"
+                          className="form-input compact full-width"
+                          value={selectedQuestion.email_domain || ""}
+                          onChange={(e) =>
+                            handleChangeField("email_domain", e.target.value)
+                          }
+                          placeholder="example.com"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
 
               {/* Limit Length */}
               {/* <div className="form-group2">

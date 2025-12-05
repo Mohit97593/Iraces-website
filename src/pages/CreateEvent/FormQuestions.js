@@ -40,19 +40,19 @@ const FormQuestions = ({ onBack, onNext }) => {
               if (!updated) return prevQuestions;
               const matchId = String(
                 updated.general_form_id ||
-                  updated.general_form ||
-                  updated.id ||
-                  updated.form_id ||
-                  ""
+                updated.general_form ||
+                updated.id ||
+                updated.form_id ||
+                ""
               );
               const replaceInArray = (arr) =>
                 arr.map((it) => {
                   const id = String(
                     it.general_form_id ||
-                      it.general_form ||
-                      it.id ||
-                      it.form_id ||
-                      ""
+                    it.general_form ||
+                    it.id ||
+                    it.form_id ||
+                    ""
                   );
                   if (id && id === matchId) return { ...it, ...updated };
                   return it;
@@ -131,8 +131,8 @@ const FormQuestions = ({ onBack, onNext }) => {
       fd.append(
         "event_id",
         sessionStorage.getItem("event_id") ||
-          localStorage.getItem("event_id") ||
-          ""
+        localStorage.getItem("event_id") ||
+        ""
       );
       // general_form_id should be the template id or the saved question id depending on backend
       fd.append(
@@ -216,10 +216,10 @@ const FormQuestions = ({ onBack, onNext }) => {
     if (!updated) return prevQuestions;
     const matchId = String(
       updated.general_form_id ||
-        updated.general_form ||
-        updated.id ||
-        updated.form_id ||
-        ""
+      updated.general_form ||
+      updated.id ||
+      updated.form_id ||
+      ""
     );
 
     // Helper to replace in an array
@@ -417,8 +417,8 @@ const FormQuestions = ({ onBack, onNext }) => {
     fd.append(
       "event_id",
       sessionStorage.getItem("event_id") ||
-        localStorage.getItem("event_id") ||
-        ""
+      localStorage.getItem("event_id") ||
+      ""
     );
     fd.append(
       "general_form_id",
@@ -782,8 +782,8 @@ const FormQuestions = ({ onBack, onNext }) => {
                                           type="checkbox"
                                           checked={
                                             q.show_on_ticket_pdf === "1" ||
-                                            q.show_on_ticket_pdf === 1 ||
-                                            q.show_on_ticket_pdf === true
+                                              q.show_on_ticket_pdf === 1 ||
+                                              q.show_on_ticket_pdf === true
                                               ? true
                                               : false
                                           }

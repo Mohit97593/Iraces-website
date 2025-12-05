@@ -250,6 +250,34 @@ export default function EventImages({ onBack, onNext }) {
             <CKEditor
               editor={ClassicEditor}
               data={description}
+              config={{
+                // Custom upload adapter for images
+                extraPlugins: [
+                  function (editor) {
+                    editor.plugins.get("FileRepository").createUploadAdapter = (
+                      loader
+                    ) => {
+                      return {
+                        upload: () => {
+                          return loader.file.then(
+                            (file) =>
+                              new Promise((resolve, reject) => {
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  resolve({
+                                    default: reader.result,
+                                  });
+                                };
+                                reader.onerror = (error) => reject(error);
+                                reader.readAsDataURL(file);
+                              })
+                          );
+                        },
+                      };
+                    };
+                  },
+                ],
+              }}
               onChange={(event, editor) => {
                 const data = editor.getData();
                 setDescription(data);
