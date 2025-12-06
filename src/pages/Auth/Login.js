@@ -243,8 +243,8 @@ export default function Login() {
             loginType === "email"
               ? formData.identifier.toLowerCase().trim()
               : loginType === "userId"
-              ? formData.identifier
-              : "",
+                ? formData.identifier
+                : "",
           mobile: cleanMobile,
           password: formData.password,
           loginType: 1, // 1=Password login (both email and mobile)
@@ -541,9 +541,8 @@ export default function Login() {
                     <div className="login-type-buttons">
                       <button
                         type="button"
-                        className={`login-type-btn${
-                          loginType === "userId" ? " active" : ""
-                        }`}
+                        className={`login-type-btn${loginType === "userId" ? " active" : ""
+                          }`}
                         onClick={() => handleLoginTypeChange("userId")}
                         style={{
                           border:
@@ -565,10 +564,10 @@ export default function Login() {
                           (e.currentTarget.style.border = "2px solid #da251c")
                         }
                         onMouseLeave={(e) =>
-                          (e.currentTarget.style.border =
-                            loginType === "userId"
-                              ? "2px solid #da251c"
-                              : "1px solid #ddd")
+                        (e.currentTarget.style.border =
+                          loginType === "userId"
+                            ? "2px solid #da251c"
+                            : "1px solid #ddd")
                         }
                       >
                         <i className="fas fa-user"></i>
@@ -576,9 +575,8 @@ export default function Login() {
                       </button>
                       <button
                         type="button"
-                        className={`login-type-btn${
-                          loginType === "mobile" ? " active" : ""
-                        }`}
+                        className={`login-type-btn${loginType === "mobile" ? " active" : ""
+                          }`}
                         onClick={() => handleLoginTypeChange("mobile")}
                         style={{
                           border:
@@ -600,10 +598,10 @@ export default function Login() {
                           (e.currentTarget.style.border = "2px solid #da251c")
                         }
                         onMouseLeave={(e) =>
-                          (e.currentTarget.style.border =
-                            loginType === "mobile"
-                              ? "2px solid #da251c"
-                              : "1px solid #ddd")
+                        (e.currentTarget.style.border =
+                          loginType === "mobile"
+                            ? "2px solid #da251c"
+                            : "1px solid #ddd")
                         }
                       >
                         <i className="fas fa-phone"></i>
@@ -611,9 +609,8 @@ export default function Login() {
                       </button>
                       <button
                         type="button"
-                        className={`login-type-btn${
-                          loginType === "email" ? " active" : ""
-                        }`}
+                        className={`login-type-btn${loginType === "email" ? " active" : ""
+                          }`}
                         onClick={() => handleLoginTypeChange("email")}
                         style={{
                           border:
@@ -634,10 +631,10 @@ export default function Login() {
                           (e.currentTarget.style.border = "2px solid #da251c")
                         }
                         onMouseLeave={(e) =>
-                          (e.currentTarget.style.border =
-                            loginType === "email"
-                              ? "2px solid #da251c"
-                              : "1px solid #ddd")
+                        (e.currentTarget.style.border =
+                          loginType === "email"
+                            ? "2px solid #da251c"
+                            : "1px solid #ddd")
                         }
                       >
                         <i className="fas fa-envelope"></i>
@@ -653,9 +650,8 @@ export default function Login() {
                     <input
                       type={getInputType()}
                       name="identifier"
-                      className={`form-control auth-input ${
-                        errors.identifier ? "is-invalid" : ""
-                      }`}
+                      className={`form-control auth-input ${errors.identifier ? "is-invalid" : ""
+                        }`}
                       placeholder={getPlaceholder()}
                       value={formData.identifier}
                       onChange={handleChange}
@@ -681,9 +677,8 @@ export default function Login() {
                         <input
                           type={showPassword ? "text" : "password"}
                           name="password"
-                          className={`form-control auth-input ${
-                            errors.password ? "is-invalid" : ""
-                          }`}
+                          className={`form-control auth-input ${errors.password ? "is-invalid" : ""
+                            }`}
                           placeholder="Password"
                           value={formData.password}
                           onChange={handleChange}
@@ -707,9 +702,8 @@ export default function Login() {
                           onClick={() => setShowPassword(!showPassword)}
                         >
                           <i
-                            className={`fas ${
-                              showPassword ? "fa-eye-slash" : "fa-eye"
-                            }`}
+                            className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"
+                              }`}
                           ></i>
                         </button>
                       </div>
@@ -743,9 +737,8 @@ export default function Login() {
                       <input
                         type="text"
                         name="otp"
-                        className={`form-control auth-input ${
-                          errors.otp ? "is-invalid" : ""
-                        }`}
+                        className={`form-control auth-input ${errors.otp ? "is-invalid" : ""
+                          }`}
                         placeholder="Enter OTP"
                         value={formData.otp}
                         onChange={handleChange}
@@ -772,7 +765,7 @@ export default function Login() {
                       )}
                       {otpSent && (
                         <div className="text-success small mt-1">
-                          OTP sent successfully! Please check your email.
+                          OTP sent successfully! Please check your {loginType === "email" ? "email" : "SMS"}.
                         </div>
                       )}
                       {/* Countdown and resend OTP UI */}

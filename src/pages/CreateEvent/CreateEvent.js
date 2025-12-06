@@ -9,6 +9,7 @@ import EventSettings from "./EventSettings";
 import RaceCategories from "./RaceCategories";
 import "./CreateEvent.css";
 import FormQuestions from "./FormQuestions";
+import Grouping from "./Grouping";
 import AgeCategory from "./AgeCategory";
 import DiscountCoupons from "./DiscountCoupons";
 import CommunicationsStep from "./CommunicationsStep";
@@ -31,7 +32,7 @@ export default function CreateEvent() {
   const [loading, setLoading] = useState(true);
   const [eventFormData, setEventFormData] = useState({});
   const [nameError, setNameError] = useState("");
-  const [savedSteps, setSavedSteps] = useState(new Array(11).fill(false)); // Track saved status for each step (now 11 steps)
+  const [savedSteps, setSavedSteps] = useState(new Array(12).fill(false)); // Track saved status for each step (now 12 steps)
   const [showPreview, setShowPreview] = useState(true);
   const [cityName, setCityName] = useState("");
   const [paidType, setPaidType] = useState("");
@@ -399,7 +400,7 @@ export default function CreateEvent() {
 
                 // Mark which steps are already saved based on presence of data
                 try {
-                  const stepSaved = new Array(11).fill(false);
+                  const stepSaved = new Array(12).fill(false);
                   // Step 1 - Essentials: event exists => saved
                   stepSaved[0] = true;
 
@@ -483,17 +484,23 @@ export default function CreateEvent() {
                   )
                     stepSaved[5] = true;
 
-                  // Step 7 - Age Category
+                  // Step 7 - Grouping
                   if (
-                    hasAny(["age_categories", "AllAgeCategory", "ageCategory"])
+                    hasAny(["grouping", "event_grouping", "groups"])
                   )
                     stepSaved[6] = true;
 
-                  // Step 8 - Discount Coupons
-                  if (hasAny(["coupons", "event_coupons", "discounts"]))
+                  // Step 8 - Age Category
+                  if (
+                    hasAny(["age_categories", "AllAgeCategory", "ageCategory"])
+                  )
                     stepSaved[7] = true;
 
-                  // Step 9 - Communications
+                  // Step 9 - Discount Coupons
+                  if (hasAny(["coupons", "event_coupons", "discounts"]))
+                    stepSaved[8] = true;
+
+                  // Step 10 - Communications
                   if (
                     hasAny([
                       "communications",
@@ -501,15 +508,15 @@ export default function CreateEvent() {
                       "event_communications",
                     ])
                   )
-                    stepSaved[8] = true;
-
-                  // Step 10 - FAQs
-                  if (hasAny(["faqs", "EventFaq", "event_faqs"]))
                     stepSaved[9] = true;
 
-                  // Step 11 - Integrations
-                  if (hasAny(["integrations", "event_integrations"]))
+                  // Step 11 - FAQs
+                  if (hasAny(["faqs", "EventFaq", "event_faqs"]))
                     stepSaved[10] = true;
+
+                  // Step 12 - Integrations
+                  if (hasAny(["integrations", "event_integrations"]))
+                    stepSaved[11] = true;
 
                   setSavedSteps(stepSaved);
                 } catch (e) {
@@ -939,6 +946,14 @@ export default function CreateEvent() {
     });
     setCurrentStep(6);
   };
+  const handleGroupingSave = () => {
+    setSavedSteps((prev) => {
+      const updated = [...prev];
+      updated[6] = true;
+      return updated;
+    });
+    setCurrentStep(8);
+  };
 
   // Step titles and their corresponding components
   const steps = [
@@ -948,11 +963,12 @@ export default function CreateEvent() {
     { title: "Event Settings", component: "settings" },
     { title: "Race Categories", component: "racecategories" },
     { title: "Form Questions", component: "formquestions" },
-    { title: "Age Category", component: "agecategory" }, // 7th step
-    { title: "Discount Coupons", component: "discountcoupons" }, // 8th step
-    { title: "Communications", component: "communications" }, // 9th step
-    { title: "FAQ's", component: "faqs" }, // 10th step
-    { title: "Integrations", component: "integrations" }, // 11th step
+    { title: "Grouping", component: "grouping" }, // 7th step
+    { title: "Age Category", component: "agecategory" }, // 8th step
+    { title: "Discount Coupons", component: "discountcoupons" }, // 9th step
+    { title: "Communications", component: "communications" }, // 10th step
+    { title: "FAQ's", component: "faqs" }, // 11th step
+    { title: "Integrations", component: "integrations" }, // 12th step
   ];
 
   if (loading) {
@@ -1285,33 +1301,39 @@ export default function CreateEvent() {
               />
             )}
             {currentStep === 7 && (
-              <AgeCategory
+              <Grouping
                 onBack={() => setCurrentStep(6)}
-                onNext={() => markCurrentSavedAndGo(8)}
+                onNext={handleGroupingSave}
               />
             )}
             {currentStep === 8 && (
-              <DiscountCoupons
+              <AgeCategory
                 onBack={() => setCurrentStep(7)}
                 onNext={() => markCurrentSavedAndGo(9)}
               />
             )}
             {currentStep === 9 && (
-              <CommunicationsStep
+              <DiscountCoupons
                 onBack={() => setCurrentStep(8)}
                 onNext={() => markCurrentSavedAndGo(10)}
               />
             )}
             {currentStep === 10 && (
-              <FAQsStep
+              <CommunicationsStep
                 onBack={() => setCurrentStep(9)}
                 onNext={() => markCurrentSavedAndGo(11)}
               />
             )}
             {currentStep === 11 && (
-              <Integrations
+              <FAQsStep
                 onBack={() => setCurrentStep(10)}
                 onNext={() => markCurrentSavedAndGo(12)}
+              />
+            )}
+            {currentStep === 12 && (
+              <Integrations
+                onBack={() => setCurrentStep(11)}
+                onNext={() => markCurrentSavedAndGo(13)}
               />
             )}
           </div>

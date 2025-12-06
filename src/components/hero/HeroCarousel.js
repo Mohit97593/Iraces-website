@@ -437,9 +437,8 @@ export default function HeroCarousel() {
                   </div>
 
                   <h4
-                    className={`display-1 hero-title ${
-                      animate ? "animated slide-in-left" : ""
-                    }`}
+                    className={`display-1 hero-title ${animate ? "animated slide-in-left" : ""
+                      }`}
                     style={{
                       fontSize: "90px",
                       lineHeight: "100px",
@@ -450,12 +449,12 @@ export default function HeroCarousel() {
                   </h4>
                   <p className="lead hero-sub">{staticSubtitle}</p>
                   {/* ✅ Modal Open Button */}
-                  <button
+                  {/* <button
                     className="btn btn-success mt-3"
                     onClick={() => dispatch(toggleModal())}
                   >
                     Learn More
-                  </button>
+                  </button> */}
                 </div>
 
                 <div className="col-lg-5 d-flex justify-content-end align-items-center">
@@ -512,11 +511,11 @@ export default function HeroCarousel() {
                                 {nextUpcomingEvent.end_date_event ||
                                   (nextUpcomingEvent.end_time
                                     ? new Date(
-                                        nextUpcomingEvent.end_time * 1000
-                                      ).toLocaleTimeString("en-US", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })
+                                      nextUpcomingEvent.end_time * 1000
+                                    ).toLocaleTimeString("en-US", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
                                     : "")}
                               </span>
                             </div>
@@ -1006,9 +1005,8 @@ export default function HeroCarousel() {
                         );
                         return (
                           <div
-                            className={`carousel-item ${
-                              slideIndex === 0 ? "active" : ""
-                            }`}
+                            className={`carousel-item ${slideIndex === 0 ? "active" : ""
+                              }`}
                             key={slideIndex}
                           >
                             <div className="row justify-content-center">
@@ -1060,11 +1058,10 @@ export default function HeroCarousel() {
                                           {event.city_name || cityName}
                                         </span>
                                         <button
-                                          className={`search-like-btn${
-                                            likedEvents[event.id]
+                                          className={`search-like-btn${likedEvents[event.id]
                                               ? " liked"
                                               : ""
-                                          }`}
+                                            }`}
                                           aria-label="Like"
                                           onClick={() =>
                                             handleToggleLike(event.id)
@@ -1128,9 +1125,8 @@ export default function HeroCarousel() {
                                             }}
                                           >
                                             <i
-                                              className={`fas fa-${
-                                                isOpen ? "check-circle" : "ban"
-                                              }`}
+                                              className={`fas fa-${isOpen ? "check-circle" : "ban"
+                                                }`}
                                               style={{ marginRight: 6 }}
                                             ></i>
                                             {isOpen

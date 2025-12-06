@@ -83,9 +83,9 @@ function TestimonialsCarousel() {
             REAL RUNNERS, REAL STORIES
           </h2>
         </div>
-        <div className="col-12 col-md-3">
+        {/* <div className="col-12 col-md-3">
           <button className="testimonials-cta w-100">JOIN THE COMMUNITY</button>
-        </div>
+        </div> */}
       </div>
       {/* Carousel grid: show only current slide's cards */}
       <div

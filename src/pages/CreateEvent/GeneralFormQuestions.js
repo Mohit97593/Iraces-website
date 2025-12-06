@@ -987,7 +987,7 @@ const GeneralFormQuestions = ({
                   <div className="form-group2">
                     <label
                       className="form-label-inline"
-                      style={{ display: "flex", marginTop: -12 }}
+                      style={{ display: "flex", marginTop: 12 }}
                     >
                       <input
                         type="checkbox"
