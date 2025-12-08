@@ -1,10 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 
 const Grouping = ({ onBack, onNext }) => {
     const [groups, setGroups] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [groupName, setGroupName] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [fetchingGroups, setFetchingGroups] = useState(true);
+    const [eventId, setEventId] = useState(null);
+
+    // Questions modal state
+    const [showQuestionsModal, setShowQuestionsModal] = useState(false);
+    const [selectedGroupId, setSelectedGroupId] = useState(null);
+    const [questions, setQuestions] = useState([]);
+    const [selectedQuestions, setSelectedQuestions] = useState([]);
+    const [loadingQuestions, setLoadingQuestions] = useState(false);
 
     const handleSave = () => {
         // Save logic will be implemented later
@@ -15,11 +26,75 @@ const Grouping = ({ onBack, onNext }) => {
         setShowModal(true);
     };
 
-    const handleSaveGroup = () => {
+    const handleSaveGroup = async () => {
         if (groupName.trim()) {
-            setGroups([...groups, { id: Date.now(), name: groupName }]);
-            setGroupName("");
-            setShowModal(false);
+            setLoading(true);
+            try {
+                const response = await authAPI.createGroupQuestion({
+                    title: groupName.trim()
+                });
+
+                console.log("Create Group Response:", response);
+                console.log("Response data:", response.data);
+
+                // Extract the group ID from response
+                let newGroupId = null;
+                if (response && response.data) {
+                    // Try different possible ID fields
+                    newGroupId = response.data.group_id || response.data.id || response.data.insertId;
+                    console.log("New Group ID:", newGroupId);
+                }
+
+                // Fetch updated groups list to get the correct data
+                await fetchGroupQuestions();
+
+                setGroupName("");
+                setShowModal(false);
+            } catch (error) {
+                console.error("Error creating group:", error);
+                alert("Failed to create group. Please try again.");
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    const fetchGroupQuestions = async () => {
+        try {
+            setFetchingGroups(true);
+            const response = await authAPI.getGroupQuestions();
+            console.log("Get Groups Response:", response);
+            console.log("Get Groups Response Data:", response.data);
+
+            // Adjust based on actual API response structure
+            if (response && response.data) {
+                const groupsData = Array.isArray(response.data) ? response.data : [];
+                console.log("Groups Data Array:", groupsData);
+
+                const mappedGroups = groupsData.map(group => {
+                    // Try different possible ID fields
+                    const groupId = group.id || group.group_id || group.question_group_id;
+                    console.log("Mapping group:", {
+                        originalId: group.id,
+                        groupId: group.group_id,
+                        mappedId: groupId,
+                        title: group.title
+                    });
+
+                    return {
+                        id: groupId,
+                        name: group.title || group.name,
+                        questions: group.questions || []
+                    };
+                });
+
+                console.log("Mapped Groups:", mappedGroups);
+                setGroups(mappedGroups);
+            }
+        } catch (error) {
+            console.error("Error fetching groups:", error);
+        } finally {
+            setFetchingGroups(false);
         }
     };
 
@@ -27,6 +102,165 @@ const Grouping = ({ onBack, onNext }) => {
         setGroupName("");
         setShowModal(false);
     };
+
+    // Fetch event form questions
+    const fetchEventFormQuestions = async () => {
+        try {
+            setLoadingQuestions(true);
+
+            if (!eventId) {
+                console.error("Event ID not found");
+                alert("Event ID not found. Please try again.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("event_id", eventId);
+
+            console.log("Fetching questions for event_id:", eventId);
+            const response = await authAPI.eventFormQuestions(formData);
+            console.log("Event Form Questions Response:", response);
+
+            // Parse the nested response structure
+            let questionsData = [];
+
+            if (response && response.data && response.data.form_question) {
+                // Try to get from event_form_array first
+                if (response.data.form_question.event_form_array &&
+                    Array.isArray(response.data.form_question.event_form_array)) {
+                    questionsData = response.data.form_question.event_form_array;
+                }
+                // Fallback to event_form_details if event_form_array is empty
+                else if (response.data.form_question.event_form_details) {
+                    const formDetails = response.data.form_question.event_form_details;
+                    // Flatten all form categories into one array
+                    Object.keys(formDetails).forEach(formKey => {
+                        if (Array.isArray(formDetails[formKey])) {
+                            questionsData = [...questionsData, ...formDetails[formKey]];
+                        }
+                    });
+                }
+            }
+
+            console.log("Parsed questions data:", questionsData);
+            setQuestions(questionsData);
+
+        } catch (error) {
+            console.error("Error fetching questions:", error);
+            alert("Failed to fetch questions. Please try again.");
+        } finally {
+            setLoadingQuestions(false);
+        }
+    };
+
+    // Handle add question button click
+    const handleAddQuestion = (groupId) => {
+        setSelectedGroupId(groupId);
+        setSelectedQuestions([]);
+        setShowQuestionsModal(true);
+        fetchEventFormQuestions();
+    };
+
+    // Handle question checkbox toggle
+    const handleQuestionToggle = (questionId) => {
+        setSelectedQuestions(prev => {
+            if (prev.includes(questionId)) {
+                return prev.filter(id => id !== questionId);
+            } else {
+                return [...prev, questionId];
+            }
+        });
+    };
+
+    // Handle add selected questions to group
+    const handleAddQuestionsToGroup = () => {
+        if (selectedQuestions.length === 0) {
+            alert("Please select at least one question.");
+            return;
+        }
+
+        // Update groups with selected questions
+        setGroups(prevGroups => prevGroups.map(group => {
+            if (group.id === selectedGroupId) {
+                const newQuestions = questions.filter(q =>
+                    selectedQuestions.includes(q.id || q.question_id)
+                );
+                return {
+                    ...group,
+                    questions: [...(group.questions || []), ...newQuestions]
+                };
+            }
+            return group;
+        }));
+
+        setShowQuestionsModal(false);
+        setSelectedQuestions([]);
+        setSelectedGroupId(null);
+    };
+
+    // Handle close questions modal
+    const handleCloseQuestionsModal = () => {
+        setShowQuestionsModal(false);
+        setSelectedQuestions([]);
+        setSelectedGroupId(null);
+    };
+
+    // Handle delete group
+    const handleDeleteGroup = async (groupId, groupName) => {
+        console.log("handleDeleteGroup called with:", { groupId, groupName });
+
+        // Validate group ID
+        if (!groupId || groupId === 0 || groupId === "0") {
+            console.error("Invalid group ID:", groupId);
+            alert("Cannot delete group: Invalid group ID. Please refresh the page and try again.");
+            return;
+        }
+
+        const confirmDelete = window.confirm(`Are you sure you want to delete "${groupName}"?`);
+        if (!confirmDelete) return;
+
+        try {
+            console.log("Deleting group with ID:", groupId, "Type:", typeof groupId);
+            const response = await authAPI.deleteGroupQuestion(groupId);
+            console.log("Delete Group Response:", response);
+
+            // Remove from local state
+            setGroups(groups.filter(g => g.id !== groupId));
+
+            // Optionally show success message
+            // alert("Group deleted successfully!");
+        } catch (error) {
+            console.error("Error deleting group:", error);
+            alert("Failed to delete group. Please try again.");
+        }
+    };
+
+    // Fetch groups when component mounts
+    useEffect(() => {
+        fetchGroupQuestions();
+
+        const storedEventId = sessionStorage.getItem("event_id");
+        if (storedEventId) {
+            setEventId(storedEventId);
+            console.log("Event ID from sessionStorage:", storedEventId);
+
+            authAPI.getEventDetails(storedEventId).then((res) => {
+                if (res && res.data && res.data.EventData && res.data.EventData[0]) {
+                    const details = res.data.EventData[0];
+                    console.log("Event Details:", details);
+
+                    // Store event_id from API response if available
+                    if (details.event_id || details.id) {
+                        const apiEventId = details.event_id || details.id;
+                        setEventId(apiEventId);
+                        console.log("Event ID from API:", apiEventId);
+                    }
+                }
+            }).catch((error) => {
+                console.error("Error fetching event details:", error);
+            });
+        }
+    }, []);
 
     return (
         <div className="event-form-section">
@@ -162,18 +396,19 @@ const Grouping = ({ onBack, onNext }) => {
                             </button>
                             <button
                                 onClick={handleSaveGroup}
+                                disabled={loading}
                                 style={{
-                                    background: "#da251c",
+                                    background: loading ? "#ccc" : "#da251c",
                                     border: "none",
                                     color: "#fff",
                                     borderRadius: 6,
                                     padding: "10px 24px",
                                     fontWeight: 600,
                                     fontSize: "1rem",
-                                    cursor: "pointer",
+                                    cursor: loading ? "not-allowed" : "pointer",
                                 }}
                             >
-                                Save
+                                {loading ? "Saving..." : "Save"}
                             </button>
                         </div>
                     </div>
@@ -190,7 +425,21 @@ const Grouping = ({ onBack, onNext }) => {
                     minHeight: 300,
                 }}
             >
-                {groups.length === 0 ? (
+                {fetchingGroups ? (
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            minHeight: 236,
+                            color: "#666",
+                            fontSize: "1.1rem",
+                        }}
+                    >
+                        <i className="fas fa-spinner fa-spin" style={{ marginRight: 12 }}></i>
+                        Loading groups...
+                    </div>
+                ) : groups.length === 0 ? (
                     <div
                         style={{
                             display: "flex",
@@ -212,128 +461,302 @@ const Grouping = ({ onBack, onNext }) => {
                     </div>
                 ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                        {groups.map((group) => (
-                            <div
-                                key={group.id}
-                                style={{
-                                    border: "1.5px solid transparent",
-                                    borderRadius: 12,
-                                    padding: "24px 20px",
-                                    display: "flex",
-                                    marginTop: "12px",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    background: "#fff",
-                                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
-                                    transition: "all 0.2s ease",
-                                    position: "relative",
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.border = "1.5px solid #da251c";
-                                    e.currentTarget.style.boxShadow = "0 4px 16px rgba(0, 0, 0, 0.2)";
-                                    const icons = e.currentTarget.querySelector('.group-icons');
-                                    if (icons) icons.style.opacity = "1";
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.border = "1.5px solid transparent";
-                                    e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.2)";
-                                    const icons = e.currentTarget.querySelector('.group-icons');
-                                    if (icons) icons.style.opacity = "0";
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        fontWeight: 600,
-                                        fontSize: "1.1rem",
-                                        color: "#333",
-                                    }}
-                                >
-                                    {group.name}
-                                </span>
-
-                                {/* Edit and Delete Icons - appear on hover */}
+                        {groups.map((group) => {
+                            console.log("Rendering group:", { id: group.id, name: group.name });
+                            return (
                                 <div
-                                    className="group-icons"
+                                    key={group.id}
                                     style={{
-                                        position: "absolute",
-                                        top: -20,
-                                        right: 12,
+                                        border: "1.5px solid transparent",
+                                        borderRadius: 12,
+                                        padding: "24px 20px",
                                         display: "flex",
-                                        gap: 8,
-                                        opacity: 0,
-                                        transition: "opacity 0.2s ease",
+                                        marginTop: "12px",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        background: "#fff",
+                                        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+                                        transition: "all 0.2s ease",
+                                        position: "relative",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.border = "1.5px solid #da251c";
+                                        e.currentTarget.style.boxShadow = "0 4px 16px rgba(0, 0, 0, 0.2)";
+                                        const icons = e.currentTarget.querySelector('.group-icons');
+                                        if (icons) icons.style.opacity = "1";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.border = "1.5px solid transparent";
+                                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.2)";
+                                        const icons = e.currentTarget.querySelector('.group-icons');
+                                        if (icons) icons.style.opacity = "0";
                                     }}
                                 >
+                                    <span
+                                        style={{
+                                            fontWeight: 600,
+                                            fontSize: "1.1rem",
+                                            color: "#333",
+                                        }}
+                                    >
+                                        {group.name}
+                                    </span>
+
+                                    {/* Edit and Delete Icons - appear on hover */}
+                                    <div
+                                        className="group-icons"
+                                        style={{
+                                            position: "absolute",
+                                            top: -20,
+                                            right: 12,
+                                            display: "flex",
+                                            gap: 8,
+                                            opacity: 0,
+                                            transition: "opacity 0.2s ease",
+                                        }}
+                                    >
+                                        <button
+                                            style={{
+                                                width: 32,
+                                                height: 32,
+                                                borderRadius: 6,
+                                                border: "1.5px solid #da251c",
+                                                background: "#fff",
+                                                color: "#da251c",
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                            }}
+                                            onClick={() => {
+                                                // Edit functionality will be implemented later
+                                                alert("Edit functionality coming soon!");
+                                            }}
+                                            title="Edit"
+                                        >
+                                            <i className="fas fa-edit"></i>
+                                        </button>
+                                        <button
+                                            style={{
+                                                width: 32,
+                                                height: 32,
+                                                borderRadius: 6,
+                                                border: "1.5px solid #da251c",
+                                                background: "#fff",
+                                                color: "#da251c",
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                            }}
+                                            onClick={() => handleDeleteGroup(group.id, group.name)}
+                                            title="Delete"
+                                        >
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+
                                     <button
                                         style={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: 6,
                                             border: "1.5px solid #da251c",
-                                            background: "#fff",
                                             color: "#da251c",
-                                            cursor: "pointer",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                        }}
-                                        onClick={() => {
-                                            // Edit functionality will be implemented later
-                                            alert("Edit functionality coming soon!");
-                                        }}
-                                        title="Edit"
-                                    >
-                                        <i className="fas fa-edit"></i>
-                                    </button>
-                                    <button
-                                        style={{
-                                            width: 32,
-                                            height: 32,
+                                            background: "#fff",
                                             borderRadius: 6,
-                                            border: "1.5px solid #da251c",
-                                            background: "#fff",
-                                            color: "#da251c",
+                                            padding: "8px 18px",
+                                            fontWeight: 600,
+                                            fontSize: "0.95rem",
                                             cursor: "pointer",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
                                         }}
-                                        onClick={() => {
-                                            // Delete functionality
-                                            const confirmDelete = window.confirm(`Are you sure you want to delete "${group.name}"?`);
-                                            if (confirmDelete) {
-                                                setGroups(groups.filter(g => g.id !== group.id));
-                                            }
-                                        }}
-                                        title="Delete"
+                                        onClick={() => handleAddQuestion(group.id)}
                                     >
-                                        <i className="fas fa-trash"></i>
+                                        + Add Question
                                     </button>
                                 </div>
-
-                                <button
-                                    style={{
-                                        border: "1.5px solid #da251c",
-                                        color: "#da251c",
-                                        background: "#fff",
-                                        borderRadius: 6,
-                                        padding: "8px 18px",
-                                        fontWeight: 600,
-                                        fontSize: "0.95rem",
-                                        cursor: "pointer",
-                                    }}
-                                    onClick={() => {
-                                        // Add question functionality will be implemented later
-                                        alert("Add Question functionality coming soon!");
-                                    }}
-                                >
-                                    + Add Question
-                                </button>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
+
+            {/* Questions Modal */}
+            {showQuestionsModal && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "rgba(0, 0, 0, 0.5)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 1000,
+                    }}
+                    onClick={handleCloseQuestionsModal}
+                >
+                    <div
+                        style={{
+                            background: "#fff",
+                            borderRadius: 12,
+                            padding: 32,
+                            width: "90%",
+                            maxWidth: 700,
+                            maxHeight: "80vh",
+                            overflow: "auto",
+                            boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h3
+                            style={{
+                                fontWeight: 700,
+                                fontSize: "1.4rem",
+                                marginBottom: 24,
+                                color: "#333",
+                            }}
+                        >
+                            Add Questions to Group
+                        </h3>
+
+                        {loadingQuestions ? (
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    minHeight: 200,
+                                    color: "#666",
+                                    fontSize: "1.1rem",
+                                }}
+                            >
+                                <i className="fas fa-spinner fa-spin" style={{ marginRight: 12 }}></i>
+                                Loading questions...
+                            </div>
+                        ) : questions.length === 0 ? (
+                            <div
+                                style={{
+                                    textAlign: "center",
+                                    padding: "40px 20px",
+                                    color: "#666",
+                                }}
+                            >
+                                <i className="fas fa-question-circle" style={{ fontSize: "3rem", color: "#da251c", marginBottom: 16 }}></i>
+                                <p>No questions found for this event.</p>
+                            </div>
+                        ) : (
+                            <div style={{ marginBottom: 24 }}>
+                                {questions.map((question) => {
+                                    const questionId = question.id || question.question_id || question.form_question_id;
+                                    const questionText = question.question_label || question.question || question.question_text || question.title || "Untitled Question";
+                                    const questionType = question.question_form_type || question.question_type || "";
+                                    const formName = question.form_name || question.new_form_name || "";
+                                    const isChecked = selectedQuestions.includes(questionId);
+
+                                    return (
+                                        <div
+                                            key={questionId}
+                                            style={{
+                                                border: "1.5px solid #ddd",
+                                                borderRadius: 8,
+                                                padding: "16px",
+                                                marginBottom: 12,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 12,
+                                                cursor: "pointer",
+                                                background: isChecked ? "#fff5f5" : "#fff",
+                                                transition: "all 0.2s ease",
+                                            }}
+                                            onClick={() => handleQuestionToggle(questionId)}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.borderColor = "#da251c";
+                                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(218, 37, 28, 0.1)";
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.borderColor = "#ddd";
+                                                e.currentTarget.style.boxShadow = "none";
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    width: 20,
+                                                    height: 20,
+                                                    border: `2px solid ${isChecked ? "#da251c" : "#ddd"}`,
+                                                    borderRadius: 4,
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    background: isChecked ? "#da251c" : "#fff",
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                {isChecked && (
+                                                    <i className="fas fa-check" style={{ color: "#fff", fontSize: "0.75rem" }}></i>
+                                                )}
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: 600, color: "#333", marginBottom: 4 }}>
+                                                    {questionText}
+                                                </div>
+                                                <div style={{ fontSize: "0.85rem", color: "#666", display: "flex", gap: 12 }}>
+                                                    {questionType && (
+                                                        <span>Type: <strong>{questionType}</strong></span>
+                                                    )}
+                                                    {formName && (
+                                                        <span>• Form: <strong>{formName}</strong></span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                gap: 12,
+                                marginTop: 24,
+                            }}
+                        >
+                            <button
+                                onClick={handleCloseQuestionsModal}
+                                style={{
+                                    background: "#fff",
+                                    border: "1.5px solid #da251c",
+                                    color: "#da251c",
+                                    borderRadius: 6,
+                                    padding: "10px 24px",
+                                    fontWeight: 600,
+                                    fontSize: "1rem",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleAddQuestionsToGroup}
+                                disabled={selectedQuestions.length === 0}
+                                style={{
+                                    background: selectedQuestions.length === 0 ? "#ccc" : "#da251c",
+                                    border: "none",
+                                    color: "#fff",
+                                    borderRadius: 6,
+                                    padding: "10px 24px",
+                                    fontWeight: 600,
+                                    fontSize: "1rem",
+                                    cursor: selectedQuestions.length === 0 ? "not-allowed" : "pointer",
+                                }}
+                            >
+                                Add {selectedQuestions.length > 0 ? `(${selectedQuestions.length})` : ""}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Navigation Buttons */}
             <div

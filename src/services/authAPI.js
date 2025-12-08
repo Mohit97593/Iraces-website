@@ -1147,6 +1147,45 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Create Group Question API
+  createGroupQuestion: async (payload) => {
+    try {
+      const response = await api.post("/create_group_question", payload, {
+        headers: { "Content-Type": "application/json" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("createGroupQuestion API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Group Questions API
+  getGroupQuestions: async () => {
+    try {
+      const response = await api.post("/get_group_questions", {}, {
+        headers: { "Content-Type": "application/json" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("getGroupQuestions API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Delete Group Question API
+  deleteGroupQuestion: async (id) => {
+    try {
+      const response = await api.post("/delete_group_question", { id }, {
+        headers: { "Content-Type": "application/json" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("deleteGroupQuestion API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 // Token को axios header में set करें app load होते समय

@@ -1059,8 +1059,8 @@ export default function HeroCarousel() {
                                         </span>
                                         <button
                                           className={`search-like-btn${likedEvents[event.id]
-                                              ? " liked"
-                                              : ""
+                                            ? " liked"
+                                            : ""
                                             }`}
                                           aria-label="Like"
                                           onClick={() =>

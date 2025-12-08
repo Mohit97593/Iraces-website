@@ -4,6 +4,7 @@
   max-width: 1490px;
   margin: 0 auto;
 }
+
 /* Feature / About section styles */
 .feature-section {
   padding: 40px 12px 80px 12px;
@@ -13,6 +14,7 @@
   width: 100%;
   display: block;
 }
+
 /* Clean and complete Hero styles */
 .hero-viewport {
   position: relative;
@@ -24,8 +26,8 @@
 }
 
 /* add small horizontal gap to match header */
-.hero-viewport > .container,
-.hero-viewport > .container-fluid,
+.hero-viewport>.container,
+.hero-viewport>.container-fluid,
 .hero-viewport .container {
   padding-left: 10px;
   padding-right: 10px;
@@ -79,9 +81,11 @@
   0% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.03);
   }
+
   100% {
     transform: scale(1);
   }
@@ -91,6 +95,7 @@
   text-align: center;
   margin-top: 0.5rem;
 }
+
 .hero-controls .dot {
   width: 12px;
   height: 12px;
@@ -99,6 +104,7 @@
   margin: 0 6px;
   background: black;
 }
+
 .hero-controls .dot.active {
   background: #da251c;
 }
@@ -113,6 +119,7 @@
   display: flex;
   align-items: center;
 }
+
 .avatar {
   width: 48px;
   height: 48px;
@@ -120,6 +127,7 @@
   border: 4px solid rgba(255, 255, 255, 0.6);
   object-fit: cover;
 }
+
 .active-count {
   color: #da251c;
   font-weight: 800;
@@ -144,6 +152,7 @@
   border-radius: 29px;
   background: rgba(255, 255, 255, 0.4);
 }
+
 .social-btn {
   width: 41px;
   height: 41px;
@@ -157,7 +166,8 @@
 }
 
 .upcoming-card {
-  background: rgba(255, 255, 255, 0.4); /* slightly transparent */
+  background: rgba(255, 255, 255, 0.4);
+  /* slightly transparent */
   padding: 8px;
   border-radius: 16px;
   width: auto;
@@ -167,10 +177,12 @@
   display: flex;
   gap: 12px;
   align-items: stretch;
-  height: 330px; /* fixed height as requested */
+  height: 330px;
+  /* fixed height as requested */
   overflow: hidden;
   margin-top: 160px;
 }
+
 .upcoming-card .badge {
   background: #fff;
   display: inline-block;
@@ -180,10 +192,12 @@
   margin-bottom: 8px;
   color: black;
 }
+
 .upcoming-card h4 {
   font-weight: 900;
   font-size: 28px;
 }
+
 .upcoming-card .info-box {
   background: #0b0b0b;
   color: #fff;
@@ -202,11 +216,13 @@
   object-fit: fill;
   display: block;
 }
+
 .upcoming-content {
   padding: 12px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* push header to top and info-box to bottom */
+  justify-content: space-between;
+  /* push header to top and info-box to bottom */
   height: 100%;
 }
 
@@ -223,11 +239,14 @@
   margin-bottom: 8px;
   color: #fff;
 }
+
 .upcoming-content .info-row .info-icon {
-  color: #da251c; /* red accent */
+  color: #da251c;
+  /* red accent */
   width: 20px;
   text-align: center;
 }
+
 .upcoming-content .info-row span {
   color: #fff;
   font-weight: 600;
@@ -237,11 +256,13 @@
 .animated {
   animation-fill-mode: both;
 }
+
 .slide-in-left {
   animation-name: slideInLeft;
   animation-duration: 2000ms;
   animation-timing-function: cubic-bezier(0.22, 0.9, 0.32, 1);
 }
+
 .slide-in-right {
   animation-name: slideInRight;
   animation-duration: 2000ms;
@@ -253,6 +274,7 @@
     opacity: 0;
     transform: translateX(-250px) scale(0.98);
   }
+
   100% {
     opacity: 1;
     transform: translateX(0);
@@ -264,6 +286,7 @@
     opacity: 0;
     transform: translateX(250px) scale(0.98);
   }
+
   100% {
     opacity: 1;
     transform: translateX(0);
@@ -275,6 +298,7 @@
   margin-top: 48px;
   padding: 24px 12px;
 }
+
 .numbers-pill {
   display: inline-block;
   background: #da251c;
@@ -285,15 +309,18 @@
   letter-spacing: 1px;
   text-align: center;
 }
+
 .numbers-intro {
   font-size: 1rem;
   color: #333;
   max-width: 900px;
   margin-left: 24px;
 }
+
 .number-cards {
   margin-left: 24px;
 }
+
 .number-card {
   background: #f1f1f1;
   border-radius: 14px;
@@ -303,16 +330,19 @@
   flex-direction: column;
   justify-content: flex-start;
 }
+
 .number-value {
   font-size: 3.5rem;
   font-weight: 900;
   color: #0b0b0b;
 }
+
 .number-title {
   margin-top: 8px;
   font-weight: 900;
   letter-spacing: 0.5px;
 }
+
 .number-desc {
   margin-top: 12px;
   color: #666;
@@ -338,7 +368,8 @@
 }
 
 .feature-image.tall {
-  height: 520px; /* tall center image */
+  height: 520px;
+  /* tall center image */
 }
 
 .center-card {
@@ -377,7 +408,8 @@
 }
 
 .about-btn {
-  background: #da251c; /* red */
+  background: #da251c;
+  /* red */
   color: white;
   border: none;
   padding: 16px 34px;
@@ -391,6 +423,7 @@
   .feature-title {
     font-size: 48px;
   }
+
   .feature-image.tall {
     height: 420px;
   }
@@ -420,6 +453,7 @@
   .feature-title {
     font-size: 42px;
   }
+
   .feature-image.tall {
     height: 380px;
   }
@@ -457,7 +491,8 @@
   }
 
   .social-vertical {
-    display: none; /* Hide on mobile to avoid overlap */
+    display: none;
+    /* Hide on mobile to avoid overlap */
   }
 
   .upcoming-card {
@@ -497,18 +532,23 @@
     font-size: 34px;
     text-align: center;
   }
+
   .feature-image.tall {
     height: 360px;
   }
+
   .feature-section {
     padding-bottom: 40px;
   }
+
   .feature-pills {
     gap: 10px;
   }
+
   .pill {
     padding: 12px 14px;
   }
+
   .about-btn {
     padding: 12px 22px;
   }
@@ -625,7 +665,8 @@
   /* Keep desktop look unchanged; make card height adapt on small screens */
   .upcoming-card {
     width: 95%;
-    height: auto; /* allow content to define height on small devices */
+    height: auto;
+    /* allow content to define height on small devices */
     flex-direction: column;
     margin-top: 18px;
     padding: 0;
@@ -710,11 +751,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(0, 0, 0, 0.2) 0%,
-    rgba(0, 0, 0, 0.6) 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(0, 0, 0, 0.2) 0%,
+      rgba(0, 0, 0, 0.6) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -807,6 +846,7 @@
 }
 
 @media (max-width: 768px) {
+
   .choose-distance-section .section-title,
   .quick-selection-section .section-title {
     font-size: 28px;
@@ -822,6 +862,7 @@
 }
 
 @media (max-width: 576px) {
+
   .choose-distance-section,
   .quick-selection-section {
     padding: 40px 0;
