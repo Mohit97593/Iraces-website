@@ -2,6 +2,7 @@ import React from "react";
 import "../Contact/Contact.css"; // Using the same CSS as Contact page
 import "./PrivacyPolicy.css"; // Additional privacy policy-specific styles
 import TopNav from "../../components/Navbar/TopNav";
+import Footer from "../../components/Footer/Footer";
 
 export default function PrivacyPolicy() {
   return (
@@ -216,6 +217,7 @@ export default function PrivacyPolicy() {
           </div>
         </div>
       </section>
+      <Footer />
     </div>
   );
 }

@@ -14,19 +14,39 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
     age_category: initialData.age_category || "",
     age_start: initialData.age_start || "",
     age_end: initialData.age_end || "",
-    gender: initialData.gender || "",
+    // Handle gender as array - convert from string if needed
+    gender: (() => {
+      if (!initialData.gender) return [];
+      if (Array.isArray(initialData.gender)) return initialData.gender;
+      if (typeof initialData.gender === 'string') {
+        return initialData.gender.split(',').filter(g => g.trim());
+      }
+      return [];
+    })(),
     event_comm_id: initialData.id || "",
   });
 
   const handleChange = (key, value) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
-    // Age End should be >= Age Start
-    if (
-      key === "age_start" &&
-      formData.age_end &&
-      Number(value) > Number(formData.age_end)
-    ) {
-      setFormData((prev) => ({ ...prev, age_end: value }));
+    if (key === "gender") {
+      // Toggle gender in array for checkboxes
+      setFormData((prev) => {
+        const currentGenders = Array.isArray(prev.gender) ? prev.gender : [];
+        const isSelected = currentGenders.includes(value);
+        const newGenders = isSelected
+          ? currentGenders.filter((g) => g !== value)
+          : [...currentGenders, value];
+        return { ...prev, gender: newGenders };
+      });
+    } else {
+      setFormData((prev) => ({ ...prev, [key]: value }));
+      // Age End should be >= Age Start
+      if (
+        key === "age_start" &&
+        formData.age_end &&
+        Number(value) > Number(formData.age_end)
+      ) {
+        setFormData((prev) => ({ ...prev, age_end: value }));
+      }
     }
   };
 
@@ -36,7 +56,12 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
       // Convert formData object to FormData instance
       const fd = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        fd.append(key, value);
+        // Convert gender array to comma-separated string for backend
+        if (key === "gender" && Array.isArray(value)) {
+          fd.append(key, value.join(","));
+        } else {
+          fd.append(key, value);
+        }
       });
       // If editing existing age criteria, include the edit flag expected by backend
       if (formData.event_comm_id) {
@@ -197,10 +222,9 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
               }}
             >
               <input
-                type="radio"
-                name="gender"
+                type="checkbox"
                 value="1"
-                checked={formData.gender === "1"}
+                checked={Array.isArray(formData.gender) && formData.gender.includes("1")}
                 onChange={(e) => handleChange("gender", e.target.value)}
                 style={{ marginRight: 12, width: 22, height: 22 }}
               />
@@ -225,10 +249,9 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
               }}
             >
               <input
-                type="radio"
-                name="gender"
+                type="checkbox"
                 value="2"
-                checked={formData.gender === "2"}
+                checked={Array.isArray(formData.gender) && formData.gender.includes("2")}
                 onChange={(e) => handleChange("gender", e.target.value)}
                 style={{ marginRight: 12, width: 22, height: 22 }}
               />
@@ -253,10 +276,9 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
               }}
             >
               <input
-                type="radio"
-                name="gender"
+                type="checkbox"
                 value="3"
-                checked={formData.gender === "3"}
+                checked={Array.isArray(formData.gender) && formData.gender.includes("3")}
                 onChange={(e) => handleChange("gender", e.target.value)}
                 style={{ marginRight: 12, width: 22, height: 22 }}
               />

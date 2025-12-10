@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./Contact.css";
 import TopNav from "../../components/Navbar/TopNav";
+import Footer from "../../components/Footer/Footer";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -13,14 +14,34 @@ export default function Contact() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+
+    // Special validation for contact number
+    if (name === "contactNumber") {
+      // Only allow numbers and limit to 10 digits
+      const numericValue = value.replace(/\D/g, ""); // Remove non-numeric characters
+      if (numericValue.length <= 10) {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: numericValue,
+        }));
+      }
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Validate contact number is exactly 10 digits
+    if (formData.contactNumber.length !== 10) {
+      alert("Please enter a valid 10-digit contact number");
+      return;
+    }
+
     console.log("Form submitted:", formData);
     // Add form submission logic here
     alert("Thank you for your message! We'll get back to you soon.");
@@ -212,6 +233,7 @@ export default function Contact() {
           </div>
         </div>
       </section>
+      <Footer />
     </div>
   );
 }

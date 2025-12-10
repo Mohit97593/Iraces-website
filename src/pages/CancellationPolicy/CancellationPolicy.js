@@ -2,6 +2,7 @@ import React from "react";
 import "../Contact/Contact.css"; // Using the same CSS as Contact page
 import "./CancellationPolicy.css"; // Additional cancellation policy-specific styles
 import TopNav from "../../components/Navbar/TopNav";
+import Footer from "../../components/Footer/Footer";
 
 export default function CancellationPolicy() {
   return (
@@ -90,6 +91,7 @@ export default function CancellationPolicy() {
           </div>
         </div>
       </section>
+      <Footer />
     </div>
   );
 }

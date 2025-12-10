@@ -281,8 +281,11 @@ const FormQuestions = ({ onBack, onNext }) => {
     if (Array.isArray(questions)) return questions;
     if (typeof questions === "object") {
       // If questions is grouped by section name, flatten arrays
+      // IMPORTANT: Use sorted keys to ensure consistent ordering for drag-and-drop
       const arr = [];
-      Object.values(questions).forEach((v) => {
+      const sortedKeys = Object.keys(questions).sort();
+      sortedKeys.forEach((key) => {
+        const v = questions[key];
         if (Array.isArray(v)) arr.push(...v);
       });
       return arr;
@@ -526,7 +529,10 @@ const FormQuestions = ({ onBack, onNext }) => {
         flatList = [...prevQuestions];
       } else if (typeof prevQuestions === 'object') {
         // Flatten the grouped structure
-        Object.values(prevQuestions).forEach((v) => {
+        // IMPORTANT: Use same sorting as getRenderList to ensure indices match
+        const sortedKeys = Object.keys(prevQuestions).sort();
+        sortedKeys.forEach((key) => {
+          const v = prevQuestions[key];
           if (Array.isArray(v)) flatList.push(...v);
         });
       }
@@ -539,20 +545,9 @@ const FormQuestions = ({ onBack, onNext }) => {
 
       console.log('New list after reorder:', flatList);
 
-      // Return in the same structure as the original state
-      if (Array.isArray(prevQuestions)) {
-        return flatList;
-      } else {
-        // If it was grouped, we need to maintain the grouped structure
-        // Group by form_name
-        const groups = {};
-        flatList.forEach((q) => {
-          const name = q.form_name || q.formName || "General";
-          if (!groups[name]) groups[name] = [];
-          groups[name].push(q);
-        });
-        return groups;
-      }
+      // IMPORTANT: Return as flat array to preserve custom order
+      // Don't regroup by form_name as that would reset the order
+      return flatList;
     });
 
     setDraggedItem(null);

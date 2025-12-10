@@ -2,6 +2,7 @@ import React from "react";
 import "../Contact/Contact.css"; // Using the same CSS as Contact page
 import "./WhyChooseRaces.css"; // Additional styles
 import TopNav from "../../components/Navbar/TopNav";
+import Footer from "../../components/Footer/Footer";
 
 export default function WhyChooseRaces() {
   return (
@@ -14,11 +15,11 @@ export default function WhyChooseRaces() {
         <div className="container">
           <div className="row">
             <div className="col-12">
-              <h1 className="contact-hero-title">Why Choose RACES?</h1>
+              <h1 className="contact-hero-title">Why Choose Races?</h1>
               <nav className="contact-breadcrumb">
                 <span>Home</span>
                 <span className="breadcrumb-separator">→</span>
-                <span>Why Choose RACES</span>
+                <span>Why Choose Races</span>
               </nav>
             </div>
           </div>
@@ -122,7 +123,7 @@ export default function WhyChooseRaces() {
         <div className="container">
           <div className="row">
             <div className="col-12">
-              <h2 className="section-title">How We works</h2>
+              <h2 className="section-title">How It works</h2>
             </div>
           </div>
 
@@ -273,6 +274,7 @@ export default function WhyChooseRaces() {
           </div>
         </div>
       </section>
+      <Footer />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React from "react";
 import "../Contact/Contact.css"; // Using the same CSS as Contact page
 import "./Disclaimer.css"; // Additional disclaimer-specific styles
 import TopNav from "../../components/Navbar/TopNav";
+import Footer from "../../components/Footer/Footer";
 
 export default function Disclaimer() {
   return (
@@ -102,6 +103,8 @@ export default function Disclaimer() {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

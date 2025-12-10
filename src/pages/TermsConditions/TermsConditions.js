@@ -2,6 +2,7 @@ import React from "react";
 import "../Contact/Contact.css"; // Using the same CSS as Contact page
 import "./TermsConditions.css"; // Additional terms-specific styles
 import TopNav from "../../components/Navbar/TopNav";
+import Footer from "../../components/Footer/Footer";
 
 export default function TermsConditions() {
   return (
@@ -271,6 +272,7 @@ export default function TermsConditions() {
           </div>
         </div>
       </section>
+      <Footer />
     </div>
   );
 }

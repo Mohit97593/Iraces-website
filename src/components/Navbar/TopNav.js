@@ -280,9 +280,9 @@ export default function TopNav() {
     // Generate URL-friendly slug from city name
     const citySlug = cityName
       ? cityName
-          .toLowerCase()
-          .replace(/\s+/g, "-")
-          .replace(/[^\w-]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^\w-]/g, "")
       : "";
 
     // Store selected city in localStorage for homepage
@@ -409,7 +409,11 @@ export default function TopNav() {
           }}
         >
           {/* logo */}
-          <div className="d-flex align-items-center">
+          <div
+            className="d-flex align-items-center"
+            onClick={() => navigate("/")}
+            style={{ cursor: "pointer" }}
+          >
             <img
               src={RunmateLogo}
               alt="Runmate"
@@ -1029,13 +1033,13 @@ export default function TopNav() {
                       fontSize: "16px",
                       color: "#333",
                     }}
+
                   >
                     {getUserName()}
                   </span>
                   <i
-                    className={`fas fa-chevron-${
-                      showProfileDropdown ? "up" : "down"
-                    }`}
+                    className={`fas fa-chevron-${showProfileDropdown ? "up" : "down"
+                      }`}
                     style={{ fontSize: "12px", color: "#666" }}
                   ></i>
                 </div>
