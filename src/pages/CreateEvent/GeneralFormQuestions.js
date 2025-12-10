@@ -20,6 +20,9 @@ const GeneralFormQuestions = ({
   const [raceCategoryMode, setRaceCategoryMode] = useState("all");
   const [showAddCustomForm, setShowAddCustomForm] = useState(false);
   const [displayNameError, setDisplayNameError] = useState("");
+  const [subQuestions, setSubQuestions] = useState([]);
+  const [showSubQuestionModal, setShowSubQuestionModal] = useState(false);
+  const [selectedQuestionForSubDetails, setSelectedQuestionForSubDetails] = useState(null);
 
   const normalizeKey = (s) =>
     String(s || "")
@@ -175,6 +178,57 @@ const GeneralFormQuestions = ({
     }));
     setRaceTickets(normalized);
   }, [eventDetails, eventFormQuestionsData]);
+
+  // Helper: check if a question has subquestions by looking in eventFormQuestionsData
+  const hasSubQuestions = (q) => {
+    if (!eventFormQuestionsData) return false;
+    const normalizeItems = (obj) => {
+      if (!obj) return [];
+      if (obj.data && obj.data.form_question) {
+        const fq = obj.data.form_question;
+        if (fq.event_form_details) {
+          const vals = Object.values(fq.event_form_details || {}).flat();
+          return Array.isArray(vals) ? vals : [];
+        }
+        if (Array.isArray(fq)) return fq;
+      }
+      if (obj.form_question) {
+        const fq = obj.form_question;
+        if (fq.event_form_details) {
+          const vals = Object.values(fq.event_form_details || {}).flat();
+          return Array.isArray(vals) ? vals : [];
+        }
+        if (Array.isArray(fq)) return fq;
+      }
+      if (Array.isArray(obj)) return obj;
+      if (obj.EventData && Array.isArray(obj.EventData)) {
+        return obj.EventData.flatMap(
+          (d) => d.event_form_details || d.form_question || []
+        );
+      }
+      const keys = Object.keys(obj || {});
+      for (const k of keys) {
+        if (Array.isArray(obj[k])) return obj[k];
+      }
+      return [];
+    };
+
+    const items = normalizeItems(eventFormQuestionsData) || [];
+    const matchedQuestion = items.find((it) => {
+      const genId =
+        it.general_form_id ||
+        it.general_form ||
+        it.id ||
+        it.form_id ||
+        it.template_id;
+      return genId && String(genId) === String(q.id);
+    });
+
+    return matchedQuestion &&
+      matchedQuestion.sub_questions_array &&
+      Array.isArray(matchedQuestion.sub_questions_array) &&
+      matchedQuestion.sub_questions_array.length > 0;
+  };
 
   // UI will render only API-provided groups in `apiQuestions`.
   // Removed defaultQuestions fallback so UI reflects backend-driven data.
@@ -337,7 +391,12 @@ const GeneralFormQuestions = ({
   const handleSetMandatory = (val) => {
     if (!selectedQuestion) return;
     // clone to avoid mutating original
-    const updated = { ...selectedQuestion, is_mandatory: val ? "1" : "0" };
+    // Set BOTH is_mandatory and is_manadatory (backend uses the typo version)
+    const updated = {
+      ...selectedQuestion,
+      is_mandatory: val ? "1" : "0",
+      is_manadatory: val ? "1" : "0"  // Backend field (with typo)
+    };
     setSelectedQuestion(updated);
   };
 
@@ -371,7 +430,44 @@ const GeneralFormQuestions = ({
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedQuestion(null);
+    setSubQuestions([]); // Reset subquestions when closing modal
   };
+
+  // Helper functions for managing subquestions
+  const addSubQuestion = () => {
+    setSubQuestions([...subQuestions, {
+      selectedOptionId: "",
+      subQuestionTitle: "",
+      subQueHintType: "1", // 1 for text, 2 for image
+      subQuestionHint: "",
+      subQuestionHintFile: null,
+      subQuestionFormType: "",
+      subQuestionMandatory: "0"
+    }]);
+  };
+
+  const removeSubQuestion = (index) => {
+    setSubQuestions(subQuestions.filter((_, i) => i !== index));
+  };
+
+  const updateSubQuestion = (index, field, value) => {
+    const updated = [...subQuestions];
+    updated[index] = { ...updated[index], [field]: value };
+    setSubQuestions(updated);
+  };
+
+  const getAvailableOptions = (currentIndex) => {
+    if (!selectedQuestion || !Array.isArray(selectedQuestion.question_form_option)) {
+      return [];
+    }
+    const selectedIds = subQuestions
+      .map((sq, idx) => idx !== currentIndex ? sq.selectedOptionId : null)
+      .filter(id => id && id !== "");
+    return selectedQuestion.question_form_option.filter(
+      opt => !selectedIds.includes(String(opt.id))
+    );
+  };
+
 
   // Helper: determine if a general question template `q` is already added
   // to the current event. We try several likely response shapes.
@@ -469,7 +565,7 @@ const GeneralFormQuestions = ({
       formData.append("form_name", selectedQuestion.form_id || "");
       formData.append(
         "question_mandatory_status",
-        selectedQuestion.is_mandatory === "1" ? "1" : "0"
+        (selectedQuestion.is_mandatory === "1" || selectedQuestion.is_manadatory === "1" || selectedQuestion.is_manadatory === 1) ? "1" : "0"
       );
       formData.append(
         "display_label_name",
@@ -495,9 +591,13 @@ const GeneralFormQuestions = ({
         "question_type",
         selectedQuestion.question_form_type || ""
       );
+
+      // Get first subquestion data if exists (backend expects single subquestion per call)
+      const firstSubQ = subQuestions && subQuestions.length > 0 ? subQuestions[0] : null;
+
       formData.append(
         "sub_question_title",
-        selectedQuestion.sub_question_title || ""
+        firstSubQ ? firstSubQ.subQuestionTitle : ""
       );
       // send options array as JSON string if present
       formData.append(
@@ -506,11 +606,11 @@ const GeneralFormQuestions = ({
       );
       formData.append(
         "sub_question_mandatory_status",
-        selectedQuestion.sub_question_mandatory_status || "0"
+        firstSubQ ? firstSubQ.subQuestionMandatory : "0"
       );
       formData.append(
         "sub_question_form_type",
-        selectedQuestion.sub_question_form_type || ""
+        firstSubQ ? firstSubQ.subQuestionFormType : ""
       );
       formData.append(
         "sub_question_price_flag",
@@ -576,31 +676,21 @@ const GeneralFormQuestions = ({
       // Sub-question hint type and sub hint file/name
       formData.append(
         "sub_que_hint_type",
-        selectedQuestion.sub_que_hint_type ||
-        selectedQuestion.subQueHintType ||
-        "1"
+        firstSubQ ? firstSubQ.subQueHintType : "1"
       );
       formData.append(
         "question_hint",
-        selectedQuestion.sub_question_hint ||
-        selectedQuestion.question_hint ||
-        ""
+        firstSubQ ? firstSubQ.subQuestionHint : ""
       );
-      const subHintFile =
-        selectedQuestion.upload_sub_hint_file ||
-        selectedQuestion.sub_question_hint_file ||
-        null;
+      const subHintFile = firstSubQ ? firstSubQ.subQuestionHintFile : null;
       if (subHintFile) {
         formData.append("upload_sub_hint_file", subHintFile);
         formData.append(
           "upload_sub_file_name",
-          selectedQuestion.upload_sub_file_name || subHintFile.name || ""
+          subHintFile.name || ""
         );
       } else {
-        formData.append(
-          "upload_sub_file_name",
-          selectedQuestion.upload_sub_file_name || ""
-        );
+        formData.append("upload_sub_file_name", "");
       }
 
       // Date range fields
@@ -617,6 +707,14 @@ const GeneralFormQuestions = ({
         selectedQuestion.email_validation_enabled ? "1" : "0"
       );
       formData.append("domain_name", selectedQuestion.email_domain || "");
+
+      console.log("=== Sending Subquestion Data ===");
+      console.log("subQuestions state:", subQuestions);
+      console.log("firstSubQ:", firstSubQ);
+      console.log("sub_question_title:", firstSubQ ? firstSubQ.subQuestionTitle : "");
+      console.log("sub_question_form_type:", firstSubQ ? firstSubQ.subQuestionFormType : "");
+      console.log("sub_question_mandatory_status:", firstSubQ ? firstSubQ.subQuestionMandatory : "0");
+      console.log("===============================");
 
       console.log("Sending addGeneralFormQuestions payload", selectedQuestion);
       res = await authAPI.addGeneralFormQuestions(formData);
@@ -931,7 +1029,7 @@ const GeneralFormQuestions = ({
                   </div>
                 )}
 
-              {/* Radio / Option type: show Add Subquestions toggle and options dropdown */}
+              {/* Radio / Option type: show Add Subquestions toggle and dynamic subquestion forms */}
               {(selectedQuestion.question_form_type || "").toLowerCase() ===
                 "radio" && (
                   <div className="form-group2">
@@ -943,45 +1041,215 @@ const GeneralFormQuestions = ({
                         type="checkbox"
                         className="checkbox"
                         checked={!!selectedQuestion.add_subquestions}
-                        onChange={(e) =>
-                          handleChangeField("add_subquestions", e.target.checked)
-                        }
+                        onChange={(e) => {
+                          handleChangeField("add_subquestions", e.target.checked);
+                          if (e.target.checked && subQuestions.length === 0) {
+                            // Add first subquestion when checkbox is checked
+                            addSubQuestion();
+                          } else if (!e.target.checked) {
+                            // Clear all subquestions when unchecked
+                            setSubQuestions([]);
+                          }
+                        }}
                       />
                       <span>Add Subquestions</span>
                     </label>
 
-                    <div
-                      className="subquestions-input"
-                      style={{
-                        display: selectedQuestion.add_subquestions
-                          ? "block"
-                          : "none",
-                        marginTop: 12,
-                      }}
-                    >
-                      <label className="form-label" style={{ display: "flex" }}>
-                        Question Option Type *
-                      </label>
-                      <select
-                        className="form-input compact"
-                        value={selectedQuestion.selected_option_id || ""}
-                        onChange={(e) =>
-                          handleChangeField("selected_option_id", e.target.value)
-                        }
-                      >
-                        <option value="">-- Select --</option>
-                        {Array.isArray(selectedQuestion.question_form_option) &&
-                          selectedQuestion.question_form_option.map((opt) => (
-                            <option key={opt.id} value={String(opt.id)}>
-                              {opt.label}
-                            </option>
-                          ))}
-                      </select>
-                    </div>
+                    {selectedQuestion.add_subquestions && (
+                      <div style={{ marginTop: 16, width: '100%' }}>
+                        {/* Display each subquestion */}
+                        {subQuestions.map((subQ, index) => (
+                          <div key={index} style={{ marginBottom: 20, width: '100%' }}>
+                            {/* Question Option Type Dropdown */}
+                            <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                              <label className="form-label">
+                                Question Option Type <span style={{ color: "#da251c" }}>*</span>
+                              </label>
+                              <select
+                                className="form-input compact"
+                                value={subQ.selectedOptionId || ""}
+                                onChange={(e) =>
+                                  updateSubQuestion(index, "selectedOptionId", e.target.value)
+                                }
+                              >
+                                <option value="">-- Select --</option>
+                                {getAvailableOptions(index).map((opt) => (
+                                  <option key={opt.id} value={String(opt.id)}>
+                                    {opt.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Show full form only if option is selected */}
+                            {subQ.selectedOptionId && (
+                              <>
+                                {/* Question Title */}
+                                <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                                  <label className="form-label">
+                                    Question Title <span style={{ color: "#da251c" }}>*</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    className="form-input compact"
+                                    value={subQ.subQuestionTitle || ""}
+                                    onChange={(e) =>
+                                      updateSubQuestion(index, "subQuestionTitle", e.target.value)
+                                    }
+                                    placeholder=""
+                                  />
+                                </div>
+
+                                {/* Hint Type and Sub Question Hint - side by side */}
+                                <div style={{ display: 'flex', gap: '16px', marginBottom: 12, width: '100%' }}>
+                                  {/* Hint Type */}
+                                  <div className="form-group2" style={{ flex: 1 }}>
+                                    <label className="form-label">Hint Type*</label>
+                                    <select
+                                      className="form-input compact"
+                                      value={subQ.subQueHintType || "1"}
+                                      onChange={(e) =>
+                                        updateSubQuestion(index, "subQueHintType", e.target.value)
+                                      }
+                                    >
+                                      <option value="1">Text</option>
+                                      <option value="2">Image</option>
+                                    </select>
+                                  </div>
+
+                                  {/* Sub Question Hint */}
+                                  <div className="form-group2" style={{ flex: 1 }}>
+                                    <label className="form-label">Sub Question Hint</label>
+                                    {subQ.subQueHintType === "2" ? (
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="form-input compact"
+                                        onChange={(e) => {
+                                          const file = e.target.files && e.target.files[0];
+                                          updateSubQuestion(index, "subQuestionHintFile", file || null);
+                                        }}
+                                      />
+                                    ) : (
+                                      <input
+                                        type="text"
+                                        className="form-input compact"
+                                        value={subQ.subQuestionHint || ""}
+                                        onChange={(e) =>
+                                          updateSubQuestion(index, "subQuestionHint", e.target.value)
+                                        }
+                                        placeholder=""
+                                      />
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Question Input Type */}
+                                <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                                  <label className="form-label">
+                                    Question Input Type <span style={{ color: "#da251c" }}>*</span>
+                                  </label>
+                                  <select
+                                    className="form-input compact"
+                                    value={subQ.subQuestionFormType || ""}
+                                    onChange={(e) =>
+                                      updateSubQuestion(index, "subQuestionFormType", e.target.value)
+                                    }
+                                  >
+                                    <option value="">-- Select --</option>
+                                    <option value="text">Text</option>
+                                    <option value="email">Email</option>
+                                    <option value="mobile">Mobile</option>
+                                    <option value="amount">Amount</option>
+                                    <option value="textarea">Textarea</option>
+                                    <option value="checkbox">Checkboxes</option>
+                                    <option value="radio">Radio</option>
+                                    <option value="date">Date</option>
+                                    <option value="time">Time</option>
+                                    <option value="file">File</option>
+                                    <option value="select">Select (Dropdown)</option>
+                                  </select>
+                                </div>
+
+                                {/* Mandatory/Optional Toggle */}
+                                <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                                  <div className="status-toggle">
+                                    <button
+                                      type="button"
+                                      className={`status-btn ${subQ.subQuestionMandatory === "1" ? "active" : ""}`}
+                                      onClick={() =>
+                                        updateSubQuestion(index, "subQuestionMandatory", "1")
+                                      }
+                                    >
+                                      <span className="star-icon">★</span> Mandatory
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={`status-btn ${subQ.subQuestionMandatory !== "1" ? "active" : ""}`}
+                                      onClick={() =>
+                                        updateSubQuestion(index, "subQuestionMandatory", "0")
+                                      }
+                                    >
+                                      <span className="star-icon">☆</span> Optional
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Delete button for this subquestion (except first one) */}
+                                {index > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeSubQuestion(index)}
+                                    style={{
+                                      background: "#fff",
+                                      border: "1px solid #e74c3c",
+                                      color: "#e74c3c",
+                                      borderRadius: 6,
+                                      padding: "6px 12px",
+                                      cursor: "pointer",
+                                      fontSize: "0.9rem",
+                                      marginBottom: 12
+                                    }}
+                                  >
+                                    🗑 Remove
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        ))}
+
+                        {/* Add More Subquestion Button - shown as + icon */}
+                        {subQuestions.length < (selectedQuestion.question_form_option?.length || 0) && (
+                          <button
+                            type="button"
+                            onClick={addSubQuestion}
+                            style={{
+                              background: "#fff",
+                              border: "2px solid #da251c",
+                              color: "#da251c",
+                              borderRadius: "50%",
+                              width: 40,
+                              height: 40,
+                              cursor: "pointer",
+                              fontSize: "1.5rem",
+                              fontWeight: 600,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginTop: 8
+                            }}
+                            title="Add another subquestion"
+                          >
+                            +
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
-              {/* Select type: same UI as radio for subquestions + dropdown populated from options */}
+              {/* Select type: same UI as radio for subquestions + dynamic subquestion forms */}
               {(selectedQuestion.question_form_type || "").toLowerCase() ===
                 "select" && (
                   <div className="form-group2">
@@ -993,41 +1261,211 @@ const GeneralFormQuestions = ({
                         type="checkbox"
                         className="checkbox"
                         checked={!!selectedQuestion.add_subquestions}
-                        onChange={(e) =>
-                          handleChangeField("add_subquestions", e.target.checked)
-                        }
+                        onChange={(e) => {
+                          handleChangeField("add_subquestions", e.target.checked);
+                          if (e.target.checked && subQuestions.length === 0) {
+                            // Add first subquestion when checkbox is checked
+                            addSubQuestion();
+                          } else if (!e.target.checked) {
+                            // Clear all subquestions when unchecked
+                            setSubQuestions([]);
+                          }
+                        }}
                       />
                       <span>Add Subquestions</span>
                     </label>
 
-                    <div
-                      className="subquestions-input"
-                      style={{
-                        display: selectedQuestion.add_subquestions
-                          ? "block"
-                          : "none",
-                        marginTop: 12,
-                      }}
-                    >
-                      <label className="form-label" style={{ display: "flex" }}>
-                        Question Option Type *
-                      </label>
-                      <select
-                        className="form-input compact"
-                        value={selectedQuestion.selected_option_id || ""}
-                        onChange={(e) =>
-                          handleChangeField("selected_option_id", e.target.value)
-                        }
-                      >
-                        <option value="">-- Select --</option>
-                        {Array.isArray(selectedQuestion.question_form_option) &&
-                          selectedQuestion.question_form_option.map((opt) => (
-                            <option key={opt.id} value={String(opt.id)}>
-                              {opt.label}
-                            </option>
-                          ))}
-                      </select>
-                    </div>
+                    {selectedQuestion.add_subquestions && (
+                      <div style={{ marginTop: 16, width: '100%' }}>
+                        {/* Display each subquestion */}
+                        {subQuestions.map((subQ, index) => (
+                          <div key={index} style={{ marginBottom: 20, width: '100%' }}>
+                            {/* Question Option Type Dropdown */}
+                            <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                              <label className="form-label">
+                                Question Option Type <span style={{ color: "#da251c" }}>*</span>
+                              </label>
+                              <select
+                                className="form-input compact"
+                                value={subQ.selectedOptionId || ""}
+                                onChange={(e) =>
+                                  updateSubQuestion(index, "selectedOptionId", e.target.value)
+                                }
+                              >
+                                <option value="">-- Select --</option>
+                                {getAvailableOptions(index).map((opt) => (
+                                  <option key={opt.id} value={String(opt.id)}>
+                                    {opt.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Show full form only if option is selected */}
+                            {subQ.selectedOptionId && (
+                              <>
+                                {/* Question Title */}
+                                <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                                  <label className="form-label">
+                                    Question Title <span style={{ color: "#da251c" }}>*</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    className="form-input compact"
+                                    value={subQ.subQuestionTitle || ""}
+                                    onChange={(e) =>
+                                      updateSubQuestion(index, "subQuestionTitle", e.target.value)
+                                    }
+                                    placeholder=""
+                                  />
+                                </div>
+
+                                {/* Hint Type and Sub Question Hint - side by side */}
+                                <div style={{ display: 'flex', gap: '16px', marginBottom: 12, width: '100%' }}>
+                                  {/* Hint Type */}
+                                  <div className="form-group2" style={{ flex: 1 }}>
+                                    <label className="form-label">Hint Type*</label>
+                                    <select
+                                      className="form-input compact"
+                                      value={subQ.subQueHintType || "1"}
+                                      onChange={(e) =>
+                                        updateSubQuestion(index, "subQueHintType", e.target.value)
+                                      }
+                                    >
+                                      <option value="1">Text</option>
+                                      <option value="2">Image</option>
+                                    </select>
+                                  </div>
+
+                                  {/* Sub Question Hint */}
+                                  <div className="form-group2" style={{ flex: 1 }}>
+                                    <label className="form-label">Sub Question Hint</label>
+                                    {subQ.subQueHintType === "2" ? (
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="form-input compact"
+                                        onChange={(e) => {
+                                          const file = e.target.files && e.target.files[0];
+                                          updateSubQuestion(index, "subQuestionHintFile", file || null);
+                                        }}
+                                      />
+                                    ) : (
+                                      <input
+                                        type="text"
+                                        className="form-input compact"
+                                        value={subQ.subQuestionHint || ""}
+                                        onChange={(e) =>
+                                          updateSubQuestion(index, "subQuestionHint", e.target.value)
+                                        }
+                                        placeholder=""
+                                      />
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Question Input Type */}
+                                <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                                  <label className="form-label">
+                                    Question Input Type <span style={{ color: "#da251c" }}>*</span>
+                                  </label>
+                                  <select
+                                    className="form-input compact"
+                                    value={subQ.subQuestionFormType || ""}
+                                    onChange={(e) =>
+                                      updateSubQuestion(index, "subQuestionFormType", e.target.value)
+                                    }
+                                  >
+                                    <option value="">-- Select --</option>
+                                    <option value="text">Text</option>
+                                    <option value="email">Email</option>
+                                    <option value="mobile">Mobile</option>
+                                    <option value="amount">Amount</option>
+                                    <option value="textarea">Textarea</option>
+                                    <option value="checkbox">Checkboxes</option>
+                                    <option value="radio">Radio</option>
+                                    <option value="date">Date</option>
+                                    <option value="time">Time</option>
+                                    <option value="file">File</option>
+                                    <option value="select">Select (Dropdown)</option>
+                                  </select>
+                                </div>
+
+                                {/* Mandatory/Optional Toggle */}
+                                <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                                  <div className="status-toggle">
+                                    <button
+                                      type="button"
+                                      className={`status-btn ${subQ.subQuestionMandatory === "1" ? "active" : ""}`}
+                                      onClick={() =>
+                                        updateSubQuestion(index, "subQuestionMandatory", "1")
+                                      }
+                                    >
+                                      <span className="star-icon">★</span> Mandatory
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={`status-btn ${subQ.subQuestionMandatory !== "1" ? "active" : ""}`}
+                                      onClick={() =>
+                                        updateSubQuestion(index, "subQuestionMandatory", "0")
+                                      }
+                                    >
+                                      <span className="star-icon">☆</span> Optional
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Delete button for this subquestion (except first one) */}
+                                {index > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeSubQuestion(index)}
+                                    style={{
+                                      background: "#fff",
+                                      border: "1px solid #e74c3c",
+                                      color: "#e74c3c",
+                                      borderRadius: 6,
+                                      padding: "6px 12px",
+                                      cursor: "pointer",
+                                      fontSize: "0.9rem",
+                                      marginBottom: 12
+                                    }}
+                                  >
+                                    🗑 Remove
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        ))}
+
+                        {/* Add More Subquestion Button - shown as + icon */}
+                        {subQuestions.length < (selectedQuestion.question_form_option?.length || 0) && (
+                          <button
+                            type="button"
+                            onClick={addSubQuestion}
+                            style={{
+                              background: "#fff",
+                              border: "2px solid #da251c",
+                              color: "#da251c",
+                              borderRadius: "50%",
+                              width: 40,
+                              height: 40,
+                              cursor: "pointer",
+                              fontSize: "1.5rem",
+                              fontWeight: 600,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginTop: 8
+                            }}
+                            title="Add another subquestion"
+                          >
+                            +
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1183,6 +1621,101 @@ const GeneralFormQuestions = ({
         </div>
       )}
 
+      {/* Subquestion Details Modal */}
+      {showSubQuestionModal && selectedQuestionForSubDetails && (
+        <div className="modal-overlay" onClick={() => setShowSubQuestionModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
+            <div className="modal-header-questions">
+              <h2>Sub Questions Details</h2>
+            </div>
+            <div className="modal-body" style={{ padding: '24px' }}>
+              {console.log("=== MODAL DEBUG ===", selectedQuestionForSubDetails)}
+              {selectedQuestionForSubDetails.ChildQuestionArray &&
+                Array.isArray(selectedQuestionForSubDetails.ChildQuestionArray) &&
+                selectedQuestionForSubDetails.ChildQuestionArray.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {selectedQuestionForSubDetails.ChildQuestionArray.map((childItem, idx) => (
+                    <div key={idx}>
+                      {/* Parent Question */}
+                      <div style={{
+                        background: '#f8f9fa',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: 8,
+                        padding: '12px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: 8
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: '1.2rem' }}>↳</span>
+                          <span style={{ fontWeight: 500 }}>{selectedQuestionForSubDetails.question_label}</span>
+                        </div>
+                        <span style={{ fontSize: '1.2rem' }}>✓</span>
+                      </div>
+
+                      {/* Selected Option */}
+                      <div style={{
+                        background: '#fff',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: 8,
+                        padding: '12px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: 8,
+                        marginLeft: 20
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: '1.2rem' }}>↳</span>
+                          <span style={{ fontWeight: 500 }}>{childItem.question_label}</span>
+                        </div>
+                        <span style={{ fontSize: '1.2rem' }}>✓</span>
+                      </div>
+
+                      {/* Child Questions (recursive) */}
+                      {childItem.ChildQuestionArray && Array.isArray(childItem.ChildQuestionArray) &&
+                        childItem.ChildQuestionArray.length > 0 && childItem.ChildQuestionArray.map((nestedChild, nestedIdx) => (
+                          <div key={nestedIdx} style={{
+                            background: '#fff',
+                            border: '1px solid #e0e0e0',
+                            borderRadius: 8,
+                            padding: '12px 16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginLeft: 40
+                          }}>
+                            <span style={{ fontWeight: 500 }}>{nestedChild.question_label}</span>
+                            <span style={{ fontSize: '1.2rem' }}>✓</span>
+                          </div>
+                        ))}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ textAlign: 'center', color: '#666' }}>No subquestions found</p>
+              )}
+            </div>
+            <div className="modal-footer" style={{ justifyContent: 'center' }}>
+              <button
+                className="btn-modal-close"
+                onClick={() => setShowSubQuestionModal(false)}
+                style={{
+                  width: '80%',
+                  color: '#da251c',
+                  border: '1px solid #da251c',
+                  background: '#fff'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {!showAddCustomForm ? (
         <>
           <div className="modal-header">
@@ -1210,13 +1743,58 @@ const GeneralFormQuestions = ({
                           </div>
                           <div className="question-action">
                             {isQuestionAdded(q) ? (
-                              <button
-                                className="btn-toggle added"
-                                title="Already added"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                ✓
-                              </button>
+                              <>
+                                <button
+                                  className="btn-toggle added"
+                                  title="Already added"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  ✓
+                                </button>
+                                {/* Eye icon for questions with subquestions */}
+                                {hasSubQuestions(q) && (
+                                  <button
+                                    className="btn-toggle"
+                                    title="Subquestion Details"
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      console.log("=== EYE ICON CLICKED ===");
+                                      console.log("Fetching subquestion tree for question:", q);
+
+                                      try {
+                                        const eventId = sessionStorage.getItem("event_id") || "";
+                                        const payload = {
+                                          event_id: eventId,
+                                          question_id: q.id
+                                        };
+
+                                        console.log("Calling viewSubQuestionTree API with:", payload);
+                                        const response = await authAPI.viewSubQuestionTree(payload);
+                                        console.log("viewSubQuestionTree response:", response);
+
+                                        if (response && response.data && response.data.length > 0) {
+                                          setSelectedQuestionForSubDetails(response.data[0]);
+                                          setShowSubQuestionModal(true);
+                                        } else {
+                                          console.error("No data returned from API");
+                                          alert("Failed to load subquestion details");
+                                        }
+                                      } catch (error) {
+                                        console.error("Error fetching subquestion tree:", error);
+                                        alert("Failed to load subquestion details");
+                                      }
+                                    }}
+                                    style={{
+                                      marginLeft: 8,
+                                      background: '#4a90e2',
+                                      color: '#fff',
+                                      fontSize: '1.2rem'
+                                    }}
+                                  >
+                                    👁
+                                  </button>
+                                )}
+                              </>
                             ) : (
                               <button
                                 className="btn-toggle"

@@ -673,28 +673,18 @@ const FormQuestions = ({ onBack, onNext }) => {
                         {renderList.map((q, i) => (
                           <div
                             key={getQId(q) || i}
-                            draggable="true"
-                            onDragStart={(e) => handleDragStart(e, q, "all", i)}
-                            onDragOver={(e) => handleDragOver(e, i)}
-                            onDragEnter={(e) => handleDragEnter(e, i)}
-                            onDragLeave={handleDragLeave}
-                            onDrop={(e) => handleDrop(e, "all", i)}
-                            onDragEnd={handleDragEnd}
                             style={{
                               border: draggedOverIndex === i && draggedGroup === "all"
                                 ? "2px solid #da251c"
                                 : "1.5px solid transparent",
                               borderRadius: 12,
                               padding: 12,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
                               background: draggedOverIndex === i && draggedGroup === "all"
                                 ? "#fff5f5"
                                 : "#fff",
-                              cursor: "grab",
                               transition: "all 0.2s ease",
                               boxShadow: "0 2px 8px rgba(218, 37, 28, 0.1)",
+                              marginBottom: 8
                             }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.border = "1.5px solid #da251c";
@@ -706,205 +696,306 @@ const FormQuestions = ({ onBack, onNext }) => {
                             }}
                           >
                             <div
+                              draggable="true"
+                              onDragStart={(e) => handleDragStart(e, q, "all", i)}
+                              onDragOver={(e) => handleDragOver(e, i)}
+                              onDragEnter={(e) => handleDragEnter(e, i)}
+                              onDragLeave={handleDragLeave}
+                              onDrop={(e) => handleDrop(e, "all", i)}
+                              onDragEnd={handleDragEnd}
                               style={{
                                 display: "flex",
                                 alignItems: "center",
-                                gap: 12,
+                                justifyContent: "space-between",
+                                cursor: "grab",
                               }}
                             >
                               <div
                                 style={{
-                                  width: 16,
-                                  height: 24,
                                   display: "flex",
                                   alignItems: "center",
-                                  justifyContent: "center",
-                                  color: "#666",
+                                  gap: 12,
                                 }}
                               >
-                                <span style={{ fontSize: 18 }}>⋮⋮</span>
-                              </div>
-                              <div
-                                style={{
-                                  background: "#f0f4f6",
-                                  padding: "10px 22px",
-                                  borderRadius: 8,
-                                }}
-                              >
-                                <span
+                                <div
                                   style={{
-                                    color: "#333",
-                                    fontWeight: 600,
+                                    width: 16,
+                                    height: 24,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: "#666",
                                   }}
                                 >
-                                  {q.question_label ||
-                                    q.label ||
-                                    q.display_label_name ||
-                                    "Question"}
-                                </span>
-                                {isMandatory(q) && (
+                                  <span style={{ fontSize: 18 }}>⋮⋮</span>
+                                </div>
+                                <div
+                                  style={{
+                                    background: "#f0f4f6",
+                                    padding: "10px 22px",
+                                    borderRadius: 8,
+                                  }}
+                                >
                                   <span
                                     style={{
-                                      color: "#d9534f",
-                                      marginLeft: 8,
-                                      fontWeight: 700,
+                                      color: "#333",
+                                      fontWeight: 600,
                                     }}
                                   >
-                                    (Mandatory)
+                                    {q.question_label ||
+                                      q.label ||
+                                      q.display_label_name ||
+                                      "Question"}
                                   </span>
-                                )}
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 12,
-                              }}
-                            >
-                              <div style={{ display: "flex", gap: 8 }}>
-                                <button
-                                  title="Delete"
-                                  onClick={() => handleDeleteQuestion(q)}
-                                  style={{
-                                    width: 34,
-                                    height: 34,
-                                    borderRadius: 18,
-                                    background: "#fff",
-                                    border: "1px solid #e74c3c",
-                                    color: "#e74c3c",
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  🗑
-                                </button>
-                                <button
-                                  title="Edit"
-                                  onClick={() => {
-                                    setEditQuestion(q);
-                                    setShowGeneralForm(true);
-                                  }}
-                                  style={{
-                                    width: 34,
-                                    height: 34,
-                                    borderRadius: 18,
-                                    background: "#fff",
-                                    border: "1px solid #007bff",
-                                    color: "#007bff",
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  ✎
-                                </button>
-                              </div>
-                              <div>
-                                <label
-                                  role="button"
-                                  tabIndex={0}
-                                  onClick={() => handleToggleClick(q)}
-                                  onKeyDown={(e) => {
-                                    if (
-                                      e.key === "Enter" ||
-                                      e.key === " "
-                                    ) {
-                                      handleToggleClick(q);
-                                    }
-                                  }}
-                                  style={{
-                                    display: "inline-block",
-                                    width: 46,
-                                    height: 28,
-                                    borderRadius: 18,
-                                    background: (() => {
-                                      const id = getQId(q);
-                                      const serverBool = parseServerBool(
-                                        q.event_form_status
-                                      );
-                                      const val =
-                                        id in localToggleMap
-                                          ? localToggleMap[id]
-                                          : !serverBool;
-                                      return val ? "#da251c" : "#fff";
-                                    })(),
-                                    border: "2px solid #da251c",
-                                    position: "relative",
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  <span
-                                    style={{
-                                      position: "absolute",
-                                      left: (() => {
-                                        const id = getQId(q);
-                                        const serverBool =
-                                          parseServerBool(
-                                            q.event_form_status
-                                          );
-                                        const val =
-                                          id in localToggleMap
-                                            ? localToggleMap[id]
-                                            : !serverBool;
-                                        return val ? 20 : 4;
-                                      })(),
-                                      top: 3,
-                                      width: 20,
-                                      height: 20,
-                                      background: (() => {
-                                        const id = getQId(q);
-                                        const serverBool =
-                                          parseServerBool(
-                                            q.event_form_status
-                                          );
-                                        const val =
-                                          id in localToggleMap
-                                            ? localToggleMap[id]
-                                            : !serverBool;
-                                        return val ? "#fff" : "#da251c";
-                                      })(),
-                                      borderRadius: 10,
-                                      display: "inline-block",
-                                    }}
-                                  ></span>
-                                </label>
+                                  {isMandatory(q) && (
+                                    <span
+                                      style={{
+                                        color: "#d9534f",
+                                        marginLeft: 8,
+                                        fontWeight: 700,
+                                      }}
+                                    >
+                                      (Mandatory)
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               <div
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
-                                  gap: 8,
+                                  gap: 12,
                                 }}
                               >
-                                <label
+                                <div style={{ display: "flex", gap: 8 }}>
+                                  <button
+                                    title="Delete"
+                                    onClick={() => handleDeleteQuestion(q)}
+                                    style={{
+                                      width: 34,
+                                      height: 34,
+                                      borderRadius: 18,
+                                      background: "#fff",
+                                      border: "1px solid #e74c3c",
+                                      color: "#e74c3c",
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    🗑
+                                  </button>
+                                  <button
+                                    title="Edit"
+                                    onClick={() => {
+                                      setEditQuestion(q);
+                                      setShowGeneralForm(true);
+                                    }}
+                                    style={{
+                                      width: 34,
+                                      height: 34,
+                                      borderRadius: 18,
+                                      background: "#fff",
+                                      border: "1px solid #007bff",
+                                      color: "#007bff",
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    ✎
+                                  </button>
+                                </div>
+                                <div>
+                                  <label
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => handleToggleClick(q)}
+                                    onKeyDown={(e) => {
+                                      if (
+                                        e.key === "Enter" ||
+                                        e.key === " "
+                                      ) {
+                                        handleToggleClick(q);
+                                      }
+                                    }}
+                                    style={{
+                                      display: "inline-block",
+                                      width: 46,
+                                      height: 28,
+                                      borderRadius: 18,
+                                      background: (() => {
+                                        const id = getQId(q);
+                                        const serverBool = parseServerBool(
+                                          q.event_form_status
+                                        );
+                                        const val =
+                                          id in localToggleMap
+                                            ? localToggleMap[id]
+                                            : !serverBool;
+                                        return val ? "#da251c" : "#fff";
+                                      })(),
+                                      border: "2px solid #da251c",
+                                      position: "relative",
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        position: "absolute",
+                                        left: (() => {
+                                          const id = getQId(q);
+                                          const serverBool =
+                                            parseServerBool(
+                                              q.event_form_status
+                                            );
+                                          const val =
+                                            id in localToggleMap
+                                              ? localToggleMap[id]
+                                              : !serverBool;
+                                          return val ? 20 : 4;
+                                        })(),
+                                        top: 3,
+                                        width: 20,
+                                        height: 20,
+                                        background: (() => {
+                                          const id = getQId(q);
+                                          const serverBool =
+                                            parseServerBool(
+                                              q.event_form_status
+                                            );
+                                          const val =
+                                            id in localToggleMap
+                                              ? localToggleMap[id]
+                                              : !serverBool;
+                                          return val ? "#fff" : "#da251c";
+                                        })(),
+                                        borderRadius: 10,
+                                        display: "inline-block",
+                                      }}
+                                    ></span>
+                                  </label>
+                                </div>
+                                <div
                                   style={{
                                     display: "flex",
                                     alignItems: "center",
                                     gap: 8,
-                                    cursor: "pointer",
                                   }}
                                 >
-                                  <input
-                                    style={{ width: 25, height: 25 }}
-                                    type="checkbox"
-                                    checked={
-                                      q.show_on_ticket_pdf === "1" ||
-                                        q.show_on_ticket_pdf === 1 ||
-                                        q.show_on_ticket_pdf === true
-                                        ? true
-                                        : false
-                                    }
-                                    onChange={(e) =>
-                                      handleTicketCheckboxConfirm(
-                                        q,
-                                        e.target.checked
-                                      )
-                                    }
-                                  />
-                                </label>
+                                  <label
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 8,
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    <input
+                                      style={{ width: 25, height: 25 }}
+                                      type="checkbox"
+                                      checked={
+                                        q.show_on_ticket_pdf === "1" ||
+                                          q.show_on_ticket_pdf === 1 ||
+                                          q.show_on_ticket_pdf === true
+                                          ? true
+                                          : false
+                                      }
+                                      onChange={(e) =>
+                                        handleTicketCheckboxConfirm(
+                                          q,
+                                          e.target.checked
+                                        )
+                                      }
+                                    />
+                                  </label>
+                                </div>
                               </div>
                             </div>
+
+
+                            {/* Subquestions Display */}
+                            {
+                              q.sub_questions_array && Array.isArray(q.sub_questions_array) && q.sub_questions_array.length > 0 && (
+                                <div style={{ marginTop: 12, marginLeft: 40 }}>
+                                  {/* Show parent question options */}
+                                  {q.question_form_option && Array.isArray(q.question_form_option) && q.question_form_option.length > 0 && (
+                                    <div style={{ marginBottom: 12 }}>
+                                      {q.question_form_type === 'radio' && (
+                                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                                          {q.question_form_option.map((opt, optIdx) => (
+                                            <div
+                                              key={optIdx}
+                                              style={{
+                                                border: '1px solid #ddd',
+                                                borderRadius: 8,
+                                                padding: '12px 24px',
+                                                background: '#fff',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                cursor: 'not-allowed',
+                                                opacity: 0.7
+                                              }}
+                                            >
+                                              <span style={{ fontWeight: 500, color: '#333' }}>{opt.label}</span>
+                                              <input
+                                                type="radio"
+                                                disabled
+                                                style={{ cursor: 'not-allowed' }}
+                                              />
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {(q.question_form_type === 'select' || q.question_form_type === 'dropdown') && (
+                                        <select
+                                          disabled
+                                          style={{
+                                            width: '100%',
+                                            padding: '12px 16px',
+                                            border: '1px solid #ddd',
+                                            borderRadius: 6,
+                                            fontSize: '0.95rem',
+                                            cursor: 'not-allowed',
+                                            opacity: 0.7,
+                                            background: '#fff'
+                                          }}
+                                        >
+                                          <option>Select {q.question_label}</option>
+                                          {q.question_form_option.map((opt, optIdx) => (
+                                            <option key={optIdx}>{opt.label}</option>
+                                          ))}
+                                        </select>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Show subquestions */}
+                                  {q.sub_questions_array.map((subQ, subIdx) => (
+                                    <div
+                                      key={subIdx}
+                                      style={{
+                                        background: "#f8f9fa",
+                                        borderLeft: "3px solid #da251c",
+                                        borderRadius: 6,
+                                        padding: "12px 16px",
+                                        marginBottom: 8,
+                                        fontSize: "0.95rem",
+                                      }}
+                                    >
+                                      <span style={{ color: "#333", fontWeight: 600 }}>
+                                        {subQ.question_label || subQ.label}
+                                      </span>
+                                      {(subQ.is_manadatory === 1 || subQ.is_manadatory === "1") && (
+                                        <span style={{ color: "#d9534f", marginLeft: 8, fontWeight: 700 }}>
+                                          (Mandatory)
+                                        </span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )
+                            }
                           </div>
                         ))}
-                      </div>
+                      </div >
                     );
                   }
 

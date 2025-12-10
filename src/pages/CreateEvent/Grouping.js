@@ -9,6 +9,8 @@ const Grouping = ({ onBack, onNext }) => {
     const [loading, setLoading] = useState(false);
     const [fetchingGroups, setFetchingGroups] = useState(true);
     const [eventId, setEventId] = useState(null);
+    const [editingGroupId, setEditingGroupId] = useState(null);
+    const [isEditMode, setIsEditMode] = useState(false);
 
     // Questions modal state
     const [showQuestionsModal, setShowQuestionsModal] = useState(false);
@@ -16,6 +18,7 @@ const Grouping = ({ onBack, onNext }) => {
     const [questions, setQuestions] = useState([]);
     const [selectedQuestions, setSelectedQuestions] = useState([]);
     const [loadingQuestions, setLoadingQuestions] = useState(false);
+    const [addingQuestions, setAddingQuestions] = useState(false);
 
     const handleSave = () => {
         // Save logic will be implemented later
@@ -23,6 +26,16 @@ const Grouping = ({ onBack, onNext }) => {
     };
 
     const handleAddGroup = () => {
+        setIsEditMode(false);
+        setEditingGroupId(null);
+        setGroupName("");
+        setShowModal(true);
+    };
+
+    const handleEditGroup = (groupId, groupName) => {
+        setIsEditMode(true);
+        setEditingGroupId(groupId);
+        setGroupName(groupName);
         setShowModal(true);
     };
 
@@ -30,29 +43,31 @@ const Grouping = ({ onBack, onNext }) => {
         if (groupName.trim()) {
             setLoading(true);
             try {
-                const response = await authAPI.createGroupQuestion({
-                    title: groupName.trim()
-                });
-
-                console.log("Create Group Response:", response);
-                console.log("Response data:", response.data);
-
-                // Extract the group ID from response
-                let newGroupId = null;
-                if (response && response.data) {
-                    // Try different possible ID fields
-                    newGroupId = response.data.group_id || response.data.id || response.data.insertId;
-                    console.log("New Group ID:", newGroupId);
+                if (isEditMode && editingGroupId) {
+                    // Update existing group
+                    const response = await authAPI.updateGroupQuestion({
+                        id: editingGroupId,
+                        title: groupName.trim()
+                    });
+                    console.log("Update Group Response:", response);
+                } else {
+                    // Create new group
+                    const response = await authAPI.createGroupQuestion({
+                        title: groupName.trim()
+                    });
+                    console.log("Create Group Response:", response);
                 }
 
                 // Fetch updated groups list to get the correct data
                 await fetchGroupQuestions();
 
                 setGroupName("");
+                setIsEditMode(false);
+                setEditingGroupId(null);
                 setShowModal(false);
             } catch (error) {
-                console.error("Error creating group:", error);
-                alert("Failed to create group. Please try again.");
+                console.error(isEditMode ? "Error updating group:" : "Error creating group:", error);
+                alert(isEditMode ? "Failed to update group. Please try again." : "Failed to create group. Please try again.");
             } finally {
                 setLoading(false);
             }
@@ -100,6 +115,8 @@ const Grouping = ({ onBack, onNext }) => {
 
     const handleCancelModal = () => {
         setGroupName("");
+        setIsEditMode(false);
+        setEditingGroupId(null);
         setShowModal(false);
     };
 
@@ -154,11 +171,15 @@ const Grouping = ({ onBack, onNext }) => {
     };
 
     // Handle add question button click
-    const handleAddQuestion = (groupId) => {
+    const handleAddQuestion = async (groupId) => {
         setSelectedGroupId(groupId);
-        setSelectedQuestions([]);
         setShowQuestionsModal(true);
-        fetchEventFormQuestions();
+
+        // Fetch questions first
+        await fetchEventFormQuestions();
+
+        // After questions are loaded, pre-select questions already in this group
+        // We'll do this in a useEffect or after the fetch completes
     };
 
     // Handle question checkbox toggle
@@ -173,29 +194,113 @@ const Grouping = ({ onBack, onNext }) => {
     };
 
     // Handle add selected questions to group
-    const handleAddQuestionsToGroup = () => {
-        if (selectedQuestions.length === 0) {
-            alert("Please select at least one question.");
+    const handleAddQuestionsToGroup = async () => {
+        if (!eventId) {
+            alert("Event ID not found. Please try again.");
             return;
         }
 
-        // Update groups with selected questions
-        setGroups(prevGroups => prevGroups.map(group => {
-            if (group.id === selectedGroupId) {
-                const newQuestions = questions.filter(q =>
-                    selectedQuestions.includes(q.id || q.question_id)
-                );
-                return {
-                    ...group,
-                    questions: [...(group.questions || []), ...newQuestions]
-                };
-            }
-            return group;
-        }));
+        setAddingQuestions(true);
+        try {
+            // Prepare the FormData payload for API call
+            const formData = new FormData();
+            formData.append("event_id", eventId);
 
-        setShowQuestionsModal(false);
-        setSelectedQuestions([]);
-        setSelectedGroupId(null);
+            // Get previously assigned questions for this group
+            const previouslyAssigned = questions
+                .filter(q => {
+                    const questionGroup = q.question_group || q.group_id;
+                    return questionGroup && questionGroup.toString() === selectedGroupId.toString();
+                })
+                .map(q => q.id || q.question_id || q.form_question_id);
+
+            // Find questions to add (newly selected)
+            const questionsToAdd = selectedQuestions.filter(id => !previouslyAssigned.includes(id));
+
+            // Find questions to remove (previously assigned but now unchecked)
+            const questionsToRemove = previouslyAssigned.filter(id => !selectedQuestions.includes(id));
+
+            console.log("Previously assigned:", previouslyAssigned);
+            console.log("Currently selected:", selectedQuestions);
+            console.log("Questions to add:", questionsToAdd);
+            console.log("Questions to remove:", questionsToRemove);
+
+            // Add all currently selected questions to FormData
+            selectedQuestions.forEach((questionId, index) => {
+                const question = questions.find(q =>
+                    (q.id || q.question_id || q.form_question_id) === questionId
+                );
+
+                // Use 'general_form_id' field from the question object
+                const generalFormId = question?.general_form_id || questionId;
+                formData.append(`questions[${index}][general_form_id]`, generalFormId);
+                formData.append(`questions[${index}][question_group]`, selectedGroupId.toString());
+            });
+
+            // Add questions to remove with question_group = 0 or empty to unassign them
+            questionsToRemove.forEach((questionId, index) => {
+                const question = questions.find(q =>
+                    (q.id || q.question_id || q.form_question_id) === questionId
+                );
+
+                const generalFormId = question?.general_form_id || questionId;
+                const removeIndex = selectedQuestions.length + index;
+                formData.append(`questions[${removeIndex}][general_form_id]`, generalFormId);
+                formData.append(`questions[${removeIndex}][question_group]`, "0"); // 0 means remove from group
+            });
+
+            console.log("Calling updateEventFormQuestion API with FormData");
+            // Log FormData contents for debugging
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
+
+            // Call the API
+            const response = await authAPI.updateEventFormQuestion(formData);
+            console.log("Update Event Form Question Response:", response);
+
+            // Refresh questions list to get updated group assignments
+            await fetchEventFormQuestions();
+
+            // Update local state with selected questions
+            setGroups(prevGroups => prevGroups.map(group => {
+                if (group.id === selectedGroupId) {
+                    const newQuestions = questions.filter(q =>
+                        selectedQuestions.includes(q.id || q.question_id || q.form_question_id)
+                    );
+                    return {
+                        ...group,
+                        questions: newQuestions // Replace instead of append
+                    };
+                }
+                return group;
+            }));
+
+            // Show success message
+            const addedCount = questionsToAdd.length;
+            const removedCount = questionsToRemove.length;
+            let message = "";
+            if (addedCount > 0 && removedCount > 0) {
+                message = `Successfully added ${addedCount} and removed ${removedCount} question(s)!`;
+            } else if (addedCount > 0) {
+                message = `Successfully added ${addedCount} question(s) to the group!`;
+            } else if (removedCount > 0) {
+                message = `Successfully removed ${removedCount} question(s) from the group!`;
+            } else {
+                message = "No changes made.";
+            }
+            alert(message);
+
+            // Close modal and reset state
+            setShowQuestionsModal(false);
+            setSelectedQuestions([]);
+            setSelectedGroupId(null);
+        } catch (error) {
+            console.error("Error updating questions in group:", error);
+            alert("Failed to update questions. Please try again.");
+        } finally {
+            setAddingQuestions(false);
+        }
     };
 
     // Handle close questions modal
@@ -261,6 +366,23 @@ const Grouping = ({ onBack, onNext }) => {
             });
         }
     }, []);
+
+    // Pre-select questions that are already assigned to the selected group
+    useEffect(() => {
+        if (questions.length > 0 && selectedGroupId !== null && showQuestionsModal) {
+            // Find questions that are already assigned to this group
+            const alreadyAssignedQuestions = questions
+                .filter(q => {
+                    // Check if question_group matches the selected group ID
+                    const questionGroup = q.question_group || q.group_id;
+                    return questionGroup && questionGroup.toString() === selectedGroupId.toString();
+                })
+                .map(q => q.id || q.question_id || q.form_question_id);
+
+            console.log("Pre-selecting questions for group:", selectedGroupId, alreadyAssignedQuestions);
+            setSelectedQuestions(alreadyAssignedQuestions);
+        }
+    }, [questions, selectedGroupId, showQuestionsModal]);
 
     return (
         <div className="event-form-section">
@@ -339,7 +461,7 @@ const Grouping = ({ onBack, onNext }) => {
                                 color: "#333",
                             }}
                         >
-                            Add Group
+                            {isEditMode ? "Edit Group" : "Add Group"}
                         </h3>
 
                         <div style={{ marginBottom: 24 }}>
@@ -408,7 +530,7 @@ const Grouping = ({ onBack, onNext }) => {
                                     cursor: loading ? "not-allowed" : "pointer",
                                 }}
                             >
-                                {loading ? "Saving..." : "Save"}
+                                {loading ? (isEditMode ? "Updating..." : "Saving...") : (isEditMode ? "Update" : "Save")}
                             </button>
                         </div>
                     </div>
@@ -524,14 +646,11 @@ const Grouping = ({ onBack, onNext }) => {
                                                 background: "#fff",
                                                 color: "#da251c",
                                                 cursor: "pointer",
-                                                display: "flex",
+                                                display: "none", // Temporarily hidden until backend API is ready
                                                 alignItems: "center",
                                                 justifyContent: "center",
                                             }}
-                                            onClick={() => {
-                                                // Edit functionality will be implemented later
-                                                alert("Edit functionality coming soon!");
-                                            }}
+                                            onClick={() => handleEditGroup(group.id, group.name)}
                                             title="Edit"
                                         >
                                             <i className="fas fa-edit"></i>
@@ -739,19 +858,19 @@ const Grouping = ({ onBack, onNext }) => {
                             </button>
                             <button
                                 onClick={handleAddQuestionsToGroup}
-                                disabled={selectedQuestions.length === 0}
+                                disabled={selectedQuestions.length === 0 || addingQuestions}
                                 style={{
-                                    background: selectedQuestions.length === 0 ? "#ccc" : "#da251c",
+                                    background: (selectedQuestions.length === 0 || addingQuestions) ? "#ccc" : "#da251c",
                                     border: "none",
                                     color: "#fff",
                                     borderRadius: 6,
                                     padding: "10px 24px",
                                     fontWeight: 600,
                                     fontSize: "1rem",
-                                    cursor: selectedQuestions.length === 0 ? "not-allowed" : "pointer",
+                                    cursor: (selectedQuestions.length === 0 || addingQuestions) ? "not-allowed" : "pointer",
                                 }}
                             >
-                                Add {selectedQuestions.length > 0 ? `(${selectedQuestions.length})` : ""}
+                                {addingQuestions ? "Adding..." : `Add ${selectedQuestions.length > 0 ? `(${selectedQuestions.length})` : ""}`}
                             </button>
                         </div>
                     </div>

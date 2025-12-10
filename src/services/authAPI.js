@@ -1186,6 +1186,47 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Update Group Question API
+  updateGroupQuestion: async (payload) => {
+    try {
+      const response = await api.post("/update_group_question", payload, {
+        headers: { "Content-Type": "application/json" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("updateGroupQuestion API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Update Event Form Question API
+  updateEventFormQuestion: async (payload) => {
+    try {
+      const response = await api.post("/updateEventFormQuestion", payload, {
+        headers: payload instanceof FormData
+          ? { "Content-Type": "multipart/form-data" }
+          : { "Content-Type": "application/json" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("updateEventFormQuestion API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // View Sub Question Tree API
+  viewSubQuestionTree: async (payload) => {
+    try {
+      const response = await api.post("/ViewSubquestionsTree", payload, {
+        headers: { "Content-Type": "application/json" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("viewSubQuestionTree API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 // Token को axios header में set करें app load होते समय
