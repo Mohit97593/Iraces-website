@@ -646,7 +646,7 @@ const Grouping = ({ onBack, onNext }) => {
                                                 background: "#fff",
                                                 color: "#da251c",
                                                 cursor: "pointer",
-                                                display: "none", // Temporarily hidden until backend API is ready
+                                                display: "flex",
                                                 alignItems: "center",
                                                 justifyContent: "center",
                                             }}

@@ -1190,7 +1190,7 @@ export const authAPI = {
   // Update Group Question API
   updateGroupQuestion: async (payload) => {
     try {
-      const response = await api.post("/update_group_question", payload, {
+      const response = await api.post("/edit_group_question", payload, {
         headers: { "Content-Type": "application/json" },
       });
       return response.data;
