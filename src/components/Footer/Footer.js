@@ -4,6 +4,10 @@ import "./Footer.css";
 import runmateLogo from "../../assets/image/Runmate-Logo.png";
 
 export default function Footer() {
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <footer className="footer-section">
       <div className="footer-container">
@@ -70,22 +74,22 @@ export default function Footer() {
             <h3 className="footer-heading">Quick Links</h3>
             <ul className="footer-links">
               <li>
-                <Link to="/disclaimer">Disclaimer</Link>
+                <Link to="/disclaimer" onClick={scrollToTop}>Disclaimer</Link>
               </li>
               <li>
-                <Link to="/terms-conditions">Terms & Conditions</Link>
+                <Link to="/terms-conditions" onClick={scrollToTop}>Terms & Conditions</Link>
               </li>
               <li>
-                <Link to="/privacy-policy">Privacy Policy</Link>
+                <Link to="/privacy-policy" onClick={scrollToTop}>Privacy Policy</Link>
               </li>
               <li>
-                <Link to="/cancellation-policy">Cancellation Policy</Link>
+                <Link to="/cancellation-policy" onClick={scrollToTop}>Cancellation Policy</Link>
               </li>
               <li>
-                <Link to="/contact">Contact Us</Link>
+                <Link to="/contact" onClick={scrollToTop}>Contact Us</Link>
               </li>
               <li>
-                <Link to="/why-choose-races">How It Works?</Link>
+                <Link to="/why-choose-races" onClick={scrollToTop}>How It Works?</Link>
               </li>
             </ul>
           </div>

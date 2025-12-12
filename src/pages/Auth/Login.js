@@ -300,6 +300,10 @@ export default function Login() {
 
   // Function to send OTP
   const handleSendOTP = async () => {
+    // Clear previous errors
+    setErrors({});
+
+    // Validate identifier is not empty
     if (!formData.identifier.trim()) {
       setErrors({
         identifier: `${getLoginTypeLabel()} is required to send OTP`,
@@ -307,8 +311,43 @@ export default function Login() {
       return;
     }
 
+    // Email validation
+    if (loginType === "email") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.identifier)) {
+        setErrors({
+          identifier: "Please enter a valid email address",
+        });
+        return;
+      }
+    }
+
+    // Mobile validation
+    if (loginType === "mobile") {
+      const cleanMobile = formData.identifier.replace(/^0+/, "");
+
+      if (formData.phoneCode === "+91") {
+        // Indian mobile validation
+        const mobileRegex = /^[6-9]\d{9}$/;
+        if (!mobileRegex.test(cleanMobile)) {
+          setErrors({
+            identifier: "Please enter a valid 10-digit mobile number starting with 6-9",
+          });
+          return;
+        }
+      } else {
+        // International mobile validation
+        const mobileRegex = /^\d{7,15}$/;
+        if (!mobileRegex.test(cleanMobile)) {
+          setErrors({
+            identifier: "Please enter a valid mobile number (7-15 digits)",
+          });
+          return;
+        }
+      }
+    }
+
     setIsLoading(true);
-    setErrors({});
 
     try {
       const cleanMobile =

@@ -258,6 +258,10 @@ const Profile = () => {
   const [showAddressSuccess, setShowAddressSuccess] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // Individual address field errors
+  const [addressErrors, setAddressErrors] = useState({});
+
+
   // Get userData from localStorage, updates when refreshTrigger changes
   const userData = useMemo(() => {
     const data = localStorage.getItem("userData");
@@ -553,9 +557,9 @@ const Profile = () => {
         handleCloseAddUserModal();
         showSuccessMessage(
           res.message ||
-            (editOrgUserId
-              ? "User updated successfully!"
-              : "User added successfully!")
+          (editOrgUserId
+            ? "User updated successfully!"
+            : "User added successfully!")
         );
       } else {
         alert(res?.message || "Failed to save user");
@@ -1293,37 +1297,36 @@ const Profile = () => {
   const handleSaveAddress = async () => {
     try {
       setAddressError("");
+      setAddressErrors({});
 
       // Validation
+      let errors = {};
+
       if (!permCountryId) {
-        setAddressError("Please select permanent address country");
-        return;
+        errors.permCountryId = "Please select country";
       }
       if (!permPincode) {
-        setAddressError("Please enter permanent address pincode");
-        return;
+        errors.permPincode = "Please enter pincode";
       }
       if (!permHouseNo) {
-        setAddressError(
-          "Please enter permanent address House No./Flat Block No."
-        );
-        return;
+        errors.permHouseNo = "Please enter House No./Flat Block No.";
       }
+
       if (!sameAsPermAddress) {
         if (!commCountryId) {
-          setAddressError("Please select communication address country");
-          return;
+          errors.commCountryId = "Please select country";
         }
         if (!commPincode) {
-          setAddressError("Please enter communication address pincode");
-          return;
+          errors.commPincode = "Please enter pincode";
         }
         if (!commHouseNo) {
-          setAddressError(
-            "Please enter communication address House No./Flat Block No."
-          );
-          return;
+          errors.commHouseNo = "Please enter House No./Flat Block No.";
         }
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setAddressErrors(errors);
+        return;
       }
 
       // Create FormData
@@ -1396,7 +1399,7 @@ const Profile = () => {
           setAddressProofNo(updatedUserData.address_proof_no || "");
           setSameAsPermAddress(
             updatedUserData.sameAsPermanent === "1" ||
-              updatedUserData.sameAsPermanent === 1
+            updatedUserData.sameAsPermanent === 1
           );
 
           // Reload states and cities for helper functions to display correctly
@@ -1920,9 +1923,8 @@ const Profile = () => {
                   <div className="profile-info-title">Your Information</div>
                   <div className="profile-info-tabs">
                     <button
-                      className={`tab ${
-                        activeTab === "personal" ? "active" : ""
-                      }`}
+                      className={`tab ${activeTab === "personal" ? "active" : ""
+                        }`}
                       onClick={() => setActiveTab("personal")}
                     >
                       Personal Details
@@ -1934,17 +1936,15 @@ const Profile = () => {
                       Basic Information
                     </button>
                     <button
-                      className={`tab ${
-                        activeTab === "address" ? "active" : ""
-                      }`}
+                      className={`tab ${activeTab === "address" ? "active" : ""
+                        }`}
                       onClick={() => setActiveTab("address")}
                     >
                       Your Address
                     </button>
                     <button
-                      className={`tab ${
-                        activeTab === "medical" ? "active" : ""
-                      }`}
+                      className={`tab ${activeTab === "medical" ? "active" : ""
+                        }`}
                       onClick={() => setActiveTab("medical")}
                     >
                       Medical Profile
@@ -2453,8 +2453,8 @@ const Profile = () => {
                                 );
                                 setEditEmergencyNumber(
                                   userData.emergency_contact_no1 ||
-                                    userData.emergency_contact_no ||
-                                    ""
+                                  userData.emergency_contact_no ||
+                                  ""
                                 );
                                 setEditOrganisation(
                                   userData.organization || ""
@@ -2473,8 +2473,8 @@ const Profile = () => {
                                 );
                                 setEditEmergencyNumber(
                                   user?.emergency_contact_no1 ||
-                                    user?.emergency_contact_no ||
-                                    ""
+                                  user?.emergency_contact_no ||
+                                  ""
                                 );
                                 setEditOrganisation(user?.organization || "");
                                 setEditIdProofType(user?.id_proof_type || "");
@@ -2950,6 +2950,52 @@ const Profile = () => {
                                 {basicErrors.editIdProofFile}
                               </div>
                             )}
+                            {editIdProofFile && (
+                              <div
+                                style={{
+                                  marginTop: "12px",
+                                  padding: "12px",
+                                  background: "#e8f5e9",
+                                  borderRadius: "6px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                  color: "#2e7d32",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                ✓ New file selected: {editIdProofFile.name}
+                              </div>
+                            )}
+                            {user?.id_proof_doc_upload && !editIdProofFile && (
+                              <div
+                                style={{
+                                  marginTop: "12px",
+                                  padding: "12px",
+                                  background: "#f0f0f0",
+                                  borderRadius: "6px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                }}
+                              >
+                                {/* <span style={{ fontSize: "14px", color: "#666" }}>
+                                  Currently uploaded:
+                                </span> */}
+                                <a
+                                  href={user.id_proof_doc_upload}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    color: "#e53935",
+                                    textDecoration: "none",
+                                    fontWeight: "500",
+                                  }}
+                                >
+                                  View Document
+                                </a>
+                              </div>
+                            )}
                           </div>
                         </form>
                         <div
@@ -3376,6 +3422,11 @@ const Profile = () => {
                                   </option>
                                 ))}
                               </select>
+                              {addressErrors.permCountryId && (
+                                <div style={{ color: "red", fontSize: "13px", marginTop: "4px" }}>
+                                  {addressErrors.permCountryId}
+                                </div>
+                              )}
                             </div>
                             <div>
                               <label
@@ -3400,6 +3451,11 @@ const Profile = () => {
                                   fontSize: "14px",
                                 }}
                               />
+                              {addressErrors.permPincode && (
+                                <div style={{ color: "red", fontSize: "13px", marginTop: "4px" }}>
+                                  {addressErrors.permPincode}
+                                </div>
+                              )}
                             </div>
                             <div>
                               <label
@@ -3426,6 +3482,11 @@ const Profile = () => {
                                   fontSize: "14px",
                                 }}
                               />
+                              {addressErrors.permHouseNo && (
+                                <div style={{ color: "red", fontSize: "13px", marginTop: "4px" }}>
+                                  {addressErrors.permHouseNo}
+                                </div>
+                              )}
                             </div>
                             <div>
                               <label
@@ -3623,6 +3684,11 @@ const Profile = () => {
                                   </option>
                                 ))}
                               </select>
+                              {addressErrors.commCountryId && (
+                                <div style={{ color: "red", fontSize: "13px", marginTop: "4px" }}>
+                                  {addressErrors.commCountryId}
+                                </div>
+                              )}
                             </div>
                             <div>
                               <label
@@ -3651,6 +3717,11 @@ const Profile = () => {
                                     : "white",
                                 }}
                               />
+                              {addressErrors.commPincode && (
+                                <div style={{ color: "red", fontSize: "13px", marginTop: "4px" }}>
+                                  {addressErrors.commPincode}
+                                </div>
+                              )}
                             </div>
                             <div>
                               <label
@@ -3681,6 +3752,11 @@ const Profile = () => {
                                     : "white",
                                 }}
                               />
+                              {addressErrors.commHouseNo && (
+                                <div style={{ color: "red", fontSize: "13px", marginTop: "4px" }}>
+                                  {addressErrors.commHouseNo}
+                                </div>
+                              )}
                             </div>
                             <div>
                               <label
@@ -3822,19 +3898,6 @@ const Profile = () => {
                             }}
                           />
                         </div>
-
-                        {/* Error Message */}
-                        {addressError && (
-                          <div
-                            style={{
-                              color: "red",
-                              marginBottom: "16px",
-                              fontSize: "14px",
-                            }}
-                          >
-                            {addressError}
-                          </div>
-                        )}
 
                         {/* Action Buttons */}
                         <div

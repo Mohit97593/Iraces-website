@@ -890,7 +890,12 @@ const GeneralFormQuestions = ({
               {/* Hint Type and Question Hint */}
               <div className="form-row1">
                 <div className="form-group2" style={{ flex: 1 }}>
-                  <label className="form-label">Hint Type*</label>
+                  <label className="form-label">
+                    Hint{" "}
+                    <span className="required" style={{ color: "#da251c" }}>
+                      *
+                    </span>
+                  </label>
                   <select
                     className="form-input compact"
                     value={selectedQuestion.hint_type || "text"}

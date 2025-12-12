@@ -3,16 +3,18 @@
   width: 100%;
   padding: 0 0 32px 0;
 }
+
 .mohit:hover {
   border: 2px solid red;
 }
 
 @media (max-width: 900px) {
-  .profile-top-btn-group > div {
+  .profile-top-btn-group>div {
     width: 100%;
     display: flex !important;
     justify-content: center !important;
   }
+
   .profile-main-btn,
   .profile-athlete-btn {
     min-width: 90px;
@@ -26,12 +28,14 @@
     box-sizing: border-box;
   }
 }
+
 @media (max-width: 900px) {
-  .profile-top-btn-group > div {
+  .profile-top-btn-group>div {
     width: 100%;
     display: flex !important;
     justify-content: center !important;
   }
+
   .profile-main-btn,
   .profile-athlete-btn {
     min-width: 120px;
@@ -45,17 +49,21 @@
     box-sizing: border-box;
   }
 }
+
 @media (max-width: 900px) {
+
   .profile-main-btn,
   .profile-athlete-btn {
     padding: 8px 16px !important;
     font-size: 1rem !important;
   }
+
   .profile-main-btn span,
   .profile-athlete-btn span {
     font-size: 18px !important;
   }
 }
+
 /* Responsive styles for top button group */
 @media (max-width: 900px) {
   .profile-top-btn-group {
@@ -64,10 +72,12 @@
     margin: 24px 0 16px 0 !important;
     align-items: stretch !important;
   }
-  .profile-top-btn-group > div {
+
+  .profile-top-btn-group>div {
     justify-content: center !important;
     margin-bottom: 8px;
   }
+
   .profile-top-btn-group .profile-athlete-btn {
     align-self: flex-end;
     margin-left: auto;
@@ -75,33 +85,39 @@
     margin-bottom: 0;
   }
 }
+
 /* Profile Page Styles */
 .profile-container {
   font-family: "Roboto", Arial, sans-serif;
   background: #fff;
   min-height: 100vh;
 }
+
 .profile-header {
   background: #1565c0;
   color: #fff;
   padding: 24px 32px 16px 32px;
   border-radius: 0 0 16px 16px;
 }
+
 .profile-header h2 {
   margin: 0;
   font-size: 2rem;
   font-weight: 700;
 }
+
 .profile-breadcrumbs {
   font-size: 1rem;
   margin-top: 8px;
   color: #e3e3e3;
 }
+
 .profile-main {
   display: flex;
   gap: 3px;
   padding: 100px 60px 60px 60px;
 }
+
 .profile-sidebar {
   width: 378px;
   background: rgb(233, 233, 236);
@@ -109,35 +125,42 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 24px 16px;
 }
+
 .profile-card {
   margin-bottom: 32px;
 }
+
 .profile-card-horizontal {
   display: flex;
   align-items: center;
   gap: 28px;
   margin-bottom: 20px;
 }
+
 .profile-card-horizontal .profile-avatar {
   width: 84px;
   height: 84px;
   border-radius: 50%;
   border: 2px solid #1565c0;
 }
+
 .profile-card-details {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
+
 .profile-card-details .profile-name {
   font-size: 1.35rem;
   font-weight: 700;
 }
+
 .profile-card-details .profile-phone,
 .profile-card-details .profile-email {
   font-size: 1.12rem;
   color: #222;
 }
+
 .profile-avatar {
   width: 80px;
   height: 80px;
@@ -145,21 +168,25 @@
   margin-bottom: 12px;
   border: 2px solid #1565c0;
 }
+
 .profile-name {
   font-size: 1.2rem;
   font-weight: 600;
   margin-bottom: 4px;
 }
+
 .profile-phone,
 .profile-email {
   font-size: 1rem;
   color: #444;
   margin-bottom: 2px;
 }
+
 .profile-progress {
   margin-top: 16px;
   text-align: left;
 }
+
 .progress-bar {
   background: #e0e0e0;
   border-radius: 8px;
@@ -168,19 +195,23 @@
   margin: 4px 0;
   position: relative;
 }
+
 .progress-bar-fill {
   background: #d32f2f;
   height: 100%;
   border-radius: 8px;
 }
+
 .progress-percent {
   float: right;
   font-size: 0.95rem;
   color: #d32f2f;
 }
+
 .profile-info-section {
   margin-top: 24px;
 }
+
 .profile-info-title {
   font-size: 1.5rem;
   font-weight: 500;
@@ -188,11 +219,13 @@
   margin-top: 41px;
   border-bottom: 1px solid gray;
 }
+
 .profile-info-tabs {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
+
 .tab {
   background: #fff;
   border: none;
@@ -204,10 +237,12 @@
   color: #333;
   transition: background 0.2s;
 }
+
 .tab.active {
   background: #d32f2f;
   color: #fff;
 }
+
 .profile-details {
   flex: 1;
   background: #fff;
@@ -215,11 +250,13 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 24px 32px;
 }
+
 .profile-details-header {
   display: flex;
   gap: 16px;
   margin-bottom: 16px;
 }
+
 .profile-btn {
   background: #d32f2f;
   color: #fff;
@@ -232,72 +269,86 @@
   margin-right: 8px;
   transition: background 0.2s, color 0.2s;
 }
+
 .profile-btn.outline {
   background: #fff;
   color: #d32f2f;
   border: 2px solid #d32f2f;
 }
+
 .profile-btn.active {
   background: #d32f2f;
   color: #fff;
   border: 2px solid #d32f2f;
 }
+
 .profile-details-main {
   margin-top: 16px;
 }
+
 .profile-details-actions {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
   margin-bottom: 16px;
 }
+
 .profile-details-card {
   display: flex;
   gap: 24px;
-  align-items: center;
+  align-items: flex-start;
   background: rgb(233, 233, 236);
   border-radius: 16px;
   padding: 24px;
   margin-top: 41px;
 }
+
 .profile-avatar-large {
   width: 112px;
   height: 114px;
   border-radius: 50%;
   border: 2px solid #1565c0;
 }
+
 .profile-details-info {
   flex: 1;
 }
+
 .profile-details-name {
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 8px;
 }
+
 .profile-details-row {
   display: flex;
   gap: 32px;
   font-size: 1.1rem;
   margin-bottom: 4px;
 }
+
 .profile-details-bio {
   margin-top: 12px;
   font-size: 1.1rem;
   color: #333;
 }
+
 @media (max-width: 900px) {
   .profile-main {
     flex-direction: column;
     gap: 16px;
     padding: 16px;
   }
+
   .profile-sidebar {
     width: 100%;
     padding: 16px 8px;
   }
+
   .profile-details {
     padding: 16px;
   }
+
   .profile-details-card {
     flex-direction: column;
     align-items: center !important;
@@ -312,6 +363,7 @@
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -323,6 +375,7 @@ table.organizing-team-table {
   border-collapse: collapse;
   width: 100%;
 }
+
 table.organizing-team-table th,
 table.organizing-team-table td {
   padding-top: 8px;
@@ -330,10 +383,12 @@ table.organizing-team-table td {
   vertical-align: middle;
   text-align: center;
 }
+
 table.organizing-team-table th {
   background: #eaf2ff;
   font-weight: 600;
 }
+
 table.organizing-team-table tr {
   vertical-align: middle;
 }

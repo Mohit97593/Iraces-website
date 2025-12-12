@@ -32,6 +32,7 @@ export default function CreateEvent() {
   const [loading, setLoading] = useState(true);
   const [eventFormData, setEventFormData] = useState({});
   const [nameError, setNameError] = useState("");
+  const [categoryError, setCategoryError] = useState("");
   const [savedSteps, setSavedSteps] = useState(new Array(12).fill(false)); // Track saved status for each step (now 12 steps)
   const [showPreview, setShowPreview] = useState(true);
   const [cityName, setCityName] = useState("");
@@ -683,6 +684,7 @@ export default function CreateEvent() {
   };
 
   const handleCategoryToggle = (label) => {
+    setCategoryError(""); // Clear error when user selects a category
     setSelectedCategories((prev) =>
       prev.includes(label) ? prev.filter((c) => c !== label) : [...prev, label]
     );
@@ -690,6 +692,14 @@ export default function CreateEvent() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Validate Event Category selection
+    if (!selectedCategories || selectedCategories.length === 0) {
+      setCategoryError("Please select at least one event category");
+      return;
+    }
+    setCategoryError("");
+
     // Always set event name in sessionStorage before moving to next step
     sessionStorage.setItem("eventName", eventName);
     sessionStorage.setItem(
@@ -749,6 +759,13 @@ export default function CreateEvent() {
 
   // Update save handlers for each step
   const handleEssentialsSave = async () => {
+    // Validate Event Category selection before proceeding
+    if (!selectedCategories || selectedCategories.length === 0) {
+      setCategoryError("Please select at least one event category");
+      return;
+    }
+    setCategoryError("");
+
     try {
       setLoading(true);
 
@@ -1247,6 +1264,11 @@ export default function CreateEvent() {
                         <p>Loading categories...</p>
                       )}
                     </div>
+                    {categoryError && (
+                      <div style={{ color: "#da251c", fontSize: "14px", marginTop: "8px" }}>
+                        {categoryError}
+                      </div>
+                    )}
                   </div>
 
                   <button type="submit" className="btn-save-continue">

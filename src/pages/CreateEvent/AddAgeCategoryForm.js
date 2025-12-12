@@ -26,7 +26,19 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
     event_comm_id: initialData.id || "",
   });
 
+  // Error states for all fields
+  const [errors, setErrors] = useState({
+    distance_category: "",
+    age_category: "",
+    age_start: "",
+    age_end: "",
+    gender: "",
+  });
+
   const handleChange = (key, value) => {
+    // Clear error for the field being changed
+    setErrors((prev) => ({ ...prev, [key]: "" }));
+
     if (key === "gender") {
       // Toggle gender in array for checkboxes
       setFormData((prev) => {
@@ -52,6 +64,41 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate all required fields
+    let newErrors = {};
+
+    if (!formData.distance_category) {
+      newErrors.distance_category = "Please select a distance category";
+    }
+    if (!formData.age_category || !formData.age_category.trim()) {
+      newErrors.age_category = "Please enter age category name";
+    }
+    if (!formData.age_start) {
+      newErrors.age_start = "Please select age start";
+    }
+    if (!formData.age_end) {
+      newErrors.age_end = "Please select age end";
+    }
+    if (!Array.isArray(formData.gender) || formData.gender.length === 0) {
+      newErrors.gender = "Please select at least one gender";
+    }
+
+    // If there are errors, set them and stop submission
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    // Clear all errors if validation passes
+    setErrors({
+      distance_category: "",
+      age_category: "",
+      age_start: "",
+      age_end: "",
+      gender: "",
+    });
+
     try {
       // Convert formData object to FormData instance
       const fd = new FormData();
@@ -123,6 +170,11 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
             <option disabled>No tickets available</option>
           )}
         </select>
+        {errors.distance_category && (
+          <div style={{ color: "#da251c", fontSize: "14px", marginTop: "8px" }}>
+            {errors.distance_category}
+          </div>
+        )}
         {/* <!-- removed duplicate closing div --> */}
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontWeight: 500, marginBottom: 8, display: "block" }}>
@@ -142,6 +194,11 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
             value={formData.age_category}
             onChange={(e) => handleChange("age_category", e.target.value)}
           />
+          {errors.age_category && (
+            <div style={{ color: "#da251c", fontSize: "14px", marginTop: "8px" }}>
+              {errors.age_category}
+            </div>
+          )}
 
           <div style={{ display: "flex", gap: 20, marginBottom: 20 }}>
             <div style={{ flex: 1 }}>
@@ -168,6 +225,11 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
                   </option>
                 ))}
               </select>
+              {errors.age_start && (
+                <div style={{ color: "#da251c", fontSize: "14px", marginTop: "8px" }}>
+                  {errors.age_start}
+                </div>
+              )}
             </div>
             <div style={{ flex: 1 }}>
               <label
@@ -195,6 +257,11 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
                   ) : null
                 )}
               </select>
+              {errors.age_end && (
+                <div style={{ color: "#da251c", fontSize: "14px", marginTop: "8px" }}>
+                  {errors.age_end}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -285,6 +352,11 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
               Other
             </label>
           </div>
+          {errors.gender && (
+            <div style={{ color: "#da251c", fontSize: "14px", marginTop: "8px" }}>
+              {errors.gender}
+            </div>
+          )}
         </div>
         <div
           style={{
