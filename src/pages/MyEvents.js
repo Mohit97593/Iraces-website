@@ -20,7 +20,7 @@ export default function MyEvents() {
     try {
       const ud = authAPI.getUserData && authAPI.getUserData();
       if (ud && (ud.user_id || ud.id)) return ud.user_id || ud.id;
-    } catch (e) {}
+    } catch (e) { }
     return 0;
   };
 
@@ -161,7 +161,7 @@ export default function MyEvents() {
         try {
           // show server message when present
           alert(res.message);
-        } catch (e) {}
+        } catch (e) { }
       }
     } catch (err) {
       console.error("Delete API error:", err);
@@ -188,7 +188,7 @@ export default function MyEvents() {
       if (deleteSucceeded) {
         try {
           // no-op if already alerted
-        } catch (e) {}
+        } catch (e) { }
       }
     } catch (e) {
       console.error("Direct refresh after delete failed:", e);
@@ -233,7 +233,7 @@ export default function MyEvents() {
               <h1 className="contact-hero-title">My Events</h1>
               <nav className="contact-breadcrumb">
                 <span>Home</span>
-                <span className="breadcrumb-separator">–</span>
+                <span className="breadcrumb-separator">→</span>
                 <span>My Events</span>
               </nav>
             </div>
@@ -243,25 +243,22 @@ export default function MyEvents() {
       <div className="my-events-section">
         <div className="my-events-type-group">
           <button
-            className={`my-events-type-btn public${
-              activeType === 1 ? " active-red" : ""
-            }`}
+            className={`my-events-type-btn public${activeType === 1 ? " active-red" : ""
+              }`}
             onClick={() => callAllEventDetails(1)}
           >
             🔓 Public
           </button>
           <button
-            className={`my-events-type-btn private${
-              activeType === 2 ? " active-red" : ""
-            }`}
+            className={`my-events-type-btn private${activeType === 2 ? " active-red" : ""
+              }`}
             onClick={() => callAllEventDetails(2)}
           >
             🔒 Private
           </button>
           <button
-            className={`my-events-type-btn draft${
-              activeType === 3 ? " active-red" : ""
-            }`}
+            className={`my-events-type-btn draft${activeType === 3 ? " active-red" : ""
+              }`}
             onClick={() => callAllEventDetails(3)}
           >
             📝 Draft
@@ -414,7 +411,7 @@ export default function MyEvents() {
                                       localStorage.getItem("userData")
                                     );
                                     if (ud && ud.user_id) user_id = ud.user_id;
-                                  } catch (e) {}
+                                  } catch (e) { }
 
                                   const payload = {
                                     event_info_status: st,
@@ -462,14 +459,14 @@ export default function MyEvents() {
                                   ]);
                                   try {
                                     alert("Event copied successfully");
-                                  } catch (e) {}
+                                  } catch (e) { }
                                 } catch (err) {
                                   console.error("Failed to copy event:", err);
                                   try {
                                     alert(
                                       "Failed to copy event. Please try again."
                                     );
-                                  } catch (e) {}
+                                  } catch (e) { }
                                 } finally {
                                   setCopyingEvents((p) => ({
                                     ...p,
@@ -575,9 +572,8 @@ export default function MyEvents() {
                             )}
                             {/* Toggle switch replacing Register/View button */}
                             <div
-                              className={`event-toggle ${
-                                toggleStates[event.id] ? "on" : ""
-                              }`}
+                              className={`event-toggle ${toggleStates[event.id] ? "on" : ""
+                                }`}
                               onClick={() =>
                                 setToggleStates((prev) => ({
                                   ...prev,

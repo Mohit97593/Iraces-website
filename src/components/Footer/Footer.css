@@ -22,8 +22,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" fill="%23333"><path d="M1200 120L0 16.48V0h1200v120z"/></svg>')
-    no-repeat center top;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" fill="%23333"><path d="M1200 120L0 16.48V0h1200v120z"/></svg>') no-repeat center top;
   background-size: cover;
   opacity: 0.1;
   z-index: 1;
@@ -97,20 +96,23 @@
 }
 
 .social-link.instagram {
-  background: linear-gradient(
-    45deg,
-    #405de6,
-    #5851db,
-    #833ab4,
-    #c13584,
-    #e1306c,
-    #fd1d1d
-  );
+  background: linear-gradient(45deg,
+      #405de6,
+      #5851db,
+      #833ab4,
+      #c13584,
+      #e1306c,
+      #fd1d1d);
   color: white;
 }
 
 .social-link.twitter {
   background: #1da1f2;
+  color: white;
+}
+
+.social-link.youtube {
+  background: #FF0000;
   color: white;
 }
 

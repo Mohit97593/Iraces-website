@@ -111,7 +111,7 @@ export default function Favourites() {
               <h1 className="favourites-hero-title">Favourites</h1>
               <nav className="favourites-breadcrumb">
                 <span>Home</span>
-                <span className="breadcrumb-separator">–</span>
+                <span className="breadcrumb-separator">→</span>
                 <span>Favourites</span>
               </nav>
             </div>
@@ -197,9 +197,8 @@ export default function Favourites() {
                       {event.city_name || event.city || "City"}
                     </div>
                     <button
-                      className={`fav-like-btn${
-                        likedEvents[event.id] ? " liked" : ""
-                      }`}
+                      className={`fav-like-btn${likedEvents[event.id] ? " liked" : ""
+                        }`}
                       onClick={() => handleToggleLike(event.id)}
                       aria-label="Like"
                     >

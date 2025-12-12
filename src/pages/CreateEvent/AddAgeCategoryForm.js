@@ -148,7 +148,7 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
               <label
                 style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
               >
-                Age Start *
+                Age Start <span style={{ color: "#da251c" }}>*</span>
               </label>
               <select
                 required
@@ -173,7 +173,7 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
               <label
                 style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
               >
-                Age End *
+                Age End <span style={{ color: "#da251c" }}>*</span>
               </label>
               <select
                 required

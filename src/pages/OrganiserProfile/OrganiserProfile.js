@@ -211,7 +211,7 @@ export default function OrganiserProfile() {
                 <h1 className="organiser-hero-title">Organiser Profile</h1>
                 <nav className="organiser-breadcrumb">
                   <span>Home</span>
-                  <span className="breadcrumb-separator">–</span>
+                  <span className="breadcrumb-separator">→</span>
                   <span>Organiser Profile</span>
                 </nav>
               </div>
@@ -241,7 +241,7 @@ export default function OrganiserProfile() {
               <h1 className="organiser-hero-title">Organiser Profile</h1>
               <nav className="organiser-breadcrumb">
                 <span>Home</span>
-                <span className="breadcrumb-separator">–</span>
+                <span className="breadcrumb-separator">→</span>
                 <span>Organiser Profile</span>
               </nav>
             </div>
