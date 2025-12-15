@@ -3024,7 +3024,7 @@ const Profile = () => {
                               }}
                             >
                               <option value="">Select Id Proof Type</option>
-                              <option value="Aadhar">Aadhar</option>
+                              <option value="Aadhaar">Aadhaar</option>
                               <option value="PAN">PAN</option>
                               <option value="Passport">Passport</option>
                               <option value="Other">Other</option>
