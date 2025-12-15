@@ -58,7 +58,7 @@ export default function EventDetails() {
           setEvent(detailedEventData);
           setIsLiked(
             detailedEventData.is_follow === 1 ||
-              detailedEventData.is_follow === "1"
+            detailedEventData.is_follow === "1"
           );
         }
       }
@@ -319,7 +319,23 @@ export default function EventDetails() {
               </h3>
               <div className="section-content">
                 <div className="organiser-info">
-                  <h5>
+                  <h5
+                    onClick={() => {
+                      // Navigate to organiser public profile
+                      const organiserId = event.organiser_id || event.user_id || event.created_by || "1";
+                      const organiserNameValue = organiserName || event.organiser_name || eventDetails?.OrganiserName || "Organiser";
+                      // Replace spaces with underscores for URL
+                      const organiserNameForUrl = organiserNameValue.replace(/ /g, "_");
+                      navigate(`/organiser/${organiserId}/${organiserNameForUrl}`);
+                    }}
+                    style={{
+                      cursor: "pointer",
+                      color: "#da251c",
+                      transition: "color 0.3s ease",
+                    }}
+                    onMouseEnter={(e) => (e.target.style.color = "#b91e16")}
+                    onMouseLeave={(e) => (e.target.style.color = "#da251c")}
+                  >
                     {organiserName ||
                       event.organiser_name ||
                       eventDetails?.OrganiserName ||
@@ -450,7 +466,7 @@ export default function EventDetails() {
                     <span className="info-label1">Category</span>
                     <span className="info-value">
                       {Array.isArray(event.category) &&
-                      event.category.length > 0
+                        event.category.length > 0
                         ? event.category.map((cat) => cat.name).join(", ")
                         : event.category?.name || ""}
                     </span>

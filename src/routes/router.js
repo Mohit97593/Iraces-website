@@ -20,11 +20,14 @@ import MyEvents from "../pages/MyEvents";
 import BannerDebugPage from "../pages/BannerDebugPage";
 import SearchEvents from "../pages/SearchEvents";
 import OrganiserProfile from "../pages/OrganiserProfile/OrganiserProfile";
+import OrganiserPublicProfile from "../pages/OrganiserProfile/OrganiserPublicProfile";
 import Favourites from "../pages/Favourites/Favourites";
 import EventDetails from "../pages/EventDetails/EventDetails";
 import SecureCheckout from "../pages/SecureCheckout/SecureCheckout";
 import ParticipantDetails from "../pages/ParticipantDetails/ParticipantDetails";
 import CreateEvent from "../pages/CreateEvent/CreateEvent";
+import EventTermsConditions from "../pages/EventTermsConditions/EventTermsConditions";
+import RegistrationTracker from "../pages/RegistrationTracker";
 
 const AppRouter = createBrowserRouter([
   {
@@ -163,6 +166,15 @@ const AppRouter = createBrowserRouter([
     errorElement: <NotFound />,
   },
   {
+    path: "/organiser/:organiserId/:organiserName?",
+    element: (
+      <ErrorBoundary>
+        <OrganiserPublicProfile />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
     path: "/search-events",
     element: (
       <ErrorBoundary>
@@ -199,10 +211,28 @@ const AppRouter = createBrowserRouter([
     errorElement: <NotFound />,
   },
   {
+    path: "/event-terms/:eventId",
+    element: (
+      <ErrorBoundary>
+        <EventTermsConditions />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
     path: "/favourites",
     element: (
       <ErrorBoundary>
         <Favourites />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/registration-tracker",
+    element: (
+      <ErrorBoundary>
+        <RegistrationTracker />
       </ErrorBoundary>
     ),
     errorElement: <NotFound />,

@@ -592,38 +592,46 @@ const GeneralFormQuestions = ({
         selectedQuestion.question_form_type || ""
       );
 
-      // Get first subquestion data if exists (backend expects single subquestion per call)
-      const firstSubQ = subQuestions && subQuestions.length > 0 ? subQuestions[0] : null;
+      // Build sub_questions array from subQuestions state
+      const subQuestionsArray = (subQuestions || []).map((subQ) => {
+        const subQuestionObj = {
+          question_type: subQ.subQuestionFormType || "",
+          title: subQ.subQuestionTitle || "",
+          form_type: subQ.subQuestionFormType || "",
+          mandatory: subQ.subQuestionMandatory === "1" ? 1 : 0,
+        };
 
+        // Add options if the subquestion has any (for select, radio, checkbox types)
+        if (selectedQuestion.question_form_option && Array.isArray(selectedQuestion.question_form_option)) {
+          // Filter options that belong to this subquestion based on selectedOptionId
+          const relevantOptions = selectedQuestion.question_form_option.filter(
+            opt => String(opt.id) === String(subQ.selectedOptionId)
+          );
+
+          // If no specific options found, include all options for select/radio/checkbox types
+          if (relevantOptions.length === 0 &&
+            (subQ.subQuestionFormType === 'select' ||
+              subQ.subQuestionFormType === 'radio' ||
+              subQ.subQuestionFormType === 'checkbox')) {
+            subQuestionObj.options = selectedQuestion.question_form_option.map(opt => ({
+              label: opt.option_name || opt.label || opt.name || ""
+            }));
+          } else if (relevantOptions.length > 0) {
+            subQuestionObj.options = relevantOptions.map(opt => ({
+              label: opt.option_name || opt.label || opt.name || ""
+            }));
+          }
+        }
+
+        return subQuestionObj;
+      });
+
+      // Send sub_questions as JSON string
       formData.append(
-        "sub_question_title",
-        firstSubQ ? firstSubQ.subQuestionTitle : ""
+        "sub_questions",
+        JSON.stringify(subQuestionsArray)
       );
-      // send options array as JSON string if present
-      formData.append(
-        "sub_question_array",
-        JSON.stringify(selectedQuestion.question_form_option || [])
-      );
-      formData.append(
-        "sub_question_mandatory_status",
-        firstSubQ ? firstSubQ.subQuestionMandatory : "0"
-      );
-      formData.append(
-        "sub_question_form_type",
-        firstSubQ ? firstSubQ.subQuestionFormType : ""
-      );
-      formData.append(
-        "sub_question_price_flag",
-        selectedQuestion.sub_question_price_flag ? "1" : "0"
-      );
-      formData.append(
-        "sub_question_count_flag",
-        selectedQuestion.sub_question_count_flag ? "1" : "0"
-      );
-      formData.append(
-        "sub_question_other_amount",
-        selectedQuestion.sub_question_other_amount ? "1" : "0"
-      );
+
       formData.append(
         "parent_general_form_id",
         selectedQuestion.parent_general_form_id || "0"
@@ -673,27 +681,11 @@ const GeneralFormQuestions = ({
         );
       }
 
-      // Sub-question hint type and sub hint file/name
-      formData.append(
-        "sub_que_hint_type",
-        firstSubQ ? firstSubQ.subQueHintType : "1"
-      );
-      formData.append(
-        "question_hint",
-        firstSubQ ? firstSubQ.subQuestionHint : ""
-      );
-      const subHintFile = firstSubQ ? firstSubQ.subQuestionHintFile : null;
-      if (subHintFile) {
-        formData.append("upload_sub_hint_file", subHintFile);
-        formData.append(
-          "upload_sub_file_name",
-          subHintFile.name || ""
-        );
-      } else {
-        formData.append("upload_sub_file_name", "");
-      }
+      console.log("=== Sending Subquestion Data ===");
+      console.log("subQuestions state:", subQuestions);
+      console.log("subQuestionsArray:", JSON.stringify(subQuestionsArray, null, 2));
+      console.log("===============================");
 
-      // Date range fields
       formData.append(
         "date_range",
         selectedQuestion.date_range_enabled ? "1" : "0"
@@ -707,14 +699,6 @@ const GeneralFormQuestions = ({
         selectedQuestion.email_validation_enabled ? "1" : "0"
       );
       formData.append("domain_name", selectedQuestion.email_domain || "");
-
-      console.log("=== Sending Subquestion Data ===");
-      console.log("subQuestions state:", subQuestions);
-      console.log("firstSubQ:", firstSubQ);
-      console.log("sub_question_title:", firstSubQ ? firstSubQ.subQuestionTitle : "");
-      console.log("sub_question_form_type:", firstSubQ ? firstSubQ.subQuestionFormType : "");
-      console.log("sub_question_mandatory_status:", firstSubQ ? firstSubQ.subQuestionMandatory : "0");
-      console.log("===============================");
 
       console.log("Sending addGeneralFormQuestions payload", selectedQuestion);
       res = await authAPI.addGeneralFormQuestions(formData);
@@ -1093,6 +1077,11 @@ const GeneralFormQuestions = ({
                                 <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
                                   <label className="form-label">
                                     Question Title <span style={{ color: "#da251c" }}>*</span>
+                                    {subQ.subQuestionMandatory === "1" && (
+                                      <span style={{ color: "#da251c", marginLeft: 8, fontSize: "0.9em" }}>
+                                        * (Mandatory)
+                                      </span>
+                                    )}
                                   </label>
                                   <input
                                     type="text"
@@ -1175,6 +1164,148 @@ const GeneralFormQuestions = ({
                                     <option value="select">Select (Dropdown)</option>
                                   </select>
                                 </div>
+
+                                {/* Options UI for checkbox, radio, and select types */}
+                                {(subQ.subQuestionFormType === 'checkbox' ||
+                                  subQ.subQuestionFormType === 'radio' ||
+                                  subQ.subQuestionFormType === 'select') && (
+                                    <div style={{ marginBottom: 12, width: '100%' }}>
+                                      {/* Price and Maximum Count Limit toggles */}
+                                      <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                                          <input
+                                            type="checkbox"
+                                            checked={subQ.priceEnabled || false}
+                                            onChange={(e) => updateSubQuestion(index, 'priceEnabled', e.target.checked)}
+                                            style={{ width: 20, height: 20, cursor: 'pointer' }}
+                                          />
+                                          <span style={{ fontWeight: 500 }}>Price</span>
+                                        </label>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                                          <input
+                                            type="checkbox"
+                                            checked={subQ.maxCountEnabled || false}
+                                            onChange={(e) => updateSubQuestion(index, 'maxCountEnabled', e.target.checked)}
+                                            style={{ width: 20, height: 20, cursor: 'pointer' }}
+                                          />
+                                          <span style={{ fontWeight: 500 }}>Maximum Count Limit</span>
+                                        </label>
+                                      </div>
+
+                                      {/* Options Table */}
+                                      <div style={{
+                                        background: '#fff0f0',
+                                        borderRadius: 8,
+                                        padding: '16px',
+                                        marginBottom: 12
+                                      }}>
+                                        <div style={{
+                                          display: 'grid',
+                                          gridTemplateColumns: '1fr auto',
+                                          gap: 16,
+                                          marginBottom: 12,
+                                          paddingBottom: 8,
+                                          borderBottom: '2px solid #da251c'
+                                        }}>
+                                          <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Label</div>
+                                          <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Action</div>
+                                        </div>
+
+                                        {/* Existing options */}
+                                        {(subQ.options || []).map((opt, optIdx) => (
+                                          <div
+                                            key={optIdx}
+                                            style={{
+                                              display: 'grid',
+                                              gridTemplateColumns: '1fr auto',
+                                              gap: 16,
+                                              alignItems: 'center',
+                                              marginBottom: 8,
+                                              paddingBottom: 8,
+                                              borderBottom: '1px solid #eee'
+                                            }}
+                                          >
+                                            <div style={{ color: '#333' }}>{opt.label || opt}</div>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const newOptions = [...(subQ.options || [])];
+                                                newOptions.splice(optIdx, 1);
+                                                updateSubQuestion(index, 'options', newOptions);
+                                              }}
+                                              style={{
+                                                background: 'transparent',
+                                                border: 'none',
+                                                color: '#e74c3c',
+                                                cursor: 'pointer',
+                                                fontSize: '1.2rem',
+                                                padding: 4
+                                              }}
+                                              title="Delete option"
+                                            >
+                                              🗑
+                                            </button>
+                                          </div>
+                                        ))}
+
+                                        {/* Add new option input */}
+                                        <div style={{
+                                          display: 'grid',
+                                          gridTemplateColumns: '1fr auto',
+                                          gap: 16,
+                                          alignItems: 'center',
+                                          marginTop: 12
+                                        }}>
+                                          <input
+                                            type="text"
+                                            placeholder="Enter option label"
+                                            value={subQ.newOptionLabel || ''}
+                                            onChange={(e) => updateSubQuestion(index, 'newOptionLabel', e.target.value)}
+                                            onKeyPress={(e) => {
+                                              if (e.key === 'Enter' && subQ.newOptionLabel && subQ.newOptionLabel.trim()) {
+                                                const newOptions = [...(subQ.options || []), { label: subQ.newOptionLabel.trim() }];
+                                                updateSubQuestion(index, 'options', newOptions);
+                                                updateSubQuestion(index, 'newOptionLabel', '');
+                                              }
+                                            }}
+                                            style={{
+                                              padding: '8px 12px',
+                                              border: '1px solid #ddd',
+                                              borderRadius: 6,
+                                              fontSize: '0.95rem'
+                                            }}
+                                          />
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              if (subQ.newOptionLabel && subQ.newOptionLabel.trim()) {
+                                                const newOptions = [...(subQ.options || []), { label: subQ.newOptionLabel.trim() }];
+                                                updateSubQuestion(index, 'options', newOptions);
+                                                updateSubQuestion(index, 'newOptionLabel', '');
+                                              }
+                                            }}
+                                            style={{
+                                              background: '#da251c',
+                                              border: 'none',
+                                              color: '#fff',
+                                              borderRadius: 6,
+                                              width: 36,
+                                              height: 36,
+                                              cursor: 'pointer',
+                                              fontSize: '1.2rem',
+                                              fontWeight: 600,
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center'
+                                            }}
+                                            title="Add option"
+                                          >
+                                            +
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
 
                                 {/* Mandatory/Optional Toggle */}
                                 <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
@@ -1313,6 +1444,11 @@ const GeneralFormQuestions = ({
                                 <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
                                   <label className="form-label">
                                     Question Title <span style={{ color: "#da251c" }}>*</span>
+                                    {subQ.subQuestionMandatory === "1" && (
+                                      <span style={{ color: "#da251c", marginLeft: 8, fontSize: "0.9em" }}>
+                                        * (Mandatory)
+                                      </span>
+                                    )}
                                   </label>
                                   <input
                                     type="text"
@@ -1395,6 +1531,247 @@ const GeneralFormQuestions = ({
                                     <option value="select">Select (Dropdown)</option>
                                   </select>
                                 </div>
+
+                                {/* Options UI for checkbox, radio, and select types */}
+                                {(subQ.subQuestionFormType === 'checkbox' ||
+                                  subQ.subQuestionFormType === 'radio' ||
+                                  subQ.subQuestionFormType === 'select') && (
+                                    <div style={{ marginBottom: 12, width: '100%' }}>
+                                      {/* Price and Maximum Count Limit toggle switches */}
+                                      <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
+                                        {/* Price Toggle */}
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                                          <div
+                                            onClick={() => updateSubQuestion(index, 'priceEnabled', !subQ.priceEnabled)}
+                                            style={{
+                                              width: 48,
+                                              height: 28,
+                                              borderRadius: 14,
+                                              background: subQ.priceEnabled ? '#da251c' : '#ccc',
+                                              position: 'relative',
+                                              transition: 'background 0.3s',
+                                              cursor: 'pointer'
+                                            }}
+                                          >
+                                            <div
+                                              style={{
+                                                position: 'absolute',
+                                                top: 2,
+                                                left: subQ.priceEnabled ? 22 : 2,
+                                                width: 24,
+                                                height: 24,
+                                                borderRadius: 12,
+                                                background: '#fff',
+                                                transition: 'left 0.3s',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                              }}
+                                            />
+                                          </div>
+                                          <span style={{ fontWeight: 500, fontSize: '1rem' }}>Price</span>
+                                        </label>
+
+                                        {/* Maximum Count Limit Toggle */}
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                                          <div
+                                            onClick={() => updateSubQuestion(index, 'maxCountEnabled', !subQ.maxCountEnabled)}
+                                            style={{
+                                              width: 48,
+                                              height: 28,
+                                              borderRadius: 14,
+                                              background: subQ.maxCountEnabled ? '#da251c' : '#ccc',
+                                              position: 'relative',
+                                              transition: 'background 0.3s',
+                                              cursor: 'pointer'
+                                            }}
+                                          >
+                                            <div
+                                              style={{
+                                                position: 'absolute',
+                                                top: 2,
+                                                left: subQ.maxCountEnabled ? 22 : 2,
+                                                width: 24,
+                                                height: 24,
+                                                borderRadius: 12,
+                                                background: '#fff',
+                                                transition: 'left 0.3s',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                              }}
+                                            />
+                                          </div>
+                                          <span style={{ fontWeight: 500, fontSize: '1rem' }}>Maximum Count Limit</span>
+                                        </label>
+                                      </div>
+
+                                      {/* Options Table */}
+                                      <div style={{
+                                        background: '#fff0f0',
+                                        borderRadius: 8,
+                                        padding: '16px',
+                                        marginBottom: 12
+                                      }}>
+                                        {/* Table Header */}
+                                        <div style={{
+                                          display: 'grid',
+                                          gridTemplateColumns: subQ.priceEnabled && subQ.maxCountEnabled
+                                            ? '2fr 1fr 1fr auto'
+                                            : subQ.priceEnabled || subQ.maxCountEnabled
+                                              ? '2fr 1fr auto'
+                                              : '1fr auto',
+                                          gap: 16,
+                                          marginBottom: 12,
+                                          paddingBottom: 8,
+                                          borderBottom: '2px solid #da251c'
+                                        }}>
+                                          <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Label</div>
+                                          {subQ.priceEnabled && <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Price</div>}
+                                          {subQ.maxCountEnabled && <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Count</div>}
+                                          <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Action</div>
+                                        </div>
+
+                                        {/* Existing options */}
+                                        {(subQ.options || []).map((opt, optIdx) => (
+                                          <div
+                                            key={optIdx}
+                                            style={{
+                                              display: 'grid',
+                                              gridTemplateColumns: subQ.priceEnabled && subQ.maxCountEnabled
+                                                ? '2fr 1fr 1fr auto'
+                                                : subQ.priceEnabled || subQ.maxCountEnabled
+                                                  ? '2fr 1fr auto'
+                                                  : '1fr auto',
+                                              gap: 16,
+                                              alignItems: 'center',
+                                              marginBottom: 8,
+                                              paddingBottom: 8,
+                                              borderBottom: '1px solid #eee'
+                                            }}
+                                          >
+                                            <div style={{ color: '#333' }}>{opt.label || opt}</div>
+                                            {subQ.priceEnabled && <div style={{ color: '#666' }}>{opt.price || '-'}</div>}
+                                            {subQ.maxCountEnabled && <div style={{ color: '#666' }}>{opt.count || '-'}</div>}
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const newOptions = [...(subQ.options || [])];
+                                                newOptions.splice(optIdx, 1);
+                                                updateSubQuestion(index, 'options', newOptions);
+                                              }}
+                                              style={{
+                                                background: 'transparent',
+                                                border: 'none',
+                                                color: '#e74c3c',
+                                                cursor: 'pointer',
+                                                fontSize: '1.2rem',
+                                                padding: 4
+                                              }}
+                                              title="Delete option"
+                                            >
+                                              🗑
+                                            </button>
+                                          </div>
+                                        ))}
+
+                                        {/* Add new option input row */}
+                                        <div style={{
+                                          display: 'grid',
+                                          gridTemplateColumns: subQ.priceEnabled && subQ.maxCountEnabled
+                                            ? '2fr 1fr 1fr auto'
+                                            : subQ.priceEnabled || subQ.maxCountEnabled
+                                              ? '2fr 1fr auto'
+                                              : '1fr auto',
+                                          gap: 16,
+                                          alignItems: 'center',
+                                          marginTop: 12
+                                        }}>
+                                          {/* Label input */}
+                                          <input
+                                            type="text"
+                                            placeholder="Enter option label"
+                                            value={subQ.newOptionLabel || ''}
+                                            onChange={(e) => updateSubQuestion(index, 'newOptionLabel', e.target.value)}
+                                            style={{
+                                              padding: '8px 12px',
+                                              border: '1px solid #ddd',
+                                              borderRadius: 6,
+                                              fontSize: '0.95rem'
+                                            }}
+                                          />
+
+                                          {/* Price input (if enabled) */}
+                                          {subQ.priceEnabled && (
+                                            <input
+                                              type="number"
+                                              placeholder="Price"
+                                              value={subQ.newOptionPrice || ''}
+                                              onChange={(e) => updateSubQuestion(index, 'newOptionPrice', e.target.value)}
+                                              style={{
+                                                padding: '8px 12px',
+                                                border: '1px solid #ddd',
+                                                borderRadius: 6,
+                                                fontSize: '0.95rem'
+                                              }}
+                                            />
+                                          )}
+
+                                          {/* Count input (if enabled) */}
+                                          {subQ.maxCountEnabled && (
+                                            <input
+                                              type="number"
+                                              placeholder="Count"
+                                              value={subQ.newOptionCount || ''}
+                                              onChange={(e) => updateSubQuestion(index, 'newOptionCount', e.target.value)}
+                                              style={{
+                                                padding: '8px 12px',
+                                                border: '1px solid #ddd',
+                                                borderRadius: 6,
+                                                fontSize: '0.95rem'
+                                              }}
+                                            />
+                                          )}
+
+                                          {/* Add button */}
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              if (subQ.newOptionLabel && subQ.newOptionLabel.trim()) {
+                                                const newOption = {
+                                                  label: subQ.newOptionLabel.trim()
+                                                };
+                                                if (subQ.priceEnabled && subQ.newOptionPrice) {
+                                                  newOption.price = subQ.newOptionPrice;
+                                                }
+                                                if (subQ.maxCountEnabled && subQ.newOptionCount) {
+                                                  newOption.count = subQ.newOptionCount;
+                                                }
+                                                const newOptions = [...(subQ.options || []), newOption];
+                                                updateSubQuestion(index, 'options', newOptions);
+                                                updateSubQuestion(index, 'newOptionLabel', '');
+                                                updateSubQuestion(index, 'newOptionPrice', '');
+                                                updateSubQuestion(index, 'newOptionCount', '');
+                                              }
+                                            }}
+                                            style={{
+                                              background: '#da251c',
+                                              border: 'none',
+                                              color: '#fff',
+                                              borderRadius: 6,
+                                              width: 36,
+                                              height: 36,
+                                              cursor: 'pointer',
+                                              fontSize: '1.2rem',
+                                              fontWeight: 600,
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center'
+                                            }}
+                                            title="Add option"
+                                          >
+                                            +
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
 
                                 {/* Mandatory/Optional Toggle */}
                                 <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>

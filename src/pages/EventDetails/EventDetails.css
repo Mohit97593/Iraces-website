@@ -333,7 +333,7 @@
   margin-top: 0.25rem;
 }
 
-.info-item > div {
+.info-item>div {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -487,20 +487,24 @@
   margin-bottom: 25px;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
 }
+
 .fee-label {
   display: block;
   font-size: 1rem;
   margin-bottom: 8px;
   opacity: 0.9;
 }
+
 .fee-amount {
   display: block;
   font-size: 2.2rem;
   font-weight: 700;
 }
+
 .ticket-price-list {
   margin-top: 18px;
 }
+
 .ticket-price-item {
   font-size: 1.08rem;
   color: #d32f2f;

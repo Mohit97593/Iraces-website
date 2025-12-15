@@ -1012,20 +1012,48 @@ export default function TopNav() {
                       width: "32px",
                       height: "32px",
                       borderRadius: "50%",
-                      backgroundColor: "#da251c",
-                      color: "white",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontWeight: "600",
-                      fontSize: "14px",
                       marginTop: "10px",
+                      overflow: "hidden",
+                      border: "2px solid #e9ecef"
                     }}
                   >
-                    {getInitials(
-                      user?.firstName || user?.firstname,
-                      user?.lastName || user?.lastname
-                    )}
+                    {(() => {
+                      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+                      if (userData?.profile_pic) {
+                        const profilePicUrl = userData.profile_pic.startsWith('http')
+                          ? userData.profile_pic
+                          : `https://api.iraces.in/uploads/profile_images/${userData.profile_pic}`;
+                        return (
+                          <img
+                            src={profilePicUrl}
+                            alt="Profile"
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover"
+                            }}
+                            onError={(e) => {
+                              e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                            }}
+                          />
+                        );
+                      } else {
+                        return (
+                          <img
+                            src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                            alt="Profile"
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover"
+                            }}
+                          />
+                        );
+                      }
+                    })()}
                   </div>
                   <span
                     style={{
@@ -1114,6 +1142,16 @@ export default function TopNav() {
                     >
                       <i className="fas fa-cog" style={{ width: "16px" }}></i>
                       My Favourites
+                    </NavLink>
+
+                    <NavLink
+                      to="/registration-tracker"
+                      className="dropdown-item d-flex align-items-center gap-2 px-3 py-2"
+                      style={{ textDecoration: "none", color: "#333" }}
+                      onClick={() => setShowProfileDropdown(false)}
+                    >
+                      <i className="fas fa-list-alt" style={{ width: "16px" }}></i>
+                      Registration Tracker
                     </NavLink>
 
                     <div className="dropdown-divider"></div>

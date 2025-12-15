@@ -211,6 +211,16 @@ export default function Login() {
     setErrors({});
 
     try {
+      // Check if user is trying to login with mobile/email without generating OTP first
+      if ((loginType === "mobile" || loginType === "email") && !otpSent) {
+        const errorMsg = "Please generate OTP first by clicking 'Send OTP' button";
+        setErrors({
+          general: errorMsg,
+        });
+        setIsLoading(false);
+        return;
+      }
+
       // If OTP field is shown and OTP is provided, login with OTP
       if (showOTPField && formData.otp) {
         const cleanMobile =
@@ -483,7 +493,7 @@ export default function Login() {
   const getPlaceholder = () => {
     switch (loginType) {
       case "userId":
-        return "Enter User ID";
+        return "Enter User Email";
       case "mobile":
         return "Enter Mobile Number";
       case "email":
@@ -700,6 +710,12 @@ export default function Login() {
                     {errors.identifier && (
                       <div className="error-message">{errors.identifier}</div>
                     )}
+                    {/* Show general error for mobile/email login when OTP not sent */}
+                    {errors.general && (loginType === "mobile" || loginType === "email") && !showOTPField && (
+                      <div className="error-message" style={{ marginTop: "4px" }}>
+                        {errors.general}
+                      </div>
+                    )}
                   </div>
                   {/* General Error Message: removed for password errors, only show below input */}
 
@@ -851,6 +867,15 @@ export default function Login() {
                     type="submit"
                     className="btn auth-submit-btn"
                     disabled={isLoading}
+                    onClick={(e) => {
+                      // Check OTP validation before form submission
+                      if ((loginType === "mobile" || loginType === "email") && !otpSent) {
+                        e.preventDefault();
+                        const errorMsg = "Please generate OTP first by clicking 'Send OTP' button";
+                        setErrors({ general: errorMsg });
+                        return false;
+                      }
+                    }}
                   >
                     {isLoading ? (
                       <>

@@ -1,0 +1,208 @@
+/* Event Terms and Conditions Page Styles */
+
+.event-terms-page {
+    min-height: 100vh;
+    background: #f8f9fa;
+}
+
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    color: #666;
+}
+
+/* Hero Section - Blue Header */
+.terms-hero {
+    position: relative;
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    padding: 80px 0 60px;
+    margin-bottom: 50px;
+    overflow: hidden;
+}
+
+.terms-hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.terms-hero-title {
+    position: relative;
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    text-align: center;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.terms-breadcrumb {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+}
+
+.terms-breadcrumb span {
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.terms-breadcrumb span:first-child:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+.breadcrumb-separator {
+    color: rgba(255, 255, 255, 0.7);
+    cursor: default !important;
+}
+
+/* Content Section */
+.terms-container {
+    padding: 40px 15px;
+    max-width: 1200px;
+}
+
+.terms-content-wrapper {
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 50px;
+}
+
+.terms-content {
+    color: #333;
+    line-height: 1.8;
+    font-size: 1rem;
+}
+
+.terms-content h1,
+.terms-content h2,
+.terms-content h3,
+.terms-content h4 {
+    color: #1a1a1a;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.terms-content h1 {
+    font-size: 2rem;
+    border-bottom: 3px solid #da251c;
+    padding-bottom: 10px;
+}
+
+.terms-content h2 {
+    font-size: 1.5rem;
+    color: #da251c;
+}
+
+.terms-content h3 {
+    font-size: 1.25rem;
+}
+
+.terms-content p {
+    margin-bottom: 15px;
+    text-align: justify;
+}
+
+.terms-content ul,
+.terms-content ol {
+    margin-bottom: 20px;
+    padding-left: 30px;
+}
+
+.terms-content li {
+    margin-bottom: 10px;
+}
+
+.terms-content b,
+.terms-content strong {
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.terms-content a {
+    color: #da251c;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.terms-content a:hover {
+    color: #b91e16;
+    text-decoration: underline;
+}
+
+/* Error Message */
+.error-message {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.error-message i {
+    font-size: 4rem;
+    color: #dc3545;
+    margin-bottom: 20px;
+}
+
+.error-message p {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .terms-hero {
+        padding: 60px 0 40px;
+    }
+
+    .terms-hero-title {
+        font-size: 1.8rem;
+    }
+
+    .terms-breadcrumb {
+        font-size: 0.9rem;
+    }
+
+    .terms-content-wrapper {
+        padding: 25px 20px;
+    }
+
+    .terms-content {
+        font-size: 0.95rem;
+    }
+
+    .terms-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .terms-content h2 {
+        font-size: 1.25rem;
+    }
+
+    .terms-content h3 {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .terms-hero-title {
+        font-size: 1.5rem;
+    }
+
+    .terms-content-wrapper {
+        padding: 20px 15px;
+    }
+}

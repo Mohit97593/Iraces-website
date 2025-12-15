@@ -368,7 +368,7 @@ export default function SecureCheckout() {
                 <>
                   <div className="summary-header">
                     <img
-                      src="https://via.placeholder.com/150x100"
+                      src={require("../../assets/image/registraction.png")}
                       alt="No Registration"
                       className="summary-icon"
                     />

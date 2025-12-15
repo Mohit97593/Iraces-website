@@ -1277,7 +1277,7 @@ export default function HeroCarousel() {
           <div className="container">
             <h2 className="section-title mb-4">Quick Selection</h2>
             <div className="row g-3">
-              <div className="col-lg-6">
+              <div className="col-lg-4 col-md-4 col-sm-12">
                 <div
                   className="quick-card"
                   onClick={() => handleQuickSelectionClick("this_week")}
@@ -1288,7 +1288,7 @@ export default function HeroCarousel() {
                   <h3 className="quick-title">This Week</h3>
                 </div>
               </div>
-              <div className="col-lg-6">
+              <div className="col-lg-4 col-md-4 col-sm-12">
                 <div
                   className="quick-card"
                   onClick={() => handleQuickSelectionClick("this_month")}
@@ -1299,7 +1299,7 @@ export default function HeroCarousel() {
                   <h3 className="quick-title">This Month</h3>
                 </div>
               </div>
-              <div className="col-lg-6">
+              <div className="col-lg-4 col-md-4 col-sm-12">
                 <div
                   className="quick-card"
                   onClick={() => handleQuickSelectionClick("this_quarter")}

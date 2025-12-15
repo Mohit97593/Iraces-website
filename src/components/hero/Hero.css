@@ -929,6 +929,7 @@
   background: white;
   border-radius: 12px;
   overflow: hidden;
+  border: 1px solid #e0e0e0;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   height: 100%;
@@ -938,7 +939,8 @@
 
 .event-card1:hover {
   transform: translateY(-8px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  border: 1px solid #000;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
 }
 
 .event-card-img-wrapper {

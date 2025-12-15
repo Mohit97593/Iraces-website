@@ -1893,8 +1893,22 @@ const Profile = () => {
                 <div className="profile-card profile-card-horizontal">
                   <img
                     className="profile-avatar"
-                    src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                    src={(userData?.profile_pic && userData.profile_pic.trim() !== '')
+                      ? (userData.profile_pic.startsWith('http')
+                        ? userData.profile_pic
+                        : `https://api.iraces.in/uploads/profile_images/${userData.profile_pic}`)
+                      : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                    }
                     alt="avatar"
+                    onError={(e) => {
+                      e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                    }}
+                    style={{
+                      width: '120px',
+                      height: '120px',
+                      borderRadius: '50%',
+                      objectFit: 'cover'
+                    }}
                   />
                   <div className="profile-info">
                     <div className="profile-name">
@@ -2013,8 +2027,16 @@ const Profile = () => {
                         <div className="profile-details-card">
                           <img
                             className="profile-avatar-large"
-                            src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                            src={(userData?.profile_pic && userData.profile_pic.trim() !== '')
+                              ? (userData.profile_pic.startsWith('http')
+                                ? userData.profile_pic
+                                : `https://api.iraces.in/uploads/profile_images/${userData.profile_pic}`)
+                              : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                            }
                             alt="avatar"
+                            onError={(e) => {
+                              e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                            }}
                           />
                           <div className="profile-details-info">
                             <div className="profile-details-name">
@@ -2058,17 +2080,145 @@ const Profile = () => {
                             alignItems: "center",
                           }}
                         >
-                          <img
-                            src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                            alt="avatar"
+                          <div
                             style={{
-                              width: "140px",
-                              height: "140px",
-                              borderRadius: "50%",
-                              marginBottom: "16px",
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                              position: 'relative',
+                              width: '140px',
+                              height: '140px',
+                              borderRadius: '50%',
+                              overflow: 'hidden',
+                              cursor: 'pointer',
+                              marginBottom: '16px',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
                             }}
-                          />
+                            onMouseEnter={(e) => {
+                              const overlay = e.currentTarget.querySelector('.edit-profile-overlay');
+                              if (overlay) overlay.style.opacity = '1';
+                            }}
+                            onMouseLeave={(e) => {
+                              const overlay = e.currentTarget.querySelector('.edit-profile-overlay');
+                              if (overlay) overlay.style.opacity = '0';
+                            }}
+                          >
+                            <img
+                              src={userData?.profile_pic
+                                ? (userData.profile_pic.startsWith('http')
+                                  ? userData.profile_pic
+                                  : `https://api.iraces.in/uploads/profile_images/${userData.profile_pic}`)
+                                : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                              }
+                              alt="avatar"
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover'
+                              }}
+                            />
+                            <div
+                              className="edit-profile-overlay"
+                              style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: 'rgba(0, 0, 0, 0.6)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '15px',
+                                opacity: 0,
+                                transition: 'opacity 0.3s ease'
+                              }}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => document.getElementById('editProfilePicInput').click()}
+                                style={{
+                                  background: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '40px',
+                                  height: '40px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  transition: 'transform 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                              >
+                                <i className="fas fa-camera" style={{ color: '#da251c', fontSize: '18px' }}></i>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (window.confirm('Are you sure you want to delete your profile picture?')) {
+                                    try {
+                                      const response = await authAPI.deleteProfilePic();
+                                      if (response && response.message) {
+                                        // Refresh profile data
+                                        const profileResponse = await authAPI.getProfile();
+                                        if (profileResponse?.data?.userData) {
+                                          localStorage.setItem('userData', JSON.stringify(profileResponse.data.userData[0]));
+                                          checkAuthStatus();
+                                          setRefreshTrigger(prev => prev + 1);
+                                          showSuccessMessage(response.message || 'Profile picture deleted successfully!');
+                                        }
+                                      }
+                                    } catch (error) {
+                                      console.error('Error deleting profile picture:', error);
+                                      alert('Failed to delete profile picture');
+                                    }
+                                  }
+                                }}
+                                style={{
+                                  background: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '40px',
+                                  height: '40px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  transition: 'transform 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                              >
+                                <i className="fas fa-trash" style={{ color: '#da251c', fontSize: '18px' }}></i>
+                              </button>
+                            </div>
+                            <input
+                              type="file"
+                              id="editProfilePicInput"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={async (e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  try {
+                                    const response = await authAPI.updateProfilePic(file);
+                                    if (response && response.message) {
+                                      // Refresh profile data
+                                      const profileResponse = await authAPI.getProfile();
+                                      if (profileResponse?.data?.userData) {
+                                        localStorage.setItem('userData', JSON.stringify(profileResponse.data.userData[0]));
+                                        checkAuthStatus();
+                                        setRefreshTrigger(prev => prev + 1);
+                                        showSuccessMessage(response.message || 'Profile picture updated successfully!');
+                                      }
+                                    }
+                                  } catch (error) {
+                                    console.error('Error uploading profile picture:', error);
+                                    alert('Failed to upload profile picture');
+                                  }
+                                }
+                              }}
+                            />
+                          </div>
                         </div>
                         <div style={{ flex: 1 }}>
                           <form

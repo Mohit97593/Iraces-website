@@ -604,9 +604,8 @@ export default function SearchEvents() {
                             {event.city_name || "City"}
                           </span>
                           <button
-                            className={`search-like-btn${
-                              likedEvents[event.id] ? " liked" : ""
-                            }`}
+                            className={`search-like-btn${likedEvents[event.id] ? " liked" : ""
+                              }`}
                             onClick={() => handleToggleLike(event.id)}
                             aria-label="Like"
                           >

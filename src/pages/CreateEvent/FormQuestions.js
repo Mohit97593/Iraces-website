@@ -978,6 +978,8 @@ const FormQuestions = ({ onBack, onNext }) => {
                                         padding: "12px 16px",
                                         marginBottom: 8,
                                         fontSize: "0.95rem",
+
+                                        textAlign: "left",
                                       }}
                                     >
                                       <span style={{ color: "#333", fontWeight: 600 }}>

@@ -455,6 +455,61 @@ export const authAPI = {
     }
   },
 
+  // All Organizer Data API - Get organizer profile with events
+  allOrganizerData: async (params = {}) => {
+    try {
+      const formData = new FormData();
+      if (params.user_id) {
+        formData.append("user_id", params.user_id);
+      }
+      if (params.organiser_name) {
+        formData.append("organiser_name", params.organiser_name);
+      }
+      const response = await api.post("/organizer_details", formData);
+      return response.data;
+    } catch (error) {
+      console.error("allOrganizerData API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Event Terms and Conditions API
+  getEventTermsConditions: async (event_id) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", event_id);
+      const response = await api.post("/get_event_term_and_conditions", formData);
+      return response.data;
+    } catch (error) {
+      console.error("getEventTermsConditions API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Update Profile Picture API
+  updateProfilePic: async (profilePicFile) => {
+    try {
+      const formData = new FormData();
+      formData.append("profile_pic", profilePicFile);
+      const response = await api.post("/update_profile_pic", formData);
+      return response.data;
+    } catch (error) {
+      console.error("updateProfilePic API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Delete Profile Picture API
+  deleteProfilePic: async () => {
+    try {
+      const response = await api.post("/delete_profile");
+      return response.data;
+    } catch (error) {
+      console.error("deleteProfilePic API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Add/Edit Organizer API
   addEditOrganizer: async (payload) => {
     try {
@@ -741,6 +796,39 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       console.error("Login with OTP API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Form Questions API
+  getFormQuestions: async (payload) => {
+    try {
+      const response = await api.post("/get_form_questions", payload);
+      return response.data;
+    } catch (error) {
+      console.error("getFormQuestions API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // PhonePe Payment Initiation API
+  phonepeInitiatePayment: async (payload) => {
+    try {
+      const response = await api.post("/phonepeInitiatePayment", payload);
+      return response.data;
+    } catch (error) {
+      console.error("phonepeInitiatePayment API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Bookings API for Registration Tracker
+  getBookings: async () => {
+    try {
+      const response = await api.post("/get_bookings");
+      return response.data;
+    } catch (error) {
+      console.error("GetBookings API error:", error);
       throw error.response?.data || error.message;
     }
   },
