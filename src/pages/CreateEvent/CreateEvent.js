@@ -38,6 +38,7 @@ export default function CreateEvent() {
   const [cityName, setCityName] = useState("");
   const [paidType, setPaidType] = useState("");
   const [bannerImageUrl, setBannerImageUrl] = useState(null);
+  const [organizerGST, setOrganizerGST] = useState(false); // Track organizer's GST setting
   // Today's date and year
   const today = new Date();
   const day = today.getDate();
@@ -579,6 +580,18 @@ export default function CreateEvent() {
       const profileRes = await authAPI.getProfile();
       if (profileRes && profileRes.data) {
         setProfile(profileRes.data);
+      }
+
+      // Call get organizer details API to fetch GST setting
+      const organizerRes = await authAPI.getOrganizerDetails();
+      if (
+        organizerRes &&
+        organizerRes.data &&
+        organizerRes.data.organizerData &&
+        organizerRes.data.organizerData.length > 0
+      ) {
+        const organizerData = organizerRes.data.organizerData[0];
+        setOrganizerGST(organizerData.gst === 1);
       }
 
       // Call get category API
@@ -1417,9 +1430,9 @@ export default function CreateEvent() {
                       baseAmount > 0
                         ? Math.round(paymentGatewayFee * 0.18 * 100) / 100
                         : 0;
-                    // Registration GST: 18% of base registration fee
+                    // Registration GST: 18% of base registration fee (only if organizer has GST enabled)
                     const registrationGST =
-                      baseAmount > 0
+                      organizerGST && baseAmount > 0
                         ? Math.round(baseAmount * 0.18 * 100) / 100
                         : 0;
                     const totalPayable =
@@ -1431,7 +1444,32 @@ export default function CreateEvent() {
                       platformFeeGST +
                       paymentGatewayGST +
                       registrationGST;
-                    const receivableAmount = baseAmount;
+
+                    // Get fee payer information from ticketCalculation
+                    const ticketCalc = eventFormData.ticketCalculation || {};
+                    const convenienceFeePlayer = ticketCalc.convenienceFeePlayer || "Participant";
+                    const gatewayFeePlayer = ticketCalc.gatewayFeePlayer || "Participant";
+
+                    // Calculate receivable amount based on who pays the fees
+                    let receivableAmount = baseAmount;
+
+                    // Deduct convenience fee + platform fee if organiser pays convenience fee
+                    // For ₹100: ₹100 - ₹2 - ₹0.36 - ₹5 - ₹0.90 = ₹91.74
+                    if (convenienceFeePlayer === "Organiser") {
+                      receivableAmount -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
+                    }
+
+                    // Deduct gateway fee if organiser pays gateway fee
+                    // Additional deduction: ₹1.85 + ₹0.33 = ₹2.18
+                    // Total: ₹91.74 - ₹2.18 = ₹89.56
+                    if (gatewayFeePlayer === "Organiser") {
+                      receivableAmount -= (paymentGatewayFee + paymentGatewayGST);
+                    }
+
+                    // Add Registration Fee GST if organizer has GST enabled
+                    if (organizerGST && registrationGST > 0) {
+                      receivableAmount += registrationGST;
+                    }
                     return (
                       <>
                         {/* Header Section */}
@@ -1553,27 +1591,29 @@ export default function CreateEvent() {
                               ₹{paymentGatewayFee.toFixed(2)}
                             </span>
                           </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              padding: "8px 0",
-                            }}
-                          >
-                            <span style={{ fontSize: "0.95rem", color: "#666" }}>
-                              Registration Fee GST 18%
-                            </span>
-                            <span
+                          {organizerGST && (
+                            <div
                               style={{
-                                fontSize: "0.95rem",
-                                fontWeight: 500,
-                                color: "#000",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                padding: "8px 0",
                               }}
                             >
-                              ₹{registrationGST.toFixed(2)}
-                            </span>
-                          </div>
+                              <span style={{ fontSize: "0.95rem", color: "#666" }}>
+                                Registration Fee GST 18%
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: "0.95rem",
+                                  fontWeight: 500,
+                                  color: "#000",
+                                }}
+                              >
+                                ₹{registrationGST.toFixed(2)}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         {/* GST Details Group */}

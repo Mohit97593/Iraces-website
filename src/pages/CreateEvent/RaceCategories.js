@@ -70,12 +70,36 @@ export default function RaceCategories({
     }
   };
 
-  const handleNewClick = () => {
+  const handleNewClick = async () => {
+    // If there are existing tickets, fetch the last one's details to use as template
+    if (tickets && tickets.length > 0) {
+      try {
+        const lastTicket = tickets[tickets.length - 1];
+        const res = await authAPI.getTicketDetail(lastTicket.id);
+        if (res && res.data && res.data.Ticket && res.data.Ticket.length > 0) {
+          const ticketData = res.data.Ticket[0];
+          // Remove ID and clear ticket name so it creates a new ticket
+          const template = { ...ticketData };
+          delete template.id;
+          delete template.ticket_id;
+          template.ticket_name = ""; // Clear name for new category
+          setEditTicket(template);
+        } else {
+          setEditTicket(null);
+        }
+      } catch (err) {
+        console.error("Error fetching ticket details:", err);
+        setEditTicket(null);
+      }
+    } else {
+      setEditTicket(null);
+    }
     setShowForm(true);
     if (setShowPreview) setShowPreview(false);
   };
 
   const handleCancel = () => {
+    setEditTicket(null);
     setShowForm(false);
     if (setShowPreview) setShowPreview(true);
   };

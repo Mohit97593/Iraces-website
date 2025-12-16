@@ -69,8 +69,8 @@ const RaceCategoryForm = ({
       editTicket?.discount === 1
         ? "Percentage"
         : editTicket?.discount === 2
-        ? "Flat"
-        : "Percentage",
+          ? "Flat"
+          : "Percentage",
     discountValue: editTicket?.discount_value || "",
     ebStartDate: editTicket?.eb_start_date || "",
     ebStartTime: editTicket?.eb_start_time || "",
@@ -78,10 +78,13 @@ const RaceCategoryForm = ({
     ebEndTime: editTicket?.eb_end_time || "",
   });
 
+  // Validation errors state
+  const [errors, setErrors] = useState({});
+
   // Update form fields when editTicket changes
   React.useEffect(() => {
     if (editTicket) {
-      setFormData({
+      const updatedFormData = {
         ticketName: editTicket.ticket_name ?? "",
         category: editTicket.category ?? "",
         maxRegistration: editTicket.total_quantity ?? "",
@@ -106,20 +109,82 @@ const RaceCategoryForm = ({
           editTicket.discount === 1
             ? "Percentage"
             : editTicket.discount === 2
-            ? "Flat"
-            : "Percentage",
+              ? "Flat"
+              : "Percentage",
         discountValue: editTicket.discount_value ?? "",
         ebStartDate: editTicket.eb_start_date ?? "",
         ebStartTime: editTicket.eb_start_time ?? "",
         ebEndDate: editTicket.eb_end_date ?? "",
         ebEndTime: editTicket.eb_end_time ?? "",
-      });
+      };
+
+      setFormData(updatedFormData);
       setShowAdvanced(editTicket.advanced_settings === 1);
       setEarlyBird(editTicket.early_bird === 1);
       setApplyAgeLimit(editTicket.apply_age_limit === 1);
+
       // Ensure correct section is shown based on paidType
       if (setPaidType) {
         setPaidType(editTicket.ticket_status === 2 ? "Free" : "Paid");
+      }
+
+      // Calculate and update eventFormData with edited ticket's price
+      const price = Number(editTicket.ticket_price) || 0;
+      if (price > 0) {
+        const convenienceFee = Math.min(0.02 * price, 40);
+        const platformFee = 5;
+        const paymentGatewayFeeRaw = 0.0185 * price;
+        const paymentGatewayFee = Math.round(paymentGatewayFeeRaw * 20) / 20;
+        const convenienceFeeGST = Math.round(convenienceFee * 0.18 * 100) / 100;
+        const platformFeeGST = Math.round(platformFee * 0.18 * 100) / 100;
+        const paymentGatewayGST = Math.round(paymentGatewayFee * 0.18 * 100) / 100;
+        const registrationGST = Math.round(price * 0.18 * 100) / 100;
+
+        const totalPayable =
+          price +
+          convenienceFee +
+          platformFee +
+          paymentGatewayFee +
+          convenienceFeeGST +
+          platformFeeGST +
+          paymentGatewayGST +
+          registrationGST;
+
+        let receivableAmount = price;
+
+        if (updatedFormData.convenienceFeePlayer === "Organiser") {
+          receivableAmount -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
+        }
+
+        if (updatedFormData.gatewayFeePlayer === "Organiser") {
+          receivableAmount -= (paymentGatewayFee + paymentGatewayGST);
+        }
+
+        setEventFormData({
+          ...eventFormData,
+          raceCategoryPrice: editTicket.ticket_price,
+          ticketCalculation: {
+            baseAmount: price,
+            convenienceFeeBase: convenienceFee,
+            convenienceFee: convenienceFee,
+            convenienceFeeGST: convenienceFeeGST,
+            totalConvenienceFees: convenienceFee + convenienceFeeGST,
+            platformFee: platformFee,
+            platformFeeGST: platformFeeGST,
+            totalPlatformFees: platformFee + platformFeeGST,
+            paymentGatewayFee: 1.85,
+            paymentGatewayBuyer: paymentGatewayFee,
+            paymentGatewayGST: paymentGatewayGST,
+            totalPG: paymentGatewayFee + paymentGatewayGST,
+            registrationAmount: price,
+            registrationGST: registrationGST,
+            netRegistrationAmount: price + convenienceFee + convenienceFeeGST,
+            totalPayable: totalPayable,
+            receivableAmount: receivableAmount,
+            convenienceFeePlayer: updatedFormData.convenienceFeePlayer,
+            gatewayFeePlayer: updatedFormData.gatewayFeePlayer,
+          },
+        });
       }
     }
   }, [editTicket]);
@@ -138,9 +203,120 @@ const RaceCategoryForm = ({
     }));
   };
 
+  // Helper function to recalculate fees when fee payer changes
+  const recalculateFees = (updatedFormData) => {
+    const price = Number(updatedFormData.raceCategoryPrice || eventFormData.raceCategoryPrice) || 0;
+
+    if (price <= 0) return;
+
+    // Calculate all fees
+    const convenienceFee = price > 0 ? Math.min(0.02 * price, 40) : 0;
+    const platformFee = price > 0 ? 5 : 0;
+    const paymentGatewayFeeRaw = price > 0 ? 0.0185 * price : 0;
+    const paymentGatewayFee = price > 0 ? Math.round(paymentGatewayFeeRaw * 20) / 20 : 0;
+    const convenienceFeeGST = price > 0 ? Math.round(convenienceFee * 0.18 * 100) / 100 : 0;
+    const platformFeeGST = price > 0 ? Math.round(platformFee * 0.18 * 100) / 100 : 0;
+    const paymentGatewayGST = price > 0 ? Math.round(paymentGatewayFee * 0.18 * 100) / 100 : 0;
+    const registrationGST = price > 0 ? Math.round(price * 0.18 * 100) / 100 : 0;
+
+    const totalPayable =
+      price +
+      convenienceFee +
+      platformFee +
+      paymentGatewayFee +
+      convenienceFeeGST +
+      platformFeeGST +
+      paymentGatewayGST +
+      registrationGST;
+
+    // Calculate receivable amount based on who pays the fees
+    let receivableAmount = price;
+
+    // Deduct convenience fee + platform fee if organiser pays convenience fee
+    if (updatedFormData.convenienceFeePlayer === "Organiser") {
+      receivableAmount -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
+    }
+
+    // Deduct gateway fee if organiser pays gateway fee
+    if (updatedFormData.gatewayFeePlayer === "Organiser") {
+      receivableAmount -= (paymentGatewayFee + paymentGatewayGST);
+    }
+
+    setEventFormData({
+      ...eventFormData,
+      raceCategoryPrice: price,
+      ticketCalculation: {
+        baseAmount: price,
+        convenienceFeeBase: convenienceFee,
+        convenienceFee: convenienceFee,
+        convenienceFeeGST: convenienceFeeGST,
+        totalConvenienceFees: convenienceFee + convenienceFeeGST,
+        platformFee: platformFee,
+        platformFeeGST: platformFeeGST,
+        totalPlatformFees: platformFee + platformFeeGST,
+        paymentGatewayFee: 1.85,
+        paymentGatewayBuyer: paymentGatewayFee,
+        paymentGatewayGST: paymentGatewayGST,
+        totalPG: paymentGatewayFee + paymentGatewayGST,
+        registrationAmount: price,
+        registrationGST: registrationGST,
+        netRegistrationAmount: price + convenienceFee + convenienceFeeGST,
+        totalPayable: totalPayable,
+        receivableAmount: receivableAmount,
+        convenienceFeePlayer: updatedFormData.convenienceFeePlayer,
+        gatewayFeePlayer: updatedFormData.gatewayFeePlayer,
+      },
+    });
+  };
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate required fields
+    const newErrors = {};
+
+    if (!formData.ticketName || formData.ticketName.trim() === "") {
+      newErrors.ticketName = "Ticket name is required";
+    }
+
+    if (!formData.category || formData.category === "" || formData.category === 0) {
+      newErrors.category = "Category is required";
+    }
+
+    if (!formData.maxRegistration || formData.maxRegistration <= 0) {
+      newErrors.maxRegistration = "Max registration is required and must be greater than 0";
+    }
+
+    if (paidType !== "Free" && (!formData.raceCategoryPrice || formData.raceCategoryPrice <= 0)) {
+      newErrors.raceCategoryPrice = "Price is required and must be greater than 0";
+    }
+
+    if (!formData.registrationStartDate) {
+      newErrors.registrationStartDate = "Start date is required";
+    }
+
+    if (!formData.registrationStartTime) {
+      newErrors.registrationStartTime = "Start time is required";
+    }
+
+    if (!formData.registrationEndDate) {
+      newErrors.registrationEndDate = "End date is required";
+    }
+
+    if (!formData.registrationEndTime) {
+      newErrors.registrationEndTime = "End time is required";
+    }
+
+    // If there are errors, set them and stop submission
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setLoading(false);
+      return;
+    }
+
+    // Clear errors if validation passes
+    setErrors({});
     setLoading(true);
 
     try {
@@ -320,16 +496,20 @@ const RaceCategoryForm = ({
             <input
               type="text"
               placeholder="Race Category Name *"
-              required
               value={formData.ticketName}
               onChange={(e) => handleChange("ticketName", e.target.value)}
               style={{
                 width: "100%",
                 padding: "10px",
                 borderRadius: 8,
-                border: "1px solid #ddd",
+                border: errors.ticketName ? "1px solid #d63031" : "1px solid #ddd",
               }}
             />
+            {errors.ticketName && (
+              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                {errors.ticketName}
+              </div>
+            )}
           </div>
           <div style={{ flex: 1 }}>
             <label
@@ -338,25 +518,29 @@ const RaceCategoryForm = ({
               Category <span className="required">*</span>
             </label>
             <select
-              required
               value={formData.category}
               onChange={(e) => handleChange("category", Number(e.target.value))}
               style={{
                 width: "100%",
                 padding: "10px",
                 borderRadius: 8,
-                border: "1px solid #ddd",
+                border: errors.category ? "1px solid #d63031" : "1px solid #ddd",
               }}
             >
               <option value="">-- Select Category --</option>
               {eventCategories.length > 0
                 ? eventCategories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))
                 : null}
             </select>
+            {errors.category && (
+              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                {errors.category}
+              </div>
+            )}
           </div>
         </div>
 
@@ -370,16 +554,20 @@ const RaceCategoryForm = ({
             <input
               type="number"
               placeholder="Maximum Registration *"
-              required
               value={formData.maxRegistration}
               onChange={(e) => handleChange("maxRegistration", e.target.value)}
               style={{
                 width: "100%",
                 padding: "10px",
                 borderRadius: 8,
-                border: "1px solid #ddd",
+                border: errors.maxRegistration ? "1px solid #d63031" : "1px solid #ddd",
               }}
             />
+            {errors.maxRegistration && (
+              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                {errors.maxRegistration}
+              </div>
+            )}
           </div>
           <div style={{ flex: 1 }}>
             {/* Hide Race Category Price input if Free */}
@@ -393,12 +581,11 @@ const RaceCategoryForm = ({
                 <input
                   type="number"
                   placeholder="Race Category Price *"
-                  required
                   style={{
                     width: "100%",
                     padding: "10px",
                     borderRadius: 8,
-                    border: "1px solid #ddd",
+                    border: errors.raceCategoryPrice ? "1px solid #d63031" : "1px solid #ddd",
                   }}
                   value={
                     formData.raceCategoryPrice ||
@@ -445,6 +632,22 @@ const RaceCategoryForm = ({
                       paymentGatewayGST +
                       registrationGST;
 
+                    // Calculate receivable amount based on who pays the fees
+                    let receivableAmount = price;
+
+                    // Deduct convenience fee + platform fee if organiser pays convenience fee
+                    // For ₹100: ₹100 - ₹2 - ₹0.36 - ₹5 - ₹0.90 = ₹91.74
+                    if (formData.convenienceFeePlayer === "Organiser") {
+                      receivableAmount -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
+                    }
+
+                    // Deduct gateway fee if organiser pays gateway fee
+                    // Additional deduction: ₹1.85 + ₹0.33 = ₹2.18
+                    // Total: ₹91.74 - ₹2.18 = ₹89.56
+                    if (formData.gatewayFeePlayer === "Organiser") {
+                      receivableAmount -= (paymentGatewayFee + paymentGatewayGST);
+                    }
+
                     setEventFormData({
                       ...eventFormData,
                       raceCategoryPrice: e.target.value,
@@ -467,11 +670,18 @@ const RaceCategoryForm = ({
                         netRegistrationAmount:
                           price + convenienceFee + convenienceFeeGST,
                         totalPayable: totalPayable,
-                        receivableAmount: price,
+                        receivableAmount: receivableAmount,
+                        convenienceFeePlayer: formData.convenienceFeePlayer,
+                        gatewayFeePlayer: formData.gatewayFeePlayer,
                       },
                     });
                   }}
                 />
+                {errors.raceCategoryPrice && (
+                  <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                    {errors.raceCategoryPrice}
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -530,19 +740,50 @@ const RaceCategoryForm = ({
             <input
               type="date"
               placeholder="dd-mm-yyyy"
-              required
               min={todayDate}
               value={formData.registrationStartDate}
-              onChange={(e) =>
-                handleChange("registrationStartDate", e.target.value)
-              }
+              onChange={(e) => {
+                handleChange("registrationStartDate", e.target.value);
+
+                // Real-time validation for past dates
+                const newErrors = { ...errors };
+                if (e.target.value) {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const selectedDate = new Date(e.target.value);
+
+                  if (selectedDate < today) {
+                    newErrors.registrationStartDate = "Start date cannot be in the past";
+                  } else {
+                    delete newErrors.registrationStartDate;
+                  }
+
+                  // Also check if end date needs to be revalidated
+                  if (formData.registrationEndDate) {
+                    const endDate = new Date(formData.registrationEndDate);
+                    if (endDate < selectedDate) {
+                      newErrors.registrationEndDate = "End date cannot be before start date";
+                    } else {
+                      delete newErrors.registrationEndDate;
+                    }
+                  }
+                } else {
+                  delete newErrors.registrationStartDate;
+                }
+                setErrors(newErrors);
+              }}
               style={{
                 width: "100%",
                 padding: "10px",
                 borderRadius: 8,
-                border: "1px solid #ddd",
+                border: errors.registrationStartDate ? "1px solid #d63031" : "1px solid #ddd",
               }}
             />
+            {errors.registrationStartDate && (
+              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                {errors.registrationStartDate}
+              </div>
+            )}
           </div>
           <div style={{ flex: 1 }}>
             <label
@@ -553,7 +794,6 @@ const RaceCategoryForm = ({
             <input
               type="time"
               placeholder="--:--"
-              required
               value={formData.registrationStartTime}
               onChange={(e) =>
                 handleChange("registrationStartTime", e.target.value)
@@ -562,9 +802,14 @@ const RaceCategoryForm = ({
                 width: "100%",
                 padding: "10px",
                 borderRadius: 8,
-                border: "1px solid #ddd",
+                border: errors.registrationStartTime ? "1px solid #d63031" : "1px solid #ddd",
               }}
             />
+            {errors.registrationStartTime && (
+              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                {errors.registrationStartTime}
+              </div>
+            )}
           </div>
         </div>
 
@@ -578,19 +823,39 @@ const RaceCategoryForm = ({
             <input
               type="date"
               placeholder="dd-mm-yyyy"
-              required
               min={formData.registrationStartDate || todayDate}
               value={formData.registrationEndDate}
-              onChange={(e) =>
-                handleChange("registrationEndDate", e.target.value)
-              }
+              onChange={(e) => {
+                handleChange("registrationEndDate", e.target.value);
+
+                // Real-time validation for end date
+                const newErrors = { ...errors };
+                if (e.target.value && formData.registrationStartDate) {
+                  const startDate = new Date(formData.registrationStartDate);
+                  const selectedEndDate = new Date(e.target.value);
+
+                  if (selectedEndDate < startDate) {
+                    newErrors.registrationEndDate = "End date cannot be before start date";
+                  } else {
+                    delete newErrors.registrationEndDate;
+                  }
+                } else {
+                  delete newErrors.registrationEndDate;
+                }
+                setErrors(newErrors);
+              }}
               style={{
                 width: "100%",
                 padding: "10px",
                 borderRadius: 8,
-                border: "1px solid #ddd",
+                border: errors.registrationEndDate ? "1px solid #d63031" : "1px solid #ddd",
               }}
             />
+            {errors.registrationEndDate && (
+              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                {errors.registrationEndDate}
+              </div>
+            )}
           </div>
           <div style={{ flex: 1 }}>
             <label
@@ -601,7 +866,6 @@ const RaceCategoryForm = ({
             <input
               type="time"
               placeholder="--:--"
-              required
               value={formData.registrationEndTime}
               min={
                 formData.registrationEndDate === formData.registrationStartDate
@@ -615,9 +879,14 @@ const RaceCategoryForm = ({
                 width: "100%",
                 padding: "10px",
                 borderRadius: 8,
-                border: "1px solid #ddd",
+                border: errors.registrationEndTime ? "1px solid #d63031" : "1px solid #ddd",
               }}
             />
+            {errors.registrationEndTime && (
+              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                {errors.registrationEndTime}
+              </div>
+            )}
           </div>
         </div>
 
@@ -697,9 +966,12 @@ const RaceCategoryForm = ({
                     border: "1px solid #ddd",
                   }}
                   value={formData.convenienceFeePlayer}
-                  onChange={(e) =>
-                    handleChange("convenienceFeePlayer", e.target.value)
-                  }
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    handleChange("convenienceFeePlayer", newValue);
+                    const updatedFormData = { ...formData, convenienceFeePlayer: newValue };
+                    recalculateFees(updatedFormData);
+                  }}
                 >
                   <option value="Organiser">Organiser</option>
                   <option value="Participant">Participant</option>
@@ -721,9 +993,12 @@ const RaceCategoryForm = ({
                     border: "1px solid #ddd",
                   }}
                   value={formData.gatewayFeePlayer}
-                  onChange={(e) =>
-                    handleChange("gatewayFeePlayer", e.target.value)
-                  }
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    handleChange("gatewayFeePlayer", newValue);
+                    const updatedFormData = { ...formData, gatewayFeePlayer: newValue };
+                    recalculateFees(updatedFormData);
+                  }}
                 >
                   <option value="Organiser">Organiser</option>
                   <option value="Participant">Participant</option>

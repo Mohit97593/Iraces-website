@@ -409,6 +409,7 @@ const Profile = () => {
     }
 
     // Fetch events
+
     setLoadingEvents(true);
     try {
       const eventsResponse = await authAPI.getEvents();
