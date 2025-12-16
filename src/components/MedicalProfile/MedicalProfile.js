@@ -218,6 +218,26 @@ const MedicalProfile = ({ onUpdate }) => {
 
   const handleSave = async () => {
     try {
+      // Validate Height
+      if (!height || height.trim() === "") {
+        setHeightError("Height is required");
+        return;
+      }
+      if (Number(height) <= 0) {
+        setHeightError("Height must be a positive number");
+        return;
+      }
+
+      // Validate Weight
+      if (!weight || weight.trim() === "") {
+        setWeightError("Weight is required");
+        return;
+      }
+      if (Number(weight) <= 0) {
+        setWeightError("Weight must be a positive number");
+        return;
+      }
+
       // Validate Family Doctor Contact Number
       if (!familyDoctorContact || familyDoctorContact.length !== 10) {
         setFamilyDoctorContactError(
@@ -631,7 +651,10 @@ const MedicalProfile = ({ onUpdate }) => {
                 </select>
               </div>
               <div className="edit-field">
-                <label>What is your height(Cm)?</label>
+                <label>
+                  What is your height(Cm)?
+                  <span style={{ color: 'red' }}>*</span>
+                </label>
                 <input
                   type="number"
                   placeholder="Height(Cm)*"
@@ -656,7 +679,10 @@ const MedicalProfile = ({ onUpdate }) => {
                 )}
               </div>
               <div className="edit-field full-width">
-                <label>What is your current weight(Kg)</label>
+                <label>
+                  What is your current weight(Kg)
+                  <span style={{ color: 'red' }}>*</span>
+                </label>
                 <input
                   type="number"
                   placeholder="Weight(Kg)*"
@@ -905,16 +931,18 @@ const MedicalProfile = ({ onUpdate }) => {
                   <span className="toggle-slider"></span>
                 </label>
               </div>
-              <div className="edit-field">
-                <label>Hospitalization Details</label>
-                <input
-                  type="text"
-                  placeholder="If Yes details of Hospital"
-                  value={hospitalizationDetails}
-                  onChange={(e) => setHospitalizationDetails(e.target.value)}
-                  className="edit-input"
-                />
-              </div>
+              {(hasHospitalized === "Yes" || hasHospitalized === "1") && (
+                <div className="edit-field">
+                  <label>Hospitalization Details</label>
+                  <input
+                    type="text"
+                    placeholder="If Yes details of Hospital"
+                    value={hospitalizationDetails}
+                    onChange={(e) => setHospitalizationDetails(e.target.value)}
+                    className="edit-input"
+                  />
+                </div>
+              )}
               <div className="edit-field toggle-field">
                 <label>Are you currently experiencing any infections?</label>
                 <label className="toggle-switch">
@@ -941,16 +969,18 @@ const MedicalProfile = ({ onUpdate }) => {
                   <span className="toggle-slider"></span>
                 </label>
               </div>
-              <div className="edit-field">
-                <label>Stage of Pregnancy</label>
-                <input
-                  type="text"
-                  placeholder="If Yes Stage of Pregnancy"
-                  value={stagePregnancy}
-                  onChange={(e) => setStagePregnancy(e.target.value)}
-                  className="edit-input"
-                />
-              </div>
+              {(isPregnant === "Yes" || isPregnant === "1") && (
+                <div className="edit-field">
+                  <label>Stage of Pregnancy</label>
+                  <input
+                    type="text"
+                    placeholder="If Yes Stage of Pregnancy"
+                    value={stagePregnancy}
+                    onChange={(e) => setStagePregnancy(e.target.value)}
+                    className="edit-input"
+                  />
+                </div>
+              )}
               <div className="edit-field toggle-field">
                 <label>Have you suffered from Covid-19?</label>
                 <label className="toggle-switch">
@@ -965,6 +995,7 @@ const MedicalProfile = ({ onUpdate }) => {
                 </label>
               </div>
             </div>
+
 
             {/* Medication and Allergies */}
             <div className="section-header">Medication and Allergies</div>
@@ -984,16 +1015,18 @@ const MedicalProfile = ({ onUpdate }) => {
                   <span className="toggle-slider"></span>
                 </label>
               </div>
-              <div className="edit-field">
-                <label>Details of Medication</label>
-                <input
-                  type="text"
-                  placeholder="If Yes details of Medication"
-                  value={medicationDetails}
-                  onChange={(e) => setMedicationDetails(e.target.value)}
-                  className="edit-input"
-                />
-              </div>
+              {(underMedication === "Yes" || underMedication === "1") && (
+                <div className="edit-field">
+                  <label>Details of Medication</label>
+                  <input
+                    type="text"
+                    placeholder="If Yes details of Medication"
+                    value={medicationDetails}
+                    onChange={(e) => setMedicationDetails(e.target.value)}
+                    className="edit-input"
+                  />
+                </div>
+              )}
               <div className="edit-field toggle-field">
                 <label>Current Medications</label>
                 <label className="toggle-switch">
@@ -1009,16 +1042,18 @@ const MedicalProfile = ({ onUpdate }) => {
                   <span className="toggle-slider"></span>
                 </label>
               </div>
-              <div className="edit-field">
-                <label>Details of Medication</label>
-                <input
-                  type="text"
-                  placeholder="Mention Names"
-                  value={medicationsName}
-                  onChange={(e) => setMedicationsName(e.target.value)}
-                  className="edit-input"
-                />
-              </div>
+              {(currentMedications === "Yes" || currentMedications === "1") && (
+                <div className="edit-field">
+                  <label>Details of Medication</label>
+                  <input
+                    type="text"
+                    placeholder="Mention Names"
+                    value={medicationsName}
+                    onChange={(e) => setMedicationsName(e.target.value)}
+                    className="edit-input"
+                  />
+                </div>
+              )}
               <div className="edit-field">
                 <label>Do you have any known allergies?</label>
                 <input
@@ -1044,16 +1079,18 @@ const MedicalProfile = ({ onUpdate }) => {
                   <span className="toggle-slider"></span>
                 </label>
               </div>
-              <div className="edit-field full-width">
-                <label>Details of Drug Allergy</label>
-                <input
-                  type="text"
-                  placeholder="If Yes details of Drug Allergy"
-                  value={drugAllergyDetails}
-                  onChange={(e) => setDrugAllergyDetails(e.target.value)}
-                  className="edit-input"
-                />
-              </div>
+              {(hasDrugAllergies === "Yes" || hasDrugAllergies === "1") && (
+                <div className="edit-field full-width">
+                  <label>Details of Drug Allergy</label>
+                  <input
+                    type="text"
+                    placeholder="If Yes details of Drug Allergy"
+                    value={drugAllergyDetails}
+                    onChange={(e) => setDrugAllergyDetails(e.target.value)}
+                    className="edit-input"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Healthcare Providers */}
