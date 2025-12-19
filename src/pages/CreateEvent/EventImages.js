@@ -292,6 +292,7 @@ export default function EventImages({ onBack, onNext }) {
                 fontSize: "0.92em",
                 marginTop: 4,
               }}
+
             >
               {errorMsg}
             </div>

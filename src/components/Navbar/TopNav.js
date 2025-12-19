@@ -23,9 +23,6 @@ export default function TopNav() {
   const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
 
-  // Show search bar and location icon only on landing page with /in/:citySlug route
-  const isLandingPage = location.pathname.startsWith("/in/");
-
   // Close dropdown and mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -442,139 +439,137 @@ export default function TopNav() {
             </span>
           </button>
 
-          {/* Desktop Search Bar Section - Only show on landing page */}
-          {isLandingPage && (
-            <div className="d-none d-lg-flex justify-content-center flex-grow-1 align-items-center gap-3">
+          {/* Desktop Search Bar Section - Show on all pages */}
+          <div className="d-none d-lg-flex justify-content-center flex-grow-1 align-items-center gap-3">
+            <button
+              className="location-icon-btn"
+              onClick={handleOpenLocationOverlay}
+              style={{
+                background: "#fff",
+                border: "none",
+                cursor: "pointer",
+                borderRadius: "18px",
+                padding: "13px 16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                color: "#da251c",
+                fontSize: "16px",
+                fontWeight: "500",
+              }}
+            >
+              <i
+                className="fas fa-map-marker-alt"
+                style={{ fontSize: "18px" }}
+              ></i>
+              {/* <span>Detect my location</span> */}
+            </button>
+            <div
+              className="search-container d-flex align-items-center"
+              style={{ position: "relative" }}
+            >
+              <div
+                style={{ flexGrow: 1, position: "relative" }}
+                ref={searchInputRef}
+              >
+                <form
+                  onSubmit={handleSearch}
+                  className="search-input-container"
+                >
+                  <input
+                    type="text"
+                    className="form-control search-input"
+                    placeholder="Search Here"
+                    value={searchQuery}
+                    onChange={handleSearchInputChange}
+                    style={{
+                      border: "none",
+                      outline: "none",
+                      backgroundColor: "transparent",
+                      fontSize: "16px",
+                      fontWeight: "400",
+                      color: "#666",
+                      padding: "8px 12px",
+                    }}
+                  />
+                </form>
+                {/* Event Suggestions Dropdown for Desktop */}
+                {showEventSuggestions && eventSuggestions.length > 0 && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      left: 0,
+                      right: 0,
+                      backgroundColor: "white",
+                      border: "1px solid #ddd",
+                      borderRadius: "8px",
+                      marginTop: "5px",
+                      maxHeight: "250px",
+                      overflowY: "auto",
+                      zIndex: 1000,
+                      boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                    }}
+                  >
+                    {eventSuggestions.map((event) => (
+                      <div
+                        key={event.id}
+                        onClick={() => handleEventSuggestionClick(event.name)}
+                        style={{
+                          padding: "12px 15px",
+                          cursor: "pointer",
+                          borderBottom: "1px solid #f0f0f0",
+                          fontSize: "14px",
+                          color: "#333",
+                          transition: "background-color 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#f8f9fa";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "white";
+                        }}
+                      >
+                        <i
+                          className="fas fa-calendar-alt me-2"
+                          style={{ color: "#da251c" }}
+                        ></i>
+                        {event.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
-                className="location-icon-btn"
-                onClick={handleOpenLocationOverlay}
+                type="button"
+                className="search-btn"
+                onClick={handleSearch}
                 style={{
-                  background: "#fff",
+                  backgroundColor: "#da251c",
                   border: "none",
-                  cursor: "pointer",
-                  borderRadius: "18px",
-                  padding: "13px 16px",
+                  borderRadius: "50%",
+                  width: "40px",
+                  height: "40px",
                   display: "flex",
                   alignItems: "center",
-                  gap: "8px",
-                  color: "#da251c",
-                  fontSize: "16px",
-                  fontWeight: "500",
+                  justifyContent: "center",
+                  color: "white",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = "#b91e14";
+                  e.target.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = "#da251c";
+                  e.target.style.transform = "scale(1)";
                 }}
               >
-                <i
-                  className="fas fa-map-marker-alt"
-                  style={{ fontSize: "18px" }}
-                ></i>
-                {/* <span>Detect my location</span> */}
+                <i className="fas fa-search" style={{ fontSize: "16px" }}></i>
               </button>
-              <div
-                className="search-container d-flex align-items-center"
-                style={{ position: "relative" }}
-              >
-                <div
-                  style={{ flexGrow: 1, position: "relative" }}
-                  ref={searchInputRef}
-                >
-                  <form
-                    onSubmit={handleSearch}
-                    className="search-input-container"
-                  >
-                    <input
-                      type="text"
-                      className="form-control search-input"
-                      placeholder="Search Here"
-                      value={searchQuery}
-                      onChange={handleSearchInputChange}
-                      style={{
-                        border: "none",
-                        outline: "none",
-                        backgroundColor: "transparent",
-                        fontSize: "16px",
-                        fontWeight: "400",
-                        color: "#666",
-                        padding: "8px 12px",
-                      }}
-                    />
-                  </form>
-                  {/* Event Suggestions Dropdown for Desktop */}
-                  {showEventSuggestions && eventSuggestions.length > 0 && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
-                        right: 0,
-                        backgroundColor: "white",
-                        border: "1px solid #ddd",
-                        borderRadius: "8px",
-                        marginTop: "5px",
-                        maxHeight: "250px",
-                        overflowY: "auto",
-                        zIndex: 1000,
-                        boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-                      }}
-                    >
-                      {eventSuggestions.map((event) => (
-                        <div
-                          key={event.id}
-                          onClick={() => handleEventSuggestionClick(event.name)}
-                          style={{
-                            padding: "12px 15px",
-                            cursor: "pointer",
-                            borderBottom: "1px solid #f0f0f0",
-                            fontSize: "14px",
-                            color: "#333",
-                            transition: "background-color 0.2s",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#f8f9fa";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "white";
-                          }}
-                        >
-                          <i
-                            className="fas fa-calendar-alt me-2"
-                            style={{ color: "#da251c" }}
-                          ></i>
-                          {event.name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  className="search-btn"
-                  onClick={handleSearch}
-                  style={{
-                    backgroundColor: "#da251c",
-                    border: "none",
-                    borderRadius: "50%",
-                    width: "40px",
-                    height: "40px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "white",
-                    cursor: "pointer",
-                    transition: "all 0.3s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = "#b91e14";
-                    e.target.style.transform = "scale(1.05)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = "#da251c";
-                    e.target.style.transform = "scale(1)";
-                  }}
-                >
-                  <i className="fas fa-search" style={{ fontSize: "16px" }}></i>
-                </button>
-              </div>
             </div>
-          )}
+          </div>
 
           {/* Popular Cities Overlay */}
           {showLocationOverlay && (
