@@ -14,6 +14,9 @@ const RaceCategoryForm = ({
   eventFormData,
   setEventFormData,
   editTicket,
+  organizerGST,
+  collectGST,
+  taxType,
 }) => {
   const [loading, setLoading] = useState(false);
   const [eventCategories, setEventCategories] = useState([]);
@@ -131,14 +134,32 @@ const RaceCategoryForm = ({
       // Calculate and update eventFormData with edited ticket's price
       const price = Number(editTicket.ticket_price) || 0;
       if (price > 0) {
-        const convenienceFee = Math.min(0.02 * price, 40);
+        // Calculate amount for convenience fee calculation
+        // Add GST only if: organizerGST=true AND collectGST=true AND taxType='exclusive'
+        const amountForConvenienceFee = (organizerGST && collectGST && taxType === 'exclusive')
+          ? price + (price * 0.18)
+          : price;
+
+        // Tiered convenience fee: 0-1000 = 2%, 1001-1400 = ₹30, 1401+ = ₹40
+        let convenienceFee;
+        if (amountForConvenienceFee <= 1000) {
+          convenienceFee = 0.02 * amountForConvenienceFee;
+        } else if (amountForConvenienceFee <= 1400) {
+          convenienceFee = 30;
+        } else {
+          convenienceFee = 40;
+        }
         const platformFee = 5;
         const paymentGatewayFeeRaw = 0.0185 * price;
         const paymentGatewayFee = Math.round(paymentGatewayFeeRaw * 20) / 20;
         const convenienceFeeGST = Math.round(convenienceFee * 0.18 * 100) / 100;
         const platformFeeGST = Math.round(platformFee * 0.18 * 100) / 100;
         const paymentGatewayGST = Math.round(paymentGatewayFee * 0.18 * 100) / 100;
-        const registrationGST = Math.round(price * 0.18 * 100) / 100;
+        // Registration GST: Show line if collectGST=Yes AND taxType=Exclusive
+        // Amount: ₹0 if organizerGST=false, otherwise 18%
+        const registrationGST = (collectGST && taxType === 'exclusive')
+          ? (organizerGST ? Math.round(price * 0.18 * 100) / 100 : 0)
+          : 0;
 
         const totalPayable =
           price +
@@ -183,6 +204,8 @@ const RaceCategoryForm = ({
             receivableAmount: receivableAmount,
             convenienceFeePlayer: updatedFormData.convenienceFeePlayer,
             gatewayFeePlayer: updatedFormData.gatewayFeePlayer,
+            collectGST: collectGST,
+            taxType: taxType,
           },
         });
       }
@@ -209,15 +232,35 @@ const RaceCategoryForm = ({
 
     if (price <= 0) return;
 
+    // Calculate amount for convenience fee calculation
+    // Add GST only if: organizerGST=true AND collectGST=true AND taxType='exclusive'
+    const amountForConvenienceFee = (organizerGST && collectGST && taxType === 'exclusive')
+      ? price + (price * 0.18)
+      : price;
+
     // Calculate all fees
-    const convenienceFee = price > 0 ? Math.min(0.02 * price, 40) : 0;
+    // Tiered convenience fee: 0-1000 = 2%, 1001-1400 = ₹30, 1401+ = ₹40
+    let convenienceFee = 0;
+    if (amountForConvenienceFee > 0) {
+      if (amountForConvenienceFee <= 1000) {
+        convenienceFee = 0.02 * amountForConvenienceFee;
+      } else if (amountForConvenienceFee <= 1400) {
+        convenienceFee = 30;
+      } else {
+        convenienceFee = 40;
+      }
+    }
     const platformFee = price > 0 ? 5 : 0;
     const paymentGatewayFeeRaw = price > 0 ? 0.0185 * price : 0;
     const paymentGatewayFee = price > 0 ? Math.round(paymentGatewayFeeRaw * 20) / 20 : 0;
     const convenienceFeeGST = price > 0 ? Math.round(convenienceFee * 0.18 * 100) / 100 : 0;
     const platformFeeGST = price > 0 ? Math.round(platformFee * 0.18 * 100) / 100 : 0;
     const paymentGatewayGST = price > 0 ? Math.round(paymentGatewayFee * 0.18 * 100) / 100 : 0;
-    const registrationGST = price > 0 ? Math.round(price * 0.18 * 100) / 100 : 0;
+    // Registration GST: Show line if collectGST=Yes AND taxType=Exclusive
+    // Amount: ₹0 if organizerGST=false, otherwise 18%
+    const registrationGST = (collectGST && taxType === 'exclusive' && price > 0)
+      ? (organizerGST ? Math.round(price * 0.18 * 100) / 100 : 0)
+      : 0;
 
     const totalPayable =
       price +
@@ -265,6 +308,8 @@ const RaceCategoryForm = ({
         receivableAmount: receivableAmount,
         convenienceFeePlayer: updatedFormData.convenienceFeePlayer,
         gatewayFeePlayer: updatedFormData.gatewayFeePlayer,
+        collectGST: collectGST,
+        taxType: taxType,
       },
     });
   };
@@ -290,6 +335,20 @@ const RaceCategoryForm = ({
 
     if (paidType !== "Free" && (!formData.raceCategoryPrice || formData.raceCategoryPrice <= 0)) {
       newErrors.raceCategoryPrice = "Price is required and must be greater than 0";
+    }
+
+    // Validate minBooking
+    if (!formData.minBooking || formData.minBooking <= 0) {
+      newErrors.minBooking = "Minimum per booking count must be greater than 0";
+    } else if (Number(formData.minBooking) > Number(formData.maxRegistration)) {
+      newErrors.minBooking = "Minimum per booking count cannot exceed Maximum Registration";
+    }
+
+    // Validate maxBooking
+    if (!formData.maxBooking || formData.maxBooking <= 0) {
+      newErrors.maxBooking = "Allow registrations upto must be greater than 0";
+    } else if (Number(formData.maxBooking) > Number(formData.maxRegistration)) {
+      newErrors.maxBooking = "Allow registrations upto cannot exceed Maximum Registration";
     }
 
     if (!formData.registrationStartDate) {
@@ -554,8 +613,36 @@ const RaceCategoryForm = ({
             <input
               type="number"
               placeholder="Maximum Registration *"
+              min="1"
               value={formData.maxRegistration}
-              onChange={(e) => handleChange("maxRegistration", e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                handleChange("maxRegistration", value);
+
+                // Re-validate minBooking and maxBooking when maxRegistration changes
+                const newErrors = { ...errors };
+
+                // Clear maxRegistration error if value is valid
+                if (value && value > 0) {
+                  delete newErrors.maxRegistration;
+                }
+
+                // Re-validate minBooking
+                if (formData.minBooking && Number(formData.minBooking) > Number(value)) {
+                  newErrors.minBooking = "Cannot exceed Maximum Registration";
+                } else if (formData.minBooking && formData.minBooking > 0) {
+                  delete newErrors.minBooking;
+                }
+
+                // Re-validate maxBooking
+                if (formData.maxBooking && Number(formData.maxBooking) > Number(value)) {
+                  newErrors.maxBooking = "Cannot exceed Maximum Registration";
+                } else if (formData.maxBooking && formData.maxBooking > 0) {
+                  delete newErrors.maxBooking;
+                }
+
+                setErrors(newErrors);
+              }}
               style={{
                 width: "100%",
                 padding: "10px",
@@ -597,9 +684,23 @@ const RaceCategoryForm = ({
                     handleChange("raceCategoryPrice", e.target.value);
 
                     // Calculate all fees and update eventFormData
-                    // Convenience fee: 2% of price capped at ₹40
-                    const convenienceFee =
-                      price > 0 ? Math.min(0.02 * price, 40) : 0;
+                    // Calculate amount for convenience fee calculation
+                    // If GST is enabled, calculate convenience fee on (price + 18% GST)
+                    const amountForConvenienceFee = organizerGST
+                      ? price + (price * 0.18)
+                      : price;
+
+                    // Tiered convenience fee: 0-1000 = 2%, 1001-1400 = ₹30, 1401+ = ₹40
+                    let convenienceFee = 0;
+                    if (amountForConvenienceFee > 0) {
+                      if (amountForConvenienceFee <= 1000) {
+                        convenienceFee = 0.02 * amountForConvenienceFee;
+                      } else if (amountForConvenienceFee <= 1400) {
+                        convenienceFee = 30;
+                      } else {
+                        convenienceFee = 40;
+                      }
+                    }
                     const platformFee = price > 0 ? 5 : 0;
                     const paymentGatewayFeeRaw = price > 0 ? 0.0185 * price : 0;
                     const paymentGatewayFee =
@@ -618,9 +719,11 @@ const RaceCategoryForm = ({
                       price > 0
                         ? Math.round(paymentGatewayFee * 0.18 * 100) / 100
                         : 0;
-                    // Registration GST: 18% of base registration fee
-                    const registrationGST =
-                      price > 0 ? Math.round(price * 0.18 * 100) / 100 : 0;
+                    // Registration GST: Show line if collectGST=Yes AND taxType=Exclusive
+                    // Amount: ₹0 if organizerGST=false, otherwise 18%
+                    const registrationGST = (collectGST && taxType === 'exclusive' && price > 0)
+                      ? (organizerGST ? Math.round(price * 0.18 * 100) / 100 : 0)
+                      : 0;
 
                     const totalPayable =
                       price +
@@ -673,6 +776,8 @@ const RaceCategoryForm = ({
                         receivableAmount: receivableAmount,
                         convenienceFeePlayer: formData.convenienceFeePlayer,
                         gatewayFeePlayer: formData.gatewayFeePlayer,
+                        collectGST: collectGST,
+                        taxType: taxType,
                       },
                     });
                   }}
@@ -697,16 +802,35 @@ const RaceCategoryForm = ({
             <input
               type="number"
               placeholder="Minimum per booking count *"
-              required
+              min="1"
               value={formData.minBooking}
-              onChange={(e) => handleChange("minBooking", e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                handleChange("minBooking", value);
+
+                // Real-time validation
+                const newErrors = { ...errors };
+                if (!value || value <= 0) {
+                  newErrors.minBooking = "Minimum per booking count must be greater than 0";
+                } else if (Number(value) > Number(formData.maxRegistration)) {
+                  newErrors.minBooking = "Cannot exceed Maximum Registration";
+                } else {
+                  delete newErrors.minBooking;
+                }
+                setErrors(newErrors);
+              }}
               style={{
                 width: "100%",
                 padding: "10px",
                 borderRadius: 8,
-                border: "1px solid #ddd",
+                border: errors.minBooking ? "1px solid #d63031" : "1px solid #ddd",
               }}
             />
+            {errors.minBooking && (
+              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                {errors.minBooking}
+              </div>
+            )}
           </div>
           <div style={{ flex: 1 }}>
             <label
@@ -717,16 +841,35 @@ const RaceCategoryForm = ({
             <input
               type="number"
               placeholder="Allow registrations upto *"
-              required
+              min="1"
               value={formData.maxBooking}
-              onChange={(e) => handleChange("maxBooking", e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                handleChange("maxBooking", value);
+
+                // Real-time validation
+                const newErrors = { ...errors };
+                if (!value || value <= 0) {
+                  newErrors.maxBooking = "Allow registrations upto must be greater than 0";
+                } else if (Number(value) > Number(formData.maxRegistration)) {
+                  newErrors.maxBooking = "Cannot exceed Maximum Registration";
+                } else {
+                  delete newErrors.maxBooking;
+                }
+                setErrors(newErrors);
+              }}
               style={{
                 width: "100%",
                 padding: "10px",
                 borderRadius: 8,
-                border: "1px solid #ddd",
+                border: errors.maxBooking ? "1px solid #d63031" : "1px solid #ddd",
               }}
             />
+            {errors.maxBooking && (
+              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                {errors.maxBooking}
+              </div>
+            )}
           </div>
         </div>
 

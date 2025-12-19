@@ -538,7 +538,8 @@ input[type="file"].form-input.compact {
 .modal-content {
   background: #fff;
   border-radius: 12px;
-  width: 720px;
+  width: 900px;
+  /* Increased from 720px for nested sub-questions */
   max-width: calc(100% - 48px);
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
   overflow: hidden;
@@ -1087,4 +1088,76 @@ input[type="file"].form-input.compact {
 
 .race-category-toggle .race-btn .icon {
   font-size: 1rem;
+}
+
+/* Info Icon Button with Tooltip */
+.btn-toggle.info-icon {
+  position: relative;
+  background: #ffc107 !important;
+  color: #fff !important;
+  cursor: help !important;
+  font-size: 1.2rem !important;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.btn-toggle.info-icon:hover {
+  background: #ffb300 !important;
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+}
+
+/* Tooltip on hover */
+.btn-toggle.info-icon::before {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: #333;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 1000;
+  max-width: 250px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+/* Tooltip arrow */
+.btn-toggle.info-icon::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-2px);
+  border: 6px solid transparent;
+  border-top-color: #333;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 1000;
+}
+
+/* Show tooltip on hover */
+.btn-toggle.info-icon:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-12px);
+}
+
+.btn-toggle.info-icon:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-6px);
 }

@@ -1319,6 +1319,7 @@ export default function CreateEvent() {
                 setPaidType={setPaidType}
                 eventFormData={eventFormData}
                 setEventFormData={setEventFormData}
+                organizerGST={organizerGST}
               />
             )}
             {currentStep === 6 && (
@@ -1408,9 +1409,31 @@ export default function CreateEvent() {
                       ? Number(eventFormData.raceCategoryPrice)
                       : 0;
                     if (!baseAmount || baseAmount < 1) baseAmount = 0;
-                    // Convenience fee: 2% of base amount capped at ₹40
-                    const convenienceFee =
-                      baseAmount > 0 ? Math.min(0.02 * baseAmount, 40) : 0;
+
+                    // Get fee payer information from ticketCalculation
+                    const ticketCalc = eventFormData.ticketCalculation || {};
+                    const convenienceFeePlayer = ticketCalc.convenienceFeePlayer || "Participant";
+                    const gatewayFeePlayer = ticketCalc.gatewayFeePlayer || "Participant";
+                    const collectGST = ticketCalc.collectGST !== undefined ? ticketCalc.collectGST : false;
+                    const taxType = ticketCalc.taxType || 'inclusive';
+
+                    // Calculate amount for convenience fee calculation
+                    // Add GST only if: organizerGST=true AND collectGST=true AND taxType='exclusive'
+                    const amountForConvenienceFee = (organizerGST && collectGST && taxType === 'exclusive')
+                      ? baseAmount + (baseAmount * 0.18)
+                      : baseAmount;
+
+                    // Tiered convenience fee: 0-1000 = 2%, 1001-1400 = ₹30, 1401+ = ₹40
+                    let convenienceFee = 0;
+                    if (amountForConvenienceFee > 0) {
+                      if (amountForConvenienceFee <= 1000) {
+                        convenienceFee = 0.02 * amountForConvenienceFee;
+                      } else if (amountForConvenienceFee <= 1400) {
+                        convenienceFee = 30;
+                      } else {
+                        convenienceFee = 40;
+                      }
+                    }
                     const platformFee = baseAmount > 0 ? 5 : 0;
                     const paymentGatewayFeeRaw =
                       baseAmount > 0 ? 0.0185 * baseAmount : 0;
@@ -1430,11 +1453,12 @@ export default function CreateEvent() {
                       baseAmount > 0
                         ? Math.round(paymentGatewayFee * 0.18 * 100) / 100
                         : 0;
-                    // Registration GST: 18% of base registration fee (only if organizer has GST enabled)
-                    const registrationGST =
-                      organizerGST && baseAmount > 0
-                        ? Math.round(baseAmount * 0.18 * 100) / 100
-                        : 0;
+
+                    // Registration GST: Show line if collectGST=Yes AND taxType=Exclusive
+                    // Amount: ₹0 if organizerGST=false, otherwise 18%
+                    const registrationGST = (collectGST && taxType === 'exclusive' && baseAmount > 0)
+                      ? (organizerGST ? Math.round(baseAmount * 0.18 * 100) / 100 : 0)
+                      : 0;
                     const totalPayable =
                       baseAmount +
                       convenienceFee +
@@ -1444,11 +1468,6 @@ export default function CreateEvent() {
                       platformFeeGST +
                       paymentGatewayGST +
                       registrationGST;
-
-                    // Get fee payer information from ticketCalculation
-                    const ticketCalc = eventFormData.ticketCalculation || {};
-                    const convenienceFeePlayer = ticketCalc.convenienceFeePlayer || "Participant";
-                    const gatewayFeePlayer = ticketCalc.gatewayFeePlayer || "Participant";
 
                     // Calculate receivable amount based on who pays the fees
                     let receivableAmount = baseAmount;
@@ -1591,7 +1610,7 @@ export default function CreateEvent() {
                               ₹{paymentGatewayFee.toFixed(2)}
                             </span>
                           </div>
-                          {organizerGST && (
+                          {collectGST && taxType === 'exclusive' && (
                             <div
                               style={{
                                 display: "flex",

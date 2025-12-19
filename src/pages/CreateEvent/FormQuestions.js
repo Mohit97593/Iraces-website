@@ -968,30 +968,69 @@ const FormQuestions = ({ onBack, onNext }) => {
                                   )}
 
                                   {/* Show subquestions */}
-                                  {q.sub_questions_array.map((subQ, subIdx) => (
-                                    <div
-                                      key={subIdx}
-                                      style={{
-                                        background: "#f8f9fa",
-                                        borderLeft: "3px solid #da251c",
-                                        borderRadius: 6,
-                                        padding: "12px 16px",
-                                        marginBottom: 8,
-                                        fontSize: "0.95rem",
+                                  {q.sub_questions_array.map((subQ, subIdx) => {
+                                    // Debug: Log subquestion data to check for child subquestions
+                                    console.log(`Subquestion ${subIdx}:`, subQ);
+                                    console.log(`  - Has sub_questions?`, subQ.sub_questions);
+                                    console.log(`  - Has sub_questions_array?`, subQ.sub_questions_array);
+                                    console.log(`  - All keys:`, Object.keys(subQ));
 
-                                        textAlign: "left",
-                                      }}
-                                    >
-                                      <span style={{ color: "#333", fontWeight: 600 }}>
-                                        {subQ.question_label || subQ.label}
-                                      </span>
-                                      {(subQ.is_manadatory === 1 || subQ.is_manadatory === "1") && (
-                                        <span style={{ color: "#d9534f", marginLeft: 8, fontWeight: 700 }}>
-                                          (Mandatory)
-                                        </span>
-                                      )}
-                                    </div>
-                                  ))}
+                                    return (
+                                      <div key={subIdx}>
+                                        <div
+                                          style={{
+                                            background: "#f8f9fa",
+                                            borderLeft: "3px solid #da251c",
+                                            borderRadius: 6,
+                                            padding: "12px 16px",
+                                            marginBottom: 8,
+                                            fontSize: "0.95rem",
+                                            textAlign: "left",
+                                          }}
+                                        >
+                                          <span style={{ color: "#333", fontWeight: 600 }}>
+                                            {subQ.question_label || subQ.label}
+                                          </span>
+                                          {(subQ.is_manadatory === 1 || subQ.is_manadatory === "1") && (
+                                            <span style={{ color: "#d9534f", marginLeft: 8, fontWeight: 700 }}>
+                                              (Mandatory)
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        {/* Child Subquestions Display (Nested) */}
+                                        {(subQ.sub_questions || subQ.sub_questions_array) &&
+                                          Array.isArray(subQ.sub_questions || subQ.sub_questions_array) &&
+                                          (subQ.sub_questions || subQ.sub_questions_array).length > 0 && (
+                                            <div style={{ marginLeft: 30, marginTop: 8 }}>
+                                              {(subQ.sub_questions || subQ.sub_questions_array).map((childSubQ, childIdx) => (
+                                                <div
+                                                  key={childIdx}
+                                                  style={{
+                                                    background: "#e8f5e9",
+                                                    borderLeft: "3px solid #4CAF50",
+                                                    borderRadius: 6,
+                                                    padding: "10px 14px",
+                                                    marginBottom: 6,
+                                                    fontSize: "0.9rem",
+                                                    textAlign: "left",
+                                                  }}
+                                                >
+                                                  <span style={{ color: "#2e7d32", fontWeight: 600, fontSize: "0.85rem" }}>
+                                                    🔹 {childSubQ.question_label || childSubQ.label || childSubQ.title}
+                                                  </span>
+                                                  {(childSubQ.is_manadatory === 1 || childSubQ.is_manadatory === "1" || childSubQ.mandatory === 1) && (
+                                                    <span style={{ color: "#d9534f", marginLeft: 8, fontWeight: 700, fontSize: "0.85rem" }}>
+                                                      (Mandatory)
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               )
                             }

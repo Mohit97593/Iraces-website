@@ -10,6 +10,7 @@ export default function RaceCategories({
   setPaidType,
   eventFormData,
   setEventFormData,
+  organizerGST,
 }) {
   const [gst, setGst] = useState(false);
   const [taxType, setTaxType] = useState("inclusive");
@@ -36,7 +37,16 @@ export default function RaceCategories({
           if (res && res.data) {
             // Set event details from EventData[0]
             if (res.data.EventData && res.data.EventData[0]) {
-              setEventDetails(res.data.EventData[0]);
+              const eventData = res.data.EventData[0];
+              setEventDetails(eventData);
+
+              // Load GST and Tax Type settings from event data
+              if (eventData.collect_gst !== undefined) {
+                setGst(eventData.collect_gst === 1);
+              }
+              if (eventData.prices_taxes_status !== undefined) {
+                setTaxType(eventData.prices_taxes_status === 1 ? 'inclusive' : 'exclusive');
+              }
             }
             // Store AllEventTypes in sessionStorage as event_categories
             if (
@@ -173,6 +183,9 @@ export default function RaceCategories({
           eventFormData={eventFormData}
           setEventFormData={setEventFormData}
           editTicket={editTicket}
+          organizerGST={organizerGST}
+          collectGST={gst}
+          taxType={taxType}
         />
       ) : (
         <>
