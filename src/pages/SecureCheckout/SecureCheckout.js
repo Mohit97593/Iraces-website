@@ -10,12 +10,78 @@ export default function SecureCheckout() {
   const [event, setEvent] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [selectedTickets, setSelectedTickets] = useState([]);
+  const [registrationStatus, setRegistrationStatus] = useState(null);
+  const [overallLimit, setOverallLimit] = useState(null);
   const [registrations, setRegistrations] = useState([]);
+
+  // Coupon states
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+  const [discount, setDiscount] = useState(0);
+  const [couponError, setCouponError] = useState("");
 
   useEffect(() => {
     checkUserLoginAndFetch();
   }, [eventId]);
+
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Fetch coupons when selected tickets change
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      console.log("🔍 Checking coupon fetch conditions:");
+      console.log("  - selectedTickets.length:", selectedTickets.length);
+      console.log("  - eventId:", eventId);
+
+      if (selectedTickets.length > 0 && eventId) {
+        try {
+          const ticketIds = selectedTickets.map(t => t.id);
+          console.log("📤 Calling getCoupons API with:");
+          console.log("  - event_id:", eventId);
+          console.log("  - ticket_ids:", ticketIds);
+
+          const response = await authAPI.getCoupons({
+            event_id: eventId,
+            ticket_ids: ticketIds
+          });
+
+          console.log("📥 getCoupons API response:", response);
+
+          if (response && response.data && response.data.Coupons) {
+            setAvailableCoupons(response.data.Coupons);
+            console.log("✅ Available coupons set:", response.data.Coupons);
+          } else {
+            console.log("⚠️ No coupons in response");
+            setAvailableCoupons([]);
+          }
+        } catch (error) {
+          console.error("❌ Error fetching coupons:", error);
+          setAvailableCoupons([]);
+        }
+      } else {
+        console.log("⚠️ Conditions not met for fetching coupons");
+        setAvailableCoupons([]);
+      }
+    };
+
+    fetchCoupons();
+  }, [selectedTickets, eventId]);
+
+  // Clear applied coupon when no tickets are selected
+  useEffect(() => {
+    if (selectedTickets.length === 0 && appliedCoupon) {
+      console.log("🧹 Clearing applied coupon - no tickets selected");
+      setAppliedCoupon(null);
+      setDiscount(0);
+      setCouponCode("");
+      setCouponError("");
+    }
+  }, [selectedTickets.length, appliedCoupon]);
 
   const checkUserLoginAndFetch = async () => {
     // Check if user has token/userData in localStorage
@@ -83,6 +149,20 @@ export default function SecureCheckout() {
         // Get event_tickets array from response
         const eventTickets = ticketResponse.data.event_tickets || [];
         setTickets(eventTickets);
+
+        // Store event_registration_status from EventData[0]
+        // Status is inside EventData array, not at root level
+        let regStatus = null;
+        let eventOverallLimit = null;
+        if (ticketResponse.data.EventData && ticketResponse.data.EventData.length > 0) {
+          regStatus = ticketResponse.data.EventData[0].event_registration_status;
+          eventOverallLimit = ticketResponse.data.EventData[0].overall_limit;
+        }
+        setRegistrationStatus(regStatus);
+        setOverallLimit(eventOverallLimit);
+        console.log("✅ event_registration_status:", regStatus);
+        console.log("✅ overall_limit:", eventOverallLimit);
+
         // If events API did not return event data, try to use EventData from ticket response
         if (
           !eventData &&
@@ -110,19 +190,182 @@ export default function SecureCheckout() {
   };
 
   const handleAddTicket = (ticket) => {
-    if (selectedTicket) {
-      alert("Only single category selection is allowed.");
-      return;
+    console.log("=== handleAddTicket START ===");
+    console.log("🎫 Ticket:", ticket.ticket_name || ticket.display_ticket_name);
+    console.log("📊 registrationStatus:", registrationStatus);
+    console.log("🎯 overallLimit:", overallLimit);
+
+    // Add min_booking tickets initially
+    const minBooking = ticket.min_booking || 1;
+
+    // Calculate current total quantity
+    const currentTotalQuantity = selectedTickets.reduce((sum, t) => sum + t.quantity, 0);
+    console.log("📦 Current total quantity:", currentTotalQuantity);
+
+    // Check overall_limit if it exists
+    if (overallLimit && overallLimit > 0) {
+      const newTotalQuantity = Number(registrationStatus) === 1
+        ? minBooking  // Single selection replaces, so just minBooking
+        : currentTotalQuantity + minBooking;  // Multiple selection adds
+
+      if (newTotalQuantity > overallLimit) {
+        alert(`Cannot add ticket. Overall limit is ${overallLimit} tickets. You have ${currentTotalQuantity} tickets selected.`);
+        console.log("❌ BLOCKED: Would exceed overall_limit");
+        return;
+      }
     }
-    setSelectedTicket(ticket);
+
+    const newTicket = {
+      ...ticket,
+      quantity: minBooking
+    };
+
+    // If event_registration_status is 1, only allow single ticket selection
+    if (Number(registrationStatus) === 1) {
+      console.log("✅ SINGLE SELECTION MODE - Replacing all tickets");
+      setSelectedTickets([newTicket]);
+    } else {
+      console.log("✅ MULTIPLE SELECTION MODE - Adding to existing");
+      setSelectedTickets([...selectedTickets, newTicket]);
+    }
+    console.log("=== handleAddTicket END ===");
   };
 
-  const handleRemoveTicket = () => {
-    setSelectedTicket(null);
+  const handleIncreaseQuantity = (ticketId) => {
+    // Calculate current total quantity
+    const currentTotalQuantity = selectedTickets.reduce((sum, t) => sum + t.quantity, 0);
+
+    // Check overall_limit before increasing
+    if (overallLimit && overallLimit > 0) {
+      if (currentTotalQuantity >= overallLimit) {
+        alert(`Cannot increase quantity. Overall limit is ${overallLimit} tickets.`);
+        console.log("❌ BLOCKED: Already at overall_limit");
+        return;
+      }
+    }
+
+    setSelectedTickets(selectedTickets.map(t => {
+      if (t.id === ticketId) {
+        const maxBooking = t.max_booking || 1;
+        if (t.quantity < maxBooking) {
+          return { ...t, quantity: t.quantity + 1 };
+        }
+      }
+      return t;
+    }));
+  };
+
+  const handleDecreaseQuantity = (ticketId) => {
+    setSelectedTickets(selectedTickets.map(t => {
+      if (t.id === ticketId) {
+        const minBooking = t.min_booking || 1;
+        if (t.quantity > minBooking) {
+          return { ...t, quantity: t.quantity - 1 };
+        }
+      }
+      return t;
+    }));
+  };
+
+  const handleRemoveTicket = (ticketId) => {
+    setSelectedTickets(selectedTickets.filter(t => t.id !== ticketId));
   };
 
   const handleBack = () => {
     navigate(-1);
+  };
+
+  const handleApplyCoupon = () => {
+    setCouponError("");
+
+    if (!couponCode.trim()) {
+      setCouponError("Please enter a coupon code");
+      return;
+    }
+
+    // Find matching coupon from available coupons
+    const matchingCoupon = availableCoupons.find(
+      coupon => coupon.discount_code?.toLowerCase() === couponCode.trim().toLowerCase()
+    );
+
+    if (!matchingCoupon) {
+      setCouponError("Invalid coupon code");
+      return;
+    }
+
+    // Calculate discount based on discount_amt_per_type
+    const totalPrice = selectedTickets.reduce((sum, t) => sum + (t.ticket_price * t.quantity), 0);
+    let calculatedDiscount = 0;
+
+    console.log("🎟️ Coupon details:", matchingCoupon);
+    console.log("💵 Total price:", totalPrice);
+    console.log("🔢 discount_amt_per_type:", matchingCoupon.discount_amt_per_type, "(1=amount, 2=percentage)");
+
+    // discount_amt_per_type: "1" = fixed amount, "2" = percentage
+    const amtPerType = parseInt(matchingCoupon.discount_amt_per_type);
+
+    if (amtPerType === 1) {
+      // Fixed amount discount - use discount_amount field
+      calculatedDiscount = parseFloat(matchingCoupon.discount_amount || 0);
+      console.log("💰 Using fixed amount:", calculatedDiscount);
+    } else if (amtPerType === 2) {
+      // Percentage discount - use discount_percentage field
+      const percentage = parseFloat(matchingCoupon.discount_percentage || 0);
+      calculatedDiscount = (totalPrice * percentage) / 100;
+      console.log("📊 Using percentage:", percentage, "% → Discount:", calculatedDiscount);
+    }
+
+    // Ensure discount doesn't exceed total price
+    calculatedDiscount = Math.min(calculatedDiscount, totalPrice);
+
+    setAppliedCoupon(matchingCoupon);
+    setDiscount(calculatedDiscount);
+    console.log("✅ Coupon applied successfully");
+    console.log("💰 Final discount amount:", calculatedDiscount);
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setDiscount(0);
+    setCouponCode("");
+    setCouponError("");
+  };
+
+  const handleApplyCouponFromCard = (coupon) => {
+    setCouponError("");
+
+    // Calculate discount based on discount_amt_per_type
+    const totalPrice = selectedTickets.reduce((sum, t) => sum + (t.ticket_price * t.quantity), 0);
+    let calculatedDiscount = 0;
+
+    console.log("🎟️ Coupon details:", coupon);
+    console.log("💵 Total price:", totalPrice);
+    console.log("🔢 discount_amt_per_type:", coupon.discount_amt_per_type, "(1=amount, 2=percentage)");
+    console.log("💰 discount_amount field:", coupon.discount_amount);
+    console.log("📊 discount_percentage field:", coupon.discount_percentage);
+
+    // discount_amt_per_type: "1" = fixed amount, "2" = percentage
+    const amtPerType = parseInt(coupon.discount_amt_per_type);
+
+    if (amtPerType === 1) {
+      // Fixed amount discount - use discount_amount field
+      calculatedDiscount = parseFloat(coupon.discount_amount || 0);
+      console.log("💰 Using fixed amount:", calculatedDiscount);
+    } else if (amtPerType === 2) {
+      // Percentage discount - use discount_percentage field
+      const percentage = parseFloat(coupon.discount_percentage || 0);
+      calculatedDiscount = (totalPrice * percentage) / 100;
+      console.log("📊 Using percentage:", percentage, "% → Discount:", calculatedDiscount);
+    }
+
+    // Ensure discount doesn't exceed total price
+    calculatedDiscount = Math.min(calculatedDiscount, totalPrice);
+
+    setAppliedCoupon(coupon);
+    setDiscount(calculatedDiscount);
+    setCouponCode(coupon.discount_code);
+    console.log("✅ Coupon applied successfully");
+    console.log("💰 Final discount amount:", calculatedDiscount);
   };
 
   if (loading) {
@@ -209,14 +452,6 @@ export default function SecureCheckout() {
               })()}
             </div>
 
-            {/* Warning Message */}
-            {selectedTicket && (
-              <div className="warning-message">
-                <i className="fas fa-exclamation-circle"></i>
-                Only single category selection is allowed.
-              </div>
-            )}
-
             {/* Category Selection */}
             <div className="category-selection-section">
               {tickets.length > 0 ? (
@@ -279,22 +514,41 @@ export default function SecureCheckout() {
                         <div className="category-price">
                           ₹{ticket.ticket_price}
                         </div>
-                        {selectedTicket?.id === ticket.id ? (
-                          <button
-                            className="btn-remove"
-                            onClick={handleRemoveTicket}
-                          >
-                            Remove
-                          </button>
-                        ) : (
-                          <button
-                            className="btn-add"
-                            onClick={() => handleAddTicket(ticket)}
-                            disabled={selectedTicket !== null}
-                          >
-                            <i className="fas fa-plus"></i> Add
-                          </button>
-                        )}
+                        {(() => {
+                          const selectedTicket = selectedTickets.find(t => t.id === ticket.id);
+                          return selectedTicket ? (
+                            <div className="quantity-controls">
+                              <button
+                                className="btn-quantity"
+                                onClick={() => handleDecreaseQuantity(ticket.id)}
+                                disabled={selectedTicket.quantity <= (ticket.min_booking || 1)}
+                              >
+                                <i className="fas fa-minus"></i>
+                              </button>
+                              <span className="quantity-display">{selectedTicket.quantity}</span>
+                              <button
+                                className="btn-quantity"
+                                onClick={() => handleIncreaseQuantity(ticket.id)}
+                                disabled={selectedTicket.quantity >= (ticket.max_booking || 1)}
+                              >
+                                <i className="fas fa-plus"></i>
+                              </button>
+                              <button
+                                className="btn-remove"
+                                onClick={() => handleRemoveTicket(ticket.id)}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              className="btn-add"
+                              onClick={() => handleAddTicket(ticket)}
+                            >
+                              <i className="fas fa-plus"></i> Add
+                            </button>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -310,29 +564,68 @@ export default function SecureCheckout() {
           {/* Right Column - Registration Summary */}
           <div className="col-lg-4">
             <div className="registration-summary">
-              {selectedTicket ? (
+              {selectedTickets.length > 0 ? (
                 <>
                   <div className="summary-box">
                     <h3 className="summary-heading">SUMMARY</h3>
                     <div className="summary-details">
+                      {selectedTickets.map((ticket) => (
+                        <div key={ticket.id} className="summary-row">
+                          <span>{ticket.ticket_name || ticket.display_ticket_name} ({ticket.quantity}x)</span>
+                          <span>
+                            ₹{(ticket.ticket_price * ticket.quantity)?.toFixed(2) || (ticket.ticket_price * ticket.quantity)}
+                          </span>
+                        </div>
+                      ))}
+
+                      {/* Subtotal */}
                       <div className="summary-row">
-                        <span>Price (1 Registration)</span>
+                        <span>Subtotal</span>
                         <span>
-                          ₹
-                          {selectedTicket.ticket_price?.toFixed(2) ||
-                            selectedTicket.ticket_price}
+                          ₹{(() => {
+                            const totalPrice = selectedTickets.reduce((sum, t) => sum + (t.ticket_price * t.quantity), 0);
+                            return totalPrice.toFixed(2);
+                          })()}
                         </span>
                       </div>
+
+                      {/* Discount row - only show if coupon applied */}
+                      {appliedCoupon && discount > 0 && (
+                        <div className="summary-row" style={{ color: '#28a745' }}>
+                          <span>
+                            Discount ({appliedCoupon.discount_code})
+                            <button
+                              onClick={handleRemoveCoupon}
+                              style={{
+                                marginLeft: '8px',
+                                background: 'none',
+                                border: 'none',
+                                color: '#dc3545',
+                                cursor: 'pointer',
+                                fontSize: '12px'
+                              }}
+                            >
+                              ✕ Remove
+                            </button>
+                          </span>
+                          <span>- ₹{discount.toFixed(2)}</span>
+                        </div>
+                      )}
+
+                      {/* Total Amount */}
                       <div className="summary-row total">
                         <span>Total Amount</span>
                         <span className="summary-total-amount">
                           ₹
                           {(() => {
-                            const price =
-                              selectedTicket.ticket_price?.toFixed(2) ||
-                              selectedTicket.ticket_price;
-                            localStorage.setItem("summaryTotalAmount", price);
-                            return price;
+                            const totalPrice = selectedTickets.reduce((sum, t) => sum + (t.ticket_price * t.quantity), 0);
+                            const finalPrice = totalPrice - discount;
+                            const formattedPrice = finalPrice.toFixed(2);
+                            const totalQuantity = selectedTickets.reduce((sum, t) => sum + t.quantity, 0);
+                            localStorage.setItem("summaryTotalAmount", formattedPrice);
+                            localStorage.setItem("ticketQuantity", totalQuantity);
+                            localStorage.setItem("selectedTickets", JSON.stringify(selectedTickets));
+                            return formattedPrice;
                           })()}
                         </span>
                       </div>
@@ -341,28 +634,171 @@ export default function SecureCheckout() {
                     <button
                       className="btn-proceed"
                       onClick={() => {
-                        // Store selected category title for next page
-                        const title =
-                          selectedTicket.ticket_name ||
-                          selectedTicket.display_ticket_name ||
-                          "";
-                        localStorage.setItem("selectedCategoryTitle", title);
+                        localStorage.setItem("selectedTickets", JSON.stringify(selectedTickets));
                         navigate(`/participant-details/${eventId}`);
                       }}
                     >
                       <i className="fas fa-users"></i>
-                      <span className="proceed-count">1</span>
+                      <span className="proceed-count">{selectedTickets.reduce((sum, t) => sum + t.quantity, 0)}</span>
                       <span className="proceed-text">PROCEED</span>
                       <i className="fas fa-arrow-right proceed-arrow"></i>
                     </button>
                   </div>
                   <div className="coupon-box">
-                    <input
-                      type="text"
-                      className="coupon-input"
-                      placeholder="Enter coupon code"
-                    />
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
+                      <input
+                        type="text"
+                        className="coupon-input"
+                        placeholder="Enter coupon code"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        disabled={appliedCoupon !== null}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          border: '1px solid #ddd',
+                          borderRadius: '5px'
+                        }}
+                      />
+                      <button
+                        onClick={handleApplyCoupon}
+                        disabled={appliedCoupon !== null || !couponCode.trim()}
+                        style={{
+                          padding: '10px 20px',
+                          backgroundColor: appliedCoupon ? '#28a745' : '#e74c3c',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '5px',
+                          cursor: appliedCoupon || !couponCode.trim() ? 'not-allowed' : 'pointer',
+                          opacity: appliedCoupon || !couponCode.trim() ? 0.6 : 1
+                        }}
+                      >
+                        {appliedCoupon ? '✓ Applied' : 'Apply'}
+                      </button>
+                    </div>
+                    {couponError && (
+                      <div style={{ color: '#dc3545', fontSize: '14px', marginTop: '5px' }}>
+                        {couponError}
+                      </div>
+                    )}
+                    {appliedCoupon && (
+                      <div style={{ color: '#28a745', fontSize: '14px', marginTop: '5px' }}>
+                        ✓ Coupon "{appliedCoupon.discount_code}" applied successfully!
+                      </div>
+                    )}
                   </div>
+
+                  {/* Available Coupons Cards */}
+                  {availableCoupons.length > 0 && (
+                    <div style={{ marginTop: '20px' }}>
+                      <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '15px', color: '#333' }}>
+                        Available Coupons
+                      </h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                        {availableCoupons.map((coupon) => {
+                          const isApplied = appliedCoupon && appliedCoupon.id === coupon.id;
+                          const discountText = coupon.discount_type === 1
+                            ? `₹${coupon.discount_amount}`
+                            : `${coupon.discount_percentage}%`;
+
+                          return (
+                            <div
+                              key={coupon.id}
+                              style={{
+                                backgroundColor: 'white',
+                                border: isApplied ? '2px solid #28a745' : '1px solid #e0e0e0',
+                                borderRadius: '12px',
+                                padding: '15px',
+                                boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+                                textAlign: 'center',
+                                transition: 'all 0.3s ease'
+                              }}
+                            >
+                              {/* Discount Badge */}
+                              <div style={{
+                                width: '50px',
+                                height: '50px',
+                                margin: '0 auto 12px',
+                                backgroundColor: '#e74c3c',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                position: 'relative'
+                              }}>
+                                <div style={{
+                                  position: 'absolute',
+                                  width: '100%',
+                                  height: '100%',
+                                  borderRadius: '50%',
+                                  background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), transparent)'
+                                }}></div>
+                                <i className="fas fa-percent" style={{ color: 'white', fontSize: '20px', zIndex: 1 }}></i>
+                              </div>
+
+                              {/* Coupon Code */}
+                              <div style={{
+                                fontSize: '20px',
+                                fontWeight: '700',
+                                color: '#333',
+                                marginBottom: '8px',
+                                letterSpacing: '1px'
+                              }}>
+                                {coupon.discount_code}
+                              </div>
+
+                              {/* Savings Text */}
+                              <div style={{
+                                fontSize: '14px',
+                                color: '#28a745',
+                                fontWeight: '600',
+                                marginBottom: '12px'
+                              }}>
+                                Save {discountText} on this event
+                              </div>
+
+                              {/* Divider */}
+                              <div style={{
+                                borderTop: '1px dashed #ddd',
+                                margin: '12px 0'
+                              }}></div>
+
+                              {/* Apply Button */}
+                              <button
+                                onClick={() => handleApplyCouponFromCard(coupon)}
+                                disabled={isApplied}
+                                style={{
+                                  width: '100%',
+                                  padding: '10px',
+                                  backgroundColor: isApplied ? '#28a745' : '#333',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  fontSize: '14px',
+                                  fontWeight: '600',
+                                  cursor: isApplied ? 'not-allowed' : 'pointer',
+                                  transition: 'all 0.3s ease',
+                                  opacity: isApplied ? 0.7 : 1
+                                }}
+                                onMouseOver={(e) => {
+                                  if (!isApplied) {
+                                    e.target.style.backgroundColor = '#e74c3c';
+                                  }
+                                }}
+                                onMouseOut={(e) => {
+                                  if (!isApplied) {
+                                    e.target.style.backgroundColor = '#333';
+                                  }
+                                }}
+                              >
+                                {isApplied ? '✓ Applied' : 'Apply'}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>

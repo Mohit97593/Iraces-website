@@ -14,13 +14,32 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
     age_category: initialData.age_category || "",
     age_start: initialData.age_start || "",
     age_end: initialData.age_end || "",
-    // Handle gender as array - convert from string if needed
+    // Handle gender as array - convert from string/number if needed
     gender: (() => {
+      console.log("Initial gender data:", initialData.gender);
       if (!initialData.gender) return [];
-      if (Array.isArray(initialData.gender)) return initialData.gender;
-      if (typeof initialData.gender === 'string') {
-        return initialData.gender.split(',').filter(g => g.trim());
+
+      // If already an array, convert all to strings
+      if (Array.isArray(initialData.gender)) {
+        const result = initialData.gender.map(g => String(g).trim());
+        console.log("Gender initialized as array:", result);
+        return result;
       }
+
+      // If comma-separated string, split it
+      if (typeof initialData.gender === 'string') {
+        const result = initialData.gender.split(',').map(g => g.trim()).filter(g => g);
+        console.log("Gender initialized from string:", result);
+        return result;
+      }
+
+      // If single number, convert to array
+      if (typeof initialData.gender === 'number') {
+        const result = [String(initialData.gender)];
+        console.log("Gender initialized from number:", result);
+        return result;
+      }
+
       return [];
     })(),
     event_comm_id: initialData.id || "",
@@ -100,20 +119,37 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
     });
 
     try {
-      // Convert formData object to FormData instance
+      // Build FormData payload with gender as array list
       const fd = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        // Convert gender array to comma-separated string for backend
-        if (key === "gender" && Array.isArray(value)) {
-          fd.append(key, value.join(","));
-        } else {
-          fd.append(key, value);
-        }
-      });
-      // If editing existing age criteria, include the edit flag expected by backend
+      
+      // Add all fields except gender
+      fd.append("event_id", formData.event_id);
+      fd.append("user_id", formData.user_id || "");
+      fd.append("distance_category", formData.distance_category);
+      fd.append("age_category", formData.age_category);
+      fd.append("age_start", formData.age_start);
+      fd.append("age_end", formData.age_end);
+      
+      // Add gender as array list (gender[])
+      if (Array.isArray(formData.gender) && formData.gender.length > 0) {
+        console.log("Gender array:", formData.gender);
+        formData.gender.forEach((genderValue) => {
+          fd.append("gender[]", genderValue);
+        });
+        console.log("Gender sent as array list (gender[])");
+      }
+      
+      // If editing existing age criteria, include the edit flag
       if (formData.event_comm_id) {
+        fd.append("event_comm_id", formData.event_comm_id);
         fd.append("event_edit_flag", "age_criteria_edit");
       }
+
+      console.log("FormData being sent to API:");
+      for (let pair of fd.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+      }
+
       const res = await authAPI.addEditAgeCriteria(fd);
       if (res.success === 200) {
         alert(res.message || "Age Criteria added/updated successfully");

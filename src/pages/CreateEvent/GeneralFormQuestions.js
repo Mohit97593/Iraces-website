@@ -534,7 +534,7 @@ const GeneralFormQuestions = ({
     const labelArray = labels.split(',').map(s => s.trim()).filter(Boolean);
 
     if (labelArray.length === 0) {
-      return { error: 'कृपया कम से कम एक label दर्ज करें / Please enter at least one label' };
+      return { error: ' Please enter at least one label' };
     }
 
     const priceArray = prices ? prices.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -543,14 +543,14 @@ const GeneralFormQuestions = ({
     // Validation: if price is enabled, price count must match label count
     if (priceEnabled && priceArray.length > 0 && priceArray.length !== labelArray.length) {
       return {
-        error: `Prices की संख्या (${priceArray.length}) Labels की संख्या (${labelArray.length}) से मेल नहीं खाती / Number of prices (${priceArray.length}) must match number of labels (${labelArray.length})`
+        error: `Prices  (${priceArray.length}) Labels (${labelArray.length})  Number of prices (${priceArray.length}) must match number of labels (${labelArray.length})`
       };
     }
 
     // Validation: if count is enabled, count count must match label count
     if (countEnabled && countArray.length > 0 && countArray.length !== labelArray.length) {
       return {
-        error: `Counts की संख्या (${countArray.length}) Labels की संख्या (${labelArray.length}) से मेल नहीं खाती / Number of counts (${countArray.length}) must match number of labels (${labelArray.length})`
+        error: `Counts  (${countArray.length}) Labels  (${labelArray.length})  Number of counts (${countArray.length}) must match number of labels (${labelArray.length})`
       };
     }
 

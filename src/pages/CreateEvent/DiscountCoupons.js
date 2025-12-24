@@ -66,6 +66,10 @@ const DiscountCoupons = ({ onBack, onNext }) => {
   };
   const [formData, setFormData] = useState(initialFormState);
   const [showCSVModal, setShowCSVModal] = useState(false);
+  const [viewCouponsModal, setViewCouponsModal] = useState(null);
+  const [editingCodeIndex, setEditingCodeIndex] = useState(null);
+  const [editedCodeValue, setEditedCodeValue] = useState("");
+  const [saveMessage, setSaveMessage] = useState(null);
   const [eventDetails, setEventDetails] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [selectedTickets, setSelectedTickets] = useState([]);
@@ -95,6 +99,10 @@ const DiscountCoupons = ({ onBack, onNext }) => {
     // No. of Discounts required
     if (!formData.noOfDiscounts || Number(formData.noOfDiscounts) <= 0) {
       errors.noOfDiscounts = "Enter number of discounts";
+    }
+    // Discount Code required for single code type
+    if (formData.codeType === "single" && (!formData.discountsCode || String(formData.discountsCode).trim() === "")) {
+      errors.discountsCode = "Discount code is required";
     }
     // Discount value required depending on type
     if (formData.discountAmount === "percentage") {
@@ -210,8 +218,8 @@ const DiscountCoupons = ({ onBack, onNext }) => {
             const couponArr = Array.isArray(payload.coupon_details)
               ? payload.coupon_details
               : Array.isArray(payload.EventData[0].coupon_details)
-              ? payload.EventData[0].coupon_details
-              : [];
+                ? payload.EventData[0].coupon_details
+                : [];
             if (couponArr.length > 0)
               setCouponDetails(uniqueCoupons(couponArr));
           } else if (payload) {
@@ -256,44 +264,97 @@ const DiscountCoupons = ({ onBack, onNext }) => {
   }, []);
 
   const handleDeleteCoupon = async (couponId) => {
-    if (!window.confirm("Are you sure you want to delete this coupon?")) return;
+    const eventId = sessionStorage.getItem("event_id");
+    if (!eventId || !couponId) return;
+
+    if (!window.confirm("Are you sure you want to delete this coupon?")) {
+      return;
+    }
+
     try {
-      const eventId = sessionStorage.getItem("event_id") || "";
       const res = await authAPI.deleteCoupon(eventId, String(couponId));
-      if (res && (res.success || res.status === "success")) {
+
+      // Check if deletion was successful - API returns {message: "Record removed successfully"}
+      if (res && res.message) {
         alert(res.message || "Coupon removed");
-        // refresh event details
-        const eventIdForRefresh = sessionStorage.getItem("event_id");
-        if (eventIdForRefresh) {
-          try {
-            const detailsRes = await authAPI.getEventDetails(eventIdForRefresh);
-            const payload =
-              detailsRes && detailsRes.data ? detailsRes.data : detailsRes;
-            if (payload && payload.EventData && payload.EventData[0]) {
-              const couponArr = Array.isArray(payload.coupon_details)
-                ? payload.coupon_details
-                : Array.isArray(payload.EventData[0].coupon_details)
-                ? payload.EventData[0].coupon_details
-                : [];
-              setCouponDetails(uniqueCoupons(couponArr));
-              if (Array.isArray(payload.EventData[0].EventTickets))
-                setTickets(payload.EventData[0].EventTickets);
-            } else if (Array.isArray(payload.coupon_details)) {
-              setCouponDetails(uniqueCoupons(payload.coupon_details));
-              if (Array.isArray(payload.EventTickets))
-                setTickets(payload.EventTickets);
-            }
-          } catch (e) {
-            console.error("Failed to refresh event details after delete", e);
+
+        // Refresh the coupons list - same pattern as AgeCategory
+        const detailsRes = await authAPI.getEventDetails(eventId);
+        if (detailsRes && detailsRes.data) {
+          if (Array.isArray(detailsRes.data.coupon_details)) {
+            setCouponDetails(uniqueCoupons(detailsRes.data.coupon_details));
+          } else {
+            setCouponDetails([]);
           }
         }
       } else {
-        alert((res && res.message) || "Failed to delete coupon");
+        alert("Failed to delete coupon");
       }
     } catch (err) {
-      console.error("deleteEventCommFqa error:", err);
+      console.error("Error deleting coupon:", err);
       alert(err.message || "Failed to delete coupon");
     }
+  };
+
+  // Handle clicking on a coupon code to edit it
+  const handleCodeClick = (index, currentValue) => {
+    setEditingCodeIndex(index);
+    setEditedCodeValue(currentValue.toUpperCase());
+    setSaveMessage(null);
+  };
+
+  // Handle saving the edited coupon code
+  const handleSaveCode = async (coupon) => {
+    try {
+      const eventId = sessionStorage.getItem("event_id");
+      const payload = {
+        event_id: eventId,
+        coupon_id: coupon.id || coupon.event_coupon_id,
+        DiscountCodeEdit: editedCodeValue,
+      };
+
+      const res = await authAPI.editCouponCode(payload);
+
+      if (res && (res.data === 1 || res.success === 200)) {
+        setSaveMessage({ type: "success", text: res.message || "Discount code updated successfully" });
+
+        // Update the code in the modal
+        const updatedCoupons = [...viewCouponsModal.multiple_coupon_details];
+        updatedCoupons[editingCodeIndex] = {
+          ...updatedCoupons[editingCodeIndex],
+          name: editedCodeValue,
+          discount_code: editedCodeValue,
+        };
+        setViewCouponsModal({
+          ...viewCouponsModal,
+          multiple_coupon_details: updatedCoupons,
+        });
+
+        setEditingCodeIndex(null);
+        setEditedCodeValue("");
+        setTimeout(() => setSaveMessage(null), 3000);
+
+        // Refresh coupon details
+        const detailsRes = await authAPI.getEventDetails(eventId);
+        if (detailsRes && detailsRes.data && Array.isArray(detailsRes.data.coupon_details)) {
+          setCouponDetails(uniqueCoupons(detailsRes.data.coupon_details));
+        }
+      } else if (res && res.data === 2) {
+        setSaveMessage({ type: "error", text: res.message || "Discount code already exists" });
+      } else {
+        setSaveMessage({ type: "error", text: "Failed to update code" });
+      }
+    } catch (err) {
+      console.error("Error updating coupon code:", err);
+      setSaveMessage({ type: "error", text: err.message || "Failed to update code" });
+    }
+  };
+
+  // Handle canceling edit
+  const handleCancelEdit = () => {
+    setEditingCodeIndex(null);
+    setEditedCodeValue("");
+    setSaveMessage(null);
   };
 
   const handleEditCoupon = async (coupon) => {
@@ -652,6 +713,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                   <select
                     name="codeType"
                     value={formData.codeType}
+                    disabled={!!formData.edit_coupon_id}
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
@@ -664,7 +726,9 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                       borderRadius: 6,
                       border: "1px solid #ddd",
                       boxSizing: "border-box",
-                      background: "#fff",
+                      background: formData.edit_coupon_id ? "#f5f5f5" : "#fff",
+                      cursor: formData.edit_coupon_id ? "not-allowed" : "pointer",
+                      opacity: formData.edit_coupon_id ? 0.6 : 1,
                     }}
                   >
                     <option value="single">Single Code</option>
@@ -829,22 +893,44 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                   ) : (
                     <>
                       <label style={{ display: "block", marginBottom: 6 }}>
-                        Discounts Code
+                        Discounts Code <span style={{ color: "red" }}>*</span>
                       </label>
                       <input
                         type="text"
                         name="discountsCode"
                         value={formData.discountsCode}
-                        onChange={handleInputChange}
-                        placeholder="Optional - for reference"
+                        onChange={(e) => {
+                          // Convert to uppercase
+                          const upperValue = e.target.value.toUpperCase();
+                          const syntheticEvent = {
+                            ...e,
+                            target: {
+                              ...e.target,
+                              name: "discountsCode",
+                              value: upperValue,
+                            },
+                          };
+                          handleInputChange(syntheticEvent);
+                          setSaveErrors((s) => ({
+                            ...s,
+                            discountsCode: undefined,
+                          }));
+                        }}
+                        placeholder="Enter discount code"
                         style={{
                           width: "100%",
                           padding: "10px",
                           borderRadius: 6,
-                          border: "1px solid #ddd",
+                          border: attemptedSave && saveErrors.discountsCode ? "1px solid red" : "1px solid #ddd",
                           boxSizing: "border-box",
+                          textTransform: "uppercase",
                         }}
                       />
+                      {attemptedSave && saveErrors.discountsCode && (
+                        <div style={{ color: "red", fontSize: 12, marginTop: 6 }}>
+                          {saveErrors.discountsCode}
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -1267,49 +1353,27 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                     const createdBy =
                       derivedUserId || localStorage.getItem("user_id") || "0";
                     fd.append("created_by", String(createdBy));
-                    // Determine discount type and map fields per rules:
-                    // discount_type: '1' => amount, '2' => percentage
-                    // If discount_type == '1' send value in discount_amount; discount_percentage empty
-                    // If discount_type == '2' send value in discount_percentage; discount_amount empty
-                    // discount_amt_per_type should be inverse: if type 1 -> 2, if type 2 -> 1
-                    const selectedMode =
-                      formData.discountAmount || "percentage"; // 'amount' or 'percentage'
-                    const discountType = formData.discount_type
-                      ? String(formData.discount_type)
-                      : selectedMode === "amount"
-                      ? "1"
-                      : "2";
 
-                    fd.append("discount_type", discountType);
+                    // discount_type based on One Time Use vs Multiple Time Use
+                    // '1' = One Time Use, '2' = Multiple Time Use
+                    const discountTypeValue = useType === "oneTime" ? "1" : "2";
+                    fd.append("discount_type", discountTypeValue);
                     fd.append("discount_name", formData.discountName || "");
 
-                    // discount_amt_per_type is inverse
-                    fd.append(
-                      "discount_amt_per_type",
-                      discountType === "1" ? "2" : "1"
-                    );
+                    // discount_amt_per_type: '1' = amount, '2' = percentage
+                    const selectedMode = formData.discountAmount || "percentage";
+                    const amtPerType = selectedMode === "amount" ? "1" : "2";
+                    fd.append("discount_amt_per_type", amtPerType);
 
-                    if (discountType === "1") {
-                      // send amount
-                      fd.append(
-                        "discount_amount",
-                        formData.discountAmountValue || ""
-                      );
-                      fd.append(
-                        "discount_percentage",
-                        formData.discountPercentage || ""
-                      );
-                    } else {
-                      // send percentage
-                      fd.append(
-                        "discount_percentage",
-                        formData.discountPercentage || ""
-                      );
-                      fd.append(
-                        "discount_amount",
-                        formData.discountAmountValue || ""
-                      );
-                    }
+                    // Send both amount and percentage values - backend uses discount_amt_per_type to determine which to use
+                    fd.append(
+                      "discount_amount",
+                      formData.discountAmountValue || ""
+                    );
+                    fd.append(
+                      "discount_percentage",
+                      formData.discountPercentage || ""
+                    );
                     // map codeType ('single'|'list') to backend values 1 or 2
                     const codeTypeValue =
                       formData.codeType === "list" ? "2" : "1";
@@ -1433,8 +1497,8 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                               )
                                 ? payload.coupon_details
                                 : Array.isArray(p.coupon_details)
-                                ? p.coupon_details
-                                : [];
+                                  ? p.coupon_details
+                                  : [];
                               if (couponArrPost.length > 0)
                                 setCouponDetails(uniqueCoupons(couponArrPost));
                             } else {
@@ -1561,6 +1625,206 @@ const DiscountCoupons = ({ onBack, onNext }) => {
             </div>
           )}
 
+          {/* View Coupons Modal */}
+          {viewCouponsModal && (
+            <div
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: "rgba(0,0,0,0.5)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 9999,
+              }}
+              onClick={() => setViewCouponsModal(null)}
+            >
+              <div
+                role="dialog"
+                aria-modal="true"
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  width: "720px",
+                  maxWidth: "95%",
+                  maxHeight: "90vh",
+                  background: "#fff",
+                  borderRadius: 12,
+                  padding: 32,
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+                  position: "relative",
+                  overflow: "auto",
+                }}
+              >
+                {/* Header */}
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="32"
+                      height="32"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#da251c"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 10.5V7a2 2 0 0 0-2-2h-3.5" />
+                      <path d="M3 13.5V17a2 2 0 0 0 2 2h3.5" />
+                      <rect x="7" y="4" width="10" height="16" rx="2" />
+                    </svg>
+                    <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>
+                      Discount Coupons
+                    </h2>
+                  </div>
+                </div>
+
+                {/* Success/Error Message */}
+                {saveMessage && (
+                  <div
+                    style={{
+                      padding: "12px 16px",
+                      marginBottom: 16,
+                      borderRadius: 6,
+                      background: saveMessage.type === "success" ? "#d4edda" : "#f8d7da",
+                      color: saveMessage.type === "success" ? "#155724" : "#721c24",
+                      border: `1px solid ${saveMessage.type === "success" ? "#c3e6cb" : "#f5c6cb"}`,
+                      fontSize: 14,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {saveMessage.text}
+                  </div>
+                )}
+
+                {/* Coupon Codes Grid */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                    gap: 16,
+                    marginBottom: 24,
+                  }}
+                >
+                  {viewCouponsModal.multiple_coupon_details &&
+                    viewCouponsModal.multiple_coupon_details.map((coupon, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          padding: editingCodeIndex === idx ? "12px" : "16px 24px",
+                          background: "#fff",
+                          border: editingCodeIndex === idx ? "2px solid #da251c" : "1px solid #e0e0e0",
+                          borderRadius: 8,
+                          fontWeight: 600,
+                          fontSize: 16,
+                          textAlign: "center",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                          letterSpacing: "0.5px",
+                          textTransform: "uppercase",
+                          position: "relative",
+                        }}
+                      >
+                        {editingCodeIndex === idx ? (
+                          <div>
+                            <input
+                              type="text"
+                              value={editedCodeValue}
+                              onChange={(e) => setEditedCodeValue(e.target.value.toUpperCase())}
+                              style={{
+                                width: "100%",
+                                padding: "8px",
+                                border: "1px solid #ddd",
+                                borderRadius: 4,
+                                fontSize: 16,
+                                fontWeight: 600,
+                                textAlign: "center",
+                                textTransform: "uppercase",
+                                marginBottom: 8,
+                              }}
+                              autoFocus
+                            />
+                            <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                              <button
+                                onClick={() => handleSaveCode(coupon)}
+                                style={{
+                                  padding: "6px 16px",
+                                  background: "#da251c",
+                                  color: "#fff",
+                                  border: "none",
+                                  borderRadius: 4,
+                                  cursor: "pointer",
+                                  fontSize: 14,
+                                  fontWeight: 600,
+                                }}
+                                title="Save"
+                              >
+                                💾 Save
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                style={{
+                                  padding: "6px 16px",
+                                  background: "#6c757d",
+                                  color: "#fff",
+                                  border: "none",
+                                  borderRadius: 4,
+                                  cursor: "pointer",
+                                  fontSize: 14,
+                                  fontWeight: 600,
+                                }}
+                                title="Cancel"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            onClick={() => handleCodeClick(idx, coupon.name || coupon.discount_code || "")}
+                            style={{ cursor: "pointer" }}
+                            title="Click to edit"
+                          >
+                            {coupon.name || coupon.discount_code || ""}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+
+                {/* Close Button */}
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    onClick={() => setViewCouponsModal(null)}
+                    style={{
+                      padding: "12px 32px",
+                      background: "#fff",
+                      color: "#da251c",
+                      border: "2px solid #da251c",
+                      borderRadius: 6,
+                      fontWeight: 600,
+                      fontSize: 16,
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = "#da251c";
+                      e.target.style.color = "#fff";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = "#fff";
+                      e.target.style.color = "#da251c";
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {!showForm &&
             (couponDetails && couponDetails.length > 0 ? (
               <div style={{ marginTop: 24, display: "grid", gap: 12 }}>
@@ -1572,9 +1836,9 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                     c.discount_code ||
                     "";
                   const discountValue =
-                    Number(c.discount_type) === 2
+                    Number(c.discount_amt_per_type) === 2
                       ? `${c.discount_percentage}%`
-                      : `${c.discount_amount}`;
+                      : `₹${c.discount_amount}`;
                   return (
                     <div
                       key={c.id}
@@ -1732,18 +1996,44 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                         </div>
 
                         <div style={{ marginLeft: 24 }}>
-                          <div
-                            style={{
-                              padding: "12px 28px",
-                              background:
-                                "repeating-linear-gradient(45deg,#f5f5f5,#f5f5f5 10px,#eee 10px,#eee 20px)",
-                              borderRadius: 6,
-                              fontWeight: 700,
-                              fontSize: 20,
-                            }}
-                          >
-                            {codePreview}
-                          </div>
+                          {c.multiple_coupon_details && c.multiple_coupon_details.length > 1 ? (
+                            <button
+                              onClick={() => setViewCouponsModal(c)}
+                              style={{
+                                padding: "12px 32px",
+                                background: "#fff",
+                                color: "#da251c",
+                                border: "2px solid #da251c",
+                                borderRadius: 8,
+                                fontWeight: 600,
+                                fontSize: 16,
+                                cursor: "pointer",
+                                transition: "all 0.2s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.background = "#fff5f5";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.background = "#fff";
+                              }}
+                            >
+                              View Coupons
+                            </button>
+                          ) : (
+                            <div
+                              style={{
+                                padding: "12px 28px",
+                                background:
+                                  "repeating-linear-gradient(45deg,#f5f5f5,#f5f5f5 10px,#eee 10px,#eee 20px)",
+                                borderRadius: 6,
+                                fontWeight: 700,
+                                fontSize: 20,
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              {codePreview}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1822,7 +2112,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import "./CreateEvent.css";
 
 const CommunicationsStep = ({ onBack, onNext }) => {
@@ -160,17 +162,17 @@ const CommunicationsStep = ({ onBack, onNext }) => {
           : items.find((i) => String(i.id) === String(item.id));
         const editObj = source
           ? {
-              id: source.id,
-              title: source.title || "",
-              content: source.content || "",
-              isTerms,
-            }
+            id: source.id,
+            title: source.title || "",
+            content: source.content || "",
+            isTerms,
+          }
           : {
-              id: item.id,
-              title: item.title || "",
-              content: item.content || "",
-              isTerms,
-            };
+            id: item.id,
+            title: item.title || "",
+            content: item.content || "",
+            isTerms,
+          };
         setEditModalData(editObj);
       }
 
@@ -183,17 +185,17 @@ const CommunicationsStep = ({ onBack, onNext }) => {
         : items.find((i) => String(i.id) === String(item.id));
       const editObj = source
         ? {
-            id: source.id,
-            title: source.title || "",
-            content: source.content || "",
-            isTerms,
-          }
+          id: source.id,
+          title: source.title || "",
+          content: source.content || "",
+          isTerms,
+        }
         : {
-            id: item.id,
-            title: item.title || "",
-            content: item.content || "",
-            isTerms,
-          };
+          id: item.id,
+          title: item.title || "",
+          content: item.content || "",
+          isTerms,
+        };
       setEditModalData(editObj);
       setShowEditModal(true);
     }
@@ -326,6 +328,28 @@ const CommunicationsStep = ({ onBack, onNext }) => {
         (res && (res.message || (res.data && res.data.message))) ||
         "Status updated";
       alert(message);
+
+      // Refresh event details to get updated Terms status from server
+      const eventId = sessionStorage.getItem("event_id");
+      if (eventId) {
+        try {
+          const detailsRes = await authAPI.getEventDetails(Number(eventId));
+          const data = detailsRes?.data || detailsRes || {};
+          const terms =
+            (data.terms_conditions_details && data.terms_conditions_details[0]) ||
+            null;
+          if (terms) {
+            setTermsItem({
+              id: terms.id,
+              title: terms.title || "Terms and Condition",
+              content: terms.terms_conditions || "",
+              status: !!terms.status,
+            });
+          }
+        } catch (e) {
+          console.error("Failed to refresh Terms status:", e);
+        }
+      }
     } catch (err) {
       console.error("statusCoupon error:", err);
       // revert on failure
@@ -352,7 +376,7 @@ const CommunicationsStep = ({ onBack, onNext }) => {
     const formData = new FormData();
     formData.append("coupon_id", String(item.id));
     formData.append("coupon_status", payloadStatus);
-    formData.append("action_flag", "comm_changes_status");
+    formData.append("action_flag", "communication_changes_status");
     const eventId = sessionStorage.getItem("event_id");
     if (eventId) formData.append("event_id", String(eventId));
 
@@ -362,6 +386,24 @@ const CommunicationsStep = ({ onBack, onNext }) => {
         (res && (res.message || (res.data && res.data.message))) ||
         "Status updated";
       alert(message);
+
+      // Refresh event details to get updated communication status from server
+      if (eventId) {
+        try {
+          const detailsRes = await authAPI.getEventDetails(Number(eventId));
+          const data = detailsRes?.data || detailsRes || {};
+          const comms = data.communication_details || [];
+          const mapped = comms.map((c) => ({
+            id: c.id,
+            title: c.subject_name || c.title || "Communication",
+            content: c.message_content || "",
+            active: !!c.status,
+          }));
+          setItems(mapped);
+        } catch (e) {
+          console.error("Failed to refresh communication status:", e);
+        }
+      }
     } catch (err) {
       console.error("statusCoupon error (item):", err);
       // revert
@@ -400,18 +442,43 @@ const CommunicationsStep = ({ onBack, onNext }) => {
               />
 
               <label>Content</label>
-              <textarea
-                value={editModalData.content}
-                onChange={(e) =>
-                  setEditModalData((p) => ({ ...p, content: e.target.value }))
-                }
-                style={{
-                  minHeight: 320,
-                  padding: 10,
-                  borderRadius: 6,
-                  border: "1px solid #ddd",
-                }}
-              />
+              <div style={{ marginTop: 8, width: "100%", maxWidth: "100%", overflow: "hidden" }}>
+                <CKEditor
+                  editor={ClassicEditor}
+                  data={editModalData.content}
+                  config={{
+                    extraPlugins: [
+                      function (editor) {
+                        editor.plugins.get("FileRepository").createUploadAdapter = (
+                          loader
+                        ) => {
+                          return {
+                            upload: () => {
+                              return loader.file.then(
+                                (file) =>
+                                  new Promise((resolve, reject) => {
+                                    const reader = new FileReader();
+                                    reader.onload = () => {
+                                      resolve({
+                                        default: reader.result,
+                                      });
+                                    };
+                                    reader.onerror = (error) => reject(error);
+                                    reader.readAsDataURL(file);
+                                  })
+                              );
+                            },
+                          };
+                        };
+                      },
+                    ],
+                  }}
+                  onChange={(event, editor) => {
+                    const data = editor.getData();
+                    setEditModalData((p) => ({ ...p, content: data }));
+                  }}
+                />
+              </div>
 
               <div
                 style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
@@ -508,9 +575,8 @@ const CommunicationsStep = ({ onBack, onNext }) => {
 
                 {/* floating actions */}
                 <div
-                  className={`comm-actions ${
-                    hovered === it.id ? "visible" : ""
-                  }`}
+                  className={`comm-actions ${hovered === it.id ? "visible" : ""
+                    }`}
                 >
                   <button onClick={() => handleEdit(it)} title="Edit">
                     ✎
@@ -545,18 +611,43 @@ const CommunicationsStep = ({ onBack, onNext }) => {
               />
 
               <label>Content</label>
-              <textarea
-                value={editModalData.content}
-                onChange={(e) =>
-                  setEditModalData((p) => ({ ...p, content: e.target.value }))
-                }
-                style={{
-                  minHeight: 220,
-                  padding: 10,
-                  borderRadius: 6,
-                  border: "1px solid #ddd",
-                }}
-              />
+              <div style={{ marginTop: 8, width: "100%", maxWidth: "100%", overflow: "hidden" }}>
+                <CKEditor
+                  editor={ClassicEditor}
+                  data={editModalData.content}
+                  config={{
+                    extraPlugins: [
+                      function (editor) {
+                        editor.plugins.get("FileRepository").createUploadAdapter = (
+                          loader
+                        ) => {
+                          return {
+                            upload: () => {
+                              return loader.file.then(
+                                (file) =>
+                                  new Promise((resolve, reject) => {
+                                    const reader = new FileReader();
+                                    reader.onload = () => {
+                                      resolve({
+                                        default: reader.result,
+                                      });
+                                    };
+                                    reader.onerror = (error) => reject(error);
+                                    reader.readAsDataURL(file);
+                                  })
+                              );
+                            },
+                          };
+                        };
+                      },
+                    ],
+                  }}
+                  onChange={(event, editor) => {
+                    const data = editor.getData();
+                    setEditModalData((p) => ({ ...p, content: data }));
+                  }}
+                />
+              </div>
 
               <div
                 style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
@@ -618,9 +709,8 @@ const CommunicationsStep = ({ onBack, onNext }) => {
               </div>
               <div style={{ marginLeft: 12 }}>
                 <div
-                  className={`toggle ${
-                    termsItem && termsItem.status ? "on" : ""
-                  }`}
+                  className={`toggle ${termsItem && termsItem.status ? "on" : ""
+                    }`}
                   role="button"
                   aria-label="toggle"
                   onClick={handleToggleTerms}

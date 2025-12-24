@@ -9,6 +9,7 @@
   flex-direction: column;
   align-items: center;
 }
+
 .summary-heading {
   font-size: 1.35rem;
   font-weight: 700;
@@ -16,6 +17,7 @@
   margin-bottom: 18px;
   letter-spacing: 1px;
 }
+
 .summary-details {
   background: #fafbfc;
   border-radius: 8px;
@@ -24,26 +26,31 @@
   margin-bottom: 18px;
   box-sizing: border-box;
 }
+
 .summary-row {
   display: flex;
   justify-content: space-between;
   font-size: 1.08rem;
   margin-bottom: 10px;
 }
+
 .summary-row.total {
   font-weight: 700;
   font-size: 1.15rem;
 }
+
 .summary-total-amount {
   font-weight: 700;
   font-size: 1.15rem;
 }
+
 .summary-note {
   font-size: 0.98rem;
   color: #222;
   margin-top: 8px;
   text-align: left;
 }
+
 .btn-proceed {
   background: linear-gradient(90deg, #e53935 0%, #d32f2f 100%);
   color: #fff;
@@ -61,21 +68,26 @@
   cursor: pointer;
   transition: background 0.2s;
 }
+
 .btn-proceed:hover {
   background: linear-gradient(90deg, #d32f2f 0%, #e53935 100%);
 }
+
 .proceed-count {
   font-size: 1.08rem;
   margin-right: 2px;
 }
+
 .proceed-text {
   font-size: 1.08rem;
   font-weight: 600;
   margin-right: 2px;
 }
+
 .proceed-arrow {
   font-size: 1.08rem;
 }
+
 .coupon-box {
   background: #fff;
   border-radius: 14px;
@@ -86,6 +98,7 @@
   flex-direction: column;
   align-items: center;
 }
+
 .coupon-input {
   width: 100%;
   max-width: 320px;
@@ -98,9 +111,11 @@
   background: #fafbfc;
   transition: border-color 0.2s;
 }
+
 .coupon-input:focus {
   border-color: #d32f2f;
 }
+
 .secure-checkout-page {
   min-height: 100vh;
   background-color: #f5f5f5;
@@ -133,8 +148,7 @@
   transition: all 0.3s ease;
 }
 
-.checkout-breadcrumb
-  span:hover:not(.breadcrumb-active):not(.breadcrumb-separator) {
+.checkout-breadcrumb span:hover:not(.breadcrumb-active):not(.breadcrumb-separator) {
   color: white;
   text-decoration: underline;
 }
@@ -335,6 +349,51 @@
   box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
 }
 
+/* Quantity Controls */
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-quantity {
+  background: linear-gradient(135deg, #2980b9 0%, #1e5fa8 100%);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(41, 128, 185, 0.3);
+}
+
+.btn-quantity:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(41, 128, 185, 0.4);
+  background: linear-gradient(135deg, #1e5fa8 0%, #2980b9 100%);
+}
+
+.btn-quantity:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #95a5a6;
+  box-shadow: none;
+}
+
+.quantity-display {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  min-width: 30px;
+  text-align: center;
+}
+
+
 /* Registration Summary */
 .registration-summary {
   background: white;
@@ -489,6 +548,19 @@
   .btn-remove {
     width: 100%;
     justify-content: center;
+  }
+
+  .quantity-controls {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-quantity {
+    flex: 0 0 auto;
+  }
+
+  .btn-remove {
+    flex: 1;
   }
 
   .category-price {

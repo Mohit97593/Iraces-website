@@ -32,6 +32,7 @@ const AgeCategory = ({ onBack, onNext }) => {
           }
           // Set Age Categories from API response (use age_criteria_details)
           if (Array.isArray(res.data.age_criteria_details)) {
+            console.log("Age categories loaded:", res.data.age_criteria_details);
             setAgeCategories(res.data.age_criteria_details);
           } else {
             setAgeCategories([]);
@@ -91,12 +92,15 @@ const AgeCategory = ({ onBack, onNext }) => {
       formData.append("event_edit_flag", "age_criteria_edit");
 
       const res = await authAPI.editEventCommFqa(formData);
+      console.log("Edit API response:", res);
       if (res && res.data) {
+        console.log("Edit response data:", res.data);
         // Response contains age_criteria_details array per backend
         const details = Array.isArray(res.data.age_criteria_details)
           ? res.data.age_criteria_details[0]
           : res.data.age_criteria_details || null;
 
+        console.log("Extracted details:", details);
         if (details) {
           setInitialFormData(details);
           setShowForm(true);
@@ -210,9 +214,8 @@ const AgeCategory = ({ onBack, onNext }) => {
                         key={cat.id || idx}
                         onMouseEnter={() => setHovered(cat.id)}
                         onMouseLeave={() => setHovered(null)}
-                        className={`comm-card ${
-                          hovered === cat.id ? "hover" : ""
-                        }`}
+                        className={`comm-card ${hovered === cat.id ? "hover" : ""
+                          }`}
                         style={{
                           padding: 24,
                           borderRadius: 8,
@@ -252,9 +255,8 @@ const AgeCategory = ({ onBack, onNext }) => {
                         </div>
 
                         <div
-                          className={`comm-actions ${
-                            hovered === cat.id ? "visible" : ""
-                          }`}
+                          className={`comm-actions ${hovered === cat.id ? "visible" : ""
+                            }`}
                         >
                           <button
                             title="Edit"

@@ -65,9 +65,19 @@ const AddCustomForm = ({ onCancel }) => {
     const question_label = questionLabelEl ? questionLabelEl.value.trim() : "";
     if (!question_label) return alert("Please enter question title");
 
-    const filteredOptions = options
-      .map((o) => o || "")
-      .filter((o) => String(o).trim() !== "");
+
+    // Handle options - if it's a string (comma-separated), split it
+    let filteredOptions = [];
+    if (typeof options === 'string') {
+      filteredOptions = options
+        .split(',')
+        .map(opt => opt.trim())
+        .filter(opt => opt !== '');
+    } else if (Array.isArray(options)) {
+      filteredOptions = options
+        .map((o) => o || "")
+        .filter((o) => String(o).trim() !== "");
+    }
 
     const fd = new FormData();
     fd.append("user_id", localStorage.getItem("user_id") || "");
@@ -120,34 +130,6 @@ const AddCustomForm = ({ onCancel }) => {
       alert("Failed to save question. See console.");
       setSaving(false);
     }
-  };
-
-  const updateOption = (index, value) => {
-    setOptions((prev) => {
-      const next = [...prev];
-      next[index] = value;
-
-      // Agar kisi bhi option mein value hai aur uske baad koi khali option nahi hai,
-      // to ek naya khali option add karo
-      if (value.trim() !== "") {
-        const hasEmptyAfter = next.slice(index + 1).some(opt => opt.trim() === "");
-        if (!hasEmptyAfter) {
-          next.push("");
-        }
-      }
-
-      // Agar pehla option khali ho gaya aur doosre options hain,
-      // to pehle option ko hata do
-      if (index === 0 && value.trim() === "" && next.length > 1) {
-        return next.filter((_, i) => i !== 0);
-      }
-
-      return next;
-    });
-  };
-
-  const removeOption = (index) => {
-    setOptions((prev) => prev.filter((_, i) => i !== index));
   };
 
   useEffect(() => {
@@ -390,42 +372,25 @@ const AddCustomForm = ({ onCancel }) => {
           </select>
         </div>
 
+
         {(questionType === "radio" || questionType === "checkboxes" || questionType === "select") && (
           <div style={{ marginTop: 12 }} className="form-group">
-            <label className="form-label">Options</label>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {options.map((opt, idx) => (
-                <div
-                  key={idx}
-                  style={{ display: "flex", alignItems: "center", gap: 8 }}
-                >
-                  <input
-                    className="form-input compact"
-                    placeholder={`Enter Option ${idx + 1}`}
-                    value={opt}
-                    onChange={(e) => updateOption(idx, e.target.value)}
-                    style={{ flex: 1 }}
-                  />
-                  {/* Sirf pehle option (idx 0) ko chhod kar sabhi mein delete button */}
-                  {idx !== 0 && (
-                    <button
-                      type="button"
-                      onClick={() => removeOption(idx)}
-                      style={{
-                        background: "#fff",
-                        border: "1px solid #e74c3c",
-                        color: "#e74c3c",
-                        borderRadius: 6,
-                        padding: "6px 10px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      🗑
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
+            <label className="form-label">
+              Options <span className="required">*</span>
+            </label>
+            <input
+              className="form-input compact"
+              placeholder="Enter options separated by commas (e.g., Option 1, Option 2, Option 3)"
+              value={Array.isArray(options) ? options.join(", ") : options}
+              onChange={(e) => {
+                // Just store the raw string value, don't split yet
+                setOptions(e.target.value);
+              }}
+              style={{ width: '100%' }}
+            />
+            <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+              💡 Hint: Enter multiple options separated by commas. Example: Male, Female, Other
+            </small>
           </div>
         )}
 

@@ -306,6 +306,24 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Edit Individual Coupon Code API
+  editCouponCode: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+      formData.append("coupon_id", payload.coupon_id);
+      formData.append("DiscountCodeEdit", payload.DiscountCodeEdit);
+      if (payload.edit_coupon_id) {
+        formData.append("edit_coupon_id", payload.edit_coupon_id);
+      }
+      const response = await api.post("/add_edit_coupon_code", formData);
+      return response.data;
+    } catch (error) {
+      console.error("editCouponCode API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
   // Get Roles API
   getRoles: async () => {
     try {
@@ -807,6 +825,27 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       console.error("getFormQuestions API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Coupons API
+  getCoupons: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+      // Append ticket_ids as array
+      if (payload.ticket_ids && Array.isArray(payload.ticket_ids)) {
+        payload.ticket_ids.forEach(ticketId => {
+          formData.append("ticket_ids[]", ticketId);
+        });
+      }
+      const response = await api.post("/get_coupons", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("getCoupons API error:", error);
       throw error.response?.data || error.message;
     }
   },

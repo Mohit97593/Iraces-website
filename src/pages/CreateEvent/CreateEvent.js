@@ -1435,12 +1435,6 @@ export default function CreateEvent() {
                       }
                     }
                     const platformFee = baseAmount > 0 ? 5 : 0;
-                    const paymentGatewayFeeRaw =
-                      baseAmount > 0 ? 0.0185 * baseAmount : 0;
-                    const paymentGatewayFee =
-                      baseAmount > 0
-                        ? Math.round(paymentGatewayFeeRaw * 20) / 20
-                        : 0;
                     const convenienceFeeGST =
                       baseAmount > 0
                         ? Math.round(convenienceFee * 0.18 * 100) / 100
@@ -1449,17 +1443,25 @@ export default function CreateEvent() {
                       baseAmount > 0
                         ? Math.round(platformFee * 0.18 * 100) / 100
                         : 0;
-                    const paymentGatewayGST =
-                      baseAmount > 0
-                        ? Math.round(paymentGatewayFee * 0.18 * 100) / 100
-                        : 0;
 
                     // Registration GST: Show line if collectGST=Yes AND taxType=Exclusive
                     // Amount: ₹0 if organizerGST=false, otherwise 18%
                     const registrationGST = (collectGST && taxType === 'exclusive' && baseAmount > 0)
                       ? (organizerGST ? Math.round(baseAmount * 0.18 * 100) / 100 : 0)
                       : 0;
-                    const totalPayable =
+
+                    // Registration amount includes GST if exclusive
+                    const registrationAmount = baseAmount + registrationGST;
+
+                    // Payment gateway fee calculated on registration amount (not base price)
+                    const paymentGatewayFeeRaw = registrationAmount > 0 ? 0.0185 * registrationAmount : 0;
+                    const paymentGatewayFee = registrationAmount > 0 ? Math.round(paymentGatewayFeeRaw * 100) / 100 : 0;
+                    const paymentGatewayGST =
+                      baseAmount > 0
+                        ? Math.round(paymentGatewayFee * 0.18 * 100) / 100
+                        : 0;
+                    // Start with all fees included
+                    let totalPayable =
                       baseAmount +
                       convenienceFee +
                       platformFee +
@@ -1468,6 +1470,16 @@ export default function CreateEvent() {
                       platformFeeGST +
                       paymentGatewayGST +
                       registrationGST;
+
+                    // Subtract convenience fees if Organiser pays them
+                    if (convenienceFeePlayer === "Organiser") {
+                      totalPayable -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
+                    }
+
+                    // Subtract gateway fees if Organiser pays them
+                    if (gatewayFeePlayer === "Organiser") {
+                      totalPayable -= (paymentGatewayFee + paymentGatewayGST);
+                    }
 
                     // Calculate receivable amount based on who pays the fees
                     let receivableAmount = baseAmount;

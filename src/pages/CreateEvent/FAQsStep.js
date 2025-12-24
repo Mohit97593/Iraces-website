@@ -12,25 +12,28 @@ const FAQsStep = ({ onBack, onNext }) => {
 
   useEffect(() => {
     // load existing FAQs from event details
-    const load = async () => {
-      const eventId = sessionStorage.getItem("event_id");
-      if (!eventId) return;
-      try {
-        const res = await authAPI.getEventDetails(Number(eventId));
-        const data = res?.data || res || {};
-        const faqs = data.faq_details || data.communication_details || [];
-        const mapped = (faqs || []).map((f) => ({
-          id: f.id || f.event_comm_id || f.faq_id,
-          title: f.question || f.title || f.subject_name || "FAQ",
-          active: f.status ? !!f.status : false,
-        }));
-        setItems(mapped);
-      } catch (err) {
-        console.error("Failed to load FAQs:", err);
-      }
-    };
-    load();
+    loadFAQs();
   }, []);
+
+  const loadFAQs = async () => {
+    const eventId = sessionStorage.getItem("event_id");
+    if (!eventId) return;
+    try {
+      const res = await authAPI.getEventDetails(Number(eventId));
+      const data = res?.data || res || {};
+      const faqs = data.faq_details || [];
+      const mapped = (faqs || []).map((f) => ({
+        id: f.id,
+        title: f.question || "FAQ",
+        content: f.answer || "",
+        active: !!f.status,
+        custom_faq: f.custom_faq || 0,
+      }));
+      setItems(mapped);
+    } catch (err) {
+      console.error("Failed to load FAQs:", err);
+    }
+  };
 
   const handleToggle = async (item) => {
     if (!window.confirm(`Change status for \"${item.title}\"?`)) return;
@@ -46,6 +49,13 @@ const FAQsStep = ({ onBack, onNext }) => {
     if (eventId) formData.append("event_id", String(eventId));
     try {
       await authAPI.statusCoupon(formData);
+
+      // Add delay and refresh event details to get updated FAQ status from server
+      if (eventId) {
+        setTimeout(async () => {
+          await loadFAQs();
+        }, 500);
+      }
     } catch (err) {
       console.error("Failed to update FAQ status:", err);
       // revert
@@ -88,6 +98,7 @@ const FAQsStep = ({ onBack, onNext }) => {
     // open inline add editor
     setNewQuestion("");
     setNewAnswer("");
+    setEditingId(null);
     setAdding(true);
   };
 
@@ -95,108 +106,91 @@ const FAQsStep = ({ onBack, onNext }) => {
     setAdding(false);
     setNewQuestion("");
     setNewAnswer("");
+    setEditingId(null);
   };
 
   const handleSaveAdd = async () => {
     if (!newQuestion.trim()) {
       alert("Question is required");
-      return;
+      return false;
     }
+    if (!newAnswer.trim()) {
+      alert("Answer is required");
+      return false;
+    }
+
     const isEdit = !!editingId;
-    let tempId = null;
-    if (!isEdit) {
-      tempId = `new_${Date.now()}`;
-      const newItem = { id: tempId, title: newQuestion.trim(), active: true };
-      // optimistic UI
-      setItems((prev) => [newItem, ...prev]);
-    }
-    setAdding(false);
-
-    // attempt backend save if event_id exists
     const eventId = sessionStorage.getItem("event_id");
-    if (eventId) {
-      // resolve user id from stored userData (many possible keys)
-      let userId = "";
-      try {
-        const stored = localStorage.getItem("userData");
-        if (stored) {
-          const ud = JSON.parse(stored);
-          userId =
-            ud.id ||
-            ud.ID ||
-            ud.user_id ||
-            ud.userId ||
-            ud.UserId ||
-            ud.ID ||
-            ud.UserID ||
-            "";
-        }
-      } catch (e) {
-        // ignore parse errors
+
+    if (!eventId) {
+      alert("Event ID not found. Please try again.");
+      return false;
+    }
+
+    // resolve user id from stored userData
+    let userId = "";
+    try {
+      const stored = localStorage.getItem("userData");
+      if (stored) {
+        const ud = JSON.parse(stored);
+        userId =
+          ud.id ||
+          ud.ID ||
+          ud.user_id ||
+          ud.userId ||
+          ud.UserId ||
+          ud.UserID ||
+          "";
       }
-      if (!userId) {
-        userId = localStorage.getItem("user_id") || "";
-      }
-      if (!userId) {
-        alert("Unable to determine user_id. Please login again.");
-        // leave optimistic UI entry but don't call backend
-        setNewQuestion("");
-        setNewAnswer("");
-        return false;
+    } catch (e) {
+      // ignore parse errors
+    }
+    if (!userId) {
+      userId = localStorage.getItem("user_id") || "";
+    }
+    if (!userId) {
+      alert("Unable to determine user_id. Please login again.");
+      return false;
+    }
+
+    try {
+      const fd = new FormData();
+      fd.append("event_id", String(eventId));
+      fd.append("user_id", String(userId));
+      fd.append("quetion_name", newQuestion.trim());
+      fd.append("answer", newAnswer.trim());
+
+      // if editing, include event_comm_id and flag
+      if (isEdit) {
+        fd.append("event_comm_id", String(editingId));
+        fd.append("event_edit_flag", "faq_edit");
       }
 
-      try {
-        const fd = new FormData();
-        fd.append("event_id", String(eventId));
-        fd.append("user_id", String(userId));
-        fd.append("quetion_name", newQuestion.trim());
-        fd.append("answer", newAnswer.trim());
-        // if editing, include event_comm_id and flag
-        if (isEdit) {
-          fd.append("event_comm_id", String(editingId));
-          fd.append("event_edit_flag", "faq_edit");
-        } else {
-          fd.append("event_comm_id", "");
-        }
-        const res = await authAPI.addEventFaq(fd);
-        // if backend returns new id, replace temp id
-        const newId =
-          res &&
-          (res.data?.id ||
-            res.data?.event_comm_id ||
-            res.event_comm_id ||
-            res.id ||
-            res.data?.inserted_id);
-        if (newId) {
-          if (isEdit) {
-            setItems((prev) =>
-              prev.map((it) =>
-                String(it.id) === String(editingId)
-                  ? { ...it, id: newId, title: newQuestion.trim() }
-                  : it
-              )
-            );
-          } else {
-            setItems((prev) =>
-              prev.map((it) => (it.id === tempId ? { ...it, id: newId } : it))
-            );
-          }
-        }
-        setNewQuestion("");
-        setNewAnswer("");
-        setEditingId(null);
-        return true;
-      } catch (err) {
-        console.error("Failed to save FAQ:", err, err.response);
-        const serverMsg =
-          err.response?.data || err.response?.statusText || err.message;
-        alert("Failed to save FAQ: " + JSON.stringify(serverMsg));
-        return false;
-      }
+      const res = await authAPI.addEventFaq(fd);
+      console.log("FAQ API Response:", res);
+
+      // Close the add form
+      setAdding(false);
+      setNewQuestion("");
+      setNewAnswer("");
+      setEditingId(null);
+
+      // Refresh FAQ list from event details API
+      setTimeout(async () => {
+        await loadFAQs();
+      }, 500);
+
+      return true;
+    } catch (err) {
+      console.error("Failed to save FAQ:", err, err.response);
+      const serverMsg =
+        err.response?.data?.message ||
+        err.response?.data ||
+        err.response?.statusText ||
+        err.message;
+      alert("Failed to save FAQ: " + (typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg)));
+      return false;
     }
-    setNewQuestion("");
-    setNewAnswer("");
-    return true;
   };
 
   const handleDelete = (item) => {
@@ -306,6 +300,9 @@ const FAQsStep = ({ onBack, onNext }) => {
               >
                 <button onClick={() => handleEdit(it)} title="Edit">
                   ✎
+                </button>
+                <button onClick={() => handleDelete(it)} title="Delete">
+                  🗑
                 </button>
               </div>
             </div>
