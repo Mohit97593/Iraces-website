@@ -57,7 +57,6 @@ const AddCustomForm = ({ onCancel }) => {
 
   const handleSave = async () => {
     // basic validation
-    if (!selectedFormId) return alert("Please select a form");
     if (!questionType) return alert("Please select question type");
     const questionLabelEl = document.querySelector(
       ".form-group input.form-input"
@@ -81,7 +80,8 @@ const AddCustomForm = ({ onCancel }) => {
 
     const fd = new FormData();
     fd.append("user_id", localStorage.getItem("user_id") || "");
-    fd.append("form_id", selectedFormId);
+    // Use default form_id as "1" since Choose Form dropdown is removed
+    fd.append("form_id", selectedFormId || "1");
     fd.append("question_label", question_label);
     fd.append(
       "question_form_type",
@@ -277,25 +277,6 @@ const AddCustomForm = ({ onCancel }) => {
         </div>
       )}
       <div style={{ marginTop: 18 }}>
-        <div className="form-group">
-          <label className="form-label">
-            Choose Form <span className="required">*</span>
-          </label>
-          <select
-            className="form-input compact"
-            value={selectedFormId}
-            onChange={(e) => setSelectedFormId(e.target.value)}
-          >
-            <option value="">-- Select --</option>
-            {formCommon &&
-              Array.isArray(formCommon.form_details) &&
-              formCommon.form_details.map((f) => (
-                <option key={f.id} value={String(f.id)}>
-                  {f.form_name}
-                </option>
-              ))}
-          </select>
-        </div>
         <div className="form-group">
           <label className="form-label">
             Question Title <span className="required">*</span>
