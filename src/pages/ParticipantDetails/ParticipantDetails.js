@@ -614,15 +614,37 @@ export default function ParticipantDetails() {
       subQuestionMap[parentId].push(sq);
     });
 
+    // Debug logging for nested subquestions
+    console.log('📊 Subquestion mapping:', subQuestionMap);
+    console.log('📋 All subquestions:', subQuestions.map(sq => ({
+      id: sq.general_form_id,
+      label: sq.question_label,
+      parent_id: sq.parent_question_id,
+      is_subquestion: sq.is_subquestion,
+      child_question_ids: sq.child_question_ids
+    })));
+
+
     // Helper function to check if subquestion should be visible
     const shouldShowSubquestion = (subQuestion, parentQuestion, selectedValue) => {
       try {
+        console.log('🔍 Checking visibility for:', {
+          subQuestion: subQuestion.question_label,
+          subQuestionId: subQuestion.general_form_id,
+          parentQuestion: parentQuestion.question_label,
+          parentType: parentQuestion.question_form_type,
+          parentIsSubquestion: parentQuestion.is_subquestion,
+          selectedValue,
+          parentChildIds: parentQuestion.child_question_ids
+        });
+
         // CHECKBOX type: Always use question-level child_question_ids
         if (parentQuestion.question_form_type === 'checkbox') {
           if (parentQuestion.child_question_ids && parentQuestion.child_question_ids.trim() !== '') {
             const childIds = parentQuestion.child_question_ids.split(',').map(id => id.trim());
             const matches = childIds.some(childId => String(childId) === String(subQuestion.general_form_id));
 
+            console.log('✅ Checkbox parent - question-level match:', matches);
             if (matches) {
               return true;
             }
@@ -630,20 +652,58 @@ export default function ParticipantDetails() {
           return false;
         }
 
-        // RADIO/SELECT types: Check question-level child_question_ids ONLY if parent is a subquestion
-        // This handles nested subquestions (subquestion -> nested subquestion)
-        if (parentQuestion.is_subquestion === 1 && parentQuestion.child_question_ids && parentQuestion.child_question_ids.trim() !== '') {
-          if (selectedValue) {
+        // RADIO/SELECT types for SUBQUESTIONS acting as parents (nested subquestions)
+        // Check BOTH question-level AND option-level child_question_ids
+        if (parentQuestion.is_subquestion === 1) {
+          // First check question-level child_question_ids (for checkbox/radio/select subquestions)
+          if (parentQuestion.child_question_ids && parentQuestion.child_question_ids.trim() !== '') {
             const childIds = parentQuestion.child_question_ids.split(',').map(id => id.trim());
             const matches = childIds.some(childId => String(childId) === String(subQuestion.general_form_id));
 
             if (matches) {
+              console.log('✅ Subquestion parent - question-level match:', matches);
+              // For subquestions with question-level child_question_ids, always show
+              // This keeps nested subquestions visible even when parent value changes
               return true;
             }
           }
+
+          // Then check option-level child_question_id (for radio/select subquestions)
+          if (selectedValue && parentQuestion.question_form_option) {
+            const options = typeof parentQuestion.question_form_option === 'string'
+              ? JSON.parse(parentQuestion.question_form_option)
+              : parentQuestion.question_form_option;
+
+            if (Array.isArray(options)) {
+              const selectedValues = Array.isArray(selectedValue) ? selectedValue : [selectedValue];
+
+              for (const value of selectedValues) {
+                const selectedOption = options.find(opt => {
+                  if (typeof opt === 'string') return opt === value;
+
+                  const optLabel = opt.label || opt.name;
+                  if (optLabel === value) return true;
+
+                  const splitLabels = optLabel ? optLabel.split(',').map(l => l.trim()) : [];
+                  return splitLabels.includes(value);
+                });
+
+                if (selectedOption && selectedOption.child_question_id) {
+                  const matches = String(selectedOption.child_question_id) === String(subQuestion.general_form_id);
+                  console.log('✅ Subquestion parent - option-level match:', matches, 'for option:', value);
+                  if (matches) {
+                    return true;
+                  }
+                }
+              }
+            }
+          }
+
+          // If we reached here and parent is a subquestion, return false
+          return false;
         }
 
-        // For parent RADIO/SELECT questions: ONLY use option-level child_question_id
+        // For parent RADIO/SELECT questions (not subquestions): ONLY use option-level child_question_id
         // This ensures only selected option's subquestions show
         if (!selectedValue || !parentQuestion.question_form_option) {
           return false;
@@ -697,7 +757,15 @@ export default function ParticipantDetails() {
       const subQs = subQuestionMap[parentQuestion.general_form_id] || [];
       const parentValue = parentSelections[`${participantIndex}_${parentQuestion.id}`];
 
-      return subQs.filter(sq => shouldShowSubquestion(sq, parentQuestion, parentValue));
+      console.log(`🔎 Getting subquestions for parent: ${parentQuestion.question_label} (ID: ${parentQuestion.general_form_id})`);
+      console.log(`   Total subquestions in map: ${subQs.length}`, subQs.map(sq => sq.question_label));
+      console.log(`   Parent value selected: ${parentValue}`);
+
+      const filtered = subQs.filter(sq => shouldShowSubquestion(sq, parentQuestion, parentValue));
+
+      console.log(`   ✅ Visible subquestions after filter: ${filtered.length}`, filtered.map(sq => sq.question_label));
+
+      return filtered;
     };
 
     // Group questions by group_question_title (only parent questions)
@@ -1142,8 +1210,26 @@ export default function ParticipantDetails() {
             // Return the question element with its subquestions
             return (
               <React.Fragment key={question.id}>
-                {/* Render the main question with indentation based on level */}
-                <div style={{ marginLeft: `${level * 20}px` }}>
+                {/* Render the main question with indentation and styling based on level */}
+                <div style={{
+                  marginLeft: `${level * 20}px`,
+                  paddingLeft: level > 0 ? '15px' : '0',
+                  borderLeft: level > 0 ? '3px solid #e0e0e0' : 'none',
+                  backgroundColor: level > 0 ? (level === 1 ? '#f9f9f9' : '#f0f0f0') : 'transparent',
+                  padding: level > 0 ? '10px' : '0',
+                  borderRadius: level > 0 ? '4px' : '0',
+                  marginBottom: level > 0 ? '8px' : '0'
+                }}>
+                  {level > 0 && (
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#666',
+                      marginBottom: '5px',
+                      fontWeight: '500'
+                    }}>
+                      {'└─ '} Nested Question (Level {level})
+                    </div>
+                  )}
                   {questionElement}
                 </div>
 

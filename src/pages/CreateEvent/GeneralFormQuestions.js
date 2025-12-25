@@ -506,7 +506,14 @@ const GeneralFormQuestions = ({
       subQuestionHint: "",
       subQuestionHintFile: null,
       subQuestionFormType: "",
-      subQuestionMandatory: "0"
+      subQuestionMandatory: "0",
+      // Options UI fields
+      priceEnabled: false,
+      maxCountEnabled: false,
+      newOptionLabel: "",
+      newOptionPrice: "",
+      newOptionCount: "",
+      options: []
     });
     setSubQuestions(updated);
   };
@@ -917,7 +924,7 @@ const GeneralFormQuestions = ({
 
             // Use the options array that was built in the UI (with price/count if enabled)
             if (subQ.options && Array.isArray(subQ.options) && subQ.options.length > 0) {
-              subQuestionObj.options = subQ.options.map(opt => {
+              subQuestionObj.options = subQ.options.map((opt, optIdx) => {
                 const optionData = {
                   label: opt.label || opt.option_name || opt.name || ""
                 };
@@ -930,6 +937,16 @@ const GeneralFormQuestions = ({
                 // Include count if it was provided
                 if (opt.count !== undefined && opt.count !== null && opt.count !== '') {
                   optionData.count = opt.count;
+                }
+
+                // NEW: Add child_question_id if there's a nested subquestion for this option
+                if (subQ.childSubquestions && subQ.childSubquestions.length > 0) {
+                  // Automatic mapping: First child subquestion → First option, Second → Second option, etc.
+                  // Find child subquestion at the same index as this option
+                  if (subQ.childSubquestions[optIdx]) {
+                    // Use a temporary ID format that will be replaced with real ID after backend saves
+                    optionData.child_question_id = `child_${optIdx}`;
+                  }
                 }
 
                 return optionData;
@@ -957,14 +974,47 @@ const GeneralFormQuestions = ({
           if (subQ.childSubquestions && subQ.childSubquestions.length > 0) {
             subQuestionObj.sub_questions = subQ.childSubquestions.map(childSubQ => {
               const childFormTypeNumeric = getFormTypeNumeric(childSubQ.subQuestionFormType);
-              return {
+
+              // Build child subquestion object with all necessary fields
+              const childObj = {
                 question_type: childFormTypeNumeric,
                 title: childSubQ.subQuestionTitle || "",
                 form_type: childSubQ.subQuestionFormType || "",
                 mandatory: childSubQ.subQuestionMandatory === "1" ? 1 : 0
               };
+
+              // Add options data for checkbox/radio/select types
+              if (childSubQ.subQuestionFormType === 'checkbox' ||
+                childSubQ.subQuestionFormType === 'radio' ||
+                childSubQ.subQuestionFormType === 'select') {
+
+                // Process comma-separated labels into options array
+                if (childSubQ.newOptionLabel && childSubQ.newOptionLabel.trim()) {
+                  const labels = childSubQ.newOptionLabel.split(',').map(l => l.trim()).filter(l => l);
+                  const prices = childSubQ.priceEnabled && childSubQ.newOptionPrice
+                    ? childSubQ.newOptionPrice.split(',').map(p => p.trim()).filter(p => p)
+                    : [];
+                  const counts = childSubQ.maxCountEnabled && childSubQ.newOptionCount
+                    ? childSubQ.newOptionCount.split(',').map(c => c.trim()).filter(c => c)
+                    : [];
+
+                  // Build options array
+                  childObj.options = labels.map((label, idx) => ({
+                    label: label,
+                    price: childSubQ.priceEnabled && prices[idx] ? prices[idx] : null,
+                    count: childSubQ.maxCountEnabled && counts[idx] ? counts[idx] : null
+                  }));
+                }
+
+                // Add price and count enabled flags
+                childObj.priceEnabled = childSubQ.priceEnabled || false;
+                childObj.maxCountEnabled = childSubQ.maxCountEnabled || false;
+              }
+
+              return childObj;
             });
           }
+
 
           return subQuestionObj;
         });
@@ -973,6 +1023,9 @@ const GeneralFormQuestions = ({
       // Build the sub_questions array using the function with UPDATED subquestions
       // (includes any auto-added pending options)
       const subQuestionsArray = buildSubQuestionsArray(updatedSubQuestions);
+
+      // Debug: Log child subquestions data
+      console.log('📤 Sending sub_questions to API:', JSON.stringify(subQuestionsArray, null, 2));
 
       // Send sub_questions as JSON string
       formData.append(
@@ -2017,6 +2070,191 @@ const GeneralFormQuestions = ({
                                                 )}
                                               </div>
 
+                                              {/* Options UI for checkbox, radio, and select types in child subquestions */}
+                                              {(child.subQuestionFormType === 'checkbox' ||
+                                                child.subQuestionFormType === 'radio' ||
+                                                child.subQuestionFormType === 'select') && (
+                                                  <div style={{ marginBottom: 12, width: '100%' }}>
+                                                    {/* Price and Maximum Count Limit toggle switches */}
+                                                    <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
+                                                      {/* Price Toggle */}
+                                                      <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                                                        <div
+                                                          onClick={() => updateChildSubQuestion(index, childIdx, 'priceEnabled', !child.priceEnabled)}
+                                                          style={{
+                                                            width: 48,
+                                                            height: 28,
+                                                            borderRadius: 14,
+                                                            background: child.priceEnabled ? '#da251c' : '#ccc',
+                                                            position: 'relative',
+                                                            transition: 'background 0.3s',
+                                                            cursor: 'pointer'
+                                                          }}
+                                                        >
+                                                          <div
+                                                            style={{
+                                                              position: 'absolute',
+                                                              top: 2,
+                                                              left: child.priceEnabled ? 22 : 2,
+                                                              width: 24,
+                                                              height: 24,
+                                                              borderRadius: 12,
+                                                              background: '#fff',
+                                                              transition: 'left 0.3s',
+                                                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                            }}
+                                                          />
+                                                        </div>
+                                                        <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Price</span>
+                                                      </label>
+
+                                                      {/* Maximum Count Limit Toggle */}
+                                                      <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                                                        <div
+                                                          onClick={() => updateChildSubQuestion(index, childIdx, 'maxCountEnabled', !child.maxCountEnabled)}
+                                                          style={{
+                                                            width: 48,
+                                                            height: 28,
+                                                            borderRadius: 14,
+                                                            background: child.maxCountEnabled ? '#da251c' : '#ccc',
+                                                            position: 'relative',
+                                                            transition: 'background 0.3s',
+                                                            cursor: 'pointer'
+                                                          }}
+                                                        >
+                                                          <div
+                                                            style={{
+                                                              position: 'absolute',
+                                                              top: 2,
+                                                              left: child.maxCountEnabled ? 22 : 2,
+                                                              width: 24,
+                                                              height: 24,
+                                                              borderRadius: 12,
+                                                              background: '#fff',
+                                                              transition: 'left 0.3s',
+                                                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                            }}
+                                                          />
+                                                        </div>
+                                                        <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Maximum Count Limit</span>
+                                                      </label>
+                                                    </div>
+
+                                                    {/* Options input section with pink background */}
+                                                    <div style={{
+                                                      background: '#fff0f0',
+                                                      borderRadius: 8,
+                                                      padding: '16px',
+                                                      marginBottom: 12
+                                                    }}>
+                                                      {/* Label input */}
+                                                      <div style={{ marginBottom: 12 }}>
+                                                        <label style={{
+                                                          display: 'block',
+                                                          fontWeight: 600,
+                                                          fontSize: '0.85rem',
+                                                          marginBottom: 6,
+                                                          color: '#333',
+                                                          textAlign: 'center'
+                                                        }}>
+                                                          Labels (comma-separated) <span style={{ color: '#da251c' }}>*</span>
+                                                        </label>
+                                                        <input
+                                                          type="text"
+                                                          placeholder="e.g., Male, Female, Other"
+                                                          value={child.newOptionLabel || ''}
+                                                          onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionLabel', e.target.value)}
+                                                          style={{
+                                                            width: '100%',
+                                                            padding: '8px 10px',
+                                                            border: '1px solid #ddd',
+                                                            borderRadius: 6,
+                                                            fontSize: '0.85rem'
+                                                          }}
+                                                        />
+                                                      </div>
+
+                                                      {/* Price input (if enabled) */}
+                                                      {child.priceEnabled && (
+                                                        <div style={{ marginBottom: 12 }}>
+                                                          <label style={{
+                                                            display: 'block',
+                                                            fontWeight: 600,
+                                                            fontSize: '0.85rem',
+                                                            marginBottom: 6,
+                                                            color: '#333',
+                                                            textAlign: 'center'
+                                                          }}>
+                                                            Prices (comma-separated)
+                                                          </label>
+                                                          <input
+                                                            type="text"
+                                                            placeholder="e.g., 100, 200, 150"
+                                                            value={child.newOptionPrice || ''}
+                                                            onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionPrice', e.target.value)}
+                                                            style={{
+                                                              width: '100%',
+                                                              padding: '8px 10px',
+                                                              border: '1px solid #ddd',
+                                                              borderRadius: 6,
+                                                              fontSize: '0.85rem'
+                                                            }}
+                                                          />
+                                                        </div>
+                                                      )}
+
+                                                      {/* Count input (if enabled) */}
+                                                      {child.maxCountEnabled && (
+                                                        <div style={{ marginBottom: 12 }}>
+                                                          <label style={{
+                                                            display: 'block',
+                                                            fontWeight: 600,
+                                                            fontSize: '0.85rem',
+                                                            marginBottom: 6,
+                                                            color: '#333',
+                                                            textAlign: 'center'
+                                                          }}>
+                                                            Counts (comma-separated)
+                                                          </label>
+                                                          <input
+                                                            type="text"
+                                                            placeholder="e.g., 50, 75, 100"
+                                                            value={child.newOptionCount || ''}
+                                                            onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionCount', e.target.value)}
+                                                            style={{
+                                                              width: '100%',
+                                                              padding: '8px 10px',
+                                                              border: '1px solid #ddd',
+                                                              borderRadius: 6,
+                                                              fontSize: '0.85rem'
+                                                            }}
+                                                          />
+                                                        </div>
+                                                      )}
+
+                                                      {/* Hint text */}
+                                                      <div style={{
+                                                        background: '#e8f5e9',
+                                                        border: '1px solid #4caf50',
+                                                        borderRadius: 6,
+                                                        padding: '8px 10px',
+                                                        fontSize: '0.75rem',
+                                                        color: '#2e7d32',
+                                                        textAlign: 'center'
+                                                      }}>
+                                                        <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                                                          💡 Tip: You can send different values in a single line
+                                                        </div>
+                                                        <div>
+                                                          • Separate multiple values with comma (,)<br />
+                                                          • Example: Male, Female, Other<br />
+                                                          • If you have 3 labels, provide 3 prices and 3 counts
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                )}
+
                                               {/* Child Mandatory */}
                                               <div className="form-group2" style={{ marginBottom: '12px' }}>
                                                 <label className="form-label" style={{ fontSize: '0.85rem' }}>Status</label>
@@ -2748,6 +2986,191 @@ const GeneralFormQuestions = ({
                                                   </div>
                                                 )}
                                               </div>
+
+                                              {/* Options UI for checkbox, radio, and select types in child subquestions */}
+                                              {(child.subQuestionFormType === 'checkbox' ||
+                                                child.subQuestionFormType === 'radio' ||
+                                                child.subQuestionFormType === 'select') && (
+                                                  <div style={{ marginBottom: 12, width: '100%' }}>
+                                                    {/* Price and Maximum Count Limit toggle switches */}
+                                                    <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
+                                                      {/* Price Toggle */}
+                                                      <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                                                        <div
+                                                          onClick={() => updateChildSubQuestion(index, childIdx, 'priceEnabled', !child.priceEnabled)}
+                                                          style={{
+                                                            width: 48,
+                                                            height: 28,
+                                                            borderRadius: 14,
+                                                            background: child.priceEnabled ? '#da251c' : '#ccc',
+                                                            position: 'relative',
+                                                            transition: 'background 0.3s',
+                                                            cursor: 'pointer'
+                                                          }}
+                                                        >
+                                                          <div
+                                                            style={{
+                                                              position: 'absolute',
+                                                              top: 2,
+                                                              left: child.priceEnabled ? 22 : 2,
+                                                              width: 24,
+                                                              height: 24,
+                                                              borderRadius: 12,
+                                                              background: '#fff',
+                                                              transition: 'left 0.3s',
+                                                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                            }}
+                                                          />
+                                                        </div>
+                                                        <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Price</span>
+                                                      </label>
+
+                                                      {/* Maximum Count Limit Toggle */}
+                                                      <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                                                        <div
+                                                          onClick={() => updateChildSubQuestion(index, childIdx, 'maxCountEnabled', !child.maxCountEnabled)}
+                                                          style={{
+                                                            width: 48,
+                                                            height: 28,
+                                                            borderRadius: 14,
+                                                            background: child.maxCountEnabled ? '#da251c' : '#ccc',
+                                                            position: 'relative',
+                                                            transition: 'background 0.3s',
+                                                            cursor: 'pointer'
+                                                          }}
+                                                        >
+                                                          <div
+                                                            style={{
+                                                              position: 'absolute',
+                                                              top: 2,
+                                                              left: child.maxCountEnabled ? 22 : 2,
+                                                              width: 24,
+                                                              height: 24,
+                                                              borderRadius: 12,
+                                                              background: '#fff',
+                                                              transition: 'left 0.3s',
+                                                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                            }}
+                                                          />
+                                                        </div>
+                                                        <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Maximum Count Limit</span>
+                                                      </label>
+                                                    </div>
+
+                                                    {/* Options input section with pink background */}
+                                                    <div style={{
+                                                      background: '#fff0f0',
+                                                      borderRadius: 8,
+                                                      padding: '16px',
+                                                      marginBottom: 12
+                                                    }}>
+                                                      {/* Label input */}
+                                                      <div style={{ marginBottom: 12 }}>
+                                                        <label style={{
+                                                          display: 'block',
+                                                          fontWeight: 600,
+                                                          fontSize: '0.85rem',
+                                                          marginBottom: 6,
+                                                          color: '#333',
+                                                          textAlign: 'center'
+                                                        }}>
+                                                          Labels (comma-separated) <span style={{ color: '#da251c' }}>*</span>
+                                                        </label>
+                                                        <input
+                                                          type="text"
+                                                          placeholder="e.g., Male, Female, Other"
+                                                          value={child.newOptionLabel || ''}
+                                                          onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionLabel', e.target.value)}
+                                                          style={{
+                                                            width: '100%',
+                                                            padding: '8px 10px',
+                                                            border: '1px solid #ddd',
+                                                            borderRadius: 6,
+                                                            fontSize: '0.85rem'
+                                                          }}
+                                                        />
+                                                      </div>
+
+                                                      {/* Price input (if enabled) */}
+                                                      {child.priceEnabled && (
+                                                        <div style={{ marginBottom: 12 }}>
+                                                          <label style={{
+                                                            display: 'block',
+                                                            fontWeight: 600,
+                                                            fontSize: '0.85rem',
+                                                            marginBottom: 6,
+                                                            color: '#333',
+                                                            textAlign: 'center'
+                                                          }}>
+                                                            Prices (comma-separated)
+                                                          </label>
+                                                          <input
+                                                            type="text"
+                                                            placeholder="e.g., 100, 200, 150"
+                                                            value={child.newOptionPrice || ''}
+                                                            onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionPrice', e.target.value)}
+                                                            style={{
+                                                              width: '100%',
+                                                              padding: '8px 10px',
+                                                              border: '1px solid #ddd',
+                                                              borderRadius: 6,
+                                                              fontSize: '0.85rem'
+                                                            }}
+                                                          />
+                                                        </div>
+                                                      )}
+
+                                                      {/* Count input (if enabled) */}
+                                                      {child.maxCountEnabled && (
+                                                        <div style={{ marginBottom: 12 }}>
+                                                          <label style={{
+                                                            display: 'block',
+                                                            fontWeight: 600,
+                                                            fontSize: '0.85rem',
+                                                            marginBottom: 6,
+                                                            color: '#333',
+                                                            textAlign: 'center'
+                                                          }}>
+                                                            Counts (comma-separated)
+                                                          </label>
+                                                          <input
+                                                            type="text"
+                                                            placeholder="e.g., 50, 75, 100"
+                                                            value={child.newOptionCount || ''}
+                                                            onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionCount', e.target.value)}
+                                                            style={{
+                                                              width: '100%',
+                                                              padding: '8px 10px',
+                                                              border: '1px solid #ddd',
+                                                              borderRadius: 6,
+                                                              fontSize: '0.85rem'
+                                                            }}
+                                                          />
+                                                        </div>
+                                                      )}
+
+                                                      {/* Hint text */}
+                                                      <div style={{
+                                                        background: '#e8f5e9',
+                                                        border: '1px solid #4caf50',
+                                                        borderRadius: 6,
+                                                        padding: '8px 10px',
+                                                        fontSize: '0.75rem',
+                                                        color: '#2e7d32',
+                                                        textAlign: 'center'
+                                                      }}>
+                                                        <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                                                          💡 Tip: You can send different values in a single line
+                                                        </div>
+                                                        <div>
+                                                          • Separate multiple values with comma (,)<br />
+                                                          • Example: Male, Female, Other<br />
+                                                          • If you have 3 labels, provide 3 prices and 3 counts
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                )}
 
                                               {/* Child Mandatory */}
                                               <div className="form-group2" style={{ marginBottom: '12px' }}>

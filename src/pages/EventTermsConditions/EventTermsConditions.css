@@ -145,19 +145,19 @@
 }
 
 /* Error Message */
-.error-message {
+.error-message1 {
     text-align: center;
     padding: 60px 20px;
     color: #666;
 }
 
-.error-message i {
+.error-message1 i {
     font-size: 4rem;
     color: #dc3545;
     margin-bottom: 20px;
 }
 
-.error-message p {
+.error-message1 p {
     font-size: 1.1rem;
     margin-bottom: 20px;
 }

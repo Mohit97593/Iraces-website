@@ -74,7 +74,7 @@ export default function EventTermsConditions() {
             <div className="container terms-container">
                 <div className="terms-content-wrapper">
                     {error ? (
-                        <div className="error-message">
+                        <div className="error-message1">
                             <i className="fas fa-exclamation-circle"></i>
                             <p>{error}</p>
                             <button
