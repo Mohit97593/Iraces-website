@@ -117,6 +117,23 @@ export default function CreateEvent() {
               const details =
                 (det.data.EventData && det.data.EventData[0]) || det.data || {};
 
+              // Debug logging to see what fields the API returns
+              console.log("Event Details API Response:", det);
+              console.log("Registration fields from API:", {
+                registration_start_date: details.registration_start_date,
+                registration_start_time: details.registration_start_time,
+                registration_end_date: details.registration_end_date,
+                registration_end_time: details.registration_end_time,
+                diplay_registration_start_date: details.diplay_registration_start_date,
+                diplay_registration_start_time: details.diplay_registration_start_time,
+                diplay_registration_end_date: details.diplay_registration_end_date,
+                diplay_registration_end_time: details.diplay_registration_end_time,
+                display_registration_start_date: details.display_registration_start_date,
+                display_registration_start_time: details.display_registration_start_time,
+                display_registration_end_date: details.display_registration_end_date,
+                display_registration_end_time: details.display_registration_end_time,
+              });
+
               // try to set eventName and status if available
               const name =
                 details.event_name || details.eventName || details.name || "";
@@ -255,21 +272,24 @@ export default function CreateEvent() {
                   eventEndTime:
                     details.event_end_time || details.end_time_event || "",
                   registrationStartDate:
-                    details.registration_start_date ||
                     details.diplay_registration_start_date ||
+                    details.registration_start_date ||
+                    details.display_registration_start_date ||
                     "",
                   registrationStartTime:
-                    details.registration_start_time ||
                     details.diplay_registration_start_time ||
+                    details.registration_start_time ||
+                    details.display_registration_start_time ||
                     "",
                   registrationEndDate:
-                    details.registration_end_date ||
-                    details.registration_end_date ||
                     details.diplay_registration_end_date ||
+                    details.registration_end_date ||
+                    details.display_registration_end_date ||
                     "",
                   registrationEndTime:
-                    details.registration_end_time ||
                     details.diplay_registration_end_time ||
+                    details.registration_end_time ||
+                    details.display_registration_end_time ||
                     "",
                 };
                 // Only set if there's at least one value

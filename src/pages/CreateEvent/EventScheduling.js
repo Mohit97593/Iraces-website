@@ -282,10 +282,26 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                 eventStartTime: details.event_start_time || "",
                 eventEndDate: details.event_end_date || "",
                 eventEndTime: details.event_end_time || "",
-                registrationStartDate: details.registration_start_date || "",
-                registrationStartTime: details.registration_start_time || "",
-                registrationEndDate: details.registration_end_date || "",
-                registrationEndTime: details.registration_end_time || "",
+                registrationStartDate:
+                  details.diplay_registration_start_date ||
+                  details.registration_start_date ||
+                  details.display_registration_start_date ||
+                  "",
+                registrationStartTime:
+                  details.diplay_registration_start_time ||
+                  details.registration_start_time ||
+                  details.display_registration_start_time ||
+                  "",
+                registrationEndDate:
+                  details.diplay_registration_end_date ||
+                  details.registration_end_date ||
+                  details.display_registration_end_date ||
+                  "",
+                registrationEndTime:
+                  details.diplay_registration_end_time ||
+                  details.registration_end_time ||
+                  details.display_registration_end_time ||
+                  "",
               });
             }
           }

@@ -715,7 +715,7 @@ const MedicalProfile = ({ onUpdate }) => {
                 <label>Medical Conditions</label>
                 <input
                   type="text"
-                  placeholder="Medical Conditions*"
+                  placeholder="Medical Conditions"
                   value={medicalConditions}
                   onChange={(e) => setMedicalConditions(e.target.value)}
                   className="edit-input"

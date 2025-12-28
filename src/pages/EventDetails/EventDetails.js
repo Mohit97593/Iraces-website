@@ -122,6 +122,11 @@ export default function EventDetails() {
     return endTime * 1000 < Date.now();
   };
 
+  const isRegistrationNotStarted = (startTime) => {
+    if (!startTime) return false;
+    return startTime * 1000 > Date.now();
+  };
+
   if (loading) {
     return (
       <div className="event-details-page">
@@ -158,6 +163,7 @@ export default function EventDetails() {
   }
 
   const registrationClosed = isRegistrationClosed(event.registration_end_time);
+  const registrationNotStarted = isRegistrationNotStarted(event.registration_start_time);
 
   return (
     <div className="event-details-page">
@@ -396,6 +402,10 @@ export default function EventDetails() {
                   <div className="status-badge closed">
                     <i className="fas fa-ban"></i> Registration Closed
                   </div>
+                ) : registrationNotStarted ? (
+                  <div className="status-badge soon" style={{ backgroundColor: '#ffc107', color: '#000' }}>
+                    <i className="fas fa-clock"></i> Registration Soon
+                  </div>
                 ) : (
                   <div className="status-badge open">
                     <i className="fas fa-check-circle"></i> Registration Open
@@ -475,7 +485,7 @@ export default function EventDetails() {
               </div>
 
               {/* Registration Button */}
-              {!registrationClosed && (
+              {!registrationClosed && !registrationNotStarted && (
                 <button
                   className="btn-register"
                   onClick={() => navigate(`/checkout/${eventId}`)}

@@ -294,7 +294,23 @@ export default function SecureCheckout() {
     }
 
     // Calculate discount based on discount_amt_per_type
-    const totalPrice = selectedTickets.reduce((sum, t) => sum + (t.ticket_price * t.quantity), 0);
+    // Use discounted price if early bird is active
+    const totalPrice = selectedTickets.reduce((sum, t) => {
+      let effectivePrice = parseFloat(t.ticket_price);
+
+      if (t.early_bird === 1 && t.show_early_bird === 1) {
+        const discountValue = parseFloat(t.discount_value || 0);
+        if (t.discount === 1) {
+          // Percentage discount
+          effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+        } else {
+          // Amount discount
+          effectivePrice = effectivePrice - discountValue;
+        }
+      }
+
+      return sum + (effectivePrice * t.quantity);
+    }, 0);
     let calculatedDiscount = 0;
 
     console.log("🎟️ Coupon details:", matchingCoupon);
@@ -335,7 +351,23 @@ export default function SecureCheckout() {
     setCouponError("");
 
     // Calculate discount based on discount_amt_per_type
-    const totalPrice = selectedTickets.reduce((sum, t) => sum + (t.ticket_price * t.quantity), 0);
+    // Use discounted price if early bird is active
+    const totalPrice = selectedTickets.reduce((sum, t) => {
+      let effectivePrice = parseFloat(t.ticket_price);
+
+      if (t.early_bird === 1 && t.show_early_bird === 1) {
+        const discountValue = parseFloat(t.discount_value || 0);
+        if (t.discount === 1) {
+          // Percentage discount
+          effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+        } else {
+          // Amount discount
+          effectivePrice = effectivePrice - discountValue;
+        }
+      }
+
+      return sum + (effectivePrice * t.quantity);
+    }, 0);
     let calculatedDiscount = 0;
 
     console.log("🎟️ Coupon details:", coupon);
@@ -512,7 +544,63 @@ export default function SecureCheckout() {
 
                       <div className="category-footer">
                         <div className="category-price">
-                          ₹{ticket.ticket_price}
+                          {/* Early Bird Discount Display */}
+                          {ticket.early_bird === 1 && ticket.show_early_bird === 1 ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                              {/* Strikethrough Original Price */}
+                              <span style={{
+                                textDecoration: 'line-through',
+                                color: '#999',
+                                fontSize: '18px',
+                                fontWeight: '500'
+                              }}>
+                                ₹{ticket.strike_out_price || ticket.ticket_price}
+                              </span>
+
+                              {/* Discounted Price - Calculate based on discount type */}
+                              <span style={{
+                                color: '#e74c3c',
+                                fontSize: '24px',
+                                fontWeight: '700'
+                              }}>
+                                ₹{(() => {
+                                  const originalPrice = parseFloat(ticket.ticket_price);
+                                  const discountValue = parseFloat(ticket.discount_value || 0);
+                                  let discountedPrice;
+
+                                  if (ticket.discount === 1) {
+                                    // Percentage discount: discount_value is percentage
+                                    // Example: ₹500 with 10% = ₹500 - (₹500 * 10/100) = ₹450
+                                    discountedPrice = originalPrice - (originalPrice * discountValue / 100);
+                                  } else {
+                                    // Amount discount: discount_value is flat amount
+                                    // Example: ₹500 with ₹10 = ₹500 - ₹10 = ₹490
+                                    discountedPrice = originalPrice - discountValue;
+                                  }
+
+                                  return discountedPrice.toFixed(2);
+                                })()}
+                              </span>
+
+                              {/* Discount Badge */}
+                              <span style={{
+                                backgroundColor: '#ffe5e5',
+                                color: '#e74c3c',
+                                padding: '4px 12px',
+                                borderRadius: '20px',
+                                fontSize: '14px',
+                                fontWeight: '600'
+                              }}>
+                                {ticket.discount === 1
+                                  ? `${ticket.discount_value}% OFF`
+                                  : `₹${ticket.discount_value} OFF`
+                                }
+                              </span>
+                            </div>
+                          ) : (
+                            /* Regular Price Display */
+                            <span>₹{ticket.ticket_price}</span>
+                          )}
                         </div>
                         {(() => {
                           const selectedTicket = selectedTickets.find(t => t.id === ticket.id);
@@ -555,7 +643,7 @@ export default function SecureCheckout() {
                 ))
               ) : (
                 <div className="no-tickets-message">
-                  <p>No tickets available for this event.</p>
+                  <p>available soon.</p>
                 </div>
               )}
             </div>
@@ -569,21 +657,52 @@ export default function SecureCheckout() {
                   <div className="summary-box">
                     <h3 className="summary-heading">SUMMARY</h3>
                     <div className="summary-details">
-                      {selectedTickets.map((ticket) => (
-                        <div key={ticket.id} className="summary-row">
-                          <span>{ticket.ticket_name || ticket.display_ticket_name} ({ticket.quantity}x)</span>
-                          <span>
-                            ₹{(ticket.ticket_price * ticket.quantity)?.toFixed(2) || (ticket.ticket_price * ticket.quantity)}
-                          </span>
-                        </div>
-                      ))}
+                      {selectedTickets.map((ticket) => {
+                        // Calculate effective price based on early bird discount
+                        let effectivePrice = parseFloat(ticket.ticket_price);
+
+                        if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
+                          const discountValue = parseFloat(ticket.discount_value || 0);
+                          if (ticket.discount === 1) {
+                            // Percentage discount
+                            effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+                          } else {
+                            // Amount discount
+                            effectivePrice = effectivePrice - discountValue;
+                          }
+                        }
+
+                        return (
+                          <div key={ticket.id} className="summary-row">
+                            <span>{ticket.ticket_name || ticket.display_ticket_name} ({ticket.quantity}x)</span>
+                            <span>
+                              ₹{(effectivePrice * ticket.quantity).toFixed(2)}
+                            </span>
+                          </div>
+                        );
+                      })}
 
                       {/* Subtotal */}
                       <div className="summary-row">
                         <span>Subtotal</span>
                         <span>
                           ₹{(() => {
-                            const totalPrice = selectedTickets.reduce((sum, t) => sum + (t.ticket_price * t.quantity), 0);
+                            const totalPrice = selectedTickets.reduce((sum, t) => {
+                              let effectivePrice = parseFloat(t.ticket_price);
+
+                              if (t.early_bird === 1 && t.show_early_bird === 1) {
+                                const discountValue = parseFloat(t.discount_value || 0);
+                                if (t.discount === 1) {
+                                  // Percentage discount
+                                  effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+                                } else {
+                                  // Amount discount
+                                  effectivePrice = effectivePrice - discountValue;
+                                }
+                              }
+
+                              return sum + (effectivePrice * t.quantity);
+                            }, 0);
                             return totalPrice.toFixed(2);
                           })()}
                         </span>
@@ -618,13 +737,37 @@ export default function SecureCheckout() {
                         <span className="summary-total-amount">
                           ₹
                           {(() => {
-                            const totalPrice = selectedTickets.reduce((sum, t) => sum + (t.ticket_price * t.quantity), 0);
+                            // Calculate total with early bird discount applied
+                            const totalPrice = selectedTickets.reduce((sum, t) => {
+                              let effectivePrice = parseFloat(t.ticket_price);
+
+                              if (t.early_bird === 1 && t.show_early_bird === 1) {
+                                const discountValue = parseFloat(t.discount_value || 0);
+                                if (t.discount === 1) {
+                                  // Percentage discount
+                                  effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+                                } else {
+                                  // Amount discount
+                                  effectivePrice = effectivePrice - discountValue;
+                                }
+                              }
+
+                              return sum + (effectivePrice * t.quantity);
+                            }, 0);
                             const finalPrice = totalPrice - discount;
                             const formattedPrice = finalPrice.toFixed(2);
                             const totalQuantity = selectedTickets.reduce((sum, t) => sum + t.quantity, 0);
                             localStorage.setItem("summaryTotalAmount", formattedPrice);
                             localStorage.setItem("ticketQuantity", totalQuantity);
                             localStorage.setItem("selectedTickets", JSON.stringify(selectedTickets));
+                            // Save coupon discount info
+                            if (discount > 0) {
+                              localStorage.setItem("couponDiscount", discount.toFixed(2));
+                              localStorage.setItem("couponCode", appliedCoupon?.discount_code || "");
+                            } else {
+                              localStorage.removeItem("couponDiscount");
+                              localStorage.removeItem("couponCode");
+                            }
                             return formattedPrice;
                           })()}
                         </span>

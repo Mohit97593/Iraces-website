@@ -72,7 +72,7 @@ const RaceCategoryForm = ({
       editTicket?.discount === 1
         ? "Percentage"
         : editTicket?.discount === 2
-          ? "Flat"
+          ? "Amount"
           : "Percentage",
     discountValue: editTicket?.discount_value || "",
     ebStartDate: editTicket?.eb_start_date || "",
@@ -112,7 +112,7 @@ const RaceCategoryForm = ({
           editTicket.discount === 1
             ? "Percentage"
             : editTicket.discount === 2
-              ? "Flat"
+              ? "Amount"
               : "Percentage",
         discountValue: editTicket.discount_value ?? "",
         ebStartDate: editTicket.eb_start_date ?? "",
@@ -223,7 +223,7 @@ const RaceCategoryForm = ({
             convenienceFeePlayer: updatedFormData.convenienceFeePlayer,
             gatewayFeePlayer: updatedFormData.gatewayFeePlayer,
             collectGST: collectGST,
-            taxType: taxType,
+            taxType: taxType
           },
         });
       }

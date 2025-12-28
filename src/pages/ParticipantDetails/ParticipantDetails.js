@@ -5,10 +5,9 @@ import { authAPI } from "../../services/authAPI";
 import "./ParticipantDetails.css";
 
 export default function ParticipantDetails() {
-  // Get price from localStorage and calculate taxes
-  const price = parseFloat(localStorage.getItem("summaryTotalAmount")) || 0;
-  const taxes = +(price * 0.18).toFixed(2);
-  const subTotal = +(price + taxes).toFixed(2);
+  // Get price and coupon info from localStorage
+  const couponDiscount = parseFloat(localStorage.getItem("couponDiscount")) || 0;
+  const couponCode = localStorage.getItem("couponCode") || "";
   const { eventId } = useParams();
   const navigate = useNavigate();
 
@@ -47,6 +46,7 @@ export default function ParticipantDetails() {
   const [cities, setCities] = useState([]);
   const [formErrors, setFormErrors] = useState({});
   const [formQuestions, setFormQuestions] = useState(null); // Keyed by ticket ID
+  const [termsConditions, setTermsConditions] = useState([]); // Terms and Conditions from API
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
   const [participantForms, setParticipantForms] = useState([]); // Array of participant form data
@@ -292,9 +292,18 @@ export default function ParticipantDetails() {
           }
 
           const questionsRes = await authAPI.getFormQuestions(formData);
-          if (questionsRes && questionsRes.data && questionsRes.data.FormQuestions) {
-            setFormQuestions(questionsRes.data.FormQuestions);
-            console.log("✅ Form questions received:", questionsRes.data.FormQuestions);
+          if (questionsRes && questionsRes.data) {
+            if (questionsRes.data.FormQuestions) {
+              setFormQuestions(questionsRes.data.FormQuestions);
+              console.log("✅ Form questions received:", questionsRes.data.FormQuestions);
+            }
+            // Save TermsConditions if present
+            if (questionsRes.data.TermsConditions && Array.isArray(questionsRes.data.TermsConditions)) {
+              setTermsConditions(questionsRes.data.TermsConditions);
+              console.log("✅ Terms and Conditions received:", questionsRes.data.TermsConditions);
+            } else {
+              setTermsConditions([]);
+            }
           }
         }
       } catch (error) {
@@ -542,14 +551,67 @@ export default function ParticipantDetails() {
             [name]: type === "checkbox" ? checked : type === "file" ? files[0] : value,
           };
 
-          // Track parent selection for conditional subquestions
-          // Find the question to check if it has child_question_ids
+          // Validate date range for date fields
           const currentTicket = form.ticketInfo;
           if (formQuestions && formQuestions[currentTicket.id]) {
             const questionsData = formQuestions[currentTicket.id];
             const questionsList = questionsData[participantIndex] || questionsData[0] || [];
             const question = questionsList.find(q => getMappedKey(q) === name);
 
+            // Check if this is a date field with range validation
+            if (question && question.question_form_type === 'date' && question.date_range === 1 && value) {
+              const enteredDate = new Date(value);
+              let isValid = true;
+              let errorMessage = "";
+
+              if (question.range_start_date) {
+                const startTimestamp = parseInt(question.range_start_date);
+                const minDate = new Date(startTimestamp * 1000);
+                minDate.setHours(0, 0, 0, 0);
+
+                if (enteredDate < minDate) {
+                  isValid = false;
+                  const minDateStr = minDate.toISOString().split('T')[0];
+                  errorMessage = `Date must be on or after ${minDateStr}`;
+                }
+              }
+
+              if (question.range_end_date && isValid) {
+                const endTimestamp = parseInt(question.range_end_date);
+                const maxDate = new Date(endTimestamp * 1000);
+                maxDate.setHours(23, 59, 59, 999);
+
+                if (enteredDate > maxDate) {
+                  isValid = false;
+                  const maxDateStr = maxDate.toISOString().split('T')[0];
+                  errorMessage = `Date must be on or before ${maxDateStr}`;
+                }
+              }
+
+              // Update form errors
+              if (!isValid) {
+                setFormErrors(prevErrors => ({
+                  ...prevErrors,
+                  [`${participantIndex}_${name}`]: errorMessage
+                }));
+              } else {
+                // Clear error if date is valid
+                setFormErrors(prevErrors => {
+                  const newErrors = { ...prevErrors };
+                  delete newErrors[`${participantIndex}_${name}`];
+                  return newErrors;
+                });
+              }
+            } else {
+              // Clear error for non-date fields or when value is empty
+              setFormErrors(prevErrors => {
+                const newErrors = { ...prevErrors };
+                delete newErrors[`${participantIndex}_${name}`];
+                return newErrors;
+              });
+            }
+
+            // Track parent selection for conditional subquestions
             if (question && question.child_question_ids && question.child_question_ids.trim() !== '') {
               // Store parent selection with actual value
               let valueToStore;
@@ -931,6 +993,23 @@ export default function ParticipantDetails() {
                 lengthError = `Maximum ${maxLength} characters allowed`;
               }
 
+              // For date fields, check if date_range is enabled and parse range dates
+              let minDate = null;
+              let maxDate = null;
+              if (question.question_form_type === 'date' && question.date_range === 1) {
+                // Convert Unix timestamps to YYYY-MM-DD format
+                if (question.range_start_date) {
+                  const startTimestamp = parseInt(question.range_start_date);
+                  const startDate = new Date(startTimestamp * 1000);
+                  minDate = startDate.toISOString().split('T')[0];
+                }
+                if (question.range_end_date) {
+                  const endTimestamp = parseInt(question.range_end_date);
+                  const endDate = new Date(endTimestamp * 1000);
+                  maxDate = endDate.toISOString().split('T')[0];
+                }
+              }
+
               questionElement = (
                 <div className="form-group" key={question.id}>
                   <label>
@@ -939,6 +1018,11 @@ export default function ParticipantDetails() {
                     {minLength && maxLength && (
                       <small style={{ color: '#666', fontSize: '11px', marginLeft: '8px' }}>
                         ({minLength}-{maxLength} characters)
+                      </small>
+                    )}
+                    {minDate && maxDate && (
+                      <small style={{ color: '#666', fontSize: '11px', marginLeft: '8px' }}>
+                        (Select date between {minDate} and {maxDate})
                       </small>
                     )}
                   </label>
@@ -951,8 +1035,11 @@ export default function ParticipantDetails() {
                     required={isRequired}
                     minLength={minLength || undefined}
                     maxLength={maxLength || undefined}
+                    min={minDate || undefined}
+                    max={maxDate || undefined}
                   />
                   {lengthError && <span style={{ color: 'red', fontSize: '12px', display: 'block', marginTop: '4px' }}>{lengthError}</span>}
+                  {formErrors[`${participantIndex}_${fieldName}`] && <span style={{ color: 'red', fontSize: '12px', display: 'block', marginTop: '4px' }}>{formErrors[`${participantIndex}_${fieldName}`]}</span>}
                   {formErrors[fieldName] && <span style={{ color: 'red', fontSize: '12px' }}>{formErrors[fieldName]}</span>}
                 </div>
               );
@@ -1354,6 +1441,41 @@ export default function ParticipantDetails() {
               console.error("Error parsing limit_length in validation:", e);
             }
           }
+
+          // Check date range validation for date fields
+          if (q.question_form_type === 'date' && q.date_range === 1 && fieldValue) {
+            const enteredDate = new Date(fieldValue);
+
+            // Check minimum date
+            if (q.range_start_date) {
+              const startTimestamp = parseInt(q.range_start_date);
+              const minDate = new Date(startTimestamp * 1000);
+              minDate.setHours(0, 0, 0, 0);
+
+              if (enteredDate < minDate) {
+                const minDateStr = minDate.toISOString().split('T')[0];
+                const errorKey = `participant_${participantIndex}_${fieldName}_daterange`;
+                errors[errorKey] = `${q.question_label} must be on or after ${minDateStr} for Participant ${participantIndex + 1}`;
+                hasErrors = true;
+                console.log(`❌ Date too early: ${q.question_label} for Participant ${participantIndex + 1}`);
+              }
+            }
+
+            // Check maximum date
+            if (q.range_end_date) {
+              const endTimestamp = parseInt(q.range_end_date);
+              const maxDate = new Date(endTimestamp * 1000);
+              maxDate.setHours(23, 59, 59, 999);
+
+              if (enteredDate > maxDate) {
+                const maxDateStr = maxDate.toISOString().split('T')[0];
+                const errorKey = `participant_${participantIndex}_${fieldName}_daterange`;
+                errors[errorKey] = `${q.question_label} must be on or before ${maxDateStr} for Participant ${participantIndex + 1}`;
+                hasErrors = true;
+                console.log(`❌ Date too late: ${q.question_label} for Participant ${participantIndex + 1}`);
+              }
+            }
+          }
         });
       }
     });
@@ -1489,7 +1611,21 @@ export default function ParticipantDetails() {
 
               {/* Show detailed breakdown for each ticket type */}
               {selectedTickets.map((ticket, index) => {
-                const baseAmount = parseFloat(ticket.ticket_price) * parseInt(ticket.quantity);
+                // Calculate effective price based on early bird discount
+                let effectivePrice = parseFloat(ticket.ticket_price);
+
+                if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
+                  const discountValue = parseFloat(ticket.discount_value || 0);
+                  if (ticket.discount === 1) {
+                    // Percentage discount
+                    effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+                  } else {
+                    // Amount discount
+                    effectivePrice = effectivePrice - discountValue;
+                  }
+                }
+
+                const baseAmount = effectivePrice * parseInt(ticket.quantity);
 
                 // Calculate fees from ticket_calculation_details if available
                 const calcDetails = ticket.ticket_calculation_details || {};
@@ -1543,54 +1679,85 @@ export default function ParticipantDetails() {
 
               <div className="divider"></div>
 
+              {/* Coupon Discount - only show if applied */}
+              {couponDiscount > 0 && (
+                <div className="summary-item" style={{ color: '#28a745', fontWeight: '600' }}>
+                  <span>Discount ({couponCode})</span>
+                  <span>- ₹{couponDiscount.toFixed(2)}</span>
+                </div>
+              )}
+
               {/* Total Amount */}
               <div className="summary-item total">
                 <span>Total Amount</span>
                 <span className="total-amount">
-                  ₹{selectedTickets.reduce((sum, ticket) => {
-                    const baseAmount = parseFloat(ticket.ticket_price) * parseInt(ticket.quantity);
-                    const calcDetails = ticket.ticket_calculation_details || {};
+                  ₹{(() => {
+                    const subtotal = selectedTickets.reduce((sum, ticket) => {
+                      // Calculate effective price based on early bird discount
+                      let effectivePrice = parseFloat(ticket.ticket_price);
 
-                    // Individual fee components
-                    const convenienceFee = parseFloat(calcDetails.total_convenience_fees || (baseAmount * 0.02)) || 0;
-                    const platformFeeBase = parseFloat(calcDetails.platform_fees_5_each || 5) || 5;
-                    const paymentGatewayCharges = parseFloat(calcDetails.payment_gateway_1_85_buyer || (baseAmount * 0.0185)) || 0;
+                      if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
+                        const discountValue = parseFloat(ticket.discount_value || 0);
+                        if (ticket.discount === 1) {
+                          // Percentage discount
+                          effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+                        } else {
+                          // Amount discount
+                          effectivePrice = effectivePrice - discountValue;
+                        }
+                      }
 
-                    // Platform Fee = Convenience + Platform + Payment Gateway
-                    const totalPlatformFee = convenienceFee + platformFeeBase + paymentGatewayCharges;
+                      const baseAmount = effectivePrice * parseInt(ticket.quantity);
+                      const calcDetails = ticket.ticket_calculation_details || {};
 
-                    // Taxes = 18% of (Base Amount + Platform Fee)
-                    const taxableAmount = baseAmount + totalPlatformFee;
-                    const ticketTaxes = parseFloat(taxableAmount * 0.18) || 0;
+                      // Individual fee components
+                      const convenienceFee = parseFloat(calcDetails.total_convenience_fees || (baseAmount * 0.02)) || 0;
+                      const platformFeeBase = parseFloat(calcDetails.platform_fees_5_each || 5) || 5;
+                      const paymentGatewayCharges = parseFloat(calcDetails.payment_gateway_1_85_buyer || (baseAmount * 0.0185)) || 0;
 
-                    // Sub Total = Base + Platform Fee + Taxes
-                    return sum + baseAmount + totalPlatformFee + ticketTaxes;
-                  }, 0).toFixed(2)}
+                      // Platform Fee = Convenience + Platform + Payment Gateway
+                      const totalPlatformFee = convenienceFee + platformFeeBase + paymentGatewayCharges;
+
+                      // Taxes = 18% of (Base Amount + Platform Fee)
+                      const taxableAmount = baseAmount + totalPlatformFee;
+                      const ticketTaxes = parseFloat(taxableAmount * 0.18) || 0;
+
+                      // Sub Total = Base + Platform Fee + Taxes
+                      return sum + baseAmount + totalPlatformFee + ticketTaxes;
+                    }, 0);
+
+                    // Subtract coupon discount from subtotal
+                    const finalTotal = subtotal - couponDiscount;
+                    return finalTotal.toFixed(2);
+                  })()}
                 </span>
               </div>
 
-              <div className="terms-checkbox">
-                <label>
-                  <input
-                    type="checkbox"
-                    name="termsAccepted"
-                    onChange={(e) => {
-                      // Simple toggle for terms acceptance
-                      console.log("Terms checkbox clicked:", e.target.checked);
-                    }}
-                  />
-                  <span>
-                    <a
-                      href={`/event-terms/${eventId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ textDecoration: "underline" }}
-                    >
-                      Terms and Condition
-                    </a>
-                  </span>
-                </label>
-              </div>
+              {/* Terms and Conditions - only show if TermsConditions data exists */}
+              {termsConditions && termsConditions.length > 0 && (
+                <div className="terms-checkbox">
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="termsAccepted"
+                      onChange={(e) => {
+                        // Simple toggle for terms acceptance
+                        console.log("Terms checkbox clicked:", e.target.checked);
+                      }}
+                    />
+                    <span>
+                      <a
+                        href={`/event-terms/${eventId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: "underline" }}
+                      >
+                        Terms and Condition
+                      </a>
+                    </span>
+                  </label>
+                </div>
+              )}
 
               <button className="btn-proceed-final" onClick={handleProceed}>
                 <i className="fas fa-users"></i>

@@ -753,7 +753,7 @@ const Profile = () => {
     if (!editEmail.trim()) errors.editEmail = "Email is required";
     if (!editGender.trim()) errors.editGender = "Gender is required";
     if (!editDob.trim()) errors.editDob = "Date of birth is required";
-    if (!editBio.trim()) errors.editBio = "Bio is required";
+    // Bio is optional - no validation required
     setPersonalErrors(errors);
     if (Object.keys(errors).length > 0) return;
     // Convert gender to number for API
@@ -2102,13 +2102,16 @@ const Profile = () => {
                             }}
                           >
                             <img
-                              src={userData?.profile_pic
+                              src={(userData?.profile_pic && userData.profile_pic.trim() !== '')
                                 ? (userData.profile_pic.startsWith('http')
                                   ? userData.profile_pic
                                   : `https://api.iraces.in/uploads/profile_images/${userData.profile_pic}`)
                                 : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
                               }
                               alt="avatar"
+                              onError={(e) => {
+                                e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+                              }}
                               style={{
                                 width: '100%',
                                 height: '100%',

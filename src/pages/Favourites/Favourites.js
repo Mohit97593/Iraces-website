@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
 import "./Favourites.css";
 import { authAPI } from "../../services/authAPI";
 
 export default function Favourites() {
+  const navigate = useNavigate();
   const [favouriteEvents, setFavouriteEvents] = useState([]);
   const [likedEvents, setLikedEvents] = useState({});
   const [loading, setLoading] = useState(true);
@@ -93,10 +95,7 @@ export default function Favourites() {
     }
   };
 
-  const handleRemoveFavourite = (eventId) => {
-    // Remove from favourites - API call
-    setFavouriteEvents(favouriteEvents.filter((event) => event.id !== eventId));
-  };
+
 
   return (
     <>
@@ -246,7 +245,12 @@ export default function Favourites() {
                             Open
                           </div>
                         )}
-                        <button className="fav-view-btn">View</button>
+                        <button
+                          className="fav-view-btn"
+                          onClick={() => navigate(`/event/${event.id}`)}
+                        >
+                          {registrationClosed ? "View" : "Register"}
+                        </button>
                       </div>
                     </div>
                   </div>
