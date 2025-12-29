@@ -516,9 +516,8 @@ export default function Signup() {
                               <input
                                 type="text"
                                 name="firstName"
-                                className={`form-control auth-input ${
-                                  errors.firstName ? "is-invalid" : ""
-                                }`}
+                                className={`form-control auth-input ${errors.firstName ? "is-invalid" : ""
+                                  }`}
                                 placeholder="First Name"
                                 value={formData.firstName}
                                 onChange={handleChange}
@@ -535,9 +534,8 @@ export default function Signup() {
                               <input
                                 type="text"
                                 name="lastName"
-                                className={`form-control auth-input ${
-                                  errors.lastName ? "is-invalid" : ""
-                                }`}
+                                className={`form-control auth-input ${errors.lastName ? "is-invalid" : ""
+                                  }`}
                                 placeholder="Last Name"
                                 value={formData.lastName}
                                 onChange={handleChange}
@@ -577,9 +575,8 @@ export default function Signup() {
                                 <input
                                   type="tel"
                                   name="mobileNo"
-                                  className={`form-control auth-input ${
-                                    errors.mobileNo ? "is-invalid" : ""
-                                  }`}
+                                  className={`form-control auth-input ${errors.mobileNo ? "is-invalid" : ""
+                                    }`}
                                   placeholder="Mobile Number"
                                   value={formData.mobileNo}
                                   onChange={handleChange}
@@ -597,9 +594,8 @@ export default function Signup() {
                               <input
                                 type="email"
                                 name="email"
-                                className={`form-control auth-input ${
-                                  errors.email ? "is-invalid" : ""
-                                }`}
+                                className={`form-control auth-input ${errors.email ? "is-invalid" : ""
+                                  }`}
                                 placeholder="Email ID"
                                 value={formData.email}
                                 onChange={handleChange}
@@ -630,9 +626,8 @@ export default function Signup() {
                                   type="date"
                                   name="dob"
                                   id="dob"
-                                  className={`form-control auth-input ${
-                                    errors.dob ? "is-invalid" : ""
-                                  }`}
+                                  className={`form-control auth-input ${errors.dob ? "is-invalid" : ""
+                                    }`}
                                   value={formData.dob}
                                   onChange={handleChange}
                                   required
@@ -665,9 +660,8 @@ export default function Signup() {
                                 </span>
                                 <select
                                   name="gender"
-                                  className={`form-control auth-input ${
-                                    errors.gender ? "is-invalid" : ""
-                                  }`}
+                                  className={`form-control auth-input ${errors.gender ? "is-invalid" : ""
+                                    }`}
                                   value={formData.gender}
                                   onChange={handleChange}
                                   required
@@ -693,9 +687,8 @@ export default function Signup() {
                                 <input
                                   type={showPassword ? "text" : "password"}
                                   name="password"
-                                  className={`form-control auth-input ${
-                                    errors.password ? "is-invalid" : ""
-                                  }`}
+                                  className={`form-control auth-input ${errors.password ? "is-invalid" : ""
+                                    }`}
                                   placeholder="Password"
                                   value={formData.password}
                                   onChange={handleChange}
@@ -722,9 +715,8 @@ export default function Signup() {
                                   onClick={() => setShowPassword(!showPassword)}
                                 >
                                   <i
-                                    className={`fas ${
-                                      showPassword ? "fa-eye-slash" : "fa-eye"
-                                    }`}
+                                    className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"
+                                      }`}
                                   ></i>
                                 </button>
                               </div>
@@ -741,9 +733,8 @@ export default function Signup() {
                                     showConfirmPassword ? "text" : "password"
                                   }
                                   name="confirmPassword"
-                                  className={`form-control auth-input ${
-                                    errors.confirmPassword ? "is-invalid" : ""
-                                  }`}
+                                  className={`form-control auth-input ${errors.confirmPassword ? "is-invalid" : ""
+                                    }`}
                                   placeholder="Confirm Password"
                                   value={formData.confirmPassword}
                                   onChange={handleChange}
@@ -772,11 +763,10 @@ export default function Signup() {
                                   }
                                 >
                                   <i
-                                    className={`fas ${
-                                      showConfirmPassword
+                                    className={`fas ${showConfirmPassword
                                         ? "fa-eye-slash"
                                         : "fa-eye"
-                                    }`}
+                                      }`}
                                   ></i>
                                 </button>
                               </div>
@@ -795,9 +785,8 @@ export default function Signup() {
                                 <input
                                   type="text"
                                   name="firstName"
-                                  className={`form-control auth-input ${
-                                    errors.firstName ? "is-invalid" : ""
-                                  }`}
+                                  className={`form-control auth-input ${errors.firstName ? "is-invalid" : ""
+                                    }`}
                                   placeholder="First Name"
                                   value={formData.firstName}
                                   onChange={handleChange}
@@ -838,9 +827,8 @@ export default function Signup() {
                                   <input
                                     type="tel"
                                     name="mobileNo"
-                                    className={`form-control auth-input ${
-                                      errors.mobileNo ? "is-invalid" : ""
-                                    }`}
+                                    className={`form-control auth-input ${errors.mobileNo ? "is-invalid" : ""
+                                      }`}
                                     placeholder="Mobile Number"
                                     value={formData.mobileNo}
                                     onChange={handleChange}
@@ -873,9 +861,8 @@ export default function Signup() {
                                     type="date"
                                     name="dob"
                                     id="dob"
-                                    className={`form-control auth-input ${
-                                      errors.dob ? "is-invalid" : ""
-                                    }`}
+                                    className={`form-control auth-input ${errors.dob ? "is-invalid" : ""
+                                      }`}
                                     value={formData.dob}
                                     onChange={handleChange}
                                     required
@@ -898,9 +885,8 @@ export default function Signup() {
                                   <input
                                     type={showPassword ? "text" : "password"}
                                     name="password"
-                                    className={`form-control auth-input ${
-                                      errors.password ? "is-invalid" : ""
-                                    }`}
+                                    className={`form-control auth-input ${errors.password ? "is-invalid" : ""
+                                      }`}
                                     placeholder="Password"
                                     value={formData.password}
                                     onChange={handleChange}
@@ -929,9 +915,8 @@ export default function Signup() {
                                     }
                                   >
                                     <i
-                                      className={`fas ${
-                                        showPassword ? "fa-eye-slash" : "fa-eye"
-                                      }`}
+                                      className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"
+                                        }`}
                                     ></i>
                                   </button>
                                 </div>
@@ -948,9 +933,8 @@ export default function Signup() {
                                 <input
                                   type="text"
                                   name="lastName"
-                                  className={`form-control auth-input ${
-                                    errors.lastName ? "is-invalid" : ""
-                                  }`}
+                                  className={`form-control auth-input ${errors.lastName ? "is-invalid" : ""
+                                    }`}
                                   placeholder="Last Name"
                                   value={formData.lastName}
                                   onChange={handleChange}
@@ -968,9 +952,8 @@ export default function Signup() {
                                 <input
                                   type="email"
                                   name="email"
-                                  className={`form-control auth-input ${
-                                    errors.email ? "is-invalid" : ""
-                                  }`}
+                                  className={`form-control auth-input ${errors.email ? "is-invalid" : ""
+                                    }`}
                                   placeholder="Email ID"
                                   value={formData.email}
                                   onChange={handleChange}
@@ -1000,9 +983,8 @@ export default function Signup() {
                                   </span>
                                   <select
                                     name="gender"
-                                    className={`form-control auth-input ${
-                                      errors.gender ? "is-invalid" : ""
-                                    }`}
+                                    className={`form-control auth-input ${errors.gender ? "is-invalid" : ""
+                                      }`}
                                     value={formData.gender}
                                     onChange={handleChange}
                                     required
@@ -1031,9 +1013,8 @@ export default function Signup() {
                                       showConfirmPassword ? "text" : "password"
                                     }
                                     name="confirmPassword"
-                                    className={`form-control auth-input ${
-                                      errors.confirmPassword ? "is-invalid" : ""
-                                    }`}
+                                    className={`form-control auth-input ${errors.confirmPassword ? "is-invalid" : ""
+                                      }`}
                                     placeholder="Confirm Password"
                                     value={formData.confirmPassword}
                                     onChange={handleChange}
@@ -1064,11 +1045,10 @@ export default function Signup() {
                                     }
                                   >
                                     <i
-                                      className={`fas ${
-                                        showConfirmPassword
+                                      className={`fas ${showConfirmPassword
                                           ? "fa-eye-slash"
                                           : "fa-eye"
-                                      }`}
+                                        }`}
                                     ></i>
                                   </button>
                                 </div>
@@ -1099,7 +1079,7 @@ export default function Signup() {
                               style={{ textDecoration: "none", color: "black" }}
                             >
                               {" "}
-                              Terms of Services{" "}
+                              Terms of Service{" "}
                             </NavLink>
                             &
                             <NavLink

@@ -54,6 +54,7 @@ export default function ParticipantDetails() {
   const [currentParticipantIndex, setCurrentParticipantIndex] = useState(0); // For Save & Next
   const [activeQuestionTab, setActiveQuestionTab] = useState({}); // Track active tab for each participant {participantIndex: groupName}
   const [parentSelections, setParentSelections] = useState({}); // Track parent question selections for conditional subquestions {participantIndex_questionId: selectedValue}
+  const [termsAccepted, setTermsAccepted] = useState(false); // Track terms and conditions acceptance
 
   const fieldMapping = {
     firstname: "firstName",
@@ -662,9 +663,30 @@ export default function ParticipantDetails() {
     // Sort by sort_order
     questionsList.sort((a, b) => a.sort_order - b.sort_order);
 
-    // Separate parent questions from subquestions
-    const parentQuestions = questionsList.filter(q => q.is_subquestion === 0 || !q.is_subquestion);
-    const subQuestions = questionsList.filter(q => q.is_subquestion === 1);
+    // Helper function to check if question is enabled (toggle is ON)
+    // question_status: true means toggle is ON (enabled)
+    // question_status: false/null/undefined means toggle is OFF (disabled)
+    const isQuestionEnabled = (q) => {
+      const status = q.question_status;
+      // If status is explicitly false, question is disabled
+      if (status === false || status === "false" || status === "0" || status === 0) {
+        return false;
+      }
+      // If status is true or truthy, question is enabled
+      if (status === true || status === "true" || status === "1" || status === 1) {
+        return true;
+      }
+      // Default: if status is null/undefined, show the question (enabled by default)
+      return true;
+    };
+
+    // Separate parent questions from subquestions and filter out disabled ones
+    const parentQuestions = questionsList
+      .filter(q => q.is_subquestion === 0 || !q.is_subquestion)
+      .filter(q => isQuestionEnabled(q));
+    const subQuestions = questionsList
+      .filter(q => q.is_subquestion === 1)
+      .filter(q => isQuestionEnabled(q));
 
     // Create lookup map for subquestions by parent_question_id
     const subQuestionMap = {};
@@ -1039,8 +1061,21 @@ export default function ParticipantDetails() {
                     max={maxDate || undefined}
                   />
                   {lengthError && <span style={{ color: 'red', fontSize: '12px', display: 'block', marginTop: '4px' }}>{lengthError}</span>}
-                  {formErrors[`${participantIndex}_${fieldName}`] && <span style={{ color: 'red', fontSize: '12px', display: 'block', marginTop: '4px' }}>{formErrors[`${participantIndex}_${fieldName}`]}</span>}
-                  {formErrors[fieldName] && <span style={{ color: 'red', fontSize: '12px' }}>{formErrors[fieldName]}</span>}
+                  {formErrors[`participant_${participantIndex}_${fieldName}`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}`]}
+                    </span>
+                  )}
+                  {formErrors[`participant_${participantIndex}_${fieldName}_length`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}_length`]}
+                    </span>
+                  )}
+                  {formErrors[`participant_${participantIndex}_${fieldName}_daterange`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}_daterange`]}
+                    </span>
+                  )}
                 </div>
               );
             }
@@ -1083,7 +1118,21 @@ export default function ParticipantDetails() {
                       </label>
                     ))}
                   </div>
-                  {formErrors[fieldName] && <span style={{ color: 'red', fontSize: '12px' }}>{formErrors[fieldName]}</span>}
+                  {formErrors[`participant_${participantIndex}_${fieldName}`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}`]}
+                    </span>
+                  )}
+                  {formErrors[`participant_${participantIndex}_${fieldName}_length`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}_length`]}
+                    </span>
+                  )}
+                  {formErrors[`participant_${participantIndex}_${fieldName}_daterange`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}_daterange`]}
+                    </span>
+                  )}
                 </div>
               );
             }
@@ -1136,7 +1185,21 @@ export default function ParticipantDetails() {
                       </label>
                     ))}
                   </div>
-                  {formErrors[fieldName] && <span style={{ color: 'red', fontSize: '12px' }}>{formErrors[fieldName]}</span>}
+                  {formErrors[`participant_${participantIndex}_${fieldName}`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}`]}
+                    </span>
+                  )}
+                  {formErrors[`participant_${participantIndex}_${fieldName}_length`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}_length`]}
+                    </span>
+                  )}
+                  {formErrors[`participant_${participantIndex}_${fieldName}_daterange`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}_daterange`]}
+                    </span>
+                  )}
                 </div>
               );
             }
@@ -1255,7 +1318,21 @@ export default function ParticipantDetails() {
                       </option>
                     ))}
                   </select>
-                  {formErrors[fieldName] && <span style={{ color: 'red', fontSize: '12px' }}>{formErrors[fieldName]}</span>}
+                  {formErrors[`participant_${participantIndex}_${fieldName}`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}`]}
+                    </span>
+                  )}
+                  {formErrors[`participant_${participantIndex}_${fieldName}_length`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}_length`]}
+                    </span>
+                  )}
+                  {formErrors[`participant_${participantIndex}_${fieldName}_daterange`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}_daterange`]}
+                    </span>
+                  )}
                 </div>
               );
             }
@@ -1273,7 +1350,21 @@ export default function ParticipantDetails() {
                     value={currentFormData[fieldName] || ""}
                     onChange={(e) => handleInputChange(participantIndex, e)}
                   ></textarea>
-                  {formErrors[fieldName] && <span style={{ color: 'red', fontSize: '12px' }}>{formErrors[fieldName]}</span>}
+                  {formErrors[`participant_${participantIndex}_${fieldName}`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}`]}
+                    </span>
+                  )}
+                  {formErrors[`participant_${participantIndex}_${fieldName}_length`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}_length`]}
+                    </span>
+                  )}
+                  {formErrors[`participant_${participantIndex}_${fieldName}_daterange`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}_daterange`]}
+                    </span>
+                  )}
                 </div>
               );
             }
@@ -1290,6 +1381,21 @@ export default function ParticipantDetails() {
                     className="form-control3"
                     onChange={(e) => handleInputChange(participantIndex, e)}
                   />
+                  {formErrors[`participant_${participantIndex}_${fieldName}`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}`]}
+                    </span>
+                  )}
+                  {formErrors[`participant_${participantIndex}_${fieldName}_length`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}_length`]}
+                    </span>
+                  )}
+                  {formErrors[`participant_${participantIndex}_${fieldName}_daterange`] && (
+                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                      {formErrors[`participant_${participantIndex}_${fieldName}_daterange`]}
+                    </span>
+                  )}
                 </div>
               );
             }
@@ -1353,6 +1459,41 @@ export default function ParticipantDetails() {
       return;
     }
 
+    // Calculate subTotal
+    const subTotal = selectedTickets.reduce((sum, ticket) => {
+      // Calculate effective price based on early bird discount
+      let effectivePrice = parseFloat(ticket.ticket_price);
+
+      if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
+        const discountValue = parseFloat(ticket.discount_value || 0);
+        if (ticket.discount === 1) {
+          // Percentage discount
+          effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+        } else {
+          // Amount discount
+          effectivePrice = effectivePrice - discountValue;
+        }
+      }
+
+      const baseAmount = effectivePrice * parseInt(ticket.quantity);
+      const calcDetails = ticket.ticket_calculation_details || {};
+
+      // Individual fee components
+      const convenienceFee = parseFloat(calcDetails.total_convenience_fees || (baseAmount * 0.02)) || 0;
+      const platformFeeBase = parseFloat(calcDetails.platform_fees_5_each || 5) || 5;
+      const paymentGatewayCharges = parseFloat(calcDetails.payment_gateway_1_85_buyer || (baseAmount * 0.0185)) || 0;
+
+      // Platform Fee = Convenience + Platform + Payment Gateway
+      const totalPlatformFee = convenienceFee + platformFeeBase + paymentGatewayCharges;
+
+      // Taxes = 18% of (Base Amount + Platform Fee)
+      const taxableAmount = baseAmount + totalPlatformFee;
+      const ticketTaxes = parseFloat(taxableAmount * 0.18) || 0;
+
+      // Sub Total = Base + Platform Fee + Taxes
+      return sum + baseAmount + totalPlatformFee + ticketTaxes;
+    }, 0) - couponDiscount; // Subtract coupon discount from subtotal
+
     console.log("✅ Validation passed, proceeding to payment");
     console.log("💰 Payment amount:", subTotal.toFixed(2));
 
@@ -1406,11 +1547,24 @@ export default function ParticipantDetails() {
 
           // Check if mandatory field is filled
           if (q.is_manadatory === 1) {
-            if (!fieldValue || String(fieldValue).trim() === "") {
+            let isEmpty = false;
+
+            // Check for different types of empty values
+            if (!fieldValue) {
+              isEmpty = true;
+            } else if (Array.isArray(fieldValue) && fieldValue.length === 0) {
+              // Empty array for checkboxes
+              isEmpty = true;
+            } else if (typeof fieldValue === 'string' && fieldValue.trim() === '') {
+              // Empty string
+              isEmpty = true;
+            }
+
+            if (isEmpty) {
               const errorKey = `participant_${participantIndex}_${fieldName}`;
-              errors[errorKey] = `${q.question_label} is required for Participant ${participantIndex + 1}`;
+              errors[errorKey] = `${q.question_label} is required`;
               hasErrors = true;
-              console.log(`❌ Missing field: ${q.question_label} for Participant ${participantIndex + 1}`);
+              console.log(`❌ Missing required field: ${q.question_label} for Participant ${participantIndex + 1}`);
             }
           }
 
@@ -1480,10 +1634,24 @@ export default function ParticipantDetails() {
       }
     });
 
+    // Check terms and conditions if they exist
+    if (termsConditions && termsConditions.length > 0 && !termsAccepted) {
+      errors['terms_conditions'] = 'You must accept the Terms and Conditions to proceed';
+      hasErrors = true;
+      console.log("❌ Terms and Conditions not accepted");
+    }
+
     if (hasErrors) {
       console.log("❌ Validation failed:", errors);
-      alert("Please fill all required fields for all participants");
+      // Removed alert - errors will be shown inline
       setFormErrors(errors);
+
+      // Scroll to first error
+      const firstErrorElement = document.querySelector('.error-message');
+      if (firstErrorElement) {
+        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
       return false;
     }
 
@@ -1582,6 +1750,70 @@ export default function ParticipantDetails() {
                       cursor: 'pointer'
                     }}
                     onClick={() => {
+                      // Validate current participant's form before proceeding
+                      const currentFormData = participantForms[participantIndex].formData;
+                      const currentTicket = participantForms[participantIndex].ticketInfo;
+                      const errors = {};
+                      let hasErrors = false;
+
+                      // Get questions for this participant's ticket
+                      if (formQuestions && currentTicket && formQuestions[currentTicket.id]) {
+                        const questionsData = formQuestions[currentTicket.id];
+                        const questionsList = questionsData[participantIndex] || questionsData[0] || [];
+
+                        // Validate each mandatory question
+                        questionsList.forEach(q => {
+                          const fieldName = getMappedKey(q);
+                          const fieldValue = currentFormData[fieldName];
+
+                          // Check if mandatory field is filled
+                          if (q.is_manadatory === 1) {
+                            let isEmpty = false;
+
+                            if (!fieldValue) {
+                              isEmpty = true;
+                            } else if (Array.isArray(fieldValue) && fieldValue.length === 0) {
+                              isEmpty = true;
+                            } else if (typeof fieldValue === 'string' && fieldValue.trim() === '') {
+                              isEmpty = true;
+                            }
+
+                            if (isEmpty) {
+                              const errorKey = `participant_${participantIndex}_${fieldName}`;
+                              errors[errorKey] = `${q.question_label} is required`;
+                              hasErrors = true;
+                            }
+                          }
+                        });
+                      }
+
+                      if (hasErrors) {
+                        // Show errors and don't proceed
+                        setFormErrors(prev => ({ ...prev, ...errors }));
+
+                        // Scroll to first error
+                        setTimeout(() => {
+                          const firstErrorElement = document.querySelector('.error-message');
+                          if (firstErrorElement) {
+                            firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }
+                        }, 100);
+
+                        console.log(`❌ Validation failed for Participant ${participantIndex + 1}`);
+                        return;
+                      }
+
+                      // Clear errors for this participant if validation passed
+                      setFormErrors(prev => {
+                        const newErrors = { ...prev };
+                        Object.keys(newErrors).forEach(key => {
+                          if (key.startsWith(`participant_${participantIndex}_`)) {
+                            delete newErrors[key];
+                          }
+                        });
+                        return newErrors;
+                      });
+
                       // Scroll to next participant form
                       const nextForm = document.querySelectorAll('.participant-form-card')[participantIndex + 1];
                       if (nextForm) {
@@ -1589,7 +1821,7 @@ export default function ParticipantDetails() {
                       }
                     }}
                   >
-                    Save & Next ({participantIndex + 1}/{participantForms.length})
+                    Save &amp; Next ({participantIndex + 1}/{participantForms.length})
                   </button>
                 )}
               </div>
@@ -1735,27 +1967,49 @@ export default function ParticipantDetails() {
 
               {/* Terms and Conditions - only show if TermsConditions data exists */}
               {termsConditions && termsConditions.length > 0 && (
-                <div className="terms-checkbox">
-                  <label>
+                <div className="terms-checkbox" style={{ marginTop: '20px' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                     <input
                       type="checkbox"
                       name="termsAccepted"
+                      checked={termsAccepted}
                       onChange={(e) => {
-                        // Simple toggle for terms acceptance
+                        setTermsAccepted(e.target.checked);
+                        // Clear error when checked
+                        if (e.target.checked) {
+                          setFormErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors['terms_conditions'];
+                            return newErrors;
+                          });
+                        }
                         console.log("Terms checkbox clicked:", e.target.checked);
                       }}
+                      style={{ marginTop: '4px', width: '18px', height: '18px' }}
                     />
                     <span>
+                      I accept the{' '}
                       <a
                         href={`/event-terms/${eventId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ textDecoration: "underline" }}
+                        style={{ textDecoration: "underline", color: '#e74c3c' }}
                       >
-                        Terms and Condition
+                        Terms and Conditions
                       </a>
+                      <span style={{ color: 'red', marginLeft: '4px' }}>*</span>
                     </span>
                   </label>
+                  {formErrors['terms_conditions'] && (
+                    <div className="error-message" style={{
+                      color: '#e74c3c',
+                      fontSize: '13px',
+                      marginTop: '5px',
+                      marginLeft: '26px'
+                    }}>
+                      {formErrors['terms_conditions']}
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -338,28 +338,76 @@ const FormQuestions = ({ onBack, onNext }) => {
   // local optimistic toggle: newVisualState = true => visual ON (red)
   const handleToggleEventFormStatus = async (q, newVisualState) => {
     const id = getQId(q);
-    const serverBoolBefore = parseServerBool(q.event_form_status);
-    console.log("Toggling question", id, { newVisualState, serverBoolBefore });
+    const questionId = q.id; // This is the actual database ID (e.g., 4542)
+    const serverBoolBefore = parseServerBool(q.question_status);
+    console.log("Toggling question", {
+      displayId: id,
+      questionId: questionId,
+      newVisualState,
+      serverBoolBefore
+    });
 
-    // optimistic update
+    // optimistic update - update question_status field
     setLocalToggleMap((s) => ({ ...s, [id]: !!newVisualState }));
     setLastToggledId(id);
 
+    // Also update the question_status in the questions state
+    setQuestions((prevQuestions) => {
+      const updateQuestion = (questions) => {
+        if (Array.isArray(questions)) {
+          return questions.map(item => {
+            if (getQId(item) === id) {
+              return { ...item, question_status: newVisualState };
+            }
+            return item;
+          });
+        } else if (typeof questions === 'object' && questions !== null) {
+          const updated = {};
+          Object.keys(questions).forEach(key => {
+            const value = questions[key];
+            if (Array.isArray(value)) {
+              updated[key] = value.map(item => {
+                if (getQId(item) === id) {
+                  return { ...item, question_status: newVisualState };
+                }
+                return item;
+              });
+            } else {
+              updated[key] = value;
+            }
+          });
+          return updated;
+        }
+        return questions;
+      };
+      return updateQuestion(prevQuestions);
+    });
+
     try {
       const fd = new FormData();
-      fd.append("coupon_id", id);
-      // inverted mapping: visual ON -> send false, visual OFF -> send true
+      fd.append("coupon_id", questionId); // Use the actual question id (e.g., 4542)
+      // INVERTED LOGIC: Toggle ON (red) -> send "false", Toggle OFF (white) -> send "true"
+      // Backend stores opposite: when we send "false", it stores question_status: true
       fd.append("event_form_status", newVisualState ? "false" : "true");
       fd.append("action_flag", "event_form_changes_status");
+
+      console.log("Sending to API:", {
+        coupon_id: questionId,
+        event_form_status: newVisualState ? "false" : "true",
+        visualState: newVisualState ? "ON (red)" : "OFF (white)",
+        expectedServerStatus: newVisualState ? "true" : "false"
+      });
+
       const res = await authAPI.statusCoupon(fd);
       console.log(
         "statusCoupon response:",
         res,
-        "for id",
-        id,
+        "for question id",
+        questionId,
         "sent event_form_status",
         newVisualState ? "false" : "true"
       );
+
       if (
         res &&
         (res.success === 200 ||
@@ -397,12 +445,12 @@ const FormQuestions = ({ onBack, onNext }) => {
   // Wrapper to show a confirmation before toggling
   const handleToggleClick = (q) => {
     const id = getQId(q);
-    const serverBool = parseServerBool(q.event_form_status);
-    const current = id in localToggleMap ? !!localToggleMap[id] : !serverBool;
+    const serverBool = parseServerBool(q.question_status); // Use question_status
+    const current = id in localToggleMap ? !!localToggleMap[id] : serverBool; // Direct mapping, not inverted
     const newVisualState = !current;
     const msg = newVisualState
-      ? "Are you sure you want to change status this record?"
-      : "Are you sure you want to change status this record?";
+      ? "Are you sure you want to enable this question?"
+      : "Are you sure you want to disable this question?";
     const ok = window.confirm(msg);
     if (!ok) return;
     handleToggleEventFormStatus(q, newVisualState);
@@ -823,12 +871,12 @@ const FormQuestions = ({ onBack, onNext }) => {
                                       background: (() => {
                                         const id = getQId(q);
                                         const serverBool = parseServerBool(
-                                          q.event_form_status
+                                          q.question_status // Use question_status
                                         );
                                         const val =
                                           id in localToggleMap
                                             ? localToggleMap[id]
-                                            : !serverBool;
+                                            : serverBool; // Direct mapping: true = ON (red)
                                         return val ? "#da251c" : "#fff";
                                       })(),
                                       border: "2px solid #da251c",
@@ -843,12 +891,12 @@ const FormQuestions = ({ onBack, onNext }) => {
                                           const id = getQId(q);
                                           const serverBool =
                                             parseServerBool(
-                                              q.event_form_status
+                                              q.question_status // Use question_status
                                             );
                                           const val =
                                             id in localToggleMap
                                               ? localToggleMap[id]
-                                              : !serverBool;
+                                              : serverBool; // Direct mapping
                                           return val ? 20 : 4;
                                         })(),
                                         top: 3,
@@ -858,12 +906,12 @@ const FormQuestions = ({ onBack, onNext }) => {
                                           const id = getQId(q);
                                           const serverBool =
                                             parseServerBool(
-                                              q.event_form_status
+                                              q.question_status // Use question_status
                                             );
                                           const val =
                                             id in localToggleMap
                                               ? localToggleMap[id]
-                                              : !serverBool;
+                                              : serverBool; // Direct mapping
                                           return val ? "#fff" : "#da251c";
                                         })(),
                                         borderRadius: 10,
@@ -986,7 +1034,7 @@ const FormQuestions = ({ onBack, onNext }) => {
                                             marginBottom: 8,
                                             fontSize: "0.95rem",
                                             textAlign: "left",
-                                          }}
+                                          }} ty6789
                                         >
                                           <span style={{ color: "#333", fontWeight: 600 }}>
                                             {subQ.question_label || subQ.label}
