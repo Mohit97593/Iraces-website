@@ -179,7 +179,7 @@ export default function EventDetails() {
             width: "100%",
             maxHeight: "400px",
             objectFit: "contain",
-            background: "#fff",
+            background: event.banner_bg_color || event.background_color || "#fff",
           }}
         />
       </div>
