@@ -22,6 +22,9 @@ export default function SecureCheckout() {
   const [discount, setDiscount] = useState(0);
   const [couponError, setCouponError] = useState("");
 
+  // Tax status state
+  const [pricesTaxesStatus, setPricesTaxesStatus] = useState("Exclusive of Taxes");
+
   useEffect(() => {
     checkUserLoginAndFetch();
   }, [eventId]);
@@ -154,14 +157,19 @@ export default function SecureCheckout() {
         // Status is inside EventData array, not at root level
         let regStatus = null;
         let eventOverallLimit = null;
+        let taxesStatus = "Exclusive of Taxes"; // Default value
         if (ticketResponse.data.EventData && ticketResponse.data.EventData.length > 0) {
           regStatus = ticketResponse.data.EventData[0].event_registration_status;
           eventOverallLimit = ticketResponse.data.EventData[0].overall_limit;
+          // Extract prices_taxes_status from API response
+          taxesStatus = ticketResponse.data.EventData[0].prices_taxes_status || "Exclusive of Taxes";
         }
         setRegistrationStatus(regStatus);
         setOverallLimit(eventOverallLimit);
+        setPricesTaxesStatus(taxesStatus);
         console.log("✅ event_registration_status:", regStatus);
         console.log("✅ overall_limit:", eventOverallLimit);
+        console.log("✅ prices_taxes_status:", taxesStatus);
 
         // If events API did not return event data, try to use EventData from ticket response
         if (
@@ -772,7 +780,7 @@ export default function SecureCheckout() {
                           })()}
                         </span>
                       </div>
-                      <div className="summary-note">(Exclusive of Taxes)</div>
+                      <div className="summary-note">({pricesTaxesStatus})</div>
                     </div>
                     <button
                       className="btn-proceed"

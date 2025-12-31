@@ -135,8 +135,8 @@ const RaceCategoryForm = ({
       const price = Number(editTicket.ticket_price) || 0;
       if (price > 0) {
         // Calculate amount for convenience fee calculation
-        // Add GST only if: organizerGST=true AND collectGST=true AND taxType='exclusive'
-        const amountForConvenienceFee = (organizerGST && collectGST && taxType === 'exclusive')
+        // Add GST only if: collectGST=true AND taxType='exclusive'
+        const amountForConvenienceFee = (collectGST && taxType === 'exclusive')
           ? price + (price * 0.18)
           : price;
 
@@ -152,10 +152,9 @@ const RaceCategoryForm = ({
         const platformFee = 5;
         const convenienceFeeGST = Math.round(convenienceFee * 0.18 * 100) / 100;
         const platformFeeGST = Math.round(platformFee * 0.18 * 100) / 100;
-        // Registration GST: Show line if collectGST=Yes AND taxType=Exclusive
-        // Amount: ₹0 if organizerGST=false, otherwise 18%
+        // Registration GST: Calculate if collectGST=Yes AND taxType=Exclusive
         const registrationGST = (collectGST && taxType === 'exclusive')
-          ? (organizerGST ? Math.round(price * 0.18 * 100) / 100 : 0)
+          ? Math.round(price * 0.18 * 100) / 100
           : 0;
 
         // Registration amount includes GST if exclusive
@@ -251,8 +250,8 @@ const RaceCategoryForm = ({
     if (price <= 0) return;
 
     // Calculate amount for convenience fee calculation
-    // Add GST only if: organizerGST=true AND collectGST=true AND taxType='exclusive'
-    const amountForConvenienceFee = (organizerGST && collectGST && taxType === 'exclusive')
+    // Add GST only if: collectGST=true AND taxType='exclusive'
+    const amountForConvenienceFee = (collectGST && taxType === 'exclusive')
       ? price + (price * 0.18)
       : price;
 
@@ -271,10 +270,9 @@ const RaceCategoryForm = ({
     const platformFee = price > 0 ? 5 : 0;
     const convenienceFeeGST = price > 0 ? Math.round(convenienceFee * 0.18 * 100) / 100 : 0;
     const platformFeeGST = price > 0 ? Math.round(platformFee * 0.18 * 100) / 100 : 0;
-    // Registration GST: Show line if collectGST=Yes AND taxType=Exclusive
-    // Amount: ₹0 if organizerGST=false, otherwise 18%
+    // Registration GST: Calculate if collectGST=Yes AND taxType=Exclusive
     const registrationGST = (collectGST && taxType === 'exclusive' && price > 0)
-      ? (organizerGST ? Math.round(price * 0.18 * 100) / 100 : 0)
+      ? Math.round(price * 0.18 * 100) / 100
       : 0;
 
     // Registration amount includes GST if exclusive
@@ -406,12 +404,12 @@ const RaceCategoryForm = ({
     if (formData.registrationStartDate && formData.registrationStartTime) {
       const eventRegStartDate = eventFormData?.registrationStartDate;
       const eventRegStartTime = eventFormData?.registrationStartTime;
-      
+
       if (eventRegStartDate && eventRegStartTime) {
         // Combine date and time for comparison
         const categoryStartDateTime = new Date(`${formData.registrationStartDate}T${formData.registrationStartTime}`);
         const eventStartDateTime = new Date(`${eventRegStartDate}T${eventRegStartTime}`);
-        
+
         if (categoryStartDateTime < eventStartDateTime) {
           newErrors.registrationStartDate = "Race category registration cannot start before event registration start date";
         }
@@ -736,8 +734,8 @@ const RaceCategoryForm = ({
 
                     // Calculate all fees and update eventFormData
                     // Calculate amount for convenience fee calculation
-                    // If GST is enabled, calculate convenience fee on (price + 18% GST)
-                    const amountForConvenienceFee = organizerGST
+                    // Add GST only if: collectGST=true AND taxType='exclusive'
+                    const amountForConvenienceFee = (collectGST && taxType === 'exclusive')
                       ? price + (price * 0.18)
                       : price;
 
@@ -761,10 +759,9 @@ const RaceCategoryForm = ({
                       price > 0
                         ? Math.round(platformFee * 0.18 * 100) / 100
                         : 0;
-                    // Registration GST: Show line if collectGST=Yes AND taxType=Exclusive
-                    // Amount: ₹0 if organizerGST=false, otherwise 18%
+                    // Registration GST: Calculate if collectGST=Yes AND taxType=Exclusive
                     const registrationGST = (collectGST && taxType === 'exclusive' && price > 0)
-                      ? (organizerGST ? Math.round(price * 0.18 * 100) / 100 : 0)
+                      ? Math.round(price * 0.18 * 100) / 100
                       : 0;
 
                     // Registration amount includes GST if exclusive
