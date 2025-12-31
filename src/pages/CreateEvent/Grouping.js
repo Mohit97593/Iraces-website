@@ -20,6 +20,10 @@ const Grouping = ({ onBack, onNext }) => {
     const [loadingQuestions, setLoadingQuestions] = useState(false);
     const [addingQuestions, setAddingQuestions] = useState(false);
 
+    // Confirmation modal state
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmModalData, setConfirmModalData] = useState({ questionId: null, fromGroup: "", toGroup: "" });
+
     const handleSave = () => {
         // Save logic will be implemented later
         onNext();
@@ -184,6 +188,36 @@ const Grouping = ({ onBack, onNext }) => {
 
     // Handle question checkbox toggle
     const handleQuestionToggle = (questionId) => {
+        // Find the question to check if it's in a different group
+        const question = questions.find(q =>
+            (q.id || q.question_id || q.form_question_id) === questionId
+        );
+
+        if (question) {
+            const questionGroup = question.question_group || question.group_id;
+            const isInDifferentGroup = questionGroup &&
+                questionGroup.toString() !== selectedGroupId.toString() &&
+                questionGroup.toString() !== "0";
+
+            // If trying to select a question from a different group, show confirmation
+            if (isInDifferentGroup && !selectedQuestions.includes(questionId)) {
+                const assignedGroup = groups.find(g => g.id.toString() === questionGroup.toString());
+                const assignedGroupName = assignedGroup?.name || "another group";
+                const currentGroup = groups.find(g => g.id.toString() === selectedGroupId.toString());
+                const currentGroupName = currentGroup?.name || "this group";
+
+                // Show custom confirmation modal
+                setConfirmModalData({
+                    questionId: questionId,
+                    fromGroup: assignedGroupName,
+                    toGroup: currentGroupName
+                });
+                setShowConfirmModal(true);
+                return; // Don't toggle yet, wait for confirmation
+            }
+        }
+
+        // Proceed with toggle
         setSelectedQuestions(prev => {
             if (prev.includes(questionId)) {
                 return prev.filter(id => id !== questionId);
@@ -192,6 +226,22 @@ const Grouping = ({ onBack, onNext }) => {
             }
         });
     };
+
+    // Handle confirmation modal OK
+    const handleConfirmOk = () => {
+        const { questionId } = confirmModalData;
+        // Add the question to selected questions
+        setSelectedQuestions(prev => [...prev, questionId]);
+        setShowConfirmModal(false);
+        setConfirmModalData({ questionId: null, fromGroup: "", toGroup: "" });
+    };
+
+    // Handle confirmation modal Cancel
+    const handleConfirmCancel = () => {
+        setShowConfirmModal(false);
+        setConfirmModalData({ questionId: null, fromGroup: "", toGroup: "" });
+    };
+
 
     // Handle add selected questions to group
     const handleAddQuestionsToGroup = async () => {
@@ -772,11 +822,24 @@ const Grouping = ({ onBack, onNext }) => {
                                     const formName = question.form_name || question.new_form_name || "";
                                     const isChecked = selectedQuestions.includes(questionId);
 
+                                    // Check if question is assigned to a different group
+                                    const questionGroup = question.question_group || question.group_id;
+                                    const isInDifferentGroup = questionGroup &&
+                                        questionGroup.toString() !== selectedGroupId.toString() &&
+                                        questionGroup.toString() !== "0";
+
+                                    // Find the group name if in different group
+                                    let assignedGroupName = "";
+                                    if (isInDifferentGroup) {
+                                        const assignedGroup = groups.find(g => g.id.toString() === questionGroup.toString());
+                                        assignedGroupName = assignedGroup?.name || "Another Group";
+                                    }
+
                                     return (
                                         <div
                                             key={questionId}
                                             style={{
-                                                border: "1.5px solid #ddd",
+                                                border: `1.5px solid ${isInDifferentGroup ? "#ffa500" : "#ddd"}`,
                                                 borderRadius: 8,
                                                 padding: "16px",
                                                 marginBottom: 12,
@@ -784,16 +847,16 @@ const Grouping = ({ onBack, onNext }) => {
                                                 alignItems: "center",
                                                 gap: 12,
                                                 cursor: "pointer",
-                                                background: isChecked ? "#fff5f5" : "#fff",
+                                                background: isInDifferentGroup ? "#fff9e6" : (isChecked ? "#fff5f5" : "#fff"),
                                                 transition: "all 0.2s ease",
                                             }}
                                             onClick={() => handleQuestionToggle(questionId)}
                                             onMouseEnter={(e) => {
-                                                e.currentTarget.style.borderColor = "#da251c";
+                                                e.currentTarget.style.borderColor = isInDifferentGroup ? "#ff8c00" : "#da251c";
                                                 e.currentTarget.style.boxShadow = "0 2px 8px rgba(218, 37, 28, 0.1)";
                                             }}
                                             onMouseLeave={(e) => {
-                                                e.currentTarget.style.borderColor = "#ddd";
+                                                e.currentTarget.style.borderColor = isInDifferentGroup ? "#ffa500" : "#ddd";
                                                 e.currentTarget.style.boxShadow = "none";
                                             }}
                                         >
@@ -818,7 +881,7 @@ const Grouping = ({ onBack, onNext }) => {
                                                 <div style={{ fontWeight: 600, color: "#333", marginBottom: 4 }}>
                                                     {questionText}
                                                 </div>
-                                                <div style={{ fontSize: "0.85rem", color: "#666", display: "flex", gap: 12 }}>
+                                                <div style={{ fontSize: "0.85rem", color: "#666", display: "flex", gap: 12, flexWrap: "wrap" }}>
                                                     {questionType && (
                                                         <span>Type: <strong>{questionType}</strong></span>
                                                     )}
@@ -826,6 +889,24 @@ const Grouping = ({ onBack, onNext }) => {
                                                         <span>• Form: <strong>{formName}</strong></span>
                                                     )}
                                                 </div>
+                                                {/* Show warning if question is in different group */}
+                                                {isInDifferentGroup && (
+                                                    <div style={{
+                                                        marginTop: 8,
+                                                        padding: "6px 10px",
+                                                        background: "#fff3cd",
+                                                        border: "1px solid #ffc107",
+                                                        borderRadius: 4,
+                                                        fontSize: "0.8rem",
+                                                        color: "#856404",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 6
+                                                    }}>
+                                                        <i className="fas fa-exclamation-triangle"></i>
+                                                        <span>Already added to <strong>{assignedGroupName}</strong></span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     );
@@ -918,6 +999,112 @@ const Grouping = ({ onBack, onNext }) => {
                     Save & Next (6/11)
                 </button>
             </div>
+
+            {/* Custom Confirmation Modal */}
+            {showConfirmModal && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "rgba(0, 0, 0, 0.6)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 2000,
+                    }}
+                    onClick={handleConfirmCancel}
+                >
+                    <div
+                        style={{
+                            background: "#fff",
+                            borderRadius: 12,
+                            padding: 32,
+                            width: "90%",
+                            maxWidth: 500,
+                            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{ textAlign: "center", marginBottom: 24 }}>
+                            <div style={{
+                                width: 60,
+                                height: 60,
+                                borderRadius: "50%",
+                                background: "#fff3cd",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                margin: "0 auto 16px",
+                            }}>
+                                <i className="fas fa-exclamation-triangle" style={{ fontSize: "2rem", color: "#ffc107" }}></i>
+                            </div>
+                            <h3
+                                style={{
+                                    fontWeight: 700,
+                                    fontSize: "1.4rem",
+                                    marginBottom: 16,
+                                    color: "#333",
+                                }}
+                            >
+                                Move Question to Different Group?
+                            </h3>
+                            <p style={{ fontSize: "1rem", color: "#666", lineHeight: 1.6, margin: 0 }}>
+                                This question is already added to <strong style={{ color: "#da251c" }}>"{confirmModalData.fromGroup}"</strong>.
+                            </p>
+                            <p style={{ fontSize: "1rem", color: "#666", lineHeight: 1.6, marginTop: 12 }}>
+                                If you add it to <strong style={{ color: "#da251c" }}>"{confirmModalData.toGroup}"</strong>, it will be removed from <strong>"{confirmModalData.fromGroup}"</strong>.
+                            </p>
+                            <p style={{ fontSize: "1rem", color: "#333", fontWeight: 600, marginTop: 16 }}>
+                                Do you want to continue?
+                            </p>
+                        </div>
+
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "center",
+                                gap: 12,
+                            }}
+                        >
+                            <button
+                                onClick={handleConfirmCancel}
+                                style={{
+                                    background: "#fff",
+                                    border: "1.5px solid #da251c",
+                                    color: "#da251c",
+                                    borderRadius: 6,
+                                    padding: "10px 32px",
+                                    fontWeight: 600,
+                                    fontSize: "1rem",
+                                    cursor: "pointer",
+                                    minWidth: 120,
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmOk}
+                                style={{
+                                    background: "#da251c",
+                                    border: "none",
+                                    color: "#fff",
+                                    borderRadius: 6,
+                                    padding: "10px 32px",
+                                    fontWeight: 600,
+                                    fontSize: "1rem",
+                                    cursor: "pointer",
+                                    minWidth: 120,
+                                }}
+                            >
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

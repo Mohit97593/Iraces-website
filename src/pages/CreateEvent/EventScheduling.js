@@ -1003,6 +1003,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                 name="eventEndDate"
                 value={formData.eventEndDate}
                 onChange={handleChange}
+                onInput={handleChange}
                 min={formData.eventStartDate || minStartDate}
                 required
               />
@@ -1080,6 +1081,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                 name="registrationEndDate"
                 value={formData.registrationEndDate}
                 onChange={handleChange}
+                onInput={handleChange}
                 min={formData.registrationStartDate || minStartDate}
                 max={formData.eventEndDate ? formData.eventEndDate : ""}
                 required={!!(formData.eventStartDate && formData.eventEndDate)}
