@@ -879,20 +879,20 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                   {" "}(Auto-filled from Pincode)
                 </span>
               </label>
-              <input
-                type="text"
+              <select
                 className="form-controll"
                 name="state"
                 value={formData.state}
-                placeholder="Enter pincode to auto-fill"
-                disabled
+                onChange={handleChange}
                 required
-                style={{
-                  backgroundColor: "#f5f5f5",
-                  cursor: "not-allowed",
-                  color: "#333"
-                }}
-              />
+              >
+                <option value="">Select State</option>
+                {states.map((state) => (
+                  <option key={state.id} value={state.name}>
+                    {state.name}
+                  </option>
+                ))}
+              </select>
               {renderError("state")}
             </div>
           </div>
@@ -904,20 +904,20 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                   {" "}(Auto-filled from Pincode)
                 </span>
               </label>
-              <input
-                type="text"
+              <select
                 className="form-controll"
                 name="city"
                 value={formData.city}
-                placeholder="Enter pincode to auto-fill"
-                disabled
+                onChange={handleChange}
                 required
-                style={{
-                  backgroundColor: "#f5f5f5",
-                  cursor: "not-allowed",
-                  color: "#333"
-                }}
-              />
+              >
+                <option value="">Select City</option>
+                {cities.map((city) => (
+                  <option key={city.id} value={city.name}>
+                    {city.name}
+                  </option>
+                ))}
+              </select>
               {renderError("city")}
             </div>
           </div>
@@ -966,6 +966,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                 name="eventStartDate"
                 value={formData.eventStartDate}
                 onChange={handleChange}
+                onClick={(e) => e.target.showPicker && e.target.showPicker()}
                 min={minStartDate}
                 required
               />
@@ -1003,7 +1004,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                 name="eventEndDate"
                 value={formData.eventEndDate}
                 onChange={handleChange}
-                onInput={handleChange}
+                onClick={(e) => e.target.showPicker && e.target.showPicker()}
                 min={formData.eventStartDate || minStartDate}
                 required
               />
@@ -1041,6 +1042,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                 name="registrationStartDate"
                 value={formData.registrationStartDate}
                 onChange={handleChange}
+                onClick={(e) => e.target.showPicker && e.target.showPicker()}
                 min={minStartDate}
                 max={formData.eventEndDate ? formData.eventEndDate : ""}
                 required={!!(formData.eventStartDate && formData.eventEndDate)}
@@ -1081,7 +1083,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
                 name="registrationEndDate"
                 value={formData.registrationEndDate}
                 onChange={handleChange}
-                onInput={handleChange}
+                onClick={(e) => e.target.showPicker && e.target.showPicker()}
                 min={formData.registrationStartDate || minStartDate}
                 max={formData.eventEndDate ? formData.eventEndDate : ""}
                 required={!!(formData.eventStartDate && formData.eventEndDate)}
