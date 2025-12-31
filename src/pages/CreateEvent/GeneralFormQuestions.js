@@ -1226,31 +1226,6 @@ const GeneralFormQuestions = ({
                 )}
               </div>
 
-              {/* Choose Form */}
-              <div className="form-group2">
-                <label className="form-label">Choose Form</label>
-                <select
-                  className="form-input compact"
-                  value={selectedQuestion.form_id || ""}
-                  onChange={(e) => handleChangeField("form_id", e.target.value)}
-                >
-                  <option value="">Do Not Have Form</option>
-                  {formCommon &&
-                    (formCommon.form_details || formCommon) &&
-                    Array.isArray(formCommon.form_details || formCommon)
-                    ? (formCommon.form_details || formCommon)
-                      .filter(
-                        (f) => (f.form_name || "") !== "Do Not Have Form"
-                      )
-                      .map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.form_name}
-                        </option>
-                      ))
-                    : null}
-                </select>
-              </div>
-
               {/* Field Mapping */}
               <div className="form-group2">
                 <label className="form-label">Field Mapping</label>
