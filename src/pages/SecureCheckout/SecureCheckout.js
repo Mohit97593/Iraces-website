@@ -34,46 +34,8 @@ export default function SecureCheckout() {
     window.scrollTo(0, 0);
   }, []);
 
-  // Fetch coupons when selected tickets change
-  useEffect(() => {
-    const fetchCoupons = async () => {
-      console.log("🔍 Checking coupon fetch conditions:");
-      console.log("  - selectedTickets.length:", selectedTickets.length);
-      console.log("  - eventId:", eventId);
-
-      if (selectedTickets.length > 0 && eventId) {
-        try {
-          const ticketIds = selectedTickets.map(t => t.id);
-          console.log("📤 Calling getCoupons API with:");
-          console.log("  - event_id:", eventId);
-          console.log("  - ticket_ids:", ticketIds);
-
-          const response = await authAPI.getCoupons({
-            event_id: eventId,
-            ticket_ids: ticketIds
-          });
-
-          console.log("📥 getCoupons API response:", response);
-
-          if (response && response.data && response.data.Coupons) {
-            setAvailableCoupons(response.data.Coupons);
-            console.log("✅ Available coupons set:", response.data.Coupons);
-          } else {
-            console.log("⚠️ No coupons in response");
-            setAvailableCoupons([]);
-          }
-        } catch (error) {
-          console.error("❌ Error fetching coupons:", error);
-          setAvailableCoupons([]);
-        }
-      } else {
-        console.log("⚠️ Conditions not met for fetching coupons");
-        setAvailableCoupons([]);
-      }
-    };
-
-    fetchCoupons();
-  }, [selectedTickets, eventId]);
+  // Fetch coupons when user applies a coupon code
+  // This is now handled in handleApplyCoupon function
 
   // Clear applied coupon when no tickets are selected
   useEffect(() => {
@@ -283,7 +245,7 @@ export default function SecureCheckout() {
     navigate(-1);
   };
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     setCouponError("");
 
     if (!couponCode.trim()) {
@@ -291,61 +253,93 @@ export default function SecureCheckout() {
       return;
     }
 
-    // Find matching coupon from available coupons
-    const matchingCoupon = availableCoupons.find(
-      coupon => coupon.discount_code?.toLowerCase() === couponCode.trim().toLowerCase()
-    );
-
-    if (!matchingCoupon) {
-      setCouponError("Invalid coupon code");
+    if (selectedTickets.length === 0) {
+      setCouponError("Please select tickets first");
       return;
     }
 
-    // Calculate discount based on discount_amt_per_type
-    // Use discounted price if early bird is active
-    const totalPrice = selectedTickets.reduce((sum, t) => {
-      let effectivePrice = parseFloat(t.ticket_price);
+    try {
+      // Call getCoupons API with coupon code
+      const ticketIds = selectedTickets.map(t => t.id);
+      console.log("📤 Calling getCoupons API with:");
+      console.log("  - event_id:", eventId);
+      console.log("  - ticket_ids:", ticketIds);
+      console.log("  - coupon_code:", couponCode.trim());
 
-      if (t.early_bird === 1 && t.show_early_bird === 1) {
-        const discountValue = parseFloat(t.discount_value || 0);
-        if (t.discount === 1) {
-          // Percentage discount
-          effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
-        } else {
-          // Amount discount
-          effectivePrice = effectivePrice - discountValue;
-        }
+      const response = await authAPI.getCoupons({
+        event_id: eventId,
+        ticket_ids: ticketIds,
+        coupon_code: couponCode.trim()
+      });
+
+      console.log("📥 getCoupons API response:", response);
+
+      // Check if response contains valid coupon data
+      if (!response || !response.data || !response.data.Coupons || response.data.Coupons.length === 0) {
+        setCouponError("Invalid coupon code");
+        return;
       }
 
-      return sum + (effectivePrice * t.quantity);
-    }, 0);
-    let calculatedDiscount = 0;
+      // Find matching coupon from response
+      const matchingCoupon = response.data.Coupons.find(
+        coupon => coupon.discount_code?.toLowerCase() === couponCode.trim().toLowerCase()
+      );
 
-    console.log("🎟️ Coupon details:", matchingCoupon);
-    console.log("💵 Total price:", totalPrice);
-    console.log("🔢 discount_amt_per_type:", matchingCoupon.discount_amt_per_type, "(1=amount, 2=percentage)");
+      if (!matchingCoupon) {
+        setCouponError("Invalid coupon code");
+        return;
+      }
 
-    // discount_amt_per_type: "1" = fixed amount, "2" = percentage
-    const amtPerType = parseInt(matchingCoupon.discount_amt_per_type);
+      // Calculate discount based on discount_amt_per_type
+      // Use discounted price if early bird is active
+      const totalPrice = selectedTickets.reduce((sum, t) => {
+        let effectivePrice = parseFloat(t.ticket_price);
 
-    if (amtPerType === 1) {
-      // Fixed amount discount - use discount_amount field
-      calculatedDiscount = parseFloat(matchingCoupon.discount_amount || 0);
-      console.log("💰 Using fixed amount:", calculatedDiscount);
-    } else if (amtPerType === 2) {
-      // Percentage discount - use discount_percentage field
-      const percentage = parseFloat(matchingCoupon.discount_percentage || 0);
-      calculatedDiscount = (totalPrice * percentage) / 100;
-      console.log("📊 Using percentage:", percentage, "% → Discount:", calculatedDiscount);
+        if (t.early_bird === 1 && t.show_early_bird === 1) {
+          const discountValue = parseFloat(t.discount_value || 0);
+          if (t.discount === 1) {
+            // Percentage discount
+            effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+          } else {
+            // Amount discount
+            effectivePrice = effectivePrice - discountValue;
+          }
+        }
+
+        return sum + (effectivePrice * t.quantity);
+      }, 0);
+      let calculatedDiscount = 0;
+
+      console.log("🎟️ Coupon details:", matchingCoupon);
+      console.log("💵 Total price:", totalPrice);
+      console.log("🔢 discount_amt_per_type:", matchingCoupon.discount_amt_per_type, "(1=amount, 2=percentage)");
+
+      // discount_amt_per_type: "1" = fixed amount, "2" = percentage
+      const amtPerType = parseInt(matchingCoupon.discount_amt_per_type);
+
+      if (amtPerType === 1) {
+        // Fixed amount discount - use discount_amount field
+        calculatedDiscount = parseFloat(matchingCoupon.discount_amount || 0);
+        console.log("💰 Using fixed amount:", calculatedDiscount);
+      } else if (amtPerType === 2) {
+        // Percentage discount - use discount_percentage field
+        const percentage = parseFloat(matchingCoupon.discount_percentage || 0);
+        calculatedDiscount = (totalPrice * percentage) / 100;
+        console.log("📊 Using percentage:", percentage, "% → Discount:", calculatedDiscount);
+      }
+
+      // Ensure discount doesn't exceed total price
+      calculatedDiscount = Math.min(calculatedDiscount, totalPrice);
+
+      setAppliedCoupon(matchingCoupon);
+      setDiscount(calculatedDiscount);
+      setAvailableCoupons(response.data.Coupons); // Update available coupons from response
+      console.log("✅ Coupon applied successfully");
+      console.log("💰 Final discount amount:", calculatedDiscount);
+    } catch (error) {
+      console.error("❌ Error applying coupon:", error);
+      setCouponError("Failed to apply coupon. Please try again.");
     }
-
-    // Ensure discount doesn't exceed total price
-    calculatedDiscount = Math.min(calculatedDiscount, totalPrice);
-
-    setAppliedCoupon(matchingCoupon);
-    setDiscount(calculatedDiscount);
-    console.log("✅ Coupon applied successfully");
-    console.log("💰 Final discount amount:", calculatedDiscount);
   };
 
   const handleRemoveCoupon = () => {

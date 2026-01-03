@@ -354,6 +354,30 @@ export default function EventDetails() {
               </div>
             </div>
 
+            {/* Gallery Section */}
+            {event.event_images && Array.isArray(event.event_images) && event.event_images.length > 0 && (
+              <div className="event-section">
+                <h3 className="section-title">
+                  <i className="fas fa-images"></i> Gallery
+                </h3>
+                <div className="section-content">
+                  <div className="gallery-grid">
+                    {event.event_images.map((imageUrl, index) => (
+                      <div key={index} className="gallery-item">
+                        <img
+                          src={imageUrl}
+                          alt={`${event.name} - Image ${index + 1}`}
+                          className="gallery-image"
+                          onClick={() => window.open(imageUrl, '_blank')}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* FAQ Section */}
             {faq && faq.length > 0 && (
               <div className="event-section">

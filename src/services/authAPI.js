@@ -840,12 +840,42 @@ export const authAPI = {
           formData.append("ticket_ids[]", ticketId);
         });
       }
+      // Append coupon_code if provided
+      if (payload.coupon_code) {
+        formData.append("coupon_code", payload.coupon_code);
+      }
       const response = await api.post("/get_coupons", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       return response.data;
     } catch (error) {
       console.error("getCoupons API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Booking Payment Process API (PayU)
+  bookingPaymentProcess: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+      formData.append("amount", payload.amount);
+      formData.append("ticket_type", payload.ticket_type);
+      formData.append("booking_tickets_array", payload.booking_tickets_array);
+
+      // Append file uploads if present
+      if (payload.fils_array && Array.isArray(payload.fils_array)) {
+        payload.fils_array.forEach(file => {
+          formData.append("fils_array[]", file);
+        });
+      }
+
+      const response = await api.post("/bookingPaymentProcess", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("bookingPaymentProcess API error:", error);
       throw error.response?.data || error.message;
     }
   },

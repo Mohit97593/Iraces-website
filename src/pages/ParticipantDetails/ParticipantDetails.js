@@ -55,6 +55,7 @@ export default function ParticipantDetails() {
   const [activeQuestionTab, setActiveQuestionTab] = useState({}); // Track active tab for each participant {participantIndex: groupName}
   const [parentSelections, setParentSelections] = useState({}); // Track parent question selections for conditional subquestions {participantIndex_questionId: selectedValue}
   const [termsAccepted, setTermsAccepted] = useState(false); // Track terms and conditions acceptance
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('phonepe'); // Track selected payment method (phonepe or payu)
 
   const fieldMapping = {
     firstname: "firstName",
@@ -552,6 +553,22 @@ export default function ParticipantDetails() {
             [name]: type === "checkbox" ? checked : type === "file" ? files[0] : value,
           };
 
+          // Check if both Age and DOB fields exist
+          const { hasAge, hasDOB, ageQuestion, dobQuestion } = hasBothAgeAndDOB(participantIndex);
+
+          // If both Age and DOB exist, and user is changing DOB, auto-calculate age
+          if (hasAge && hasDOB && dobQuestion) {
+            const dobFieldName = getMappedKey(dobQuestion);
+            const ageFieldName = getMappedKey(ageQuestion);
+
+            // If the changed field is DOB, calculate and set age
+            if (name === dobFieldName && value) {
+              const calculatedAge = calculateAge(value);
+              updatedFormData[ageFieldName] = calculatedAge;
+              console.log(`🎂 Auto-calculated age: ${calculatedAge} from DOB: ${value}`);
+            }
+          }
+
           // Validate date range for date fields
           const currentTicket = form.ticketInfo;
           if (formQuestions && formQuestions[currentTicket.id]) {
@@ -603,7 +620,66 @@ export default function ParticipantDetails() {
                   return newErrors;
                 });
               }
-            } else {
+            }
+            // Validate mobile number field
+            else if (question && question.question_form_type === 'mobile') {
+              if (value) {
+                // Only validate if there's a value
+                const mobileRegex = /^[0-9]{10}$/;
+                const isValid = mobileRegex.test(value);
+
+                if (!isValid) {
+                  setFormErrors(prevErrors => ({
+                    ...prevErrors,
+                    [`${participantIndex}_${name}`]: 'Mobile number must be exactly 10 digits'
+                  }));
+                } else {
+                  // Clear error if mobile is valid
+                  setFormErrors(prevErrors => {
+                    const newErrors = { ...prevErrors };
+                    delete newErrors[`${participantIndex}_${name}`];
+                    return newErrors;
+                  });
+                }
+              } else {
+                // Clear error if field is empty
+                setFormErrors(prevErrors => {
+                  const newErrors = { ...prevErrors };
+                  delete newErrors[`${participantIndex}_${name}`];
+                  return newErrors;
+                });
+              }
+            }
+            // Validate email field
+            else if (question && question.question_form_type === 'email') {
+              if (value) {
+                // Only validate if there's a value
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const isValid = emailRegex.test(value);
+
+                if (!isValid) {
+                  setFormErrors(prevErrors => ({
+                    ...prevErrors,
+                    [`${participantIndex}_${name}`]: 'Please enter a valid email address'
+                  }));
+                } else {
+                  // Clear error if email is valid
+                  setFormErrors(prevErrors => {
+                    const newErrors = { ...prevErrors };
+                    delete newErrors[`${participantIndex}_${name}`];
+                    return newErrors;
+                  });
+                }
+              } else {
+                // Clear error if field is empty
+                setFormErrors(prevErrors => {
+                  const newErrors = { ...prevErrors };
+                  delete newErrors[`${participantIndex}_${name}`];
+                  return newErrors;
+                });
+              }
+            }
+            else {
               // Clear error for non-date fields or when value is empty
               setFormErrors(prevErrors => {
                 const newErrors = { ...prevErrors };
@@ -644,6 +720,168 @@ export default function ParticipantDetails() {
 
   const getMappedKey = (question) => {
     return fieldMapping[question.user_field_mapping] || `custom_${question.id}`;
+  };
+
+  // Helper function to check if both Age and DOB fields exist
+  const hasBothAgeAndDOB = (participantIndex) => {
+    const participantForm = participantForms[participantIndex];
+    if (!participantForm || !participantForm.ticketInfo) return { hasAge: false, hasDOB: false, ageQuestion: null, dobQuestion: null };
+
+    const currentTicket = participantForm.ticketInfo;
+    if (!formQuestions || !formQuestions[currentTicket.id]) return { hasAge: false, hasDOB: false, ageQuestion: null, dobQuestion: null };
+
+    const questionsData = formQuestions[currentTicket.id];
+    const questionsList = questionsData[participantIndex] || questionsData[0] || [];
+
+    let ageQuestion = null;
+    let dobQuestion = null;
+
+    questionsList.forEach(q => {
+      const label = q.question_label?.toLowerCase() || '';
+      const fieldName = getMappedKey(q);
+
+      // Check for Age field
+      if (label === 'age' || fieldName === 'age') {
+        ageQuestion = q;
+      }
+      // Check for Date of Birth field
+      if (label === 'date of birth' || label === 'dob' || fieldName === 'dob') {
+        dobQuestion = q;
+      }
+    });
+
+    return {
+      hasAge: ageQuestion !== null,
+      hasDOB: dobQuestion !== null,
+      ageQuestion,
+      dobQuestion
+    };
+  };
+
+  // Helper function to calculate age from date of birth
+  const calculateAge = (dob) => {
+    if (!dob) return '';
+
+    const birthDate = new Date(dob);
+    const today = new Date();
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    // Adjust age if birthday hasn't occurred this year
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    return age.toString();
+  };
+
+  // Build booking payload for PayU payment
+  const buildBookingPayload = () => {
+    // Get total attendees
+    const total_attendees = selectedTickets.reduce((sum, t) => sum + t.quantity, 0);
+
+    // Build FormQuestions object - organize by ticket ID
+    const FormQuestions = {};
+    participantForms.forEach((participantForm, participantIndex) => {
+      const ticketId = participantForm.ticketInfo?.id;
+      if (!ticketId) return;
+
+      if (!FormQuestions[ticketId]) {
+        FormQuestions[ticketId] = [];
+      }
+
+      // Get all questions for this participant
+      if (formQuestions && formQuestions[ticketId]) {
+        const questionsData = formQuestions[ticketId];
+        const questionsList = questionsData[participantIndex] || questionsData[0] || [];
+
+        const participantQuestions = questionsList.map(q => {
+          const fieldName = getMappedKey(q);
+          const fieldValue = participantForm.formData[fieldName];
+
+          return {
+            id: q.id,
+            event_id: q.event_id,
+            general_form_id: q.general_form_id,
+            question_label: q.question_label,
+            form_id: q.form_id,
+            question_form_type: q.question_form_type,
+            question_form_name: q.question_form_name,
+            hint_type: q.hint_type,
+            question_hint: q.question_hint || "",
+            question_form_option: q.question_form_option || "",
+            question_option_limit_flag: q.question_option_limit_flag || 0,
+            child_question_ids: q.child_question_ids || "",
+            sub_child_question_ids1: q.sub_child_question_ids1 || "",
+            sub_child_question_ids2: q.sub_child_question_ids2 || "",
+            user_field_mapping: q.user_field_mapping || "",
+            is_manadatory: q.is_manadatory,
+            date_range: q.date_range,
+            range_start_date: q.range_start_date || "",
+            range_end_date: q.range_end_date || "",
+            specific_domain: q.specific_domain,
+            domain_name: q.domain_name || "",
+            limit_check: q.limit_check,
+            limit_length: q.limit_length || "",
+            question_status: q.question_status,
+            is_subquestion: q.is_subquestion,
+            parent_question_id: q.parent_question_id,
+            sort_order: q.sort_order,
+            is_compulsory: q.is_compulsory,
+            created_by: q.created_by,
+            is_custom_form: q.is_custom_form,
+            apply_ticket: q.apply_ticket,
+            ticket_details: q.ticket_details,
+            show_on_ticket_pdf: q.show_on_ticket_pdf,
+            hint_image: q.hint_image || "",
+            ActualValue: fieldValue || "",
+            Error: "",
+            TicketId: ticketId.toString()
+          };
+        });
+
+        FormQuestions[ticketId].push(participantQuestions);
+      }
+    });
+
+    // Calculate total price
+    const TotalPrice = selectedTickets.reduce((sum, t) => {
+      const calcDetails = t.ticket_calculation_details || {};
+      const totalBuyer = parseFloat(calcDetails.total_buyer || t.ticket_price * t.quantity);
+      return sum + totalBuyer;
+    }, 0).toFixed(2);
+
+    // Get discount from localStorage
+    const TotalDiscount = parseFloat(localStorage.getItem("couponDiscount")) || 0;
+
+    // Build AllTickets array with all ticket details
+    const AllTickets = selectedTickets.map(ticket => ({
+      ...ticket,
+      count: ticket.quantity
+    }));
+
+    // Build GstArray (same as AllTickets for GST calculation)
+    const GstArray = [...AllTickets];
+
+    // Get event URL
+    const EventUrl = event ? `https://racesregistrations.com/e/${event.url || event.name}` : "";
+
+    // Build the complete payload
+    const bookingTicketsArray = {
+      event_id: eventId,
+      total_attendees,
+      FormQuestions,
+      TotalPrice,
+      TotalDiscount,
+      AllTickets,
+      ExtraPricing: [],
+      EventUrl,
+      UtmCampaign: "",
+      GstArray
+    };
+
+    return bookingTicketsArray;
   };
 
   const renderDynamicFields = (participantIndex) => {
@@ -1032,6 +1270,11 @@ export default function ParticipantDetails() {
                 }
               }
 
+              // Check if this is the Age field and both Age and DOB exist
+              const { hasAge, hasDOB, ageQuestion } = hasBothAgeAndDOB(participantIndex);
+              const isAgeField = ageQuestion && getMappedKey(ageQuestion) === fieldName;
+              const shouldDisableAge = hasAge && hasDOB && isAgeField;
+
               questionElement = (
                 <div className="form-group" key={question.id}>
                   <label>
@@ -1047,6 +1290,11 @@ export default function ParticipantDetails() {
                         (Select date between {minDate} and {maxDate})
                       </small>
                     )}
+                    {shouldDisableAge && (
+                      <small style={{ color: '#28a745', fontSize: '11px', marginLeft: '8px' }}>
+                        (Auto-calculated from Date of Birth)
+                      </small>
+                    )}
                   </label>
                   <input
                     type={question.question_form_type === 'mobile' ? 'tel' : question.question_form_type}
@@ -1054,11 +1302,28 @@ export default function ParticipantDetails() {
                     className="form-control3"
                     value={currentValue}
                     onChange={(e) => handleInputChange(participantIndex, e)}
+                    onKeyPress={(e) => {
+                      // For mobile fields, only allow numbers
+                      if (question.question_form_type === 'mobile') {
+                        if (!/[0-9]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }
+                    }}
+                    onInput={(e) => {
+                      // For mobile fields, limit to 10 digits
+                      if (question.question_form_type === 'mobile') {
+                        e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+                      }
+                    }}
                     required={isRequired}
                     minLength={minLength || undefined}
-                    maxLength={maxLength || undefined}
+                    maxLength={question.question_form_type === 'mobile' ? 10 : (maxLength || undefined)}
                     min={minDate || undefined}
                     max={maxDate || undefined}
+                    placeholder={question.question_form_type === 'mobile' ? '10 digit mobile number' : ''}
+                    disabled={shouldDisableAge}
+                    style={shouldDisableAge ? { backgroundColor: '#f5f5f5', cursor: 'not-allowed' } : {}}
                   />
                   {lengthError && <span style={{ color: 'red', fontSize: '12px', display: 'block', marginTop: '4px' }}>{lengthError}</span>}
                   {formErrors[`participant_${participantIndex}_${fieldName}`] && (
@@ -1444,8 +1709,43 @@ export default function ParticipantDetails() {
   };
 
   const handlePayNow = () => {
-    if (paymentData && paymentData.redirect_url) {
-      // Open PhonePe payment URL in new window
+    if (!paymentData) return;
+
+    console.log("💳 Redirecting to payment gateway:", selectedPaymentMethod);
+    console.log("Payment Data:", paymentData);
+
+    // For PayU, create a form and submit to PayU gateway
+    if (selectedPaymentMethod === 'payu' && paymentData.hash) {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'https://secure.payu.in/_payment'; // PayU production URL
+
+      // Add all payment fields
+      const fields = {
+        key: paymentData.merchant_key,
+        txnid: paymentData.txnid,
+        amount: paymentData.amount,
+        productinfo: paymentData.productinfo,
+        firstname: paymentData.firstname,
+        email: paymentData.email,
+        phone: paymentData.phone_no,
+        surl: window.location.origin + '/payment-success',
+        furl: window.location.origin + '/payment-failure',
+        hash: paymentData.hash
+      };
+
+      Object.keys(fields).forEach(key => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = fields[key];
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+    } else if (paymentData.redirect_url) {
+      // PhonePe or other payment methods with redirect URL
       window.location.href = paymentData.redirect_url;
     }
   };
@@ -1635,6 +1935,28 @@ export default function ParticipantDetails() {
               }
             }
           }
+
+          // Validate mobile number format (must be exactly 10 digits)
+          if (q.question_form_type === 'mobile' && fieldValue) {
+            const mobileRegex = /^[0-9]{10}$/;
+            if (!mobileRegex.test(fieldValue)) {
+              const errorKey = `participant_${participantIndex}_${fieldName}`;
+              errors[errorKey] = `${q.question_label} must be exactly 10 digits for Participant ${participantIndex + 1}`;
+              hasErrors = true;
+              console.log(`❌ Invalid mobile number: ${q.question_label} for Participant ${participantIndex + 1}`);
+            }
+          }
+
+          // Validate email format
+          if (q.question_form_type === 'email' && fieldValue) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(fieldValue)) {
+              const errorKey = `participant_${participantIndex}_${fieldName}`;
+              errors[errorKey] = `Please enter a valid email address for ${q.question_label} (Participant ${participantIndex + 1})`;
+              hasErrors = true;
+              console.log(`❌ Invalid email format: ${q.question_label} for Participant ${participantIndex + 1}`);
+            }
+          }
         });
       }
     });
@@ -1664,6 +1986,130 @@ export default function ParticipantDetails() {
     setFormErrors({});
     return true;
   }
+
+  // Handle Proceed with PayU Payment
+  const handleProceedWithPayU = async () => {
+    console.log("🔵 PayU Payment - Starting validation...");
+
+    // Validate all forms first
+    let hasErrors = false;
+    const errors = {};
+
+    // Validate each participant's form
+    participantForms.forEach((participantForm, participantIndex) => {
+      const currentFormData = participantForm.formData;
+      const currentTicket = participantForm.ticketInfo;
+
+      if (formQuestions && currentTicket && formQuestions[currentTicket.id]) {
+        const questionsData = formQuestions[currentTicket.id];
+        const questionsList = questionsData[participantIndex] || questionsData[0] || [];
+
+        questionsList.forEach(q => {
+          const fieldName = getMappedKey(q);
+          const fieldValue = currentFormData[fieldName];
+
+          if (q.is_manadatory === 1) {
+            let isEmpty = false;
+            if (!fieldValue) {
+              isEmpty = true;
+            } else if (Array.isArray(fieldValue) && fieldValue.length === 0) {
+              isEmpty = true;
+            } else if (typeof fieldValue === 'string' && fieldValue.trim() === '') {
+              isEmpty = true;
+            }
+
+            if (isEmpty) {
+              const errorKey = `participant_${participantIndex}_${fieldName}`;
+              errors[errorKey] = `${q.question_label} is required`;
+              hasErrors = true;
+            }
+          }
+        });
+      }
+    });
+
+    // Check terms and conditions
+    if (termsConditions && termsConditions.length > 0 && !termsAccepted) {
+      errors['terms_conditions'] = 'You must accept the Terms and Conditions to proceed';
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
+      setFormErrors(errors);
+      const firstErrorElement = document.querySelector('.error-message');
+      if (firstErrorElement) {
+        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    // Clear errors
+    setFormErrors({});
+
+    try {
+      console.log("📦 Building booking payload...");
+
+      // Build the booking payload
+      const bookingPayload = buildBookingPayload();
+
+      // Calculate total amount
+      const totalAmount = selectedTickets.reduce((sum, t) => {
+        const calcDetails = t.ticket_calculation_details || {};
+        const totalBuyer = parseFloat(calcDetails.total_buyer || t.ticket_price * t.quantity);
+        return sum + totalBuyer;
+      }, 0);
+
+      // Apply coupon discount if any
+      const couponDiscount = parseFloat(localStorage.getItem("couponDiscount")) || 0;
+      const finalAmount = (totalAmount - couponDiscount).toFixed(2);
+
+      // Determine ticket type
+      const ticketType = finalAmount > 0 ? 'paid' : 'free';
+
+      console.log("💰 Payment Details:", {
+        totalAmount,
+        couponDiscount,
+        finalAmount,
+        ticketType
+      });
+
+      // Call PayU payment API
+      console.log("🚀 Calling PayU payment API...");
+      console.log("📦 Event ID:", eventId);
+      console.log("💰 Final Amount:", finalAmount);
+      console.log("🎫 Ticket Type:", ticketType);
+      console.log("📋 Booking Payload (before stringify):", bookingPayload);
+      console.log("📋 Booking Payload (stringified):", JSON.stringify(bookingPayload));
+
+      const apiPayload = {
+        event_id: eventId,
+        amount: finalAmount,
+        ticket_type: ticketType,
+        booking_tickets_array: JSON.stringify(bookingPayload)
+      };
+
+      console.log("🔍 Complete API Payload:", apiPayload);
+
+      const response = await authAPI.bookingPaymentProcess(apiPayload);
+
+      console.log("✅ PayU API Response:", response);
+
+      if (response && response.data) {
+        // Set payment data and open modal
+        setPaymentData(response.data);
+        setSelectedPaymentMethod('payu');
+        setShowPaymentModal(true);
+        console.log("✅ Payment modal opened for PayU");
+      } else {
+        alert("Payment initiation failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("❌ PayU payment error:", error);
+      console.error("❌ Error details:", error.response?.data);
+      console.error("❌ Error status:", error.response?.status);
+      alert(`Payment initiation failed: ${error.response?.data?.message || error.message || 'Please try again'}`);
+    }
+  };
 
   return (
     <div className="participant-details-page">
@@ -1867,13 +2313,38 @@ export default function ParticipantDetails() {
                 // Calculate fees from ticket_calculation_details if available
                 const calcDetails = ticket.ticket_calculation_details || {};
 
-                // Individual fee components
-                const convenienceFee = parseFloat(calcDetails.total_convenience_fees || (baseAmount * 0.02)) || 0;
-                const platformFeeBase = parseFloat(calcDetails.platform_fees_5_each || 5) || 5;
-                const paymentGatewayCharges = parseFloat(calcDetails.payment_gateway_1_85_buyer || (baseAmount * 0.0185)) || 0;
+                console.log('🔍 Full calcDetails:', calcDetails);
 
-                // Platform Fee = Convenience + Platform + Payment Gateway
-                const totalPlatformFee = convenienceFee + platformFeeBase + paymentGatewayCharges;
+                // Individual fee components (base amounts only, without GST)
+                // Check if GST is enabled
+                const isGSTEnabled = calcDetails.collect_gst === "1" || calcDetails.collect_gst === 1;
+
+                // IMPORTANT: When GST is ON, convenience_fee_amount and payment_gateway_1.85_buyer INCLUDE GST
+                // When GST is OFF, they are already base amounts
+                const convenienceFeeWithGST = parseFloat(calcDetails.convenience_fee_amount) || 0;
+                const convenienceFeeBase = !isGSTEnabled && convenienceFeeWithGST > 0
+                  ? Math.round((convenienceFeeWithGST / 1.18) * 100) / 100
+                  : convenienceFeeWithGST;
+
+                const platformFeeBase = parseFloat(calcDetails.platform_fees_5_each) || 0;
+
+                const paymentGatewayWithGST = parseFloat(calcDetails['payment_gateway_1.85_buyer'] || calcDetails.payment_gateway_1_85_buyer) || 0;
+                const paymentGatewayChargesBase = !isGSTEnabled && paymentGatewayWithGST > 0
+                  ? Math.round((paymentGatewayWithGST / 1.18) * 100) / 100
+                  : paymentGatewayWithGST;
+
+                console.log('🔍 Platform Fee Components:', {
+                  isGSTEnabled,
+                  convenienceFeeWithGST,
+                  convenienceFeeBase,
+                  platformFeeBase,
+                  paymentGatewayWithGST,
+                  paymentGatewayChargesBase,
+                  sum: convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase
+                });
+
+                // Platform Fee = Convenience + Platform + Payment Gateway (base amounts only)
+                const totalPlatformFee = convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase;
 
                 // Extract individual GST components from ticket_calculation_details
                 const registrationGST = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
@@ -1952,13 +2423,26 @@ export default function ParticipantDetails() {
                       const baseAmount = effectivePrice * parseInt(ticket.quantity);
                       const calcDetails = ticket.ticket_calculation_details || {};
 
-                      // Individual fee components
-                      const convenienceFee = parseFloat(calcDetails.total_convenience_fees || (baseAmount * 0.02)) || 0;
-                      const platformFeeBase = parseFloat(calcDetails.platform_fees_5_each || 5) || 5;
-                      const paymentGatewayCharges = parseFloat(calcDetails.payment_gateway_1_85_buyer || (baseAmount * 0.0185)) || 0;
+                      // Individual fee components (base amounts only, without GST)
+                      // Check if GST is enabled
+                      const isGSTEnabled = calcDetails.collect_gst === "1" || calcDetails.collect_gst === 1;
 
-                      // Platform Fee = Convenience + Platform + Payment Gateway
-                      const totalPlatformFee = convenienceFee + platformFeeBase + paymentGatewayCharges;
+                      // IMPORTANT: When GST is ON, convenience_fee_amount and payment_gateway_1.85_buyer INCLUDE GST
+                      // When GST is OFF, they are already base amounts
+                      const convenienceFeeWithGST = parseFloat(calcDetails.convenience_fee_amount) || 0;
+                      const convenienceFeeBase = !isGSTEnabled && convenienceFeeWithGST > 0
+                        ? Math.round((convenienceFeeWithGST / 1.18) * 100) / 100
+                        : convenienceFeeWithGST;
+
+                      const platformFeeBase = parseFloat(calcDetails.platform_fees_5_each) || 0;
+
+                      const paymentGatewayWithGST = parseFloat(calcDetails['payment_gateway_1.85_buyer'] || calcDetails.payment_gateway_1_85_buyer) || 0;
+                      const paymentGatewayChargesBase = !isGSTEnabled && paymentGatewayWithGST > 0
+                        ? Math.round((paymentGatewayWithGST / 1.18) * 100) / 100
+                        : paymentGatewayWithGST;
+
+                      // Platform Fee = Convenience + Platform + Payment Gateway (base amounts only)
+                      const totalPlatformFee = convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase;
 
                       // Extract individual GST components from ticket_calculation_details
                       const registrationGST = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
@@ -2028,14 +2512,35 @@ export default function ParticipantDetails() {
                 </div>
               )}
 
-              <button className="btn-proceed-final" onClick={handleProceed}>
-                <i className="fas fa-users"></i>
-                <span className="proceed-count">
-                  {selectedTickets.reduce((sum, t) => sum + t.quantity, 0)}
-                </span>
-                <span className="proceed-text">PROCEED</span>
-                <i className="fas fa-arrow-right"></i>
-              </button>
+              {/* Payment Buttons Container */}
+              <div style={{ display: 'flex', gap: '15px', flexDirection: 'column' }}>
+                {/* Proceed with PhonePe Button */}
+                <button className="btn-proceed-final" onClick={handleProceed} style={{ marginBottom: '0' }}>
+                  <i className="fas fa-users"></i>
+                  <span className="proceed-count">
+                    {selectedTickets.reduce((sum, t) => sum + t.quantity, 0)}
+                  </span>
+                  <span className="proceed-text">PROCEED WITH PHONEPE</span>
+                  <i className="fas fa-arrow-right"></i>
+                </button>
+
+                {/* Proceed with PayU Button */}
+                <button
+                  className="btn-proceed-final"
+                  onClick={handleProceedWithPayU}
+                  style={{
+                    marginBottom: '0',
+                    backgroundColor: '#17C653' // PayU green color
+                  }}
+                >
+                  <i className="fas fa-users"></i>
+                  <span className="proceed-count">
+                    {selectedTickets.reduce((sum, t) => sum + t.quantity, 0)}
+                  </span>
+                  <span className="proceed-text">PROCEED WITH PAYU</span>
+                  <i className="fas fa-arrow-right"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>

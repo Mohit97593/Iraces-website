@@ -1410,25 +1410,61 @@ const GeneralFormQuestions = ({
                 (selectedQuestion.question_form_type || "").toLowerCase() === "checkbox") && (
                   <div className="form-group2">
                     <label
-                      className="form-label-inline"
-                      style={{ display: "flex", marginTop: 22 }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginTop: 22,
+                        cursor: 'pointer',
+                        userSelect: 'none'
+                      }}
                     >
-                      <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={!!selectedQuestion.add_subquestions}
-                        onChange={(e) => {
-                          handleChangeField("add_subquestions", e.target.checked);
-                          if (e.target.checked && subQuestions.length === 0) {
-                            // Add first subquestion when checkbox is checked
+                      {/* Toggle Switch */}
+                      <div
+                        onClick={() => {
+                          const newValue = !selectedQuestion.add_subquestions;
+                          handleChangeField("add_subquestions", newValue);
+                          if (newValue && subQuestions.length === 0) {
+                            // Add first subquestion when toggle is turned on
                             addSubQuestion();
-                          } else if (!e.target.checked) {
-                            // Clear all subquestions when unchecked
+                          } else if (!newValue) {
+                            // Clear all subquestions when turned off
                             setSubQuestions([]);
                           }
                         }}
-                      />
-                      <span>Add Subquestions</span>
+                        style={{
+                          position: 'relative',
+                          width: 48,
+                          height: 28,
+                          borderRadius: 14,
+                          background: selectedQuestion.add_subquestions ? '#da251c' : '#ccc',
+                          transition: 'background 0.3s',
+                          cursor: 'pointer',
+                          flexShrink: 0
+                        }}
+                      >
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 2,
+                            left: selectedQuestion.add_subquestions ? 22 : 2,
+                            width: 24,
+                            height: 24,
+                            borderRadius: 12,
+                            background: '#fff',
+                            transition: 'left 0.3s',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                          }}
+                        />
+                      </div>
+                      <span style={{ fontWeight: 500, fontSize: '0.95rem' }}>Add Subquestions</span>
+                      <span style={{
+                        fontSize: '0.85rem',
+                        color: '#666',
+                        marginLeft: 'auto'
+                      }}>
+                        {selectedQuestion.add_subquestions ? subQuestions.length : 0}
+                      </span>
                     </label>
 
                     {selectedQuestion.add_subquestions && (
@@ -2327,25 +2363,61 @@ const GeneralFormQuestions = ({
                 "select" && (
                   <div className="form-group2">
                     <label
-                      className="form-label-inline"
-                      style={{ display: "flex", marginTop: 12 }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginTop: 12,
+                        cursor: 'pointer',
+                        userSelect: 'none'
+                      }}
                     >
-                      <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={!!selectedQuestion.add_subquestions}
-                        onChange={(e) => {
-                          handleChangeField("add_subquestions", e.target.checked);
-                          if (e.target.checked && subQuestions.length === 0) {
-                            // Add first subquestion when checkbox is checked
+                      {/* Toggle Switch */}
+                      <div
+                        onClick={() => {
+                          const newValue = !selectedQuestion.add_subquestions;
+                          handleChangeField("add_subquestions", newValue);
+                          if (newValue && subQuestions.length === 0) {
+                            // Add first subquestion when toggle is turned on
                             addSubQuestion();
-                          } else if (!e.target.checked) {
-                            // Clear all subquestions when unchecked
+                          } else if (!newValue) {
+                            // Clear all subquestions when turned off
                             setSubQuestions([]);
                           }
                         }}
-                      />
-                      <span>Add Subquestions</span>
+                        style={{
+                          position: 'relative',
+                          width: 48,
+                          height: 28,
+                          borderRadius: 14,
+                          background: selectedQuestion.add_subquestions ? '#da251c' : '#ccc',
+                          transition: 'background 0.3s',
+                          cursor: 'pointer',
+                          flexShrink: 0
+                        }}
+                      >
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 2,
+                            left: selectedQuestion.add_subquestions ? 22 : 2,
+                            width: 24,
+                            height: 24,
+                            borderRadius: 12,
+                            background: '#fff',
+                            transition: 'left 0.3s',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                          }}
+                        />
+                      </div>
+                      <span style={{ fontWeight: 500, fontSize: '0.95rem' }}>Add Subquestions</span>
+                      <span style={{
+                        fontSize: '0.85rem',
+                        color: '#666',
+                        marginLeft: 'auto'
+                      }}>
+                        {selectedQuestion.add_subquestions ? subQuestions.length : 0}
+                      </span>
                     </label>
 
                     {selectedQuestion.add_subquestions && (

@@ -7,6 +7,8 @@ const Integrations = ({ onBack, onNext }) => {
   const [eventDetails, setEventDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showTCSModal, setShowTCSModal] = useState(false);
+  const [tcsAccepted, setTcsAccepted] = useState(false);
   const [savedEventUrl, setSavedEventUrl] = useState("");
   const [savedCheckoutUrl, setSavedCheckoutUrl] = useState("");
   const navigate = useNavigate();
@@ -50,7 +52,20 @@ const Integrations = ({ onBack, onNext }) => {
     );
   };
 
-  const handleSave = async () => {
+  const handleSaveClick = () => {
+    // Show TCS modal first
+    setShowTCSModal(true);
+    setTcsAccepted(false);
+  };
+
+  const handleTCSConfirm = async () => {
+    if (!tcsAccepted) {
+      alert("Please acknowledge the terms of services related to TCS.");
+      return;
+    }
+
+    setShowTCSModal(false);
+
     try {
       const eventId = sessionStorage.getItem("event_id");
       if (!eventId) {
@@ -155,7 +170,7 @@ const Integrations = ({ onBack, onNext }) => {
             Back
           </button>
           <button
-            onClick={handleSave}
+            onClick={handleSaveClick}
             style={{
               background: "#da251c",
               color: "#fff",
@@ -170,6 +185,185 @@ const Integrations = ({ onBack, onNext }) => {
           </button>
         </div>
       </div>
+
+      {/* TCS Acknowledgment Modal */}
+      {showTCSModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            style={{
+              background: "#fff",
+              borderRadius: 8,
+              width: 800,
+              maxWidth: "95%",
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{
+              padding: "20px 24px",
+              borderBottom: "1px solid #e0e0e0",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}>
+              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 600 }}>
+                What is TCS and how does TCS work?
+              </h3>
+              <button
+                onClick={() => setShowTCSModal(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "24px",
+                  cursor: "pointer",
+                  color: "#666",
+                  padding: 0,
+                  lineHeight: 1
+                }}
+              >×</button>
+            </div>
+
+            {/* Modal Content - Scrollable */}
+            <div style={{
+              padding: "24px",
+              overflowY: "auto",
+              flex: 1
+            }}>
+              <p style={{ marginTop: 0, lineHeight: 1.6 }}>
+                Starting 1st October 2018, every e-commerce operator has to collect TCS as per the GST regulations.
+              </p>
+
+              <h4 style={{ marginTop: 20, marginBottom: 10, fontWeight: 600 }}>What is TCS under GST?</h4>
+              <p style={{ lineHeight: 1.6 }}>
+                Tax Collected at Source (TCS) under GST means the tax collected by an e-commerce operator from the
+                consideration received by it on behalf of the supplier of goods, or services who makes supplies through
+                the operator's online platform. TCS will be charged as a percentage on the net taxable supplies.
+              </p>
+
+              <h4 style={{ marginTop: 20, marginBottom: 10, fontWeight: 600 }}>
+                What is meant by the "net value of taxable supplies"?
+              </h4>
+              <p style={{ lineHeight: 1.6 }}>
+                The "net value of taxable supplies" means the aggregate value of taxable supplies of goods or services or
+                both, made during any month by a registered supplier through such operator reduced by the aggregate
+                value of taxable supplies returned to such supplier during the said month.
+              </p>
+
+              <h4 style={{ marginTop: 20, marginBottom: 10, fontWeight: 600 }}>
+                What is the rate of TCS notified by the Government?
+              </h4>
+              <p style={{ lineHeight: 1.6 }}>
+                Rate of TCS is 0.5% under each Act (i.e. the CGST Act, 2017, and the respective SGST Act / UTGST Act
+                respectively) and the same is 1% under the IGST Act, 2017.
+              </p>
+
+              <h4 style={{ marginTop: 20, marginBottom: 10, fontWeight: 600 }}>
+                Is every e-commerce operator required to collect tax on behalf of the actual supplier?
+              </h4>
+              <p style={{ lineHeight: 1.6 }}>
+                Every e-commerce operator is required to collect tax where the supplier is supplying goods or services
+                through e-commerce operators and consideration with respect to the supply is to be collected by the said
+                e-commerce operator.
+              </p>
+
+              <h4 style={{ marginTop: 20, marginBottom: 10, fontWeight: 600 }}>
+                How can actual suppliers/organizers claim credit for TCS?
+              </h4>
+              <p style={{ lineHeight: 1.6 }}>
+                Based on the statement (FORM GSTR-8) filed by the e-commerce operator, the TCS would be credited to
+                the electronic cash ledger of the actual supplier in the respective tax head. The said credit can be used at
+                the time of discharge of tax liability by the actual supplier.
+              </p>
+
+              <p style={{ lineHeight: 1.6, marginBottom: 8 }}>
+                If the supplier is not able to use the amount lying in the said cash ledger, the actual supplier may claim a
+                refund of the excess balance lying in his electronic cash ledger in accordance with the provisions contained
+                in section 54(1) of the CGST Act, 2017
+              </p>
+
+              <h4 style={{ marginTop: 20, marginBottom: 10, fontWeight: 600 }}>
+                How does youtoocanrun handle TCS collected?
+              </h4>
+              <p style={{ lineHeight: 1.6, marginBottom: 24 }}>
+                Youtoocanrun files the TCS collected from the transaction under an Organizer's account on a monthly basis.
+                Total TCS collected for a month for an organizer is filed at one go.
+              </p>
+
+              {/* Checkbox */}
+              <div style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 10,
+                padding: "16px",
+                background: "#f9f9f9",
+                borderRadius: 6
+              }}>
+                <input
+                  type="checkbox"
+                  id="tcsCheckbox"
+                  checked={tcsAccepted}
+                  onChange={(e) => setTcsAccepted(e.target.checked)}
+                  style={{
+                    width: 18,
+                    height: 18,
+                    cursor: "pointer",
+                    marginTop: 2
+                  }}
+                />
+                <label
+                  htmlFor="tcsCheckbox"
+                  style={{
+                    cursor: "pointer",
+                    fontSize: 14,
+                    lineHeight: 1.5
+                  }}
+                >
+                  I acknowledge the terms of services related to TCS.
+                </label>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: "16px 24px",
+              borderTop: "1px solid #e0e0e0",
+              display: "flex",
+              justifyContent: "flex-end"
+            }}>
+              <button
+                onClick={handleTCSConfirm}
+                disabled={!tcsAccepted}
+                style={{
+                  background: tcsAccepted ? "#da251c" : "#ccc",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 6,
+                  padding: "10px 32px",
+                  fontWeight: 600,
+                  cursor: tcsAccepted ? "pointer" : "not-allowed",
+                  fontSize: 14
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showSuccessModal && (
         <div

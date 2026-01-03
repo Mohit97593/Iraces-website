@@ -59,6 +59,20 @@ export default function EventImages({ onBack, onNext }) {
           // If server already has a banner image, show it as preview
           if (details.banner_image) setEventBannerPreview(details.banner_image);
         }
+
+        // Load saved event photos from EventImages array
+        if (res.data.EventImages && Array.isArray(res.data.EventImages) && res.data.EventImages.length > 0) {
+          const photoUrls = res.data.EventImages.map(photo => {
+            // EventImages has structure: { id, event_id, image, created_by }
+            if (photo.image) return photo.image;
+            return null;
+          }).filter(url => url !== null);
+
+          if (photoUrls.length > 0) {
+            setCreativesPreviews(photoUrls);
+            console.log('✅ Loaded event photos:', photoUrls);
+          }
+        }
       });
     }
   }, []);
@@ -174,6 +188,14 @@ export default function EventImages({ onBack, onNext }) {
       descriptionImage ? descriptionImage : ""
     );
     if (eventBanner) formData.append("event_banner", eventBanner);
+
+    // Add Event Communication Creatives photos
+    if (creatives && creatives.length > 0) {
+      creatives.forEach((file) => {
+        formData.append("event_photos[]", file);
+      });
+    }
+
     try {
       const res = await authAPI.addEventDescription(formData);
       if (res.data && res.data.status === 200) {
@@ -610,8 +632,18 @@ export default function EventImages({ onBack, onNext }) {
                             setCreatives(newCreatives);
 
                             const newPreviews = [...creativesPreviews];
-                            // Revoke URL
-                            URL.revokeObjectURL(newPreviews[index]);
+                            const urlToRemove = newPreviews[index];
+
+                            // Only revoke URL if it's a blob URL (newly uploaded)
+                            // Don't revoke if it's a server URL (http/https)
+                            if (urlToRemove && urlToRemove.startsWith('blob:')) {
+                              try {
+                                URL.revokeObjectURL(urlToRemove);
+                              } catch (e) {
+                                console.error('Error revoking URL:', e);
+                              }
+                            }
+
                             newPreviews.splice(index, 1);
                             setCreativesPreviews(newPreviews);
                           }}
