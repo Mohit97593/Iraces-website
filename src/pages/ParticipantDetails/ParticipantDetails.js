@@ -1881,44 +1881,125 @@ export default function ParticipantDetails() {
   };
 
   const handlePayNow = () => {
-    if (!paymentData) return;
+    if (!paymentData) {
+      console.error("❌ No payment data available");
+      alert("Payment data is not available. Please try again.");
+      return;
+    }
 
     console.log("💳 Redirecting to payment gateway:", selectedPaymentMethod);
-    console.log("Payment Data:", paymentData);
+    console.log("📋 Full Payment Data received from API:", paymentData);
 
     // For PayU, create a form and submit to PayU gateway
-    if (selectedPaymentMethod === 'payu' && paymentData.hash) {
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = 'https://secure.payu.in/_payment'; // PayU production URL
+    if (selectedPaymentMethod === 'payu') {
+      // Get API base URL
+      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
 
-      // Add all payment fields
+      // Define all PayU fields - use exact values from backend for hash validation
       const fields = {
-        key: paymentData.merchant_key,
-        txnid: paymentData.txnid,
-        amount: paymentData.amount,
-        productinfo: paymentData.productinfo,
-        firstname: paymentData.firstname,
-        email: paymentData.email,
-        phone: paymentData.phone_no,
-        surl: window.location.origin + '/registration-tracker',
-        furl: window.location.origin + '/registration-tracker',
-        hash: paymentData.hash
+        key: paymentData.merchant_key || paymentData.key || '',
+        txnid: paymentData.txnid || '',
+        amount: paymentData.amount || '',
+        productinfo: paymentData.productinfo || '', // Must match backend exactly (even if empty)
+        firstname: paymentData.firstname || paymentData.first_name || '',
+        email: paymentData.email || '',
+        phone: paymentData.phone_no || paymentData.phone || '',
+        // PayU sends POST requests - React dev server CANNOT handle them
+        // MUST use Laravel backend to receive POST, then redirect to React with GET
+        // ALWAYS use backend API URLs (both dev and production) to handle POST callbacks
+        surl: paymentData.surl || `${API_BASE_URL}/payment_gateway/success`,
+        furl: paymentData.furl || `${API_BASE_URL}/payment_gateway/failure`,
+        hash: paymentData.hash || ''
+        // Note: UDF fields removed - backend doesn't include them in hash calculation
       };
 
+      // Log all fields for debugging (hide sensitive hash)
+      console.log("📋 PayU Form Fields (before validation):");
       Object.keys(fields).forEach(key => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = fields[key];
-        form.appendChild(input);
+        const value = fields[key];
+        const displayValue = key === 'hash' ? (value ? '[PRESENT]' : '[MISSING]') : value;
+        console.log(`  ${key}: ${displayValue || '[EMPTY]'}`);
       });
 
+      // Validate required fields (productinfo can be empty as per backend)
+      const requiredFields = ['key', 'txnid', 'amount', 'firstname', 'email', 'phone', 'hash'];
+      const missingFields = requiredFields.filter(field => !fields[field] || fields[field] === '');
+
+      if (missingFields.length > 0) {
+        console.error("❌ Missing required PayU fields:", missingFields);
+        console.error("❌ Complete paymentData received:", paymentData);
+        alert(`Payment Error: Missing required fields (${missingFields.join(', ')}). Please try again or contact support.`);
+        setShowPaymentModal(false);
+        return;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(fields.email)) {
+        console.error("❌ Invalid email format:", fields.email);
+        alert("Payment Error: Invalid email format. Please check and try again.");
+        setShowPaymentModal(false);
+        return;
+      }
+
+      // Validate phone format (should be numeric)
+      const phoneRegex = /^[0-9]{10,15}$/;
+      if (!phoneRegex.test(fields.phone)) {
+        console.error("❌ Invalid phone format:", fields.phone);
+        alert("Payment Error: Invalid phone number. Please check and try again.");
+        setShowPaymentModal(false);
+        return;
+      }
+
+      // Create form
+      console.log("✅ All validations passed. Creating payment form...");
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'https://secure.payu.in/_payment'; // PayU PRODUCTION
+      form.id = 'payu-payment-form';
+
+      // Add only non-empty fields to the form
+      Object.keys(fields).forEach(key => {
+        const value = fields[key];
+        if (value && value !== '') {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = String(value).trim();
+          form.appendChild(input);
+        }
+      });
+
+      // Log final form data
+      console.log("📋 Final PayU Form Fields (being submitted):");
+      const formData = new FormData(form);
+      for (let [key, value] of formData.entries()) {
+        const displayValue = key === 'hash' ? '[REDACTED]' : value;
+        console.log(`  ${key}: ${displayValue}`);
+      }
+
+      // Submit form
       document.body.appendChild(form);
+      console.log("🚀 Submitting PayU payment form...");
       form.submit();
+
+      // Cleanup form after submission
+      setTimeout(() => {
+        const existingForm = document.getElementById('payu-payment-form');
+        if (existingForm) {
+          document.body.removeChild(existingForm);
+          console.log("🧹 Form cleaned up");
+        }
+      }, 1000);
     } else if (paymentData.redirect_url) {
       // PhonePe or other payment methods with redirect URL
+      console.log("🔗 Redirecting to:", paymentData.redirect_url);
       window.location.href = paymentData.redirect_url;
+    } else {
+      console.error("❌ No valid payment method or redirect URL");
+      console.error("❌ paymentData:", paymentData);
+      alert("Payment method not properly configured. Please try again or contact support.");
+      setShowPaymentModal(false);
     }
   };
 

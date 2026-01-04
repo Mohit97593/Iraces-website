@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { authAPI } from "../services/authAPI";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import "./RegistrationTracker.css";
 import TopNav from "../components/Navbar/TopNav";
 
@@ -8,11 +8,57 @@ export default function RegistrationTracker() {
     const [activeEvents, setActiveEvents] = useState([]);
     const [pastEvents, setPastEvents] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
 
+    // Handle PayU callback on component mount
     useEffect(() => {
+        handlePayUCallback();
         fetchBookings();
     }, []);
+
+    const handlePayUCallback = () => {
+        // PayU sends payment response in URL parameters
+        const status = searchParams.get('status');
+        const txnid = searchParams.get('txnid');
+        const mihpayid = searchParams.get('mihpayid'); // PayU transaction ID
+        const amount = searchParams.get('amount');
+        const hash = searchParams.get('hash');
+
+        console.log("🔍 PayU Callback Parameters:", {
+            status,
+            txnid,
+            mihpayid,
+            amount,
+            hash
+        });
+
+        if (status) {
+            // Clear URL parameters after reading them
+            setSearchParams({});
+
+            if (status === 'success') {
+                // Payment successful
+                console.log("✅ Payment successful!");
+                console.log("Transaction ID:", txnid);
+                console.log("PayU Payment ID:", mihpayid);
+
+                // TODO: Call booking confirmation API with payment details
+                // Example: await authAPI.confirmBooking({ txnid, mihpayid, amount, status });
+
+                alert(`🎉 Payment Successful!\n\nTransaction ID: ${txnid}\nAmount: ₹${amount}\n\nYour booking has been confirmed!`);
+            } else if (status === 'failure') {
+                // Payment failed
+                console.log("❌ Payment failed!");
+                console.log("Transaction ID:", txnid);
+
+                alert(`❌ Payment Failed\n\nTransaction ID: ${txnid}\n\nPlease try again or contact support.`);
+            } else {
+                // Unknown status
+                console.log("⚠️ Unknown payment status:", status);
+            }
+        }
+    };
 
     const fetchBookings = async () => {
         try {
