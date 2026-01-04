@@ -1384,6 +1384,165 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Get Insights API - Event Analytics
+  getInsights: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+
+      if (payload.filter) {
+        formData.append("filter", payload.filter); cx
+      }
+      if (payload.from_date) {
+        formData.append("from_date", payload.from_date);
+      }
+      if (payload.to_date) {
+        formData.append("to_date", payload.to_date);
+      }
+      if (payload.Ticket) {
+        formData.append("Ticket", payload.Ticket);
+      }
+
+      const response = await api.post("/get_insights", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("getInsights API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Category Wise Data API - Event Analytics Charts
+  getCategoryWiseData: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+
+      if (payload.filter) {
+        formData.append("filter", payload.filter);
+      }
+      if (payload.from_date) {
+        formData.append("from_date", payload.from_date);
+      }
+      if (payload.to_date) {
+        formData.append("to_date", payload.to_date);
+      }
+      if (payload.Ticket) {
+        formData.append("Ticket", payload.Ticket);
+      }
+
+      const response = await api.post("/get_category_wise_data", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("getCategoryWiseData API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Registered Users API - Registration Details
+  getRegisteredUsers: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+
+      if (payload.user_name) {
+        formData.append("user_name", payload.user_name);
+      }
+      if (payload.from_date) {
+        formData.append("from_date", payload.from_date);
+      }
+      if (payload.to_date) {
+        formData.append("to_date", payload.to_date);
+      }
+      if (payload.TransactionStatus) {
+        formData.append("TransactionStatus", payload.TransactionStatus);
+      }
+      if (payload.TransactionID) {
+        formData.append("TransactionID", payload.TransactionID);
+      }
+      formData.append("limit", payload.limit || 30);
+      formData.append("page", payload.page || 1);
+
+      const response = await api.post("/get_registered_users", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("getRegisteredUsers API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Net Sales API - Participants/Attendee Details
+  getNetSales: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+
+      if (payload.participant_name) {
+        formData.append("participant_name", payload.participant_name);
+      }
+      if (payload.reg_id) {
+        formData.append("reg_id", payload.reg_id);
+      }
+      if (payload.mobile_number) {
+        formData.append("mobile_number", payload.mobile_number);
+      }
+      if (payload.email) {
+        formData.append("email", payload.email);
+      }
+      if (payload.ticket_id) {
+        formData.append("ticket_id", payload.ticket_id);
+      }
+      if (payload.from_date) {
+        formData.append("from_date", payload.from_date);
+      }
+      if (payload.to_date) {
+        formData.append("to_date", payload.to_date);
+      }
+      if (payload.TransactionStatus) {
+        formData.append("TransactionStatus", payload.TransactionStatus);
+      }
+      if (payload.coupon_used_flag !== undefined) {
+        formData.append("coupon_used_flag", payload.coupon_used_flag);
+      }
+      if (payload.TransactionID) {
+        formData.append("TransactionID", payload.TransactionID);
+      }
+      formData.append("limit", payload.limit || 30);
+      formData.append("page", payload.page || 1);
+
+      const response = await api.post("/get_netsales", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("getNetSales API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Change Event Status API - Toggle event active/inactive
+  changeEventStatus: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+      formData.append("event_status", payload.event_status);
+      formData.append("action_flag", payload.action_flag || "change_status");
+
+      const response = await api.post("/EventDeleteChangeStatus", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("changeEventStatus API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 // Token को axios header में set करें app load होते समय

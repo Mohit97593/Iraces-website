@@ -118,10 +118,11 @@ export default function MyEvents() {
       });
       setLikedEvents(initialLiked);
 
-      // Initialize toggle states (default OFF)
+      // Initialize toggle states based on event_status from API
+      // event_status: true = toggle ON, event_status: false = toggle OFF
       const initialToggles = {};
       events.forEach((ev) => {
-        initialToggles[ev.id] = false;
+        initialToggles[ev.id] = ev.event_status === true || ev.event_status === "true" || ev.event_status === 1;
       });
       setToggleStates(initialToggles);
     }
@@ -138,6 +139,52 @@ export default function MyEvents() {
     } catch (err) {
       console.error("Failed to toggle like:", err);
       setLikedEvents((p) => ({ ...p, [eventId]: current }));
+    }
+  };
+
+  // Handle event status toggle
+  const handleToggleStatus = async (eventId, currentState) => {
+    // Optimistically update UI
+    const newState = !currentState;
+    setToggleStates((prev) => ({ ...prev, [eventId]: newState }));
+
+    try {
+      // When toggle is ON, send "false" to backend
+      // When toggle is OFF, send "true" to backend
+      const statusToSend = newState ? "false" : "true";
+
+      console.log(`🔄 Changing event ${eventId} status to:`, statusToSend);
+
+      const payload = {
+        event_id: eventId,
+        event_status: statusToSend,
+        action_flag: "change_status"
+      };
+
+      const response = await authAPI.changeEventStatus(payload);
+      console.log("✅ Status change response:", response);
+
+      // Refresh events list to get updated data
+      const user_id = getStoredUserId();
+      const refreshPayload = {
+        event_info_status: activeType === 1 ? 1 : activeType === 2 ? 2 : 3,
+        user_id: user_id,
+        login_as_organiser_id: 0,
+      };
+
+      const refreshRes = await authAPI.allEventDetails(refreshPayload);
+      const parsedRefresh = parseEventsFromResponse(refreshRes);
+      setEvents(parsedRefresh);
+
+      // Show success message if available
+      if (response && response.message) {
+        console.log("✅", response.message);
+      }
+    } catch (err) {
+      console.error("❌ Failed to toggle status:", err);
+      // Revert on error
+      setToggleStates((prev) => ({ ...prev, [eventId]: currentState }));
+      alert("Failed to change event status. Please try again.");
     }
   };
 
@@ -519,9 +566,21 @@ export default function MyEvents() {
 
                           <hr className="event-divider" />
 
-                          <div className="event-register-info">
-                            Register By :{" "}
-                            <span className="register-date">{registerBy}</span>
+                          <div className="event-register-info" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              Register By :{" "}
+                              <span className="register-date">{registerBy}</span>
+                            </div>
+                            <i
+                              className="fas fa-chart-bar"
+                              style={{
+                                fontSize: '18px',
+                                color: '#666',
+                                cursor: 'pointer'
+                              }}
+                              onClick={() => navigate(`/event-analytics/${event.id}`)}
+                              title="View Analytics"
+                            ></i>
                           </div>
 
                           <div className="event-footer d-flex align-items-center justify-content-between">
@@ -549,12 +608,7 @@ export default function MyEvents() {
                             <div
                               className={`event-toggle ${toggleStates[event.id] ? "on" : ""
                                 }`}
-                              onClick={() =>
-                                setToggleStates((prev) => ({
-                                  ...prev,
-                                  [event.id]: !prev[event.id],
-                                }))
-                              }
+                              onClick={() => handleToggleStatus(event.id, toggleStates[event.id])}
                               role="button"
                               tabIndex={0}
                               aria-pressed={!!toggleStates[event.id]}

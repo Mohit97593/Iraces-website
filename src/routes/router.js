@@ -28,6 +28,9 @@ import ParticipantDetails from "../pages/ParticipantDetails/ParticipantDetails";
 import CreateEvent from "../pages/CreateEvent/CreateEvent";
 import EventTermsConditions from "../pages/EventTermsConditions/EventTermsConditions";
 import RegistrationTracker from "../pages/RegistrationTracker";
+import EventAnalytics from "../pages/EventAnalytics/EventAnalytics";
+import Registrations from "../pages/Registrations/Registrations";
+import Participants from "../pages/Participants/Participants";
 
 const AppRouter = createBrowserRouter([
   {
@@ -248,6 +251,33 @@ const AppRouter = createBrowserRouter([
   {
     path: "/reset-password/:token",
     element: <ResetPasswordPage />,
+  },
+  {
+    path: "/event-analytics/:eventId",
+    element: (
+      <ErrorBoundary>
+        <EventAnalytics />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/registrations/:eventId",
+    element: (
+      <ErrorBoundary>
+        <Registrations />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/participants/:eventId",
+    element: (
+      <ErrorBoundary>
+        <Participants />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
   },
   {
     path: "/create-event",

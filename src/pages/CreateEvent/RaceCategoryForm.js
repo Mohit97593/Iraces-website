@@ -160,9 +160,10 @@ const RaceCategoryForm = ({
         // Registration amount includes GST if exclusive
         const registrationAmount = price + registrationGST;
 
-        // Payment gateway fee calculated on registration amount (not base price)
-        const paymentGatewayFeeRaw = registrationAmount > 0 ? 0.0185 * registrationAmount : 0;
-        const paymentGatewayFee = registrationAmount > 0 ? Math.round(paymentGatewayFeeRaw * 100) / 100 : 0;
+        // Payment gateway fee calculated on sum of all fees (Convenience Fee + Platform Fee + their GSTs + Base Registration Fee + Registration GST if applicable)
+        const amountForGatewayFee = price + convenienceFee + platformFee + convenienceFeeGST + platformFeeGST + registrationGST;
+        const paymentGatewayFeeRaw = amountForGatewayFee > 0 ? 0.0185 * amountForGatewayFee : 0;
+        const paymentGatewayFee = amountForGatewayFee > 0 ? Math.round(paymentGatewayFeeRaw * 100) / 100 : 0;
         const paymentGatewayGST = Math.round(paymentGatewayFee * 0.18 * 100) / 100;
 
         // Start with all fees included
@@ -278,9 +279,10 @@ const RaceCategoryForm = ({
     // Registration amount includes GST if exclusive
     const registrationAmount = price + registrationGST;
 
-    // Payment gateway fee calculated on registration amount (not base price)
-    const paymentGatewayFeeRaw = registrationAmount > 0 ? 0.0185 * registrationAmount : 0;
-    const paymentGatewayFee = registrationAmount > 0 ? Math.round(paymentGatewayFeeRaw * 100) / 100 : 0;
+    // Payment gateway fee calculated on sum of all fees (Convenience Fee + Platform Fee + their GSTs + Base Registration Fee + Registration GST if applicable)
+    const amountForGatewayFee = price + convenienceFee + platformFee + convenienceFeeGST + platformFeeGST + registrationGST;
+    const paymentGatewayFeeRaw = amountForGatewayFee > 0 ? 0.0185 * amountForGatewayFee : 0;
+    const paymentGatewayFee = amountForGatewayFee > 0 ? Math.round(paymentGatewayFeeRaw * 100) / 100 : 0;
     const paymentGatewayGST = price > 0 ? Math.round(paymentGatewayFee * 0.18 * 100) / 100 : 0;
 
     // Start with all fees included
@@ -767,9 +769,10 @@ const RaceCategoryForm = ({
                     // Registration amount includes GST if exclusive
                     const registrationAmount = price + registrationGST;
 
-                    // Payment gateway fee calculated on registration amount (not base price)
-                    const paymentGatewayFeeRaw = registrationAmount > 0 ? 0.0185 * registrationAmount : 0;
-                    const paymentGatewayFee = registrationAmount > 0 ? Math.round(paymentGatewayFeeRaw * 100) / 100 : 0;
+                    // Payment gateway fee calculated on sum of all fees (Convenience Fee + Platform Fee + their GSTs + Base Registration Fee + Registration GST if applicable)
+                    const amountForGatewayFee = price + convenienceFee + platformFee + convenienceFeeGST + platformFeeGST + registrationGST;
+                    const paymentGatewayFeeRaw = amountForGatewayFee > 0 ? 0.0185 * amountForGatewayFee : 0;
+                    const paymentGatewayFee = amountForGatewayFee > 0 ? Math.round(paymentGatewayFeeRaw * 100) / 100 : 0;
                     const paymentGatewayGST =
                       price > 0
                         ? Math.round(paymentGatewayFee * 0.18 * 100) / 100

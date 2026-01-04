@@ -57,6 +57,12 @@ export default function ParticipantDetails() {
   const [termsAccepted, setTermsAccepted] = useState(false); // Track terms and conditions acceptance
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('phonepe'); // Track selected payment method (phonepe or payu)
 
+  // Coupon state variables
+  const [appliedCoupon, setAppliedCoupon] = useState(null); // Applied coupon details from API
+  const [couponLoading, setCouponLoading] = useState(false); // Loading state for coupon API call
+  const [couponError, setCouponError] = useState(''); // Coupon validation error message
+
+
   const fieldMapping = {
     firstname: "firstName",
     lastname: "lastName",
@@ -776,6 +782,81 @@ export default function ParticipantDetails() {
     return age.toString();
   };
 
+  // Handle Apply Coupon
+  const handleApplyCoupon = async (couponCode, participantIndex, questionId) => {
+    if (!couponCode || couponCode.trim() === '') {
+      setCouponError('Please enter a coupon code');
+      return;
+    }
+
+    setCouponLoading(true);
+    setCouponError('');
+
+    try {
+      // Extract ticket IDs from selected tickets
+      const ticketIds = selectedTickets.map(ticket => ticket.id);
+
+      // Call getCoupons API
+      const response = await authAPI.getCoupons({
+        event_id: eventId,
+        ticket_ids: ticketIds,
+        coupon_code: couponCode.trim()
+      });
+
+      console.log('✅ Coupon API Response:', response);
+
+      // Check if API call was successful
+      if (response && response.data && response.data.Coupons && response.data.Coupons.length > 0) {
+        const couponData = response.data.Coupons[0];
+
+        // Transform coupon data
+        // discount_amt_per_type: 1 = fixed amount, 2 = percentage
+        const transformedCoupon = {
+          ...couponData,
+          coupon_code: couponData.discount_code || couponData.coupon_code,
+          discount_type: couponData.discount_amt_per_type,
+          discount_value: couponData.discount_amt_per_type === 2
+            ? couponData.discount_percentage
+            : couponData.discount_amount
+        };
+
+        // Store applied coupon details
+        setAppliedCoupon(transformedCoupon);
+        setCouponError('');
+
+        console.log('✅ Coupon applied successfully:', transformedCoupon);
+      } else {
+        // Invalid coupon
+        let errorMessage = 'Invalid or expired coupon code';
+        if (response && response.message && response.message !== 'Request processed successfully') {
+          errorMessage = response.message;
+        }
+        setCouponError(errorMessage);
+        setAppliedCoupon(null);
+      }
+    } catch (error) {
+      console.error('❌ Coupon API Error:', error);
+      setCouponError('Failed to apply coupon. Please try again.');
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  // Handle Remove Coupon
+  const handleRemoveCoupon = (participantIndex, questionId) => {
+    setAppliedCoupon(null);
+    setCouponError('');
+
+    // Clear the coupon code input field
+    handleInputChange(participantIndex, {
+      target: { name: `question_${questionId}`, value: '' }
+    });
+
+    console.log('🗑️ Coupon removed');
+  };
+
+
   // Build booking payload for PayU payment
   const buildBookingPayload = () => {
     // Get total attendees
@@ -1325,22 +1406,113 @@ export default function ParticipantDetails() {
                     disabled={shouldDisableAge}
                     style={shouldDisableAge ? { backgroundColor: '#f5f5f5', cursor: 'not-allowed' } : {}}
                   />
+
+                  {/* Apply/Remove button for Enter Coupon Code field */}
+                  {
+                    question.question_label.toLowerCase().includes('enter coupon code') && (
+                      <div style={{ marginTop: '12px' }}>
+                        {!appliedCoupon ? (
+                          <button
+                            type="button"
+                            onClick={() => handleApplyCoupon(currentValue, participantIndex, question.id)}
+                            disabled={!currentValue || couponLoading}
+                            style={{
+                              padding: '10px 24px',
+                              backgroundColor: (!currentValue || couponLoading) ? '#ccc' : '#e74c3c',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              cursor: (!currentValue || couponLoading) ? 'not-allowed' : 'pointer',
+                              transition: 'background-color 0.3s'
+                            }}
+                          >
+                            {couponLoading ? 'Applying...' : 'Apply'}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCoupon(participantIndex, question.id)}
+                            style={{
+                              padding: '10px 24px',
+                              backgroundColor: '#666',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              transition: 'background-color 0.3s'
+                            }}
+                          >
+                            Remove
+                          </button>
+                        )}
+
+                        {/* Success Message */}
+                        {appliedCoupon && (
+                          <div style={{
+                            marginTop: '10px',
+                            padding: '10px 14px',
+                            backgroundColor: '#d4edda',
+                            border: '1px solid #c3e6cb',
+                            borderRadius: '6px',
+                            color: '#155724',
+                            fontSize: '13px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}>
+                            <i className="fas fa-check-circle"></i>
+                            <span>Coupon "{appliedCoupon.coupon_code}" applied successfully!</span>
+                          </div>
+                        )}
+
+                        {/* Error Message */}
+                        {couponError && (
+                          <div style={{
+                            marginTop: '10px',
+                            padding: '10px 14px',
+                            backgroundColor: '#f8d7da',
+                            border: '1px solid #f5c6cb',
+                            borderRadius: '6px',
+                            color: '#721c24',
+                            fontSize: '13px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}>
+                            <i className="fas fa-exclamation-circle"></i>
+                            <span>{couponError}</span>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  }
+
                   {lengthError && <span style={{ color: 'red', fontSize: '12px', display: 'block', marginTop: '4px' }}>{lengthError}</span>}
-                  {formErrors[`participant_${participantIndex}_${fieldName}`] && (
-                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
-                      {formErrors[`participant_${participantIndex}_${fieldName}`]}
-                    </span>
-                  )}
-                  {formErrors[`participant_${participantIndex}_${fieldName}_length`] && (
-                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
-                      {formErrors[`participant_${participantIndex}_${fieldName}_length`]}
-                    </span>
-                  )}
-                  {formErrors[`participant_${participantIndex}_${fieldName}_daterange`] && (
-                    <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
-                      {formErrors[`participant_${participantIndex}_${fieldName}_daterange`]}
-                    </span>
-                  )}
+                  {
+                    formErrors[`participant_${participantIndex}_${fieldName}`] && (
+                      <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                        {formErrors[`participant_${participantIndex}_${fieldName}`]}
+                      </span>
+                    )
+                  }
+                  {
+                    formErrors[`participant_${participantIndex}_${fieldName}_length`] && (
+                      <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                        {formErrors[`participant_${participantIndex}_${fieldName}_length`]}
+                      </span>
+                    )
+                  }
+                  {
+                    formErrors[`participant_${participantIndex}_${fieldName}_daterange`] && (
+                      <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                        {formErrors[`participant_${participantIndex}_${fieldName}_daterange`]}
+                      </span>
+                    )
+                  }
                 </div>
               );
             }
@@ -1704,7 +1876,7 @@ export default function ParticipantDetails() {
           // Call the recursive function for this parent question
           return renderQuestionWithSubquestions(q, 0);
         })}
-      </div>
+      </div >
     );
   };
 
@@ -1729,8 +1901,8 @@ export default function ParticipantDetails() {
         firstname: paymentData.firstname,
         email: paymentData.email,
         phone: paymentData.phone_no,
-        surl: window.location.origin + '/payment-success',
-        furl: window.location.origin + '/payment-failure',
+        surl: window.location.origin + '/registration-tracker',
+        furl: window.location.origin + '/registration-tracker',
         hash: paymentData.hash
       };
 
@@ -2393,12 +2565,46 @@ export default function ParticipantDetails() {
               <div className="divider"></div>
 
               {/* Coupon Discount - only show if applied */}
-              {couponDiscount > 0 && (
-                <div className="summary-item" style={{ color: '#28a745', fontWeight: '600' }}>
-                  <span>Discount ({couponCode})</span>
-                  <span>- ₹{couponDiscount.toFixed(2)}</span>
-                </div>
-              )}
+              {appliedCoupon && (() => {
+                // Calculate base price only (without fees and taxes)
+                const basePrice = selectedTickets.reduce((sum, ticket) => {
+                  let effectivePrice = parseFloat(ticket.ticket_price);
+
+                  if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
+                    const discountValue = parseFloat(ticket.discount_value || 0);
+                    if (ticket.discount === 1) {
+                      effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+                    } else {
+                      effectivePrice = effectivePrice - discountValue;
+                    }
+                  }
+
+                  const baseAmount = effectivePrice * parseInt(ticket.quantity);
+                  return sum + baseAmount;
+                }, 0);
+
+                // Calculate discount based on coupon type (apply on base price only)
+                // discount_amt_per_type: 1 = fixed amount, 2 = percentage
+                let discountAmount = 0;
+                if (appliedCoupon.discount_type === 2) {
+                  // Percentage discount on base price
+                  const discountPercent = parseFloat(appliedCoupon.discount_value || 0);
+                  discountAmount = (basePrice * discountPercent) / 100;
+                } else if (appliedCoupon.discount_type === 1) {
+                  // Fixed amount discount
+                  discountAmount = parseFloat(appliedCoupon.discount_value || 0);
+                }
+
+                // Ensure discount doesn't exceed base price
+                discountAmount = Math.min(discountAmount, basePrice);
+
+                return (
+                  <div className="summary-item" style={{ color: '#28a745', fontWeight: '600' }}>
+                    <span>Discount ({appliedCoupon.coupon_code})</span>
+                    <span>- ₹{discountAmount.toFixed(2)}</span>
+                  </div>
+                );
+              })()}
 
               {/* Total Amount */}
               <div className="summary-item total">
@@ -2457,8 +2663,41 @@ export default function ParticipantDetails() {
                       return sum + baseAmount + totalPlatformFee + totalTaxes;
                     }, 0);
 
+                    // Calculate coupon discount on base price only
+                    let couponDiscountAmount = 0;
+                    if (appliedCoupon) {
+                      // Calculate base price (without fees and taxes)
+                      const basePrice = selectedTickets.reduce((sum, ticket) => {
+                        let effectivePrice = parseFloat(ticket.ticket_price);
+
+                        if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
+                          const discountValue = parseFloat(ticket.discount_value || 0);
+                          if (ticket.discount === 1) {
+                            effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+                          } else {
+                            effectivePrice = effectivePrice - discountValue;
+                          }
+                        }
+
+                        const baseAmount = effectivePrice * parseInt(ticket.quantity);
+                        return sum + baseAmount;
+                      }, 0);
+
+                      // discount_amt_per_type: 1 = fixed amount, 2 = percentage
+                      if (appliedCoupon.discount_type === 2) {
+                        // Percentage discount on base price
+                        const discountPercent = parseFloat(appliedCoupon.discount_value || 0);
+                        couponDiscountAmount = (basePrice * discountPercent) / 100;
+                      } else if (appliedCoupon.discount_type === 1) {
+                        // Fixed amount discount
+                        couponDiscountAmount = parseFloat(appliedCoupon.discount_value || 0);
+                      }
+                      // Ensure discount doesn't exceed base price
+                      couponDiscountAmount = Math.min(couponDiscountAmount, basePrice);
+                    }
+
                     // Subtract coupon discount from subtotal
-                    const finalTotal = subtotal - couponDiscount;
+                    const finalTotal = subtotal - couponDiscountAmount;
                     return finalTotal.toFixed(2);
                   })()}
                 </span>
