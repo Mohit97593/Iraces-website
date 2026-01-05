@@ -108,7 +108,7 @@ export default function Registrations() {
     };
 
     const handleBack = () => {
-        navigate(`/analytics/${eventId}`);
+        navigate(`/event-analytics/${eventId}`);
     };
 
     const handlePageChange = (newPage) => {

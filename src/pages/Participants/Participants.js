@@ -133,7 +133,7 @@ export default function Participants() {
     };
 
     const handleBack = () => {
-        navigate(`/analytics/${eventId}`);
+        navigate(`/event-analytics/${eventId}`);
     };
 
     const handlePageChange = (newPage) => {
