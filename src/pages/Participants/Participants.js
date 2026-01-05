@@ -13,6 +13,15 @@ export default function Participants() {
     const [participantData, setParticipantData] = useState([]);
     const [totalRecords, setTotalRecords] = useState(0);
     const [ticketCategories, setTicketCategories] = useState([]);
+    const [showModal, setShowModal] = useState(false);
+    const [bookingDetails, setBookingDetails] = useState(null);
+    const [loadingModal, setLoadingModal] = useState(false);
+    const [showEmailModal, setShowEmailModal] = useState(false);
+    const [emailTypes, setEmailTypes] = useState([]);
+    const [selectedEmailType, setSelectedEmailType] = useState("");
+    const [selectedParticipants, setSelectedParticipants] = useState([]);
+    const [customSubject, setCustomSubject] = useState("");
+    const [customMessage, setCustomMessage] = useState("");
 
     const [filters, setFilters] = useState({
         participantName: "",
@@ -102,6 +111,7 @@ export default function Participants() {
         if (eventId) {
             fetchData();
             fetchParticipants();
+            fetchEmailTypes();
         }
     }, [eventId]);
 
@@ -128,6 +138,145 @@ export default function Participants() {
 
     const handlePageChange = (newPage) => {
         setPagination({ ...pagination, page: newPage });
+    };
+
+    const handleViewDetails = async (participant) => {
+        try {
+            setLoadingModal(true);
+            setShowModal(true);
+            console.log("📊 Fetching booking details for participant:", participant);
+
+            const payload = {
+                event_id: eventId,
+                BookingId: participant.aId,
+                BookingDetailId: participant.booking_details_id
+            };
+
+            const response = await authAPI.getBookingDetails(payload);
+            console.log("✅ getBookingDetails API Response:", response);
+
+            if (response && response.data && response.data.BookingDetails && response.data.BookingDetails.length > 0) {
+                setBookingDetails(response.data.BookingDetails[0]);
+            }
+        } catch (error) {
+            console.error("❌ Error fetching booking details:", error);
+        } finally {
+            setLoadingModal(false);
+        }
+    };
+
+    const fetchEmailTypes = async () => {
+        try {
+            console.log("📧 Fetching email types...");
+            const response = await authAPI.getCommunicationMasterDetails();
+            console.log("✅ getCommunicationMasterDetails API Response:", response);
+
+            if (response && response.data) {
+                let emailTypesList = [...response.data];
+
+                // Check if Custom Email already exists
+                const hasCustomEmail = emailTypesList.some(type => type.subject_name === "Custom Email");
+
+                // If Custom Email doesn't exist, add it
+                if (!hasCustomEmail) {
+                    emailTypesList.push({
+                        id: 5,
+                        subject_name: "Custom Email"
+                    });
+                }
+
+                setEmailTypes(emailTypesList);
+                // Set first option as default if available
+                if (emailTypesList.length > 0) {
+                    setSelectedEmailType(emailTypesList[0].id);
+                }
+            }
+        } catch (error) {
+            console.error("❌ Error fetching email types:", error);
+        }
+    };
+
+    const handleSendEmail = () => {
+        if (selectedParticipants.length === 0) {
+            alert("Please select at least one participant before sending email.");
+            return;
+        }
+        setShowEmailModal(true);
+    };
+
+    const handleSelectParticipant = (participantId) => {
+        setSelectedParticipants(prev => {
+            if (prev.includes(participantId)) {
+                return prev.filter(id => id !== participantId);
+            } else {
+                return [...prev, participantId];
+            }
+        });
+    };
+
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            const allIds = participantData.map(p => p.aId);
+            setSelectedParticipants(allIds);
+        } else {
+            setSelectedParticipants([]);
+        }
+    };
+
+    const handleConfirmSendEmail = async () => {
+        try {
+            // Check if Custom Email is selected and validate fields
+            const selectedEmail = emailTypes.find(type => type.id == selectedEmailType);
+            const isCustomEmail = selectedEmail && selectedEmail.subject_name === "Custom Email";
+
+            if (isCustomEmail) {
+                if (!customSubject.trim()) {
+                    alert("Please enter a subject name for custom email.");
+                    return;
+                }
+                if (!customMessage.trim()) {
+                    alert("Please enter a message for custom email.");
+                    return;
+                }
+            }
+
+            console.log("📧 Sending email with type:", selectedEmailType);
+            console.log("📧 Selected participants:", selectedParticipants);
+
+            // Get user data from localStorage
+            const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+            const userId = userData.ID || userData.id || 0;
+
+            // Prepare payload
+            const payload = {
+                event_id: eventId,
+                user_id: userId,
+                event_url: window.location.origin + `/e/${eventId}`,
+                email_type: selectedEmailType,
+                subject_name: isCustomEmail ? customSubject : "",
+                message_content: isCustomEmail ? customMessage : "",
+                participant_data: selectedParticipants
+            };
+
+            console.log("📧 Sending payload:", payload);
+
+            const response = await authAPI.sendParticipantEmail(payload);
+            console.log("✅ sendParticipantEmail API Response:", response);
+
+            if (response && response.success === 200) {
+                alert("Email sent successfully!");
+                setShowEmailModal(false);
+                // Clear selected participants and custom fields after successful send
+                setSelectedParticipants([]);
+                setCustomSubject("");
+                setCustomMessage("");
+            } else {
+                alert(response.message || "Failed to send email");
+            }
+        } catch (error) {
+            console.error("❌ Error sending email:", error);
+            alert("Failed to send email. Please try again.");
+        }
     };
 
     const totalPages = Math.ceil(totalRecords / pagination.limit);
@@ -160,7 +309,7 @@ export default function Participants() {
                 <div className="participants-header">
                     <h2>Participants</h2>
                     <div className="header-actions">
-                        <button className="action-btn send-email-btn">
+                        <button className="action-btn send-email-btn" onClick={handleSendEmail}>
                             <i className="fas fa-envelope"></i> Send Email
                         </button>
                         <button className="action-btn download-btn">
@@ -309,7 +458,13 @@ export default function Participants() {
                     <table className="participants-table">
                         <thead>
                             <tr>
-                                <th><input type="checkbox" /></th>
+                                <th>
+                                    <input
+                                        type="checkbox"
+                                        onChange={handleSelectAll}
+                                        checked={participantData.length > 0 && selectedParticipants.length === participantData.length}
+                                    />
+                                </th>
                                 <th>Sr. No.</th>
                                 <th>Participant Name</th>
                                 <th>Email / Mobile Number</th>
@@ -326,7 +481,13 @@ export default function Participants() {
                             {participantData.length > 0 ? (
                                 participantData.map((participant, index) => (
                                     <tr key={participant.aId}>
-                                        <td><input type="checkbox" /></td>
+                                        <td>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedParticipants.includes(participant.aId)}
+                                                onChange={() => handleSelectParticipant(participant.aId)}
+                                            />
+                                        </td>
                                         <td>{(pagination.page - 1) * pagination.limit + index + 1}</td>
                                         <td>{participant.firstname} {participant.lastname}</td>
                                         <td>
@@ -346,7 +507,11 @@ export default function Participants() {
                                             </span>
                                         </td>
                                         <td>
-                                            <button className="action-icon-btn" title="View Details">
+                                            <button
+                                                className="action-icon-btn"
+                                                title="View Details"
+                                                onClick={() => handleViewDetails(participant)}
+                                            >
                                                 <i className="fas fa-eye"></i>
                                             </button>
                                         </td>
@@ -405,6 +570,200 @@ export default function Participants() {
                             >
                                 Next
                             </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Booking Details Modal */}
+                {showModal && (
+                    <div className="modal-overlay" onClick={() => setShowModal(false)}>
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h2>Registration Details</h2>
+                                <button className="modal-close" onClick={() => setShowModal(false)}>
+                                    ×
+                                </button>
+                            </div>
+                            <div className="modal-body">
+                                {loadingModal ? (
+                                    <div style={{ textAlign: 'center', padding: '20px' }}>
+                                        <p>Loading booking details...</p>
+                                    </div>
+                                ) : bookingDetails ? (
+                                    <>
+                                        {/* Registration Details Section */}
+                                        <div className="details-section">
+                                            <h3>Registration Details</h3>
+                                            <table className="details-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Order Id</th>
+                                                        <th>Registration Id</th>
+                                                        <th>Name</th>
+                                                        <th>Email</th>
+                                                        <th>Registration Date & Time</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>{bookingDetails.OrderId || 'N/A'}</td>
+                                                        <td>{bookingDetails.unique_ticket_id || 'N/A'}</td>
+                                                        <td>{bookingDetails.firstname} {bookingDetails.lastname}</td>
+                                                        <td>{bookingDetails.email || 'N/A'}</td>
+                                                        <td>{bookingDetails.booking_start_date} {bookingDetails.booking_time}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {/* Races Category Details Section */}
+                                        <div className="details-section">
+                                            <h3>Races Category Details</h3>
+                                            <table className="details-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Category</th>
+                                                        <th>Quantity</th>
+                                                        <th>Price</th>
+                                                        <th>Discount</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>{bookingDetails.TicketName || 'N/A'}</td>
+                                                        <td>1</td>
+                                                        <td>{bookingDetails.ticket_price || '0'}</td>
+                                                        <td>{bookingDetails.TicketDiscount || '0'}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {/* Additional Purchases Section */}
+                                        <div className="details-section">
+                                            <h3>Additional Purchases</h3>
+                                            {bookingDetails.amount_details && bookingDetails.amount_details.length > 0 ? (
+                                                <table className="details-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Other Amount</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {bookingDetails.amount_details.map((item, index) => (
+                                                            <tr key={index}>
+                                                                <td>
+                                                                    {item.question_label}: {item.question_answer}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            ) : (
+                                                <table className="details-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Other Amount</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td style={{ textAlign: 'center' }}>:</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            )}
+                                        </div>
+
+                                        {/* Extra Details Section */}
+                                        {bookingDetails.extra_details && bookingDetails.extra_details.length > 0 && (
+                                            <div className="details-section">
+                                                <h3>Extra Details</h3>
+                                                <div className="extra-details-list">
+                                                    {bookingDetails.extra_details.map((item, index) => (
+                                                        <div key={index} className="extra-detail-item">
+                                                            <strong>{item.question_label}:</strong> {item.question_answer}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '20px' }}>
+                                        <p>No booking details available</p>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="modal-footer">
+                                <button className="close-btn" onClick={() => setShowModal(false)}>
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Send Email Modal */}
+                {showEmailModal && (
+                    <div className="modal-overlay" onClick={() => setShowEmailModal(false)}>
+                        <div className="email-modal-content" onClick={(e) => e.stopPropagation()}>
+                            <h2 className="email-modal-title">Are you sure you want to send this email to attendee?</h2>
+
+                            <div className="email-type-group">
+                                <label className="email-type-label">Email Type</label>
+                                <select
+                                    className="email-type-select"
+                                    value={selectedEmailType}
+                                    onChange={(e) => setSelectedEmailType(e.target.value)}
+                                >
+                                    {emailTypes.map((type) => (
+                                        <option key={type.id} value={type.id}>
+                                            {type.subject_name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Custom Email Fields - Show only when Custom Email is selected */}
+                            {emailTypes.find(type => type.id == selectedEmailType)?.subject_name === "Custom Email" && (
+                                <>
+                                    <div className="email-type-group">
+                                        <label className="email-type-label">
+                                            Subject Name <span style={{ color: 'red' }}>*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="email-type-input"
+                                            value={customSubject}
+                                            onChange={(e) => setCustomSubject(e.target.value)}
+                                            placeholder="Enter subject name"
+                                        />
+                                    </div>
+
+                                    <div className="email-type-group">
+                                        <label className="email-type-label">
+                                            Message <span style={{ color: 'red' }}>*</span>
+                                        </label>
+                                        <textarea
+                                            className="email-type-textarea"
+                                            value={customMessage}
+                                            onChange={(e) => setCustomMessage(e.target.value)}
+                                            placeholder="Enter your message"
+                                            rows="6"
+                                        />
+                                    </div>
+                                </>
+                            )}
+
+                            <div className="email-modal-actions">
+                                <button className="email-cancel-btn" onClick={() => setShowEmailModal(false)}>
+                                    Cancel
+                                </button>
+                                <button className="email-send-btn" onClick={handleConfirmSendEmail}>
+                                    Send
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

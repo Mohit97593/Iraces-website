@@ -1543,6 +1543,51 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Get Booking Details API
+  getBookingDetails: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+      formData.append("BookingId", payload.BookingId);
+      formData.append("BookingDetailId", payload.BookingDetailId);
+      const response = await api.post("/get_booking_details", formData);
+      return response.data;
+    } catch (error) {
+      console.error("getBookingDetails API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Communication Master Details API
+  getCommunicationMasterDetails: async () => {
+    try {
+      const response = await api.get("/CommunicationMasterDetails");
+      return response.data;
+    } catch (error) {
+      console.error("getCommunicationMasterDetails API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Send Participant Email API
+  sendParticipantEmail: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+      formData.append("user_id", payload.user_id);
+      formData.append("event_url", payload.event_url);
+      formData.append("email_type", payload.email_type);
+      formData.append("subject_name", payload.subject_name || "");
+      formData.append("message_content", payload.message_content || "");
+      formData.append("participant_data", JSON.stringify(payload.participant_data));
+      const response = await api.post("/participant_send_multiple_email", formData);
+      return response.data;
+    } catch (error) {
+      console.error("sendParticipantEmail API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 // Token को axios header में set करें app load होते समय
