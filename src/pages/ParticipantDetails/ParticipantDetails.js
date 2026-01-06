@@ -62,6 +62,10 @@ export default function ParticipantDetails() {
   const [couponLoading, setCouponLoading] = useState(false); // Loading state for coupon API call
   const [couponError, setCouponError] = useState(''); // Coupon validation error message
 
+  // Active payment gateway state
+  const [activePaymentGateway, setActivePaymentGateway] = useState(null); // Active payment gateway from admin (phonepe or payu)
+  const [gatewayLoading, setGatewayLoading] = useState(true); // Loading state for gateway API call
+
 
   const fieldMapping = {
     firstname: "firstName",
@@ -321,6 +325,51 @@ export default function ParticipantDetails() {
     if (eventId) {
       fetchTicketAndQuestions();
     }
+  }, [eventId]);
+
+  // Fetch active payment gateway on component mount
+  useEffect(() => {
+    const fetchActivePaymentGateway = async () => {
+      if (!eventId) return;
+
+      try {
+        setGatewayLoading(true);
+        console.log("🔍 Fetching active payment gateway for event:", eventId);
+
+        const response = await authAPI.getActivePaymentGateway(eventId);
+        console.log("✅ Active payment gateway response:", response);
+
+        if (response && response.gateway) {
+          const gateway = response.gateway.toLowerCase();
+
+          // Normalize gateway name: "phonepe" or "payu"
+          let normalizedGateway = gateway;
+          if (gateway.includes('phone')) {
+            normalizedGateway = 'phonepe';
+          } else if (gateway.includes('pay') && gateway.includes('u')) {
+            normalizedGateway = 'payu';
+          }
+
+          setActivePaymentGateway(normalizedGateway);
+          setSelectedPaymentMethod(normalizedGateway);
+          console.log("✅ Active payment gateway set to:", normalizedGateway);
+        } else {
+          // Fallback to PhonePe if no active gateway found
+          console.warn("⚠️ No active gateway found, defaulting to PhonePe");
+          setActivePaymentGateway('phonepe');
+          setSelectedPaymentMethod('phonepe');
+        }
+      } catch (error) {
+        console.error("❌ Error fetching active payment gateway:", error);
+        // Fallback to PhonePe on error
+        setActivePaymentGateway('phonepe');
+        setSelectedPaymentMethod('phonepe');
+      } finally {
+        setGatewayLoading(false);
+      }
+    };
+
+    fetchActivePaymentGateway();
   }, [eventId]);
 
   // Auto-fill form when "Myself" is selected
@@ -2003,9 +2052,10 @@ export default function ParticipantDetails() {
     }
   };
 
-  const handleProceed = async (e) => {
+  const handleProceedPayment = async (e) => {
     e.preventDefault();
     console.log("🚀 Proceed button clicked");
+    console.log("💳 Active payment gateway:", activePaymentGateway);
 
     if (!validateForm()) {
       console.log("❌ Validation failed, stopping proceed");
@@ -2060,24 +2110,60 @@ export default function ParticipantDetails() {
     setShowPaymentModal(true);
 
     try {
-      // Call PhonePe payment initiation API
-      console.log("📤 Calling payment API...");
-      const res = await authAPI.phonepeInitiatePayment({
-        event_id: eventId,
-        amount: subTotal.toFixed(2)
-      });
+      // Check which payment gateway is active and call appropriate API
+      if (activePaymentGateway === 'phonepe') {
+        // Call PhonePe payment initiation API
+        console.log("📤 Calling PhonePe payment API...");
+        const res = await authAPI.phonepeInitiatePayment({
+          event_id: eventId,
+          amount: subTotal.toFixed(2)
+        });
 
-      console.log("📥 Payment API response:", res);
+        console.log("📥 PhonePe Payment API response:", res);
 
-      if (res && res.data && res.data.redirect_url) {
-        setPaymentData(res.data);
-        console.log("✅ Payment data set, redirect URL:", res.data.redirect_url);
+        if (res && res.data && res.data.redirect_url) {
+          setPaymentData(res.data);
+          setSelectedPaymentMethod('phonepe');
+          console.log("✅ PhonePe payment data set, redirect URL:", res.data.redirect_url);
+        } else {
+          throw new Error("Invalid response from PhonePe payment API");
+        }
+      } else if (activePaymentGateway === 'payu') {
+        // Call PayU payment API
+        console.log("📤 Calling PayU payment API...");
+
+        // Build the booking payload for PayU
+        const bookingPayload = buildBookingPayload();
+
+        // Determine ticket type
+        const ticketType = subTotal > 0 ? 'paid' : 'free';
+
+        const apiPayload = {
+          event_id: eventId,
+          amount: subTotal.toFixed(2),
+          ticket_type: ticketType,
+          booking_tickets_array: JSON.stringify(bookingPayload)
+        };
+
+        console.log("📦 PayU API Payload:", apiPayload);
+
+        const response = await authAPI.bookingPaymentProcess(apiPayload);
+
+        console.log("📥 PayU Payment API response:", response);
+
+        if (response && response.data) {
+          setPaymentData(response.data);
+          setSelectedPaymentMethod('payu');
+          console.log("✅ PayU payment data set");
+        } else {
+          throw new Error("Invalid response from PayU payment API");
+        }
       } else {
-        throw new Error("Invalid response from payment API");
+        throw new Error(`Unknown payment gateway: ${activePaymentGateway}`);
       }
     } catch (error) {
       console.error("❌ Payment Error:", error);
-      alert("Payment initiation failed. Please try again.");
+      alert(`Payment initiation failed: ${error.response?.data?.message || error.message || 'Please try again'}`);
       setShowPaymentModal(false);
     }
   };
@@ -2872,30 +2958,28 @@ export default function ParticipantDetails() {
 
               {/* Payment Buttons Container */}
               <div style={{ display: 'flex', gap: '15px', flexDirection: 'column' }}>
-                {/* Proceed with PhonePe Button */}
-                <button className="btn-proceed-final" onClick={handleProceed} style={{ marginBottom: '0' }}>
-                  <i className="fas fa-users"></i>
-                  <span className="proceed-count">
-                    {selectedTickets.reduce((sum, t) => sum + t.quantity, 0)}
-                  </span>
-                  <span className="proceed-text">PROCEED WITH PHONEPE</span>
-                  <i className="fas fa-arrow-right"></i>
-                </button>
-
-                {/* Proceed with PayU Button */}
+                {/* Single Proceed Button - Dynamic based on active gateway */}
                 <button
                   className="btn-proceed-final"
-                  onClick={handleProceedWithPayU}
+                  onClick={handleProceedPayment}
+                  disabled={gatewayLoading}
                   style={{
                     marginBottom: '0',
-                    backgroundColor: '#17C653' // PayU green color
+                    backgroundColor: activePaymentGateway === 'payu' ? '#17C653' : '#5f259f',
+                    opacity: gatewayLoading ? 0.6 : 1,
+                    cursor: gatewayLoading ? 'not-allowed' : 'pointer'
                   }}
                 >
                   <i className="fas fa-users"></i>
                   <span className="proceed-count">
                     {selectedTickets.reduce((sum, t) => sum + t.quantity, 0)}
                   </span>
-                  <span className="proceed-text">PROCEED WITH PAYU</span>
+                  <span className="proceed-text">
+                    {gatewayLoading
+                      ? 'LOADING...'
+                      : `PROCEED WITH ${activePaymentGateway?.toUpperCase() || 'PAYMENT'}`
+                    }
+                  </span>
                   <i className="fas fa-arrow-right"></i>
                 </button>
               </div>

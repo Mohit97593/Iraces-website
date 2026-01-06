@@ -1611,6 +1611,17 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Get Active Payment Gateway API
+  getActivePaymentGateway: async (event_id) => {
+    try {
+      const response = await api.get(`/active-payment-gateway?event_id=${event_id}`);
+      return response.data;
+    } catch (error) {
+      console.error("getActivePaymentGateway API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 // Token को axios header में set करें app load होते समय
