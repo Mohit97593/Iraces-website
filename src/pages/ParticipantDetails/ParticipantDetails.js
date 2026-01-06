@@ -2031,22 +2031,23 @@ export default function ParticipantDetails() {
       const baseAmount = effectivePrice * parseInt(ticket.quantity);
       const calcDetails = ticket.ticket_calculation_details || {};
 
-      // Individual fee components
-      const convenienceFee = parseFloat(calcDetails.total_convenience_fees || (baseAmount * 0.02)) || 0;
-      const platformFeeBase = parseFloat(calcDetails.platform_fees_5_each || 5) || 5;
-      const paymentGatewayCharges = parseFloat(calcDetails.payment_gateway_1_85_buyer || (baseAmount * 0.0185)) || 0;
+      // Individual fee components - these are PER TICKET from backend
+      // We need to multiply by quantity to get total
+      const convenienceFeePerTicket = parseFloat(calcDetails.total_convenience_fees || (effectivePrice * 0.02)) || 0;
+      const platformFeePerTicket = parseFloat(calcDetails.platform_fees_5_each || 5) || 5;
+      const paymentGatewayPerTicket = parseFloat(calcDetails.payment_gateway_1_85_buyer || (effectivePrice * 0.0185)) || 0;
 
-      // Platform Fee = Convenience + Platform + Payment Gateway
-      const totalPlatformFee = convenienceFee + platformFeeBase + paymentGatewayCharges;
+      // Platform Fee total = (per ticket fees) * quantity
+      const totalPlatformFee = (convenienceFeePerTicket + platformFeePerTicket + paymentGatewayPerTicket) * parseInt(ticket.quantity);
 
-      // Extract individual GST components from ticket_calculation_details
-      const registrationGST = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
-      const convenienceFeeGST = parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0);
-      const platformFeeGST = parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0);
-      const paymentGatewayGST = parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0);
+      // Extract individual GST components from ticket_calculation_details - these are PER TICKET
+      const registrationGSTPerTicket = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
+      const convenienceFeeGSTPerTicket = parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0);
+      const platformFeeGSTPerTicket = parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0);
+      const paymentGatewayGSTPerTicket = parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0);
 
-      // Calculate total taxes from individual components
-      const totalTaxes = registrationGST + convenienceFeeGST + platformFeeGST + paymentGatewayGST;
+      // Calculate total taxes = (per ticket taxes) * quantity
+      const totalTaxes = (registrationGSTPerTicket + convenienceFeeGSTPerTicket + platformFeeGSTPerTicket + paymentGatewayGSTPerTicket) * parseInt(ticket.quantity);
 
       // Sub Total = Base + Platform Fee + Total Taxes
       return sum + baseAmount + totalPlatformFee + totalTaxes;
@@ -2305,11 +2306,44 @@ export default function ParticipantDetails() {
       // Build the booking payload
       const bookingPayload = buildBookingPayload();
 
-      // Calculate total amount
-      const totalAmount = selectedTickets.reduce((sum, t) => {
-        const calcDetails = t.ticket_calculation_details || {};
-        const totalBuyer = parseFloat(calcDetails.total_buyer || t.ticket_price * t.quantity);
-        return sum + totalBuyer;
+      // Calculate total amount using same logic as PhonePe
+      const totalAmount = selectedTickets.reduce((sum, ticket) => {
+        // Calculate effective price based on early bird discount
+        let effectivePrice = parseFloat(ticket.ticket_price);
+
+        if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
+          const discountValue = parseFloat(ticket.discount_value || 0);
+          if (ticket.discount === 1) {
+            // Percentage discount
+            effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+          } else {
+            // Amount discount
+            effectivePrice = effectivePrice - discountValue;
+          }
+        }
+
+        const baseAmount = effectivePrice * parseInt(ticket.quantity);
+        const calcDetails = ticket.ticket_calculation_details || {};
+
+        // Individual fee components - these are PER TICKET from backend
+        const convenienceFeePerTicket = parseFloat(calcDetails.total_convenience_fees || (effectivePrice * 0.02)) || 0;
+        const platformFeePerTicket = parseFloat(calcDetails.platform_fees_5_each || 5) || 5;
+        const paymentGatewayPerTicket = parseFloat(calcDetails.payment_gateway_1_85_buyer || (effectivePrice * 0.0185)) || 0;
+
+        // Platform Fee total = (per ticket fees) * quantity
+        const totalPlatformFee = (convenienceFeePerTicket + platformFeePerTicket + paymentGatewayPerTicket) * parseInt(ticket.quantity);
+
+        // Extract individual GST components - these are PER TICKET
+        const registrationGSTPerTicket = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
+        const convenienceFeeGSTPerTicket = parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0);
+        const platformFeeGSTPerTicket = parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0);
+        const paymentGatewayGSTPerTicket = parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0);
+
+        // Calculate total taxes = (per ticket taxes) * quantity
+        const totalTaxes = (registrationGSTPerTicket + convenienceFeeGSTPerTicket + platformFeeGSTPerTicket + paymentGatewayGSTPerTicket) * parseInt(ticket.quantity);
+
+        // Sub Total = Base + Platform Fee + Total Taxes
+        return sum + baseAmount + totalPlatformFee + totalTaxes;
       }, 0);
 
       // Apply coupon discount if any
@@ -2597,7 +2631,8 @@ export default function ParticipantDetails() {
                 });
 
                 // Platform Fee = Convenience + Platform + Payment Gateway (base amounts only)
-                const totalPlatformFee = convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase;
+                // Multiply by quantity to get total for all tickets
+                const totalPlatformFee = (convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase) * parseInt(ticket.quantity);
 
                 // Extract individual GST components from ticket_calculation_details
                 const registrationGST = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
@@ -2606,7 +2641,8 @@ export default function ParticipantDetails() {
                 const paymentGatewayGST = parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0);
 
                 // Calculate total taxes from individual components
-                const totalTaxes = registrationGST + convenienceFeeGST + platformFeeGST + paymentGatewayGST;
+                // Multiply by quantity to get total for all tickets
+                const totalTaxes = (registrationGST + convenienceFeeGST + platformFeeGST + paymentGatewayGST) * parseInt(ticket.quantity);
 
                 // Sub Total = Base + Platform Fee + Total Taxes
                 const ticketSubTotal = baseAmount + totalPlatformFee + totalTaxes;
@@ -2619,13 +2655,13 @@ export default function ParticipantDetails() {
                       <span>₹{baseAmount.toFixed(2)}</span>
                     </div>
 
-                    {/* Platform Fee (Combined) */}
+                    {/* Platform Fee (Combined) - Multiplied by quantity */}
                     <div className="summary-item">
                       <span>Platform Fee</span>
                       <span>₹{totalPlatformFee.toFixed(2)}</span>
                     </div>
 
-                    {/* Tax - Sum of all GST components */}
+                    {/* Tax - Sum of all GST components - Multiplied by quantity */}
                     <div className="summary-item">
                       <span>Tax</span>
                       <span>₹{totalTaxes.toFixed(2)}</span>
@@ -2729,7 +2765,8 @@ export default function ParticipantDetails() {
                         : paymentGatewayWithGST;
 
                       // Platform Fee = Convenience + Platform + Payment Gateway (base amounts only)
-                      const totalPlatformFee = convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase;
+                      // Multiply by quantity to get total for all tickets
+                      const totalPlatformFee = (convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase) * parseInt(ticket.quantity);
 
                       // Extract individual GST components from ticket_calculation_details
                       const registrationGST = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
@@ -2738,7 +2775,8 @@ export default function ParticipantDetails() {
                       const paymentGatewayGST = parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0);
 
                       // Calculate total taxes from individual components
-                      const totalTaxes = registrationGST + convenienceFeeGST + platformFeeGST + paymentGatewayGST;
+                      // Multiply by quantity to get total for all tickets
+                      const totalTaxes = (registrationGST + convenienceFeeGST + platformFeeGST + paymentGatewayGST) * parseInt(ticket.quantity);
 
                       // Sub Total = Base + Platform Fee + Total Taxes
                       return sum + baseAmount + totalPlatformFee + totalTaxes;

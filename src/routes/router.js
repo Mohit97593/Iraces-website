@@ -31,6 +31,7 @@ import RegistrationTracker from "../pages/RegistrationTracker";
 import EventAnalytics from "../pages/EventAnalytics/EventAnalytics";
 import Registrations from "../pages/Registrations/Registrations";
 import Participants from "../pages/Participants/Participants";
+import PaymentLog from "../pages/PaymentLog/PaymentLog";
 import PaymentSuccess from "../pages/PaymentSuccess";
 import PaymentFailure from "../pages/PaymentFailure";
 
@@ -295,6 +296,15 @@ const AppRouter = createBrowserRouter([
     element: (
       <ErrorBoundary>
         <Participants />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/payment-log/:eventId",
+    element: (
+      <ErrorBoundary>
+        <PaymentLog />
       </ErrorBoundary>
     ),
     errorElement: <NotFound />,

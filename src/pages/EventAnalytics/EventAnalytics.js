@@ -407,12 +407,13 @@ export default function EventAnalytics() {
                         <i className="info-icon fas fa-info-circle"></i>
                     </div>
 
-                    {/* Page Views */}
+                    {/* Payment History */}
                     <div className="stat-card">
                         <div className="stat-content">
                             <div className="stat-info">
-                                <h3>Page Views</h3>
+                                <h3>Payment History</h3>
                                 <div className="stat-value">{stats.pageViews}</div>
+                                <Link to={`/payment-log/${eventId}`} className="view-details">View Details</Link>
                             </div>
                             <div className="stat-icon">
                                 <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png" alt="Page Views" />

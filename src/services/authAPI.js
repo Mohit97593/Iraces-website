@@ -1588,6 +1588,29 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Get Payment Log API
+  getPaymentLog: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+      formData.append("page", payload.page || 1);
+      formData.append("limit", payload.limit || 30);
+
+      if (payload.user_name) formData.append("user_name", payload.user_name);
+      if (payload.email) formData.append("email", payload.email);
+      if (payload.TransactionID) formData.append("TransactionID", payload.TransactionID);
+      if (payload.TransactionStatus) formData.append("TransactionStatus", payload.TransactionStatus);
+      if (payload.from_date) formData.append("from_date", payload.from_date);
+      if (payload.to_date) formData.append("to_date", payload.to_date);
+
+      const response = await api.post("/get_payment_log", formData);
+      return response.data;
+    } catch (error) {
+      console.error("getPaymentLog API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 // Token को axios header में set करें app load होते समय
