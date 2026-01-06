@@ -1622,6 +1622,19 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // PhonePe Verify Payment Status API
+  phonepeVerifyStatus: async (merchant_transaction_id) => {
+    try {
+      const response = await api.post("/phonepeVerifyStatus", {
+        merchant_transaction_id: merchant_transaction_id,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("phonepeVerifyStatus API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 // Token को axios header में set करें app load होते समय

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import TopNav from '../components/Navbar/TopNav';
+import { authAPI } from '../services/authAPI';
 import './PaymentSuccess.css';
 
 export default function PaymentSuccess() {
@@ -30,8 +31,25 @@ export default function PaymentSuccess() {
     console.log('✅ Payment Success - Details:', details);
     setPaymentDetails(details);
 
-    // Optional: Send confirmation to backend or update local state
-    // You can call an API here to confirm the booking on your end
+    // Call verify payment API
+    if (details.txnid) {
+      console.log('🔄 Calling phonepeVerifyStatus API with txnid:', details.txnid);
+
+      authAPI.phonepeVerifyStatus(details.txnid)
+        .then(response => {
+          console.log('✅ Verify API Response:', response);
+          if (response.status === 'PAYMENT_SUCCESS') {
+            console.log('✅ Payment verified successfully!');
+          } else {
+            console.log('⚠️ Payment status:', response.status);
+          }
+        })
+        .catch(error => {
+          console.error('❌ Verify API Error:', error);
+        });
+    } else {
+      console.warn('⚠️ No transaction ID found, skipping verification');
+    }
 
   }, [searchParams]);
 
@@ -74,7 +92,7 @@ export default function PaymentSuccess() {
           {/* Payment Details */}
           <div className="payment-details-box">
             <h3>Transaction Details</h3>
-            
+
             <div className="detail-row">
               <span className="detail-label">
                 <i className="fas fa-receipt"></i>
@@ -82,7 +100,7 @@ export default function PaymentSuccess() {
               </span>
               <span className="detail-value">{paymentDetails.txnid}</span>
             </div>
-            
+
             <div className="detail-row">
               <span className="detail-label">
                 <i className="fas fa-credit-card"></i>
@@ -90,7 +108,7 @@ export default function PaymentSuccess() {
               </span>
               <span className="detail-value">{paymentDetails.mihpayid}</span>
             </div>
-            
+
             <div className="detail-row highlight-row">
               <span className="detail-label">
                 <i className="fas fa-money-bill-wave"></i>
@@ -98,7 +116,7 @@ export default function PaymentSuccess() {
               </span>
               <span className="detail-value amount">₹{paymentDetails.amount}</span>
             </div>
-            
+
             <div className="detail-row">
               <span className="detail-label">
                 <i className="fas fa-tag"></i>
@@ -106,7 +124,7 @@ export default function PaymentSuccess() {
               </span>
               <span className="detail-value">{paymentDetails.productinfo}</span>
             </div>
-            
+
             <div className="detail-row">
               <span className="detail-label">
                 <i className="fas fa-user"></i>
@@ -114,7 +132,7 @@ export default function PaymentSuccess() {
               </span>
               <span className="detail-value">{paymentDetails.firstname}</span>
             </div>
-            
+
             <div className="detail-row">
               <span className="detail-label">
                 <i className="fas fa-envelope"></i>
@@ -122,7 +140,7 @@ export default function PaymentSuccess() {
               </span>
               <span className="detail-value">{paymentDetails.email}</span>
             </div>
-            
+
             {paymentDetails.phone && (
               <div className="detail-row">
                 <span className="detail-label">
