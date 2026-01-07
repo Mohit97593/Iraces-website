@@ -39,7 +39,7 @@ api.interceptors.response.use(
         console.warn('⚠️ 401 error on payment page - not redirecting to login');
         return Promise.reject(error);
       }
-      
+
       // Token expired या invalid
       localStorage.removeItem("token");
       localStorage.removeItem("userData");
@@ -1652,7 +1652,10 @@ export const authAPI = {
       formData.append("event_url", payload.event_url);
 
       const response = await api.post("/send_email_payment_success", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "Authorization": "" // Remove auth - endpoint should be public
+        },
       });
       return response.data;
     } catch (error) {
