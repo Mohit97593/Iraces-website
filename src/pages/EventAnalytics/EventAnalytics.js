@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
 import { authAPI } from "../../services/authAPI";
 import "./EventAnalytics.css";
+import Highcharts from "highcharts";
+import HighchartsReact from "highcharts-react-official";
 
 export default function EventAnalytics() {
     const { eventId } = useParams();
@@ -216,6 +218,94 @@ export default function EventAnalytics() {
         setFilterData(prev => ({ ...prev, [name]: value }));
     };
 
+    // Prepare Chart Options
+    const chartOptions = {
+        chart: {
+            type: 'column'
+        },
+        title: {
+            text: 'Daily Category Count'
+        },
+        xAxis: {
+            categories: categoryData.barChartData.map(item => item.date || item.Date || item.label || ''),
+            crosshair: true,
+            title: {
+                text: 'Date'
+            }
+        },
+        yAxis: {
+            min: 0,
+            title: {
+                text: 'Category Count'
+            }
+        },
+        tooltip: {
+            headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+            pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                '<td style="padding:0"><b>{point.y}</b></td></tr>',
+            footerFormat: '</table>',
+            shared: true,
+            useHTML: true
+        },
+        plotOptions: {
+            column: {
+                pointPadding: 0.2,
+                borderWidth: 0,
+                color: '#3bb1f6' // Light blue color from screenshot
+            }
+        },
+        series: [{
+            name: 'Categories',
+            data: categoryData.barChartData.map(item => item.count || item.Count || item.value || 0)
+        }],
+        credits: {
+            enabled: true,
+            text: 'Highcharts.com',
+            href: 'https://www.highcharts.com'
+        }
+    };
+
+    // Number of Categories Sold Chart Options
+    const pieChartOptions = {
+        chart: {
+            type: 'pie'
+        },
+        title: {
+            text: 'Category Booking Data'
+        },
+        tooltip: {
+            pointFormat: '{series.name}: <b>{point.y}</b>'
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: true,
+                    format: '<b>{point.name}</b> ({point.y})',
+                    style: {
+                        color: 'black'
+                    }
+                },
+                showInLegend: true
+            }
+        },
+        series: [{
+            name: 'Bookings',
+            colorByPoint: true,
+            data: categoryData.bookingData.map(item => ({
+                name: item.ticket_name || item.name || item.TicketName || 'Unknown',
+                y: item.total_booking || item.count || item.Total || 0,
+                color: (item.ticket_name || '').includes('testo') ? '#5c5cff' : undefined // Attempt to match some colors if hinted
+            }))
+        }],
+        credits: {
+            enabled: true,
+            text: 'Highcharts.com',
+            href: 'https://www.highcharts.com'
+        }
+    };
+
     // Format currency for display
     const formatCurrency = (value) => {
         if (!value || value === "0.00") return "0.00";
@@ -412,7 +502,7 @@ export default function EventAnalytics() {
                         <div className="stat-content">
                             <div className="stat-info">
                                 <h3>Payment History</h3>
-                                <div className="stat-value">{stats.pageViews}</div>
+                                {/* <div className="stat-value">{stats.pageViews}</div> */}
                                 <Link to={`/payment-log/${eventId}`} className="view-details">View Details</Link>
                             </div>
                             <div className="stat-icon">
@@ -486,9 +576,12 @@ export default function EventAnalytics() {
                         <div className="col-lg-6">
                             <div className="chart-card">
                                 <h3 className="chart-title">Registration Per Day</h3>
-                                <p className="chart-subtitle">Daily Category Count</p>
-                                <div className="chart-placeholder">
-                                    <p>Chart will be displayed here</p>
+                                {/* <p className="chart-subtitle">Daily Category Count</p> */}
+                                <div className="chart-container">
+                                    <HighchartsReact
+                                        highcharts={Highcharts}
+                                        options={chartOptions}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -497,9 +590,11 @@ export default function EventAnalytics() {
                         <div className="col-lg-6">
                             <div className="chart-card">
                                 <h3 className="chart-title">Number of Categories Sold</h3>
-                                <div className="no-data-placeholder">
-                                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076478.png" alt="No Data" />
-                                    <p>No Data Found</p>
+                                <div className="chart-container">
+                                    <HighchartsReact
+                                        highcharts={Highcharts}
+                                        options={pieChartOptions}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -527,14 +622,37 @@ export default function EventAnalytics() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td>Races Website</td>
-                                            <td>0</td>
-                                        </tr>
-                                        <tr className="total-row">
-                                            <td><strong>Total</strong></td>
-                                            <td><strong>0</strong></td>
-                                        </tr>
+                                        {categoryData.utmCode && categoryData.utmCode.length > 0 ? (
+                                            <>
+                                                {categoryData.utmCode.map((utm, index) => (
+                                                    <tr key={index}>
+                                                        <td>{utm.utm_campaign || 'Unknown'}</td>
+                                                        <td>{utm.total_quantity || 0}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="total-row">
+                                                    <td><strong>Total</strong></td>
+                                                    <td>
+                                                        <strong>
+                                                            {categoryData.utmCode.reduce((sum, utm) =>
+                                                                sum + (utm.total_quantity || 0), 0
+                                                            )}
+                                                        </strong>
+                                                    </td>
+                                                </tr>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <tr>
+                                                    <td>Races Website</td>
+                                                    <td>0</td>
+                                                </tr>
+                                                <tr className="total-row">
+                                                    <td><strong>Total</strong></td>
+                                                    <td><strong>0</strong></td>
+                                                </tr>
+                                            </>
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
