@@ -31,51 +31,26 @@ export default function PaymentSuccess() {
     console.log('✅ Payment Success - Details:', details);
     setPaymentDetails(details);
 
-    // Check which payment gateway was used
-    const gateway = searchParams.get('gateway') || 'payu'; // Default to PayU
+    // Check which payment gateway was used - check both parameters
+    const gateway = searchParams.get('gateway') || searchParams.get('payment_gateway') || 'payu';
     console.log('💳 Payment Gateway:', gateway);
 
-    if (gateway === 'phonepe') {
-      // PhonePe Flow: Only verify payment status (optional - don't block UI)
-      if (details.txnid) {
-        console.log('🔄 PhonePe Flow: Verifying payment status...');
+    // PhonePe Flow: Only verify payment status
+    if (gateway === 'phonepe' && details.txnid) {
+      console.log('🔄 PhonePe Flow: Verifying payment status...');
 
-        authAPI.phonepeVerifyStatus(details.txnid)
-          .then(verifyResponse => {
-            console.log('✅ PhonePe Verify API Response:', verifyResponse);
+      authAPI.phonepeVerifyStatus(details.txnid)
+        .then(verifyResponse => {
+          console.log('✅ PhonePe Verify API Response:', verifyResponse);
 
-            if (verifyResponse.status === 'PAYMENT_SUCCESS') {
-              console.log('✅ PhonePe Payment verified successfully!');
-            } else {
-              console.warn('⚠️ PhonePe Payment status:', verifyResponse.status);
-            }
-          })
-          .catch(error => {
-            console.error('❌ PhonePe Verify API Error:', error);
-            // Don't block - just log the error
-          });
-      }
-    } else {
-      // PayU Flow: Send confirmation email (optional - don't block UI)
-      console.log('🔄 PayU Flow: Sending confirmation email...');
-
-      // Extract booking_pay_id and event_id from URL params (udf1, udf2)
-      const emailPayload = {
-        booking_pay_id: details.udf1 || details.mihpayid,
-        event_id: details.udf2 || '',
-        event_url: details.udf3 || 'https://racesregistrations.com'
-      };
-
-      console.log('📧 Sending confirmation email with payload:', emailPayload);
-
-      authAPI.sendEmailPaymentSuccess(emailPayload)
-        .then(emailResponse => {
-          console.log('✅ Email sent successfully!', emailResponse);
-          console.log('🎉 PayU payment success flow completed!');
+          if (verifyResponse.status === 'PAYMENT_SUCCESS') {
+            console.log('✅ PhonePe Payment verified successfully!');
+          } else {
+            console.warn('⚠️ PhonePe Payment status:', verifyResponse.status);
+          }
         })
         .catch(error => {
-          console.error('❌ Email send error:', error);
-          // Don't block - just log the error
+          console.error('❌ PhonePe Verify API Error:', error);
         });
     }
 
