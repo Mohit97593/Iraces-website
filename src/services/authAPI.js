@@ -1635,6 +1635,24 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Send Email Payment Success API
+  sendEmailPaymentSuccess: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("booking_pay_id", payload.booking_pay_id);
+      formData.append("event_id", payload.event_id);
+      formData.append("event_url", payload.event_url);
+
+      const response = await api.post("/send_email_payment_success", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("sendEmailPaymentSuccess API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 // Token को axios header में set करें app load होते समय
