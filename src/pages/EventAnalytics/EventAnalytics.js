@@ -603,10 +603,69 @@ export default function EventAnalytics() {
                         <div className="col-lg-6">
                             <div className="chart-card">
                                 <h3 className="chart-title">Category Wise Data</h3>
-                                <div className="no-data-placeholder">
-                                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076478.png" alt="No Data" />
-                                    <p>No Data Found</p>
-                                </div>
+                                <table className="utm-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Total</th>
+                                            <th>Used</th>
+                                            <th>Pending</th>
+                                            <th>Total Collection</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {categoryData.bookingData && categoryData.bookingData.length > 0 ? (
+                                            <>
+                                                {categoryData.bookingData.map((category, index) => (
+                                                    <tr key={index}>
+                                                        <td>{category.TicketName || category.ticket_name || 'Unknown'}</td>
+                                                        <td>{category.total_quantity || 0}</td>
+                                                        <td>{category.TicketCount || 0}</td>
+                                                        <td>{category.PendingCount || 0}</td>
+                                                        <td>₹ {formatCurrency(category.TotalAmount || 0)}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="total-row">
+                                                    <td><strong>Total</strong></td>
+                                                    <td>
+                                                        <strong>
+                                                            {categoryData.bookingData.reduce((sum, cat) =>
+                                                                sum + (cat.total_quantity || 0), 0
+                                                            )}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {categoryData.bookingData.reduce((sum, cat) =>
+                                                                sum + (cat.TicketCount || 0), 0
+                                                            )}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {categoryData.bookingData.reduce((sum, cat) =>
+                                                                sum + (cat.PendingCount || 0), 0
+                                                            )}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            ₹ {formatCurrency(
+                                                                categoryData.bookingData.reduce((sum, cat) =>
+                                                                    sum + parseFloat(cat.TotalAmount || 0), 0
+                                                                )
+                                                            )}
+                                                        </strong>
+                                                    </td>
+                                                </tr>
+                                            </>
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="5" style={{ textAlign: 'center' }}>No Data Found</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 

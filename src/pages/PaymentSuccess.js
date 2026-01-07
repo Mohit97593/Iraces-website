@@ -26,6 +26,8 @@ export default function PaymentSuccess() {
       udf3: searchParams.get('udf3'),
       udf4: searchParams.get('udf4'),
       udf5: searchParams.get('udf5'),
+      event_id: searchParams.get('event_id'), // PhonePe sends event_id directly
+      booking_pay_id: searchParams.get('booking_pay_id'), // PhonePe sends booking_pay_id directly
     };
 
     console.log('✅ Payment Success - Details:', details);
@@ -37,10 +39,12 @@ export default function PaymentSuccess() {
 
     // Prepare email payload for both flows
     const emailPayload = {
-      booking_pay_id: details.udf1 || details.mihpayid,
-      event_id: details.udf2 || '',
+      booking_pay_id: details.booking_pay_id || details.udf1 || details.mihpayid,
+      event_id: details.event_id || details.udf2 || '',
       event_url: details.udf3 || 'https://racesregistrations.com'
     };
+
+    console.log('📧 Email Payload:', emailPayload);
 
     // PhonePe Flow: Verify payment status first, then send email
     if (gateway === 'phonepe' && details.txnid) {
@@ -69,7 +73,7 @@ export default function PaymentSuccess() {
     } else {
       // PayU Flow: Send confirmation email directly
       console.log('📧 PayU: Sending confirmation email...');
-      
+
       authAPI.sendEmailPaymentSuccess(emailPayload)
         .then(emailResponse => {
           console.log('✅ PayU: Email sent successfully!', emailResponse);

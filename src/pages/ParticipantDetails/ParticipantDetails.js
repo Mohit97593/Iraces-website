@@ -2114,11 +2114,23 @@ export default function ParticipantDetails() {
       if (activePaymentGateway === 'phonepe') {
         // Call PhonePe payment initiation API
         console.log("📤 Calling PhonePe payment API...");
-        const res = await authAPI.phonepeInitiatePayment({
-          event_id: eventId,
-          amount: subTotal.toFixed(2)
-        });
 
+        // Build the booking payload (same as PayU)
+        const bookingPayload = buildBookingPayload();
+
+        // Determine ticket type
+        const ticketType = subTotal > 0 ? 'paid' : 'free';
+
+        const apiPayload = {
+          event_id: eventId,
+          amount: subTotal.toFixed(2),
+          ticket_type: ticketType,
+          booking_tickets_array: JSON.stringify(bookingPayload)
+        };
+
+        console.log("📦 PhonePe API Payload:", apiPayload);
+
+        const res = await authAPI.phonepeInitiatePayment(apiPayload);
         console.log("📥 PhonePe Payment API response:", res);
 
         if (res && res.data && res.data.redirect_url) {
