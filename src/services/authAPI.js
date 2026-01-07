@@ -33,6 +33,13 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Check if we're on payment success page - don't redirect
+      const currentPath = window.location.pathname;
+      if (currentPath.includes('/payment/success') || currentPath.includes('/payment/failure')) {
+        console.warn('⚠️ 401 error on payment page - not redirecting to login');
+        return Promise.reject(error);
+      }
+      
       // Token expired या invalid
       localStorage.removeItem("token");
       localStorage.removeItem("userData");
@@ -1650,6 +1657,47 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       console.error("sendEmailPaymentSuccess API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // WhatsApp - Get Templates API
+  getWhatsAppTemplates: async () => {
+    try {
+      const response = await api.post("/whatsapp_templates");
+      return response.data;
+    } catch (error) {
+      console.error("getWhatsAppTemplates API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // WhatsApp - Send Message to Single Participant API
+  sendWhatsAppMessage: async (payload) => {
+    try {
+      const response = await api.post("/whatsapp_send_message", {
+        participant_id: payload.participant_id,
+        template_id: payload.template_id,
+        params: payload.params || []
+      });
+      return response.data;
+    } catch (error) {
+      console.error("sendWhatsAppMessage API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // WhatsApp - Send Message to Multiple Participants API
+  sendWhatsAppMultiple: async (payload) => {
+    try {
+      const response = await api.post("/whatsapp_send_multiple", {
+        participant_data: JSON.stringify(payload.participant_data),
+        template_id: payload.template_id,
+        params: payload.params || []
+      });
+      return response.data;
+    } catch (error) {
+      console.error("sendWhatsAppMultiple API error:", error);
       throw error.response?.data || error.message;
     }
   },

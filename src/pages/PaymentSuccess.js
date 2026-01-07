@@ -36,7 +36,7 @@ export default function PaymentSuccess() {
     console.log('💳 Payment Gateway:', gateway);
 
     if (gateway === 'phonepe') {
-      // PhonePe Flow: Only verify payment status
+      // PhonePe Flow: Only verify payment status (optional - don't block UI)
       if (details.txnid) {
         console.log('🔄 PhonePe Flow: Verifying payment status...');
 
@@ -52,42 +52,30 @@ export default function PaymentSuccess() {
           })
           .catch(error => {
             console.error('❌ PhonePe Verify API Error:', error);
+            // Don't block - just log the error
           });
       }
     } else {
-      // PayU Flow: getEvents → getProfile → sendEmail
-      console.log('🔄 PayU Flow: Starting payment success flow...');
+      // PayU Flow: Send confirmation email (optional - don't block UI)
+      console.log('🔄 PayU Flow: Sending confirmation email...');
 
-      // Step 1: Call getEvents API
-      authAPI.getEvents()
-        .then(eventsResponse => {
-          console.log('✅ Step 1: getEvents API Response:', eventsResponse);
+      // Extract booking_pay_id and event_id from URL params (udf1, udf2)
+      const emailPayload = {
+        booking_pay_id: details.udf1 || details.mihpayid,
+        event_id: details.udf2 || '',
+        event_url: details.udf3 || 'https://racesregistrations.com'
+      };
 
-          // Step 2: Call getProfile API
-          return authAPI.getProfile();
-        })
-        .then(profileResponse => {
-          console.log('✅ Step 2: getProfile API Response:', profileResponse);
+      console.log('📧 Sending confirmation email with payload:', emailPayload);
 
-          // Step 3: Send confirmation email
-          // Extract booking_pay_id and event_id from URL params (udf1, udf2)
-          const emailPayload = {
-            booking_pay_id: details.udf1 || details.mihpayid, // Use udf1 or mihpayid as fallback
-            event_id: details.udf2 || '', // Use udf2 for event_id
-            event_url: details.udf3 || 'https://racesregistrations.com' // Use udf3 or default URL
-          };
-
-          console.log('📧 Step 3: Sending confirmation email with payload:', emailPayload);
-
-          return authAPI.sendEmailPaymentSuccess(emailPayload);
-        })
+      authAPI.sendEmailPaymentSuccess(emailPayload)
         .then(emailResponse => {
-          console.log('✅ Step 3: Email sent successfully!', emailResponse);
+          console.log('✅ Email sent successfully!', emailResponse);
           console.log('🎉 PayU payment success flow completed!');
         })
         .catch(error => {
-          console.error('❌ PayU payment success flow error:', error);
-          console.error('Error details:', error.message);
+          console.error('❌ Email send error:', error);
+          // Don't block - just log the error
         });
     }
 

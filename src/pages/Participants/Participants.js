@@ -23,6 +23,11 @@ export default function Participants() {
     const [customSubject, setCustomSubject] = useState("");
     const [customMessage, setCustomMessage] = useState("");
 
+    // WhatsApp states
+    const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+    const [whatsappTemplates, setWhatsappTemplates] = useState([]);
+    const [selectedWhatsAppTemplate, setSelectedWhatsAppTemplate] = useState("");
+
     const [filters, setFilters] = useState({
         participantName: "",
         transactionStatus: "",
@@ -112,6 +117,7 @@ export default function Participants() {
             fetchData();
             fetchParticipants();
             fetchEmailTypes();
+            fetchWhatsAppTemplates();
         }
     }, [eventId]);
 
@@ -193,6 +199,24 @@ export default function Participants() {
             }
         } catch (error) {
             console.error("❌ Error fetching email types:", error);
+        }
+    };
+
+    const fetchWhatsAppTemplates = async () => {
+        try {
+            console.log("📱 Fetching WhatsApp templates...");
+            const response = await authAPI.getWhatsAppTemplates();
+            console.log("✅ getWhatsAppTemplates API Response:", response);
+
+            if (response && response.data) {
+                setWhatsappTemplates(response.data);
+                // Set first template as default if available
+                if (response.data.length > 0) {
+                    setSelectedWhatsAppTemplate(response.data[0].id);
+                }
+            }
+        } catch (error) {
+            console.error("❌ Error fetching WhatsApp templates:", error);
         }
     };
 
@@ -279,6 +303,45 @@ export default function Participants() {
         }
     };
 
+    const handleSendWhatsApp = () => {
+        if (selectedParticipants.length === 0) {
+            alert("Please select at least one participant before sending WhatsApp.");
+            return;
+        }
+        setShowWhatsAppModal(true);
+    };
+
+    const handleConfirmSendWhatsApp = async () => {
+        try {
+            console.log("📱 Sending WhatsApp with template:", selectedWhatsAppTemplate);
+            console.log("📱 Selected participants:", selectedParticipants);
+
+            const payload = {
+                participant_data: selectedParticipants,
+                template_id: selectedWhatsAppTemplate,
+                params: [] // Add template params if needed
+            };
+
+            console.log("📱 Sending payload:", payload);
+
+            const response = await authAPI.sendWhatsAppMultiple(payload);
+            console.log("✅ sendWhatsAppMultiple API Response:", response);
+
+            if (response && response.message) {
+                alert(response.message);
+                setShowWhatsAppModal(false);
+                setSelectedParticipants([]);
+            } else {
+                alert("WhatsApp sent successfully!");
+                setShowWhatsAppModal(false);
+                setSelectedParticipants([]);
+            }
+        } catch (error) {
+            console.error("❌ Error sending WhatsApp:", error);
+            alert("Failed to send WhatsApp. Please try again.");
+        }
+    };
+
     const totalPages = Math.ceil(totalRecords / pagination.limit);
 
     return (
@@ -311,6 +374,9 @@ export default function Participants() {
                     <div className="header-actions">
                         <button className="action-btn send-email-btn" onClick={handleSendEmail}>
                             <i className="fas fa-envelope"></i> Send Email
+                        </button>
+                        <button className="action-btn send-whatsapp-btn" onClick={handleSendWhatsApp} style={{ backgroundColor: '#25D366' }}>
+                            <i className="fab fa-whatsapp"></i> Send WhatsApp
                         </button>
                         <button className="action-btn download-btn">
                             <i className="fas fa-download"></i> Download
@@ -762,6 +828,46 @@ export default function Participants() {
                                 </button>
                                 <button className="email-send-btn" onClick={handleConfirmSendEmail}>
                                     Send
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Send WhatsApp Modal */}
+                {showWhatsAppModal && (
+                    <div className="modal-overlay" onClick={() => setShowWhatsAppModal(false)}>
+                        <div className="email-modal-content" onClick={(e) => e.stopPropagation()}>
+                            <h2 className="email-modal-title">Send WhatsApp Message to Participants</h2>
+
+                            <div className="email-type-group">
+                                <label className="email-type-label">WhatsApp Template</label>
+                                <select
+                                    className="email-type-select"
+                                    value={selectedWhatsAppTemplate}
+                                    onChange={(e) => setSelectedWhatsAppTemplate(e.target.value)}
+                                >
+                                    {whatsappTemplates.map((template) => (
+                                        <option key={template.id} value={template.id}>
+                                            {template.name} {template.description && `- ${template.description}`}
+                                        </option>
+                                    ))}
+                                </select>
+                                <small style={{ color: '#666', marginTop: '5px', display: 'block' }}>
+                                    Selected participants: {selectedParticipants.length}
+                                </small>
+                            </div>
+
+                            <div className="email-modal-actions">
+                                <button className="email-cancel-btn" onClick={() => setShowWhatsAppModal(false)}>
+                                    Cancel
+                                </button>
+                                <button
+                                    className="email-send-btn"
+                                    onClick={handleConfirmSendWhatsApp}
+                                    style={{ backgroundColor: '#25D366' }}
+                                >
+                                    <i className="fab fa-whatsapp"></i> Send WhatsApp
                                 </button>
                             </div>
                         </div>
