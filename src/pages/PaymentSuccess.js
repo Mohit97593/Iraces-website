@@ -33,9 +33,16 @@ export default function PaymentSuccess() {
 
     // Check which payment gateway was used - check both parameters
     const gateway = searchParams.get('gateway') || searchParams.get('payment_gateway') || 'payu';
-    console.log('💳 Payment Gateway:', gateway);
+    console.log(' Payment Gateway:', gateway);
 
-    // PhonePe Flow: Only verify payment status
+    // Prepare email payload for both flows
+    const emailPayload = {
+      booking_pay_id: details.udf1 || details.mihpayid,
+      event_id: details.udf2 || '',
+      event_url: details.udf3 || 'https://racesregistrations.com'
+    };
+
+    // PhonePe Flow: Verify payment status first, then send email
     if (gateway === 'phonepe' && details.txnid) {
       console.log('🔄 PhonePe Flow: Verifying payment status...');
 
@@ -48,9 +55,27 @@ export default function PaymentSuccess() {
           } else {
             console.warn('⚠️ PhonePe Payment status:', verifyResponse.status);
           }
+
+          // Send confirmation email after verification
+          console.log('📧 PhonePe: Sending confirmation email...');
+          return authAPI.sendEmailPaymentSuccess(emailPayload);
+        })
+        .then(emailResponse => {
+          console.log('✅ PhonePe: Email sent successfully!', emailResponse);
         })
         .catch(error => {
-          console.error('❌ PhonePe Verify API Error:', error);
+          console.error('❌ PhonePe Flow Error:', error);
+        });
+    } else {
+      // PayU Flow: Send confirmation email directly
+      console.log('📧 PayU: Sending confirmation email...');
+      
+      authAPI.sendEmailPaymentSuccess(emailPayload)
+        .then(emailResponse => {
+          console.log('✅ PayU: Email sent successfully!', emailResponse);
+        })
+        .catch(error => {
+          console.error('❌ PayU Email Error:', error);
         });
     }
 
