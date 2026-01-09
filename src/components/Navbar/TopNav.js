@@ -319,22 +319,10 @@ export default function TopNav() {
       );
     }
 
-    // Navigate based on current page
-    const currentPath = window.location.pathname;
-
-    // If on home page or already on /in/* route, navigate to /in/city-slug
-    if (currentPath === "/" || currentPath.startsWith("/in/")) {
-      // Navigate if we have a city slug (regardless of cityType value)
-      if (citySlug) {
-        navigate(`/in/${citySlug}`);
-      }
-    } else {
-      // If on other pages, navigate to search-events
-      if (cityType === "city" || cityId) {
-        navigate(`/search-events?city_id=${cityId}`);
-      } else {
-        navigate(`/search-events?state_id=${cityId}`);
-      }
+    // Always navigate to /in/city-slug when selecting from location overlay
+    // This ensures consistent behavior on both desktop and mobile
+    if (citySlug) {
+      navigate(`/in/${citySlug}`);
     }
   };
 
