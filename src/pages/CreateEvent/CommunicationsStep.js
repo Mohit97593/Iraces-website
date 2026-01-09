@@ -4,7 +4,7 @@ import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import "./CreateEvent.css";
 
-const CommunicationsStep = ({ onBack, onNext }) => {
+const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
   const [items, setItems] = useState([]);
   const [termsItem, setTermsItem] = useState(null);
   const [hovered, setHovered] = useState(null);
@@ -104,6 +104,9 @@ const CommunicationsStep = ({ onBack, onNext }) => {
   };
 
   const handleEdit = async (item) => {
+    // Notify parent that editing has started
+    if (onEditingChange) onEditingChange(true);
+
     // When edit clicked, call editEventCommFqa to fetch editable details
     const isTerms = String(item.id) === "terms" || item.id === "terms";
     const eventId = sessionStorage.getItem("event_id") || "";
@@ -214,6 +217,8 @@ const CommunicationsStep = ({ onBack, onNext }) => {
     setShowEditModal(false);
     setEditModalData({ id: "", title: "", content: "", isTerms: false });
     setEditingId(null);
+    // Notify parent that editing has ended
+    if (onEditingChange) onEditingChange(false);
   };
 
   const saveEdit = async () => {

@@ -1533,6 +1533,55 @@ export const authAPI = {
     }
   },
 
+  // Attendee Net Sales Excel Data API - Download Excel for Attendee or Revenue
+  attendeeNetsalesExcellData: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+      formData.append("command", payload.command); // 'attendee' or 'revenue'
+
+      // Optional filters
+      if (payload.participant_name) {
+        formData.append("participant_name", payload.participant_name);
+      }
+      if (payload.reg_id) {
+        formData.append("reg_id", payload.reg_id);
+      }
+      if (payload.mobile_number) {
+        formData.append("mobile_number", payload.mobile_number);
+      }
+      if (payload.email) {
+        formData.append("email", payload.email);
+      }
+      if (payload.ticket_id) {
+        formData.append("ticket_id", payload.ticket_id);
+      }
+      if (payload.from_date) {
+        formData.append("from_date", payload.from_date);
+      }
+      if (payload.to_date) {
+        formData.append("to_date", payload.to_date);
+      }
+      if (payload.TransactionStatus) {
+        formData.append("TransactionStatus", payload.TransactionStatus);
+      }
+      if (payload.coupon_used_flag !== undefined) {
+        formData.append("coupon_used_flag", payload.coupon_used_flag);
+      }
+      if (payload.TransactionID) {
+        formData.append("TransactionID", payload.TransactionID);
+      }
+
+      const response = await api.post("/attendeeNetsalesExcellData", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("attendeeNetsalesExcellData API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Change Event Status API - Toggle event active/inactive
   changeEventStatus: async (payload) => {
     try {
@@ -1701,6 +1750,66 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       console.error("sendWhatsAppMultiple API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Attendee/Participant Excel Download API
+  attendeeNetsalesExcellData: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+      formData.append("command", payload.command); // 'attendee' or 'revenue'
+      formData.append("coupon_used_flag", payload.coupon_used_flag || 0);
+
+      // Add optional filters
+      if (payload.participant_name) {
+        formData.append("participant_name", payload.participant_name);
+      }
+      if (payload.reg_id) {
+        formData.append("reg_id", payload.reg_id);
+      }
+      if (payload.mobile_number) {
+        formData.append("mobile_number", payload.mobile_number);
+      }
+      if (payload.email) {
+        formData.append("email", payload.email);
+      }
+      if (payload.ticket_id) {
+        formData.append("ticket_id", payload.ticket_id);
+      }
+      if (payload.from_date) {
+        formData.append("from_date", payload.from_date);
+      }
+      if (payload.to_date) {
+        formData.append("to_date", payload.to_date);
+      }
+      if (payload.TransactionStatus) {
+        formData.append("TransactionStatus", payload.TransactionStatus);
+      }
+      if (payload.TransactionID) {
+        formData.append("TransactionID", payload.TransactionID);
+      }
+
+      const response = await api.post("/attendee_netsales_excell_data", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("attendeeNetsalesExcellData API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Event Booking Tickets API
+  getEventBookingTickets: async (event_id) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", event_id);
+      const response = await api.post("/get_event_booking_tickets", formData);
+      return response.data;
+    } catch (error) {
+      console.error("getEventBookingTickets API error:", error);
       throw error.response?.data || error.message;
     }
   },

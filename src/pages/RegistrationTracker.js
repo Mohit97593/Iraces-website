@@ -105,7 +105,12 @@ export default function RegistrationTracker() {
                 <div className="event-card-footer">
                     <span className="registration-count">{event.TotalCount} REGISTRATION</span>
                     <span className="separator">|</span>
-                    <button className="view-details-btn">VIEW DETAILS</button>
+                    <button
+                        className="view-details-btn"
+                        onClick={() => navigate(`/ticket-details/${event.event_id}`)}
+                    >
+                        VIEW DETAILS
+                    </button>
                 </div>
             </div>
         </div>

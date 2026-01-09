@@ -376,7 +376,7 @@ const AddCustomForm = ({ onCancel }) => {
         )}
 
         <div style={{ marginTop: 12 }} className="form-group">
-          <div className="form-label">Question Status</div>
+          {/* <div className="form-label">Question Status</div>
           <div className="status-toggle" style={{ marginTop: 8 }}>
             <button
               className={`status-btn ${isMandatory ? "active" : ""}`}
@@ -390,7 +390,7 @@ const AddCustomForm = ({ onCancel }) => {
             >
               Optional
             </button>
-          </div>
+          </div> */}
         </div>
         <div
           style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}

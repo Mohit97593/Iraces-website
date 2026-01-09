@@ -20,6 +20,7 @@ export default function TopNav() {
   const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [eventSuggestions, setEventSuggestions] = useState([]);
   const [showEventSuggestions, setShowEventSuggestions] = useState(false);
+  const [showEventTypeModal, setShowEventTypeModal] = useState(false);
   const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
 
@@ -606,7 +607,7 @@ export default function TopNav() {
                     className="delete-location-btn-top"
                     onClick={handleDeleteLocation}
                   >
-                    <i className="fas fa-trash-alt"></i>
+                    <i className="fas fa-crosshairs"></i>
                     <span>Detect my location</span>
                   </button>
                 </div>
@@ -987,7 +988,37 @@ export default function TopNav() {
           )}
 
           {/* desktop login/signup buttons or profile dropdown */}
-          <div className="d-none d-lg-block">
+          <div className="d-none d-lg-flex align-items-center gap-3">
+            {/* Design Your Event Button */}
+            <button
+              onClick={() => setShowEventTypeModal(true)}
+              style={{
+                backgroundColor: "#da251c",
+                color: "white",
+                border: "none",
+                borderRadius: "25px",
+                padding: "10px 24px",
+                fontSize: "16px",
+                fontWeight: "600",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = "#b91e14";
+                e.target.style.transform = "scale(1.05)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "#da251c";
+                e.target.style.transform = "scale(1)";
+              }}
+            >
+              <i className="fas fa-calendar-plus"></i>
+              Design Your Event
+            </button>
+
             {isAuthenticated ? (
               <div className="position-relative" ref={dropdownRef}>
                 <div
@@ -1276,6 +1307,214 @@ export default function TopNav() {
                 >
                   Yes, Logout
                 </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Event Type Selection Modal */}
+      {showEventTypeModal && (
+        <>
+          {/* Modal Overlay */}
+          <div
+            className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex align-items-center justify-content-center"
+            style={{ zIndex: 1060 }}
+            onClick={() => setShowEventTypeModal(false)}
+          >
+            {/* Modal Content */}
+            <div
+              className="bg-white rounded-3 p-4 mx-3"
+              style={{
+                maxWidth: "960px",
+                width: "100%",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+                position: "relative",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowEventTypeModal(false)}
+                style={{
+                  position: "absolute",
+                  top: "20px",
+                  right: "20px",
+                  background: "white",
+                  border: "1px solid #e0e0e0",
+                  borderRadius: "50%",
+                  width: "40px",
+                  height: "40px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  fontSize: "20px",
+                  color: "#666",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = "#f5f5f5";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = "white";
+                }}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+
+              {/* Modal Header */}
+              <div className="text-start mb-4">
+                <h2 className="fw-bold mb-2" style={{ color: "#1f2937", fontSize: "28px" }}>
+                  Select Event Type
+                </h2>
+                <p className="text-muted mb-0" style={{ fontSize: "16px" }}>
+                  Pick the type of event you want to host
+                </p>
+              </div>
+
+              {/* Event Type Cards */}
+              <div className="row g-4">
+                {/* On Ground Event */}
+                <div className="col-md-4">
+                  <div
+                    onClick={() => {
+                      setShowEventTypeModal(false);
+                      navigate("/create-event");
+                    }}
+                    style={{
+                      border: "1px solid #e0e0e0",
+                      borderRadius: "12px",
+                      padding: "30px 20px",
+                      textAlign: "center",
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      height: "100%",
+                      backgroundColor: "white",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "#da251c";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(218, 37, 28, 0.1)";
+                      e.currentTarget.style.transform = "translateY(-4px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "#e0e0e0";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
+                  >
+                    <div className="mb-3" style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                      <img
+                        src="https://cdn-icons-png.flaticon.com/128/3176/3176366.png"
+                        alt="On Ground Event"
+                        style={{ width: "120px", height: "120px", objectFit: "contain" }}
+                        onError={(e) => {
+                          e.target.src = "https://via.placeholder.com/120/da251c/FFFFFF?text=Event";
+                        }}
+                      />
+                    </div>
+                    <h4 className="fw-bold mb-2" style={{ fontSize: "20px", color: "#1f2937" }}>
+                      On Ground Event
+                    </h4>
+                    <p className="text-muted mb-0" style={{ fontSize: "14px", lineHeight: "1.6" }}>
+                      Host an in-person on ground event using our event management platform.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Virtual Run */}
+                <div className="col-md-4">
+                  <div
+                    onClick={() => {
+                      setShowEventTypeModal(false);
+                      navigate("/create-event");
+                    }}
+                    style={{
+                      border: "1px solid #e0e0e0",
+                      borderRadius: "12px",
+                      padding: "30px 20px",
+                      textAlign: "center",
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      height: "100%",
+                      backgroundColor: "white",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "#da251c";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(218, 37, 28, 0.1)";
+                      e.currentTarget.style.transform = "translateY(-4px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "#e0e0e0";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
+                  >
+                    <div className="mb-3" style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                      <img
+                        src="https://cdn-icons-png.flaticon.com/128/2920/2920277.png"
+                        alt="Virtual Run"
+                        style={{ width: "120px", height: "120px", objectFit: "contain" }}
+                        onError={(e) => {
+                          e.target.src = "https://via.placeholder.com/120/da251c/FFFFFF?text=Virtual";
+                        }}
+                      />
+                    </div>
+                    <h4 className="fw-bold mb-2" style={{ fontSize: "20px", color: "#1f2937" }}>
+                      Virtual Run
+                    </h4>
+                    <p className="text-muted mb-0" style={{ fontSize: "14px", lineHeight: "1.6" }}>
+                      Host virtual challenges like walking, running, cycling etc
+                    </p>
+                  </div>
+                </div>
+
+                {/* Hybrid Event */}
+                <div className="col-md-4">
+                  <div
+                    onClick={() => {
+                      setShowEventTypeModal(false);
+                      navigate("/create-event");
+                    }}
+                    style={{
+                      border: "1px solid #e0e0e0",
+                      borderRadius: "12px",
+                      padding: "30px 20px",
+                      textAlign: "center",
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      height: "100%",
+                      backgroundColor: "white",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "#da251c";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(218, 37, 28, 0.1)";
+                      e.currentTarget.style.transform = "translateY(-4px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "#e0e0e0";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
+                  >
+                    <div className="mb-3" style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                      <img
+                        src="https://cdn-icons-png.flaticon.com/128/3588/3588435.png"
+                        alt="Hybrid Event"
+                        style={{ width: "120px", height: "120px", objectFit: "contain" }}
+                        onError={(e) => {
+                          e.target.src = "https://via.placeholder.com/120/da251c/FFFFFF?text=Hybrid";
+                        }}
+                      />
+                    </div>
+                    <h4 className="fw-bold mb-2" style={{ fontSize: "20px", color: "#1f2937" }}>
+                      Hybrid Event
+                    </h4>
+                    <p className="text-muted mb-0" style={{ fontSize: "14px", lineHeight: "1.6" }}>
+                      Seamlessly blend in-person and virtual experiences using our event management platform.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

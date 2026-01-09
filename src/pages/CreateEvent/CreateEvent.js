@@ -39,6 +39,7 @@ export default function CreateEvent() {
   const [paidType, setPaidType] = useState("");
   const [bannerImageUrl, setBannerImageUrl] = useState(null);
   const [organizerGST, setOrganizerGST] = useState(false); // Track organizer's GST setting
+  const [isEditingCommunication, setIsEditingCommunication] = useState(false); // Track if editing communication
   // Today's date and year
   const today = new Date();
   const day = today.getDate();
@@ -1378,6 +1379,7 @@ export default function CreateEvent() {
               <CommunicationsStep
                 onBack={() => setCurrentStep(9)}
                 onNext={() => markCurrentSavedAndGo(11)}
+                onEditingChange={setIsEditingCommunication}
               />
             )}
             {currentStep === 11 && (
@@ -1394,9 +1396,75 @@ export default function CreateEvent() {
             )}
           </div>
 
-          {/* Right Column - Preview or Money to you */}
+          {/* Right Column - Preview, Placeholders, or Money to you */}
           <div className="col-lg-4">
-            {(currentStep !== 5 || showPreview) && (
+            {/* Show Placeholders section ONLY when editing communication (step 10 + editing mode) */}
+            {currentStep === 10 && isEditingCommunication && (
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: "16px",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+                  padding: "24px",
+                  marginBottom: "24px",
+                }}
+              >
+                <h3 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "16px" }}>
+                  Placeholders
+                </h3>
+                <p style={{ fontSize: "0.95rem", color: "#666", marginBottom: "16px" }}>
+                  You can use following placeholders in your message content.
+                </p>
+
+                <div style={{ marginBottom: "20px" }}>
+                  <strong style={{ fontSize: "1rem", display: "block", marginBottom: "8px" }}>
+                    Example:
+                  </strong>
+                  <p style={{ fontSize: "0.9rem", color: "#333", marginBottom: "4px" }}>
+                    Hi {"{FIRSTNAME}"},
+                  </p>
+                  <p style={{ fontSize: "0.9rem", color: "#333" }}>
+                    Welcome to {"{EVENTNAME}"}.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    maxHeight: "400px",
+                    overflowY: "auto",
+                    border: "1px solid #e0e0e0",
+                    borderRadius: "8px",
+                    padding: "12px",
+                  }}
+                >
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {[
+                      "FIRSTNAME", "LASTNAME", "EVENTID", "EVENTNAME",
+                      "EVENTSTARTDATE", "EVENTSTARTTIME", "EVENTENDDATE", "EVENTENDTIME",
+                      "YTCRTEAM", "EVENTURL", "COMPANYNAME", "TOTALTICKETS",
+                      "VENUE", "TICKETAMOUNT", "RACECATEGORY", "REGISTRATIONID"
+                    ].map((placeholder) => (
+                      <div
+                        key={placeholder}
+                        style={{
+                          padding: "8px 12px",
+                          background: "#f5f5f5",
+                          borderRadius: "4px",
+                          fontSize: "0.85rem",
+                          fontWeight: 500,
+                          color: "#333",
+                        }}
+                      >
+                        {placeholder}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Show Event Preview for all other cases */}
+            {!(currentStep === 10 && isEditingCommunication) && (currentStep !== 5 || showPreview) && (
               <>
                 <div
                   style={{
@@ -1790,7 +1858,7 @@ export default function CreateEvent() {
                   })()}
                 </div>
               )}
-            {(currentStep !== 5 || showPreview) && (
+            {!(currentStep === 10 && isEditingCommunication) && (currentStep !== 5 || showPreview) && (
               <div
                 className="event-card search-event-card"
                 style={{

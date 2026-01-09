@@ -34,6 +34,7 @@ import Participants from "../pages/Participants/Participants";
 import PaymentLog from "../pages/PaymentLog/PaymentLog";
 import PaymentSuccess from "../pages/PaymentSuccess";
 import PaymentFailure from "../pages/PaymentFailure";
+import TicketDetails from "../pages/TicketDetails";
 
 const AppRouter = createBrowserRouter([
   {
@@ -239,6 +240,15 @@ const AppRouter = createBrowserRouter([
     element: (
       <ErrorBoundary>
         <RegistrationTracker />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/ticket-details/:eventId",
+    element: (
+      <ErrorBoundary>
+        <TicketDetails />
       </ErrorBoundary>
     ),
     errorElement: <NotFound />,

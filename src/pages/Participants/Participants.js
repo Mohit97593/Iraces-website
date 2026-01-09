@@ -10,6 +10,8 @@ export default function Participants() {
 
     const [eventName, setEventName] = useState("");
     const [loading, setLoading] = useState(false);
+    const [downloadingAttendee, setDownloadingAttendee] = useState(false);
+    const [downloadingRevenue, setDownloadingRevenue] = useState(false);
     const [participantData, setParticipantData] = useState([]);
     const [totalRecords, setTotalRecords] = useState(0);
     const [ticketCategories, setTicketCategories] = useState([]);
@@ -342,6 +344,131 @@ export default function Participants() {
         }
     };
 
+    // Handle Download Excel (Attendee)
+    const handleDownloadExcel = async () => {
+        try {
+            setDownloadingAttendee(true);
+            console.log("📥 Starting attendee Excel download...");
+            console.log("Event ID:", eventId);
+
+            const payload = {
+                event_id: eventId,
+                command: 'attendee',
+                coupon_used_flag: 0
+            };
+
+            // Add filters if provided
+            if (filters.participantName) payload.participant_name = filters.participantName;
+            if (filters.registrationID) payload.reg_id = filters.registrationID;
+            if (filters.mobileNumber) payload.mobile_number = filters.mobileNumber;
+            if (filters.email) payload.email = filters.email;
+            if (filters.category) payload.ticket_id = filters.category;
+            if (filters.transactionStatus) payload.TransactionStatus = filters.transactionStatus;
+            if (filters.dateFrom) payload.from_date = filters.dateFrom;
+            if (filters.dateTo) payload.to_date = filters.dateTo;
+            if (filters.transactionID) payload.TransactionID = filters.transactionID;
+
+            console.log("📤 Sending payload:", payload);
+
+            const response = await authAPI.attendeeNetsalesExcellData(payload);
+            console.log("✅ Full API Response:", response);
+            console.log("Response data:", response?.data);
+            console.log("Excel URL:", response?.data?.attendee_details_excel);
+
+            if (response && response.data && response.data.attendee_details_excel) {
+                const excelUrl = response.data.attendee_details_excel;
+                console.log("🎯 Downloading Excel from URL:", excelUrl);
+
+                // Direct download using window.location or anchor tag
+                // This bypasses CORS restrictions
+                const link = document.createElement('a');
+                link.href = excelUrl;
+                link.download = ''; // Empty download attribute triggers download
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                console.log("✅ Excel download initiated!");
+                alert("Excel file download started! Check your downloads folder.");
+            } else {
+                console.warn("⚠️ No Excel URL in response");
+                alert("No data available to download");
+            }
+        } catch (error) {
+            console.error("❌ Error downloading Excel:");
+            console.error("Error object:", error);
+            console.error("Error message:", error.message);
+            console.error("Error response:", error.response);
+            alert("Failed to download Excel. Please check console for details.");
+        } finally {
+            setDownloadingAttendee(false);
+        }
+    };
+
+    const handleDownloadRevenue = async () => {
+        try {
+            setDownloadingRevenue(true);
+            console.log("💰 Starting revenue Excel download...");
+            console.log("Event ID:", eventId);
+
+            const payload = {
+                event_id: eventId,
+                command: 'revenue',
+                coupon_used_flag: 0
+            };
+
+            // Add filters if provided
+            if (filters.participantName) payload.participant_name = filters.participantName;
+            if (filters.registrationID) payload.reg_id = filters.registrationID;
+            if (filters.mobileNumber) payload.mobile_number = filters.mobileNumber;
+            if (filters.email) payload.email = filters.email;
+            if (filters.category) payload.ticket_id = filters.category;
+            if (filters.transactionStatus) payload.TransactionStatus = filters.transactionStatus;
+            if (filters.dateFrom) payload.from_date = filters.dateFrom;
+            if (filters.dateTo) payload.to_date = filters.dateTo;
+            if (filters.transactionID) payload.TransactionID = filters.transactionID;
+
+            console.log("📤 Sending payload:", payload);
+
+            const response = await authAPI.attendeeNetsalesExcellData(payload);
+            console.log("✅ Full API Response:", response);
+            console.log("Response data:", response?.data);
+            console.log("Revenue Excel URL:", response?.data?.remittance_details_excel);
+
+            if (response && response.data && response.data.remittance_details_excel) {
+                const excelUrl = response.data.remittance_details_excel;
+                console.log("🎯 Downloading Revenue Excel from URL:", excelUrl);
+
+                // Direct download using window.location or anchor tag
+                // This bypasses CORS restrictions
+                const link = document.createElement('a');
+                link.href = excelUrl;
+                link.download = ''; // Empty download attribute triggers download
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                console.log("✅ Revenue Excel download initiated!");
+                alert("Revenue Excel file download started! Check your downloads folder.");
+            } else {
+                console.warn("⚠️ No Revenue Excel URL in response");
+                alert("No revenue data available to download");
+            }
+        } catch (error) {
+            console.error("❌ Error downloading revenue Excel:");
+            console.error("Error object:", error);
+            console.error("Error message:", error.message);
+            console.error("Error response:", error.response);
+            alert("Failed to download revenue Excel. Please check console for details.");
+        } finally {
+            setDownloadingRevenue(false);
+        }
+    };
+
     const totalPages = Math.ceil(totalRecords / pagination.limit);
 
     return (
@@ -378,11 +505,19 @@ export default function Participants() {
                         <button className="action-btn send-whatsapp-btn" onClick={handleSendWhatsApp} style={{ backgroundColor: '#25D366' }}>
                             <i className="fab fa-whatsapp"></i> Send WhatsApp
                         </button>
-                        <button className="action-btn download-btn">
-                            <i className="fas fa-download"></i> Download
+                        <button
+                            className="action-btn download-btn"
+                            onClick={handleDownloadExcel}
+                            disabled={downloadingAttendee}
+                        >
+                            <i className="fas fa-download"></i> {downloadingAttendee ? 'Downloading...' : 'Download'}
                         </button>
-                        <button className="action-btn revenue-btn">
-                            <i className="fas fa-rupee-sign"></i> Revenue
+                        <button
+                            className="action-btn revenue-btn"
+                            onClick={handleDownloadRevenue}
+                            disabled={downloadingRevenue}
+                        >
+                            <i className="fas fa-rupee-sign"></i> {downloadingRevenue ? 'Downloading...' : 'Revenue'}
                         </button>
                         <button className="back-btn" onClick={handleBack}>
                             <i className="fas fa-arrow-left"></i> Back
