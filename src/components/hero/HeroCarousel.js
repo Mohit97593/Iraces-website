@@ -420,7 +420,7 @@ export default function HeroCarousel() {
           <div className="hero-overlay">
             <div className="container h-100">
               <div className="row h-100 align-items-center">
-                <div
+                {/* <div
                   className={`col-lg-7 text-white position-relative`}
                   style={{ marginBottom: "80px" }}
                 >
@@ -434,9 +434,9 @@ export default function HeroCarousel() {
                       <br />
                       <small>Active Members</small>
                     </div>
-                  </div>
+                  </div> */}
 
-                  <h4
+                {/* <h4
                     className={`display-1 hero-title ${animate ? "animated slide-in-left" : ""
                       }`}
                     style={{
@@ -446,18 +446,18 @@ export default function HeroCarousel() {
                     }}
                   >
                     {staticTitle}
-                  </h4>
-                  <p className="lead hero-sub">{staticSubtitle}</p>
-                  {/* ✅ Modal Open Button */}
-                  {/* <button
+                  </h4> */}
+                {/* <p className="lead hero-sub">{staticSubtitle}</p> */}
+                {/* ✅ Modal Open Button */}
+                {/* <button
                     className="btn btn-success mt-3"
                     onClick={() => dispatch(toggleModal())}
                   >
                     Learn More
                   </button> */}
-                </div>
+                {/* </div> */}
 
-                <div className="col-lg-5 d-flex justify-content-end align-items-center">
+                {/* <div className="col-lg-5 d-flex justify-content-end align-items-center">
                   <div className={animate ? "animated slide-in-right" : ""}>
                     {nextUpcomingEvent ? (
                       <div className="upcoming-card">
@@ -576,14 +576,14 @@ export default function HeroCarousel() {
                       </div>
                     )}
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
         </div>
 
         <div className="social-vertical">
-          <a
+          {/* <a
             className="social-btn"
             href=" https://www.facebook.com/youtoocanrunsmpl"
             target="_blank"
@@ -591,9 +591,9 @@ export default function HeroCarousel() {
             aria-label="Facebook"
           >
             <i className="fab fa-facebook-f" aria-hidden="true" />
-          </a>
+          </a> */}
 
-          <a
+          {/* <a
             className="social-btn"
             href="https://www.instagram.com/youtoocanrun/"
             target="_blank"
@@ -601,20 +601,20 @@ export default function HeroCarousel() {
             aria-label="Instagram"
           >
             <i className="fab fa-instagram" aria-hidden="true" />
-          </a>
+          </a> */}
 
-          <a
+          {/* <a
             className="social-btn"
             href="https://www.linkedin.com/company/youtoocanrun/"
             target="_blank"
             rel="noreferrer"
             aria-label="LinkedIn"
-          >
-            {/* Font Awesome may not include an official Threads icon depending on version; using 'fa-x' (or update FA) */}
-            <i className="fab fa-linkedin-in" aria-hidden="true" />
-          </a>
+          > */}
+          {/* Font Awesome may not include an official Threads icon depending on version; using 'fa-x' (or update FA) */}
+          {/* <i className="fab fa-linkedin-in" aria-hidden="true" />
+          </a> */}
 
-          <a
+          {/* <a
             className="social-btn"
             href=" https://x.com/youtoocanrun"
             target="_blank"
@@ -622,7 +622,7 @@ export default function HeroCarousel() {
             aria-label="Twitter"
           >
             <i className="fab fa-twitter" aria-hidden="true" />
-          </a>
+          </a> */}
         </div>
 
         <div className="hero-controls container">

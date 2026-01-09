@@ -51,7 +51,6 @@ export default function EventAnalytics() {
     // Fetch insights data
     const fetchInsights = async () => {
         try {
-            setLoading(true);
             console.log("📊 Fetching insights for event:", eventId);
 
             const payload = {
@@ -75,6 +74,8 @@ export default function EventAnalytics() {
             if (filterData.category) {
                 payload.Ticket = filterData.category;
             }
+
+            console.log("📤 Sending payload to getInsights API:", payload);
 
             const response = await authAPI.getInsights(payload);
             console.log("✅ getInsights API Response:", response);
@@ -113,8 +114,6 @@ export default function EventAnalytics() {
             }
         } catch (error) {
             console.error("❌ Error fetching insights:", error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -144,6 +143,8 @@ export default function EventAnalytics() {
             if (filterData.category) {
                 payload.Ticket = filterData.category;
             }
+
+            console.log("📤 Sending payload to getCategoryWiseData API:", payload);
 
             const response = await authAPI.getCategoryWiseData(payload);
             console.log("✅ getCategoryWiseData API Response:", response);
@@ -203,11 +204,37 @@ export default function EventAnalytics() {
 
     // Refetch insights and category data when filters change
     useEffect(() => {
-        if (eventId && (filterData.filter || filterData.category || filterData.dateFrom || filterData.dateTo)) {
-            fetchInsights();
-            fetchCategoryWiseData();
+        // Skip on initial mount (eventId dependency handles that)
+        // Only run when filters actually change
+        const hasAnyFilter = filterData.filter || filterData.category || filterData.dateFrom || filterData.dateTo;
+
+        if (eventId && hasAnyFilter) {
+            console.log("🔄 Filters changed, refetching data with filters:", filterData);
+
+            // Call both APIs together
+            const fetchBothAPIs = async () => {
+                try {
+                    setLoading(true);
+                    console.log("🚀 Starting both API calls...");
+
+                    console.log("📞 Calling fetchInsights...");
+                    const insightsPromise = fetchInsights();
+
+                    console.log("📞 Calling fetchCategoryWiseData...");
+                    const categoryPromise = fetchCategoryWiseData();
+
+                    await Promise.all([insightsPromise, categoryPromise]);
+                    console.log("✅ Both API calls completed successfully");
+                } catch (error) {
+                    console.error("❌ Error fetching filtered data:", error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            fetchBothAPIs();
         }
-    }, [filterData.filter, filterData.category, filterData.dateFrom, filterData.dateTo]);
+    }, [filterData.filter, filterData.category, filterData.dateFrom, filterData.dateTo, eventId]);
 
     const handleBack = () => {
         navigate("/myevents");
@@ -217,6 +244,86 @@ export default function EventAnalytics() {
         const { name, value } = e.target;
         setFilterData(prev => ({ ...prev, [name]: value }));
     };
+
+    const handleClearFilters = async () => {
+        // Reset filter state
+        setFilterData({
+            filter: "",
+            category: "",
+            dateFrom: "",
+            dateTo: ""
+        });
+
+        // Call APIs with only event_id (no filters)
+        try {
+            setLoading(true);
+
+            const payload = {
+                event_id: eventId
+            };
+
+            // Call both APIs with clean payload
+            await Promise.all([
+                authAPI.getInsights(payload),
+                authAPI.getCategoryWiseData(payload)
+            ]).then(([insightsResponse, categoryResponse]) => {
+                // Update insights data
+                if (insightsResponse && insightsResponse.data) {
+                    const data = insightsResponse.data;
+
+                    const parseCurrency = (value) => {
+                        if (!value) return "0.00";
+                        if (typeof value === 'string') {
+                            return value.replace(/[₹,]/g, '').trim();
+                        }
+                        return value.toString();
+                    };
+
+                    setStats({
+                        registrations: data.TotalRegistration || 0,
+                        participants: data.TotalParticipant || 0,
+                        netSales: data.NetSales || 0,
+                        totalAmountCollected: parseCurrency(data.TotalAmount),
+                        conversionRate: data.SuccessPercentage || 0,
+                        registrationLimit: data.TotalTickets || 0,
+                        pageViews: data.TotalPageViews || 0,
+                        remittanceAmount: parseCurrency(data.RemittanceAmount),
+                        receivableToOrganiser: parseCurrency(data.OrganiserAmount),
+                        totalPaymentGateway: parseCurrency(data.TotalPaymentGateway),
+                        totalConvenienceFee: parseCurrency(data.TotalConvenience)
+                    });
+
+                    if (data.TicketData && Array.isArray(data.TicketData)) {
+                        setTicketCategories(data.TicketData);
+                    }
+                }
+
+                // Update category data
+                if (categoryResponse && categoryResponse.data) {
+                    const data = categoryResponse.data;
+
+                    setCategoryData({
+                        bookingData: data.BookingData || [],
+                        barChartData: data.FinalBarChartData || [],
+                        maleCount: data.maleCount || 0,
+                        femaleCount: data.femaleCount || 0,
+                        otherCount: data.otherCount || 0,
+                        ageCategory: data.ageCategory || [],
+                        utmCode: data.utmCode || [],
+                        couponCodes: data.CouponCodes || [],
+                        customQuestions: data.CountArray || {}
+                    });
+                }
+            });
+        } catch (error) {
+            console.error("❌ Error clearing filters:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Check if any filter is applied
+    const isFilterApplied = filterData.filter || filterData.category || filterData.dateFrom || filterData.dateTo;
 
     // Prepare Chart Options
     const chartOptions = {
@@ -298,6 +405,63 @@ export default function EventAnalytics() {
                 y: item.total_booking || item.count || item.Total || 0,
                 color: (item.ticket_name || '').includes('testo') ? '#5c5cff' : undefined // Attempt to match some colors if hinted
             }))
+        }],
+        credits: {
+            enabled: true,
+            text: 'Highcharts.com',
+            href: 'https://www.highcharts.com'
+        }
+    };
+
+    // Gender Distribution Pie Chart Options
+    const genderChartOptions = {
+        chart: {
+            type: 'pie'
+        },
+        title: {
+            text: 'Gender Distribution'
+        },
+        tooltip: {
+            pointFormat: '{series.name}: <b>{point.y}</b> ({point.percentage:.1f}%)'
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: false
+                },
+                showInLegend: true
+            }
+        },
+        legend: {
+            align: 'right',
+            verticalAlign: 'middle',
+            layout: 'vertical',
+            itemStyle: {
+                fontSize: '14px'
+            }
+        },
+        series: [{
+            name: 'Count',
+            colorByPoint: true,
+            data: [
+                {
+                    name: `Male (${categoryData.maleCount})`,
+                    y: categoryData.maleCount,
+                    color: '#87CEEB' // Light blue
+                },
+                {
+                    name: `Female (${categoryData.femaleCount})`,
+                    y: categoryData.femaleCount,
+                    color: '#9370DB' // Purple
+                },
+                {
+                    name: `Other (${categoryData.otherCount})`,
+                    y: categoryData.otherCount,
+                    color: '#90EE90' // Light green
+                }
+            ]
         }],
         credits: {
             enabled: true,
@@ -400,6 +564,11 @@ export default function EventAnalytics() {
                         <button className="back-btn" onClick={handleBack}>
                             <i className="fas fa-arrow-left"></i> Back
                         </button>
+                        {isFilterApplied && (
+                            <button className="back-btn" onClick={handleClearFilters} style={{ marginLeft: '10px', backgroundColor: '#dc3545' }}>
+                                <i className="fas fa-times"></i> Clear Filters
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -721,10 +890,64 @@ export default function EventAnalytics() {
                         <div className="col-lg-6">
                             <div className="chart-card">
                                 <h3 className="chart-title">Coupons</h3>
-                                <div className="no-data-placeholder">
-                                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076478.png" alt="No Data" />
-                                    <p>No Data Found</p>
-                                </div>
+                                {categoryData.couponCodes && categoryData.couponCodes.length > 0 ? (
+                                    <table className="utm-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Coupon Code</th>
+                                                <th>Total</th>
+                                                <th>Used</th>
+                                                <th>Pending</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {categoryData.couponCodes.map((coupon, index) => {
+                                                const total = coupon.TotalDiscountCode || 0;
+                                                const used = coupon.CouponCount || 0;
+                                                const pending = total - used;
+                                                return (
+                                                    <tr key={index}>
+                                                        <td>{coupon.DiscountCode || coupon.DiscountName || 'Unknown'}</td>
+                                                        <td>{total}</td>
+                                                        <td>{used}</td>
+                                                        <td>{pending}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                            <tr className="total-row">
+                                                <td><strong>Total</strong></td>
+                                                <td>
+                                                    <strong>
+                                                        {categoryData.couponCodes.reduce((sum, coupon) =>
+                                                            sum + (coupon.TotalDiscountCode || 0), 0
+                                                        )}
+                                                    </strong>
+                                                </td>
+                                                <td>
+                                                    <strong>
+                                                        {categoryData.couponCodes.reduce((sum, coupon) =>
+                                                            sum + (coupon.CouponCount || 0), 0
+                                                        )}
+                                                    </strong>
+                                                </td>
+                                                <td>
+                                                    <strong>
+                                                        {categoryData.couponCodes.reduce((sum, coupon) => {
+                                                            const total = coupon.TotalDiscountCode || 0;
+                                                            const used = coupon.CouponCount || 0;
+                                                            return sum + (total - used);
+                                                        }, 0)}
+                                                    </strong>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <div className="no-data-placeholder">
+                                        <img src="https://cdn-icons-png.flaticon.com/512/4076/4076478.png" alt="No Data" />
+                                        <p>No Data Found</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -743,9 +966,18 @@ export default function EventAnalytics() {
                         <div className="col-lg-6">
                             <div className="chart-card">
                                 <h3 className="chart-title">Gender Wise</h3>
-                                <div className="no-data-placeholder">
-                                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076478.png" alt="No Data" />
-                                    <p>No Data Found</p>
+                                <div className="chart-container">
+                                    {(categoryData.maleCount > 0 || categoryData.femaleCount > 0 || categoryData.otherCount > 0) ? (
+                                        <HighchartsReact
+                                            highcharts={Highcharts}
+                                            options={genderChartOptions}
+                                        />
+                                    ) : (
+                                        <div className="no-data-placeholder">
+                                            <img src="https://cdn-icons-png.flaticon.com/512/4076/4076478.png" alt="No Data" />
+                                            <p>No Data Found</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

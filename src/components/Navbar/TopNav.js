@@ -338,21 +338,113 @@ export default function TopNav() {
     }
   };
 
-  // Handle delete my location
-  const handleDeleteLocation = async () => {
-    // Clear all location data from localStorage
-    localStorage.removeItem("selectedCityId");
-    localStorage.removeItem("selectedCityName");
-    localStorage.removeItem("selectedCitySlug");
-    localStorage.removeItem("selectedStateId");
-    localStorage.removeItem("selectedCountryId");
-    localStorage.removeItem("detectedCity");
-    localStorage.removeItem("detectedCitySlug");
+  // Handle detect my location using Geolocation API
+  const handleDetectLocation = async () => {
+    // Check if Geolocation API is supported
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser. Using IP-based location instead.");
+      await handleIPBasedLocation();
+      return;
+    }
 
-    // Close the overlay
-    setShowLocationOverlay(false);
+    // Request location permission and get coordinates
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        console.log("Detected coordinates:", latitude, longitude);
 
-    // Detect current location via IP or navigate to default
+        try {
+          // Use reverse geocoding to get city name from coordinates
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
+            {
+              headers: {
+                'User-Agent': 'iRaces-Website/1.0'
+              }
+            }
+          );
+          const data = await response.json();
+
+          const detectedCityName =
+            data.address?.city ||
+            data.address?.town ||
+            data.address?.village ||
+            data.address?.state ||
+            "India";
+
+          const detectedCitySlug = detectedCityName
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^\w-]/g, "");
+
+          // Store detected city
+          localStorage.setItem("detectedCity", detectedCityName);
+          localStorage.setItem("detectedCitySlug", detectedCitySlug);
+
+          // Clear previous selections
+          localStorage.removeItem("selectedCityId");
+          localStorage.removeItem("selectedCityName");
+          localStorage.removeItem("selectedCitySlug");
+          localStorage.removeItem("selectedStateId");
+          localStorage.removeItem("selectedCountryId");
+
+          // Close the overlay
+          setShowLocationOverlay(false);
+
+          // Dispatch event to update homepage
+          window.dispatchEvent(
+            new CustomEvent("locationDetected", {
+              detail: {
+                cityName: detectedCityName,
+                citySlug: detectedCitySlug,
+                latitude,
+                longitude
+              },
+            })
+          );
+
+          // Navigate to detected location
+          const currentPath = window.location.pathname;
+          if (currentPath === "/" || currentPath.startsWith("/in/")) {
+            navigate(`/in/${detectedCitySlug}`);
+          }
+        } catch (error) {
+          console.error("Error reverse geocoding:", error);
+          // Fallback to IP-based location
+          await handleIPBasedLocation();
+        }
+      },
+      async (error) => {
+        console.error("Geolocation error:", error);
+
+        // Handle different error cases
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            alert("Location permission denied. Using IP-based location instead.");
+            break;
+          case error.POSITION_UNAVAILABLE:
+            alert("Location information unavailable. Using IP-based location instead.");
+            break;
+          case error.TIMEOUT:
+            alert("Location request timed out. Using IP-based location instead.");
+            break;
+          default:
+            alert("An unknown error occurred. Using IP-based location instead.");
+        }
+
+        // Fallback to IP-based location
+        await handleIPBasedLocation();
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  };
+
+  // Fallback: IP-based location detection
+  const handleIPBasedLocation = async () => {
     try {
       const response = await fetch("https://ipapi.co/json/");
       const data = await response.json();
@@ -366,9 +458,19 @@ export default function TopNav() {
       localStorage.setItem("detectedCity", detectedCityName);
       localStorage.setItem("detectedCitySlug", detectedCitySlug);
 
+      // Clear previous selections
+      localStorage.removeItem("selectedCityId");
+      localStorage.removeItem("selectedCityName");
+      localStorage.removeItem("selectedCitySlug");
+      localStorage.removeItem("selectedStateId");
+      localStorage.removeItem("selectedCountryId");
+
+      // Close the overlay
+      setShowLocationOverlay(false);
+
       // Dispatch event to update homepage
       window.dispatchEvent(
-        new CustomEvent("locationDeleted", {
+        new CustomEvent("locationDetected", {
           detail: { cityName: detectedCityName, citySlug: detectedCitySlug },
         })
       );
@@ -379,10 +481,10 @@ export default function TopNav() {
         navigate(`/in/${detectedCitySlug}`);
       }
     } catch (error) {
-      console.error("Error detecting location:", error);
+      console.error("Error detecting location via IP:", error);
       // Fallback to default location
       window.dispatchEvent(
-        new CustomEvent("locationDeleted", {
+        new CustomEvent("locationDetected", {
           detail: { cityName: "India", citySlug: "india" },
         })
       );
@@ -393,6 +495,23 @@ export default function TopNav() {
       }
     }
   };
+
+  // Auto-detect location on component mount (for mobile devices)
+  useEffect(() => {
+    const hasDetectedLocation = localStorage.getItem("detectedCity");
+    const hasSelectedLocation = localStorage.getItem("selectedCityId") || localStorage.getItem("selectedStateId");
+
+    // Only auto-detect if no location has been set before
+    if (!hasDetectedLocation && !hasSelectedLocation) {
+      // Check if it's a mobile device
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile && navigator.geolocation) {
+        // Auto-request location permission on mobile
+        handleDetectLocation();
+      }
+    }
+  }, []); // Run only once on mount
 
   return (
     <header className="topbar">
@@ -605,7 +724,7 @@ export default function TopNav() {
                   </button> */}
                   <button
                     className="delete-location-btn-top"
-                    onClick={handleDeleteLocation}
+                    onClick={handleDetectLocation}
                   >
                     <i className="fas fa-crosshairs"></i>
                     <span>Detect my location</span>
