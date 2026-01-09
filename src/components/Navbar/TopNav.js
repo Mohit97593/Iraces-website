@@ -351,14 +351,26 @@ export default function TopNav() {
               }
             }
           );
+
+          if (!response.ok) {
+            throw new Error('Reverse geocoding failed');
+          }
+
           const data = await response.json();
 
-          const detectedCityName =
-            data.address?.city ||
-            data.address?.town ||
-            data.address?.village ||
-            data.address?.state ||
-            "India";
+          // Try to get city name from various address fields
+          let detectedCityName =
+            data?.address?.city ||
+            data?.address?.town ||
+            data?.address?.village ||
+            data?.address?.state ||
+            data?.address?.county ||
+            "";
+
+          // If no valid city name found or it's empty, use "India" as fallback
+          if (!detectedCityName || detectedCityName.trim() === "") {
+            detectedCityName = "India";
+          }
 
           const detectedCitySlug = detectedCityName
             .toLowerCase()
@@ -435,8 +447,21 @@ export default function TopNav() {
   const handleIPBasedLocation = async () => {
     try {
       const response = await fetch("https://ipapi.co/json/");
+
+      if (!response.ok) {
+        throw new Error('IP-based location API failed');
+      }
+
       const data = await response.json();
-      const detectedCityName = data.city || "India";
+
+      // Get city name from IP data, validate it's not empty
+      let detectedCityName = data?.city || "";
+
+      // If no valid city name found or it's empty, use "India" as fallback
+      if (!detectedCityName || detectedCityName.trim() === "") {
+        detectedCityName = "India";
+      }
+
       const detectedCitySlug = detectedCityName
         .toLowerCase()
         .replace(/\s+/g, "-")
@@ -470,7 +495,20 @@ export default function TopNav() {
       }
     } catch (error) {
       console.error("Error detecting location via IP:", error);
-      // Fallback to default location
+      // Fallback to default location "India"
+      localStorage.setItem("detectedCity", "India");
+      localStorage.setItem("detectedCitySlug", "india");
+      
+      // Clear previous selections
+      localStorage.removeItem("selectedCityId");
+      localStorage.removeItem("selectedCityName");
+      localStorage.removeItem("selectedCitySlug");
+      localStorage.removeItem("selectedStateId");
+      localStorage.removeItem("selectedCountryId");
+      
+      // Close the overlay
+      setShowLocationOverlay(false);
+      
       window.dispatchEvent(
         new CustomEvent("locationDetected", {
           detail: { cityName: "India", citySlug: "india" },
