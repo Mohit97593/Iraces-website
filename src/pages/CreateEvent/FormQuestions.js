@@ -543,7 +543,7 @@ const FormQuestions = ({ onBack, onNext }) => {
     }
   };
 
-  const handleDrop = (e, targetGroupName, targetIndex) => {
+  const handleDrop = async (e, targetGroupName, targetIndex) => {
     e.preventDefault();
 
     if (!draggedItem) {
@@ -564,43 +564,94 @@ const FormQuestions = ({ onBack, onNext }) => {
 
     console.log('Dropping:', { sourceIndex, targetIndex });
 
-    // Reorder questions in the flat list
-    setQuestions((prevQuestions) => {
-      console.log('Previous questions state:', prevQuestions);
+    // Get the current questions list BEFORE updating state
+    let currentList = [];
+    if (Array.isArray(questions)) {
+      currentList = [...questions];
+    } else if (typeof questions === 'object' && questions !== null) {
+      const sortedKeys = Object.keys(questions).sort();
+      sortedKeys.forEach((key) => {
+        const v = questions[key];
+        if (Array.isArray(v)) currentList.push(...v);
+      });
+    }
 
-      // Handle different question state structures
-      if (!prevQuestions) return prevQuestions;
+    if (currentList.length === 0) {
+      console.log('No questions to reorder');
+      setDraggedItem(null);
+      setDraggedOverIndex(null);
+      setDraggedGroup(null);
+      return;
+    }
 
-      // Get the flattened list to work with
-      let flatList = [];
-      if (Array.isArray(prevQuestions)) {
-        flatList = [...prevQuestions];
-      } else if (typeof prevQuestions === 'object') {
-        // Flatten the grouped structure
-        // IMPORTANT: Use same sorting as getRenderList to ensure indices match
-        const sortedKeys = Object.keys(prevQuestions).sort();
-        sortedKeys.forEach((key) => {
-          const v = prevQuestions[key];
-          if (Array.isArray(v)) flatList.push(...v);
-        });
-      }
+    // Perform the reorder operation on the current list
+    const [movedQuestion] = currentList.splice(sourceIndex, 1);
+    currentList.splice(targetIndex, 0, movedQuestion);
 
-      if (flatList.length === 0) return prevQuestions;
+    console.log('New list after reorder:', currentList);
 
-      // Reorder the flat list
-      const [movedQuestion] = flatList.splice(sourceIndex, 1);
-      flatList.splice(targetIndex, 0, movedQuestion);
-
-      console.log('New list after reorder:', flatList);
-
-      // IMPORTANT: Return as flat array to preserve custom order
-      // Don't regroup by form_name as that would reset the order
-      return flatList;
-    });
+    // Update the UI immediately with the reordered list
+    setQuestions(currentList);
 
     setDraggedItem(null);
     setDraggedOverIndex(null);
     setDraggedGroup(null);
+
+    // Call the sorting API to persist the new order
+    try {
+      const eventId = sessionStorage.getItem("event_id") || localStorage.getItem("event_id") || "";
+
+      if (!eventId) {
+        console.error("No event_id found");
+        alert("Event ID not found. Cannot save sort order.");
+        return;
+      }
+
+      // Prepare the payload for the API using the reordered list
+      const event_form_question_array = currentList.map((q) => ({
+        id: q.id || "",
+        event_id: q.event_id || eventId,
+        general_form_id: q.general_form_id || q.general_form || q.id || "",
+        question_label: q.question_label || q.label || q.display_label_name || "",
+        question_form_type: q.question_form_type || q.form_type || "",
+        question_form_name: q.question_form_name || q.form_name || "",
+        is_manadatory: q.is_manadatory || q.is_mandatory || q.mandatory || "0",
+        question_form_option: q.question_form_option || q.form_option || "",
+        is_compulsory: q.is_compulsory || "0",
+        is_subquestion: q.is_subquestion || "0",
+        sort_order: q.sort_order || "0",
+        child_question_ids: q.child_question_ids || "",
+        form_name: q.form_name || "",
+        form_id: q.form_id || "",
+        show_on_ticket_pdf: q.show_on_ticket_pdf || "0",
+        question_status: q.question_status || "true",
+        common_index: q.common_index || "",
+        new_form_name: q.new_form_name || "Custom Form"
+      }));
+
+      const payload = {
+        event_id: eventId,
+        event_form_question_array: event_form_question_array
+      };
+
+      console.log("Calling sorting API with payload:", payload);
+      console.log("Number of questions in payload:", event_form_question_array.length);
+
+      const response = await authAPI.eventFormQuestionSorting(payload);
+      console.log("Sorting API response:", response);
+
+      if (response && (response.success === 200 || response.message)) {
+        console.log("Sort order updated successfully");
+        // Refresh questions to get the updated sort order from server
+        await fetchQuestions();
+      } else {
+        console.error("Failed to update sort order:", response);
+        alert(response?.message || "Failed to update sort order");
+      }
+    } catch (error) {
+      console.error("Error calling sorting API:", error);
+      alert("Failed to update sort order. See console for details.");
+    }
   };
 
   const handleDragEnd = (e) => {

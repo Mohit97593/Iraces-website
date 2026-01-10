@@ -1073,7 +1073,8 @@ export default function ParticipantDetails() {
       label: sq.question_label,
       parent_id: sq.parent_question_id,
       is_subquestion: sq.is_subquestion,
-      child_question_ids: sq.child_question_ids
+      child_question_ids: sq.child_question_ids,
+      question_type: sq.question_type  // NEW: Log question_type field
     })));
 
 
@@ -1187,12 +1188,30 @@ export default function ParticipantDetails() {
             return splitLabels.includes(value);
           });
 
-          if (selectedOption && selectedOption.child_question_id) {
-            // Check if this subquestion's general_form_id matches the child_question_id
-            const matches = String(selectedOption.child_question_id) === String(subQuestion.general_form_id);
+          if (selectedOption) {
+            // Check option-level child_question_id
+            // Support comma-separated child_question_ids for multiple subquestions per option
+            if (selectedOption.child_question_id) {
+              const childIds = String(selectedOption.child_question_id).split(',').map(id => id.trim());
+              const matches = childIds.some(childId => String(childId) === String(subQuestion.general_form_id));
 
-            if (matches) {
-              return true;
+              if (matches) {
+                console.log('✅ Match found via option child_question_id:', {
+                  optionLabel: selectedOption.label || selectedOption.name,
+                  childQuestionIds: selectedOption.child_question_id,
+                  subQuestionId: subQuestion.general_form_id,
+                  subQuestionLabel: subQuestion.question_label
+                });
+                return true;
+              }
+            }
+
+            // Also check question_type if available (backward compatibility)
+            if (selectedOption.id && subQuestion.question_type) {
+              if (String(subQuestion.question_type) === String(selectedOption.id)) {
+                console.log('✅ Match found via question_type:', subQuestion.question_type, '=', selectedOption.id);
+                return true;
+              }
             }
           }
         }
@@ -1410,6 +1429,78 @@ export default function ParticipantDetails() {
                   <label>
                     {question.question_label}
                     {isRequired && <span style={{ color: 'red' }}>*</span>}
+                    {/* Hint icon - show if question_hint exists */}
+                    {question.question_hint && question.question_hint.trim() !== '' && (
+                      <span
+                        style={{
+                          marginLeft: '8px',
+                          cursor: 'help',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '18px',
+                          height: '18px',
+                          borderRadius: '50%',
+                          border: '1.5px solid #666',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          color: '#666',
+                          position: 'relative'
+                        }}
+                        title={question.hint_type === 1 || !question.hint_type ? question.question_hint : undefined}
+                        onMouseEnter={(e) => {
+                          if (question.hint_type === 2 || question.hint_type === '2') {
+                            // Show image tooltip
+                            const tooltip = e.currentTarget.querySelector('.image-tooltip');
+                            if (tooltip) tooltip.style.display = 'block';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (question.hint_type === 2 || question.hint_type === '2') {
+                            // Hide image tooltip
+                            const tooltip = e.currentTarget.querySelector('.image-tooltip');
+                            if (tooltip) tooltip.style.display = 'none';
+                          }
+                        }}
+                      >
+                        i
+                        {/* Image tooltip for hint_type 2 */}
+                        {(question.hint_type === 2 || question.hint_type === '2') && (
+                          <div
+                            className="image-tooltip"
+                            style={{
+                              display: 'none',
+                              position: 'absolute',
+                              bottom: '100%',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              marginBottom: '8px',
+                              padding: '8px',
+                              backgroundColor: '#fff',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                              zIndex: 1000,
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            <img
+                              src={question.hint_image || question.question_hint}
+                              alt="Hint"
+                              style={{
+                                maxWidth: '300px',
+                                maxHeight: '200px',
+                                display: 'block'
+                              }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.parentElement.innerHTML = '<div style="padding: 8px; color: #666;">Image not available</div>';
+                              }}
+                            />
+                          </div>
+                        )}
+                      </span>
+                    )}
                     {minLength && maxLength && (
                       <small style={{ color: '#666', fontSize: '11px', marginLeft: '8px' }}>
                         ({minLength}-{maxLength} characters)
@@ -1589,6 +1680,13 @@ export default function ParticipantDetails() {
                   <label>
                     {question.question_label}
                     {isRequired && <span style={{ color: 'red' }}>*</span>}
+                    {/* Hint icon */}
+                    {question.question_hint && question.question_hint.trim() !== '' && (
+                      <span style={{ marginLeft: '8px', cursor: 'help', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', border: '1.5px solid #666', fontSize: '12px', fontWeight: 'bold', color: '#666', position: 'relative' }} title={question.hint_type === 1 || !question.hint_type ? question.question_hint : undefined} onMouseEnter={(e) => { if (question.hint_type === 2 || question.hint_type === '2') { const tooltip = e.currentTarget.querySelector('.image-tooltip'); if (tooltip) tooltip.style.display = 'block'; } }} onMouseLeave={(e) => { if (question.hint_type === 2 || question.hint_type === '2') { const tooltip = e.currentTarget.querySelector('.image-tooltip'); if (tooltip) tooltip.style.display = 'none'; } }}>
+                        i
+                        {(question.hint_type === 2 || question.hint_type === '2') && (<div className="image-tooltip" style={{ display: 'none', position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: '8px', padding: '8px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 1000, whiteSpace: 'nowrap' }}><img src={question.hint_image || question.question_hint} alt="Hint" style={{ maxWidth: '300px', maxHeight: '200px', display: 'block' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div style="padding: 8px; color: #666;">Image not available</div>'; }} /></div>)}
+                      </span>
+                    )}
                   </label>
                   <div className="gender-options">
                     {processedOptions.map((opt, idx) => (
@@ -1647,6 +1745,13 @@ export default function ParticipantDetails() {
                   <label>
                     {question.question_label}
                     {isRequired && <span style={{ color: 'red' }}>*</span>}
+                    {/* Hint icon */}
+                    {question.question_hint && question.question_hint.trim() !== '' && (
+                      <span style={{ marginLeft: '8px', cursor: 'help', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', border: '1.5px solid #666', fontSize: '12px', fontWeight: 'bold', color: '#666', position: 'relative' }} title={question.hint_type === 1 || !question.hint_type ? question.question_hint : undefined} onMouseEnter={(e) => { if (question.hint_type === 2 || question.hint_type === '2') { const tooltip = e.currentTarget.querySelector('.image-tooltip'); if (tooltip) tooltip.style.display = 'block'; } }} onMouseLeave={(e) => { if (question.hint_type === 2 || question.hint_type === '2') { const tooltip = e.currentTarget.querySelector('.image-tooltip'); if (tooltip) tooltip.style.display = 'none'; } }}>
+                        i
+                        {(question.hint_type === 2 || question.hint_type === '2') && (<div className="image-tooltip" style={{ display: 'none', position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: '8px', padding: '8px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 1000, whiteSpace: 'nowrap' }}><img src={question.hint_image || question.question_hint} alt="Hint" style={{ maxWidth: '300px', maxHeight: '200px', display: 'block' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div style="padding: 8px; color: #666;">Image not available</div>'; }} /></div>)}
+                      </span>
+                    )}
                   </label>
                   <div>
                     {processedOptions.map((opt, idx) => (
@@ -1734,6 +1839,28 @@ export default function ParticipantDetails() {
                   <label>
                     {question.question_label}
                     {isRequired && <span style={{ color: 'red' }}>*</span>}
+                    {/* Hint icon */}
+                    {question.question_hint && question.question_hint.trim() !== '' && (
+                      <span
+                        style={{
+                          marginLeft: '8px',
+                          cursor: 'help',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '18px',
+                          height: '18px',
+                          borderRadius: '50%',
+                          border: '1.5px solid #666',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          color: '#666'
+                        }}
+                        title={question.question_hint}
+                      >
+                        i
+                      </span>
+                    )}
                   </label>
                   <select
                     name={fieldName}
@@ -1860,6 +1987,28 @@ export default function ParticipantDetails() {
                   <label>
                     {question.question_label}
                     {isRequired && <span style={{ color: 'red' }}>*</span>}
+                    {/* Hint icon */}
+                    {question.question_hint && question.question_hint.trim() !== '' && (
+                      <span
+                        style={{
+                          marginLeft: '8px',
+                          cursor: 'help',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '18px',
+                          height: '18px',
+                          borderRadius: '50%',
+                          border: '1.5px solid #666',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          color: '#666'
+                        }}
+                        title={question.question_hint}
+                      >
+                        i
+                      </span>
+                    )}
                   </label>
                   <input
                     type="file"
@@ -2101,10 +2250,48 @@ export default function ParticipantDetails() {
 
       // Sub Total = Base + Platform Fee + Total Taxes
       return sum + baseAmount + totalPlatformFee + totalTaxes;
-    }, 0) - couponDiscount; // Subtract coupon discount from subtotal
+    }, 0);
+
+    // Calculate coupon discount from appliedCoupon state (same logic as UI)
+    let couponDiscountAmount = 0;
+    if (appliedCoupon) {
+      // Calculate base price (without fees and taxes)
+      const basePrice = selectedTickets.reduce((sum, ticket) => {
+        let effectivePrice = parseFloat(ticket.ticket_price);
+
+        if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
+          const discountValue = parseFloat(ticket.discount_value || 0);
+          if (ticket.discount === 1) {
+            effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+          } else {
+            effectivePrice = effectivePrice - discountValue;
+          }
+        }
+
+        const baseAmount = effectivePrice * parseInt(ticket.quantity);
+        return sum + baseAmount;
+      }, 0);
+
+      // discount_type: 1 = fixed amount, 2 = percentage
+      if (appliedCoupon.discount_type === 2) {
+        // Percentage discount on base price
+        const discountPercent = parseFloat(appliedCoupon.discount_value || 0);
+        couponDiscountAmount = (basePrice * discountPercent) / 100;
+      } else if (appliedCoupon.discount_type === 1) {
+        // Fixed amount discount
+        couponDiscountAmount = parseFloat(appliedCoupon.discount_value || 0);
+      }
+      // Ensure discount doesn't exceed base price
+      couponDiscountAmount = Math.min(couponDiscountAmount, basePrice);
+    }
+
+    // Final amount after discount
+    const finalAmount = subTotal - couponDiscountAmount;
 
     console.log("✅ Validation passed, proceeding to payment");
-    console.log("💰 Payment amount:", subTotal.toFixed(2));
+    console.log("💰 Subtotal (before discount):", subTotal.toFixed(2));
+    console.log("🎟️ Coupon discount:", couponDiscountAmount.toFixed(2));
+    console.log("💵 Final payment amount:", finalAmount.toFixed(2));
 
     // Show payment modal immediately
     setShowPaymentModal(true);
@@ -2119,11 +2306,11 @@ export default function ParticipantDetails() {
         const bookingPayload = buildBookingPayload();
 
         // Determine ticket type
-        const ticketType = subTotal > 0 ? 'paid' : 'free';
+        const ticketType = finalAmount > 0 ? 'paid' : 'free';
 
         const apiPayload = {
           event_id: eventId,
-          amount: subTotal.toFixed(2),
+          amount: finalAmount.toFixed(2),
           ticket_type: ticketType,
           booking_tickets_array: JSON.stringify(bookingPayload)
         };
@@ -2148,11 +2335,11 @@ export default function ParticipantDetails() {
         const bookingPayload = buildBookingPayload();
 
         // Determine ticket type
-        const ticketType = subTotal > 0 ? 'paid' : 'free';
+        const ticketType = finalAmount > 0 ? 'paid' : 'free';
 
         const apiPayload = {
           event_id: eventId,
-          amount: subTotal.toFixed(2),
+          amount: finalAmount.toFixed(2),
           ticket_type: ticketType,
           booking_tickets_array: JSON.stringify(bookingPayload)
         };

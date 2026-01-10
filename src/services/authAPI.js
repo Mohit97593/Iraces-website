@@ -198,6 +198,28 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+  // Event Form Question Sorting API
+  eventFormQuestionSorting: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+
+      // Add event_form_question_array as nested array structure
+      if (payload.event_form_question_array && Array.isArray(payload.event_form_question_array)) {
+        payload.event_form_question_array.forEach((question, index) => {
+          Object.keys(question).forEach((key) => {
+            formData.append(`event_form_question_array[${index}][${key}]`, question[key] || "");
+          });
+        });
+      }
+
+      const response = await api.post("/EventFormQuestionsSorting", formData);
+      return response.data;
+    } catch (error) {
+      console.error("eventFormQuestionSorting API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
   // Add custom form question API
   addCustomFormQuestions: async (formData) => {
     try {

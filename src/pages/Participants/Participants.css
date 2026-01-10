@@ -167,6 +167,26 @@
     background-color: #5568d3;
 }
 
+.clear-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: auto;
+    transition: background-color 0.3s;
+}
+
+.clear-btn:hover {
+    background-color: #c82333;
+}
+
 /* Table Container */
 .table-container {
     background: white;

@@ -583,12 +583,8 @@ const GeneralFormQuestions = ({
     if (!selectedQuestion || !Array.isArray(selectedQuestion.question_form_option)) {
       return [];
     }
-    const selectedIds = subQuestions
-      .map((sq, idx) => idx !== currentIndex ? sq.selectedOptionId : null)
-      .filter(id => id && id !== "");
-    return selectedQuestion.question_form_option.filter(
-      opt => !selectedIds.includes(String(opt.id))
-    );
+    // Return all options without filtering - allow duplicate selections
+    return selectedQuestion.question_form_option;
   };
 
 

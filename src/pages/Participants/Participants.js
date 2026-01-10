@@ -140,6 +140,62 @@ export default function Participants() {
         fetchParticipants();
     };
 
+    const handleClearFilters = async () => {
+        try {
+            setLoading(true);
+
+            // Reset all filters to empty values
+            setFilters({
+                participantName: "",
+                transactionStatus: "",
+                registrationID: "",
+                mobileNumber: "",
+                email: "",
+                category: "",
+                dateFrom: "",
+                dateTo: "",
+                transactionID: ""
+            });
+
+            // Reset pagination to page 1
+            setPagination({ ...pagination, page: 1 });
+
+            // Call API directly with empty filters (don't wait for state update)
+            console.log("🧹 Clearing filters and fetching all participants...");
+
+            const payload = {
+                event_id: eventId,
+                page: 1,
+                limit: pagination.limit,
+                coupon_used_flag: 0
+            };
+
+            console.log("📤 Clear filters payload:", payload);
+
+            const response = await authAPI.getNetSales(payload);
+            console.log("✅ getNetSales API Response:", response);
+
+            if (response && response.data) {
+                setParticipantData(response.data.AttendeeData || []);
+                setTotalRecords(response.data.TotalRecord || 0);
+
+                // Update ticket categories if available
+                if (response.data.TicketData && Array.isArray(response.data.TicketData)) {
+                    setTicketCategories(response.data.TicketData);
+                }
+            }
+        } catch (error) {
+            console.error("❌ Error clearing filters:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Check if any filter is applied
+    const hasActiveFilters = () => {
+        return Object.values(filters).some(value => value !== "");
+    };
+
     const handleBack = () => {
         navigate(`/event-analytics/${eventId}`);
     };
@@ -645,6 +701,13 @@ export default function Participants() {
                                 <i className="fas fa-search"></i> Search
                             </button>
                         </div>
+                        {hasActiveFilters() && (
+                            <div className="filter-group">
+                                <button className="clear-btn" onClick={handleClearFilters}>
+                                    <i className="fas fa-times"></i> Clear
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 

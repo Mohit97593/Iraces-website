@@ -47,6 +47,7 @@
   inset: 0;
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   transition: background-image 0.8s ease-in-out;
   z-index: 1;
 }
@@ -460,8 +461,31 @@
 }
 
 @media (max-width: 768px) {
+
+  /* Remove margins and border-radius on mobile for full-width banner */
+  .hero-viewport {
+    margin: 0;
+    border-radius: 0;
+    max-width: 100%;
+  }
+
   .hero-slide {
     height: 70vh;
+    border-radius: 0;
+  }
+
+  /* Mobile banner fit adjustment - show full image */
+  .hero-bg {
+    background-size: 100% 100%;
+    background-position: center center;
+  }
+
+  /* Remove container padding on mobile */
+  .hero-viewport>.container,
+  .hero-viewport>.container-fluid,
+  .hero-viewport .container {
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .hero-overlay .row {
@@ -577,8 +601,31 @@
 }
 
 @media (max-width: 576px) {
+
+  /* Full-width banner on small mobile */
+  .hero-viewport {
+    margin: 0;
+    border-radius: 0;
+    max-width: 100%;
+  }
+
   .hero-slide {
     height: 60vh;
+    border-radius: 0;
+  }
+
+  /* Small mobile banner fit adjustment - show full image */
+  .hero-bg {
+    background-size: 100% 100%;
+    background-position: center center;
+  }
+
+  /* Remove container padding */
+  .hero-viewport>.container,
+  .hero-viewport>.container-fluid,
+  .hero-viewport .container {
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .hero-title {
@@ -647,14 +694,31 @@
 
 /* Additional mobile-specific styles */
 @media (max-width: 480px) {
+
+  /* Full-width banner on extra small mobile */
   .hero-viewport {
-    margin: 0 5px;
-    border-radius: 15px;
+    margin: 0;
+    border-radius: 0;
+    max-width: 100%;
   }
 
   .hero-slide {
-    height: 90vh;
-    border-radius: 15px;
+    height: 50vh;
+    border-radius: 0;
+  }
+
+  /* Extra small mobile banner fit adjustment - show full image */
+  .hero-bg {
+    background-size: 100% 100%;
+    background-position: center center;
+  }
+
+  /* Remove container padding */
+  .hero-viewport>.container,
+  .hero-viewport>.container-fluid,
+  .hero-viewport .container {
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .hero-title {
@@ -687,6 +751,12 @@
 @media (max-width: 375px) {
   .hero-slide {
     height: 50vh;
+  }
+
+  /* Tiny mobile banner fit adjustment - show full image */
+  .hero-bg {
+    background-size: 100% 100%;
+    background-position: center center;
   }
 
   .hero-title {
