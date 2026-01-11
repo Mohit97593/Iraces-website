@@ -354,6 +354,30 @@ export default function MyEvents() {
                             ></i>
                             {event.city_name || event.city || "City"}
                           </span>
+                          {/* Early Bird Badge */}
+                          {(event.early_bird === 1 || event.early_bird === "1") && (
+                            <span
+                              className="event-card-badge"
+                              style={{
+                                position: 'absolute',
+                                top: '184px',
+                                right: '0px',
+                                backgroundColor: '#D4A017',
+                                color: '#fff',
+                                padding: '4px 19px',
+                                left: '8px',
+                                borderRadius: '20px',
+                                fontSize: '13px',
+                                fontWeight: '600',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                                zIndex: 2,
+                                width: "100px"
+
+                              }}
+                            >
+                              Early Bird
+                            </span>
+                          )}
                           {/* Delete button */}
                           <div
                             style={{

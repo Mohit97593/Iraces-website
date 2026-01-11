@@ -41,6 +41,16 @@ api.interceptors.response.use(
       }
 
       // Token expired या invalid
+      // Save current URL to redirect back after login
+      const fullPath = window.location.pathname + window.location.search;
+      console.log("🔐 401 Error - Current path:", fullPath);
+      if (fullPath !== "/login" && fullPath !== "/") {
+        localStorage.setItem("redirectAfterLogin", fullPath);
+        console.log("💾 Saved redirect URL:", fullPath);
+      } else {
+        console.log("⏭️ Skipping redirect save (login or home page)");
+      }
+
       localStorage.removeItem("token");
       localStorage.removeItem("userData");
       window.location.href = "/login";
@@ -70,6 +80,16 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       console.error("allEventDetails API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Get All Events (Simple - only id and name) for Team Member Assignment
+  getEvent: async () => {
+    try {
+      const response = await api.post("/get_events");
+      return response.data;
+    } catch (error) {
+      console.error("getEvent API error:", error);
       throw error.response?.data || error.message;
     }
   },
@@ -131,6 +151,19 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       console.error("addGeneralFormQuestions API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+  // Update Event Form Question API
+  updateEventFormQuestion: async (payload) => {
+    try {
+      // Convert payload to JSON format as per API documentation
+      const response = await api.post("/updateEventFormQuestion", payload, {
+        headers: { "Content-Type": "application/json" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("updateEventFormQuestion API error:", error);
       throw error.response?.data || error.message;
     }
   },
@@ -1832,6 +1865,27 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       console.error("getEventBookingTickets API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get Data Location Wise API - for trending events on homepage
+  getDataLocationWise: async (payload) => {
+    try {
+      const formData = new FormData();
+
+      // Add all location parameters as FormData
+      if (payload.city) formData.append("city", payload.city);
+      if (payload.scity) formData.append("scity", payload.scity);
+      if (payload.state) formData.append("state", payload.state);
+      if (payload.country) formData.append("country", payload.country);
+      if (payload.search_flag) formData.append("search_flag", payload.search_flag);
+      if (payload.home_flag !== undefined) formData.append("home_flag", payload.home_flag);
+
+      const response = await api.post("/get_data_location_wise", formData);
+      return response.data;
+    } catch (error) {
+      console.error("getDataLocationWise API error:", error);
       throw error.response?.data || error.message;
     }
   },

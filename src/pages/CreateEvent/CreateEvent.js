@@ -76,6 +76,7 @@ export default function CreateEvent() {
       if (!eid) {
         try {
           sessionStorage.removeItem("event_id");
+          sessionStorage.removeItem("eventName");
           sessionStorage.removeItem("eventSchedulingFormData");
           sessionStorage.removeItem("eventImagesFormData");
           sessionStorage.removeItem("event_categories");
@@ -87,6 +88,10 @@ export default function CreateEvent() {
         } catch (e) {
           // ignore
         }
+        // Clear eventName state for new event
+        setEventName("");
+        setSelectedCategories([]);
+        setStatus("draft");
       }
 
       if (eid) {
@@ -584,8 +589,12 @@ export default function CreateEvent() {
   }, [currentStep]);
 
   useEffect(() => {
-    const s = sessionStorage.getItem("eventName") || "";
-    if (s && s !== eventName) setEventName(s);
+    // Only load eventName from sessionStorage if editing an existing event
+    const editingEventId = sessionStorage.getItem("event_id");
+    if (editingEventId) {
+      const s = sessionStorage.getItem("eventName") || "";
+      if (s && s !== eventName) setEventName(s);
+    }
   }, []);
 
   const fetchData = async () => {

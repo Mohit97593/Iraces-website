@@ -412,12 +412,12 @@ const Profile = () => {
 
     setLoadingEvents(true);
     try {
-      const eventsResponse = await authAPI.getEvents();
+      const eventsResponse = await authAPI.getEvent();
       console.log("Events Response:", eventsResponse);
-      if (eventsResponse && eventsResponse.data && eventsResponse.data.events) {
+      if (eventsResponse && eventsResponse.data && eventsResponse.data.AllEvents) {
         setEvents(
-          Array.isArray(eventsResponse.data.events)
-            ? eventsResponse.data.events
+          Array.isArray(eventsResponse.data.AllEvents)
+            ? eventsResponse.data.AllEvents
             : []
         );
       } else {
@@ -611,7 +611,7 @@ const Profile = () => {
         // Load events and set checked ones
         setLoadingEvents(true);
         try {
-          const eventsResponse = await authAPI.getEvents();
+          const eventsResponse = await authAPI.getEvent();
           if (
             eventsResponse &&
             eventsResponse.data &&
@@ -4815,11 +4815,9 @@ const Profile = () => {
                 {eventSelection === "select" && (
                   <div
                     style={{
-                      maxHeight: "200px",
+                      maxHeight: "300px",
                       overflowY: "auto",
-                      border: "1px solid #ddd",
-                      borderRadius: "8px",
-                      padding: "12px",
+                      padding: "12px 0",
                     }}
                   >
                     {loadingEvents ? (
@@ -4827,36 +4825,79 @@ const Profile = () => {
                         Loading events...
                       </p>
                     ) : events.length > 0 ? (
-                      events.map((event) => (
-                        <label
-                          key={event.id}
-                          style={{
-                            display: "block",
-                            padding: "8px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            value={event.id}
-                            checked={selectedEvents.includes(event.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedEvents([
-                                  ...selectedEvents,
-                                  event.id,
-                                ]);
-                              } else {
-                                setSelectedEvents(
-                                  selectedEvents.filter((id) => id !== event.id)
-                                );
-                              }
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(3, 1fr)",
+                          gap: "16px",
+                        }}
+                      >
+                        {events.map((event) => (
+                          <label
+                            key={event.id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "12px",
+                              padding: "16px",
+                              border: selectedEvents.includes(event.id)
+                                ? "2px solid #e53935"
+                                : "1px solid #ddd",
+                              borderRadius: "12px",
+                              cursor: "pointer",
+                              backgroundColor: selectedEvents.includes(event.id)
+                                ? "#fff5f5"
+                                : "white",
+                              transition: "all 0.2s ease",
                             }}
-                            style={{ marginRight: "8px" }}
-                          />
-                          {event.event_name || event.name}
-                        </label>
-                      ))
+                          >
+                            <span
+                              style={{
+                                fontSize: "24px",
+                                flexShrink: 0,
+                              }}
+                            >
+                              🎫
+                            </span>
+                            <span
+                              style={{
+                                flex: 1,
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                color: "#333",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {event.event_name || event.name}
+                            </span>
+                            <input
+                              type="checkbox"
+                              value={event.id}
+                              checked={selectedEvents.includes(event.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedEvents([
+                                    ...selectedEvents,
+                                    event.id,
+                                  ]);
+                                } else {
+                                  setSelectedEvents(
+                                    selectedEvents.filter((id) => id !== event.id)
+                                  );
+                                }
+                              }}
+                              style={{
+                                width: "18px",
+                                height: "18px",
+                                cursor: "pointer",
+                                flexShrink: 0,
+                              }}
+                            />
+                          </label>
+                        ))}
+                      </div>
                     ) : (
                       <p style={{ textAlign: "center", color: "#999" }}>
                         No events available

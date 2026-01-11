@@ -152,9 +152,30 @@ export default function HeroCarousel() {
       } else if (cityId) {
         params.city = cityId;
         params.scity = cityId;
-        // Try to get state and country from localStorage or use defaults
-        const storedStateId = localStorage.getItem("selectedStateId");
+
+        // Try to get state and country from localStorage
+        let storedStateId = localStorage.getItem("selectedStateId");
         const storedCountryId = localStorage.getItem("selectedCountryId");
+
+        console.log("📍 City ID:", cityId);
+        console.log("📍 Stored State ID:", storedStateId);
+        console.log("📍 Stored Country ID:", storedCountryId);
+
+        // If state is not in localStorage, try to fetch it from city name
+        if (!storedStateId) {
+          const storedCityName = localStorage.getItem("selectedCityName");
+          if (storedCityName) {
+            console.log("🔍 State not found, fetching city data for:", storedCityName);
+            const fetchedCityData = await fetchCityIdByName(storedCityName);
+            if (fetchedCityData && fetchedCityData.state_id) {
+              storedStateId = fetchedCityData.state_id;
+              localStorage.setItem("selectedStateId", fetchedCityData.state_id);
+              localStorage.setItem("selectedCountryId", fetchedCityData.country_id);
+              console.log("✅ Fetched State ID:", fetchedCityData.state_id);
+            }
+          }
+        }
+
         if (storedStateId) params.state = parseInt(storedStateId);
         if (storedCountryId) params.country = parseInt(storedCountryId);
 
@@ -176,6 +197,8 @@ export default function HeroCarousel() {
         }
       }
 
+      console.log("🚀 Final API Payload:", params);
+
       const data = await authAPI.getDataLocationWise(params);
 
       if (data.status === "success" && data.data) {
@@ -184,42 +207,95 @@ export default function HeroCarousel() {
           setCityName(data.data.CityName);
         }
 
-        // Set trending events (eventData from API) - show only events from selected city
+        // Set trending events (eventData from API) - show only ACTIVE events from selected city
         if (data.data.eventData && data.data.eventData.length > 0) {
+          console.log("📊 Total events from API:", data.data.eventData.length);
+          console.log("📝 Sample event:", data.data.eventData[0]);
+
           const currentCityName =
             data.data.CityName || cityNameFromSlug || cityName;
+
+          // Filter local events (from selected city)
           const localEvents = data.data.eventData.filter(
             (event) =>
               event.city_name &&
-              event.city_name.toLowerCase() === currentCityName.toLowerCase()
+              event.city_name.toLowerCase() === currentCityName.toLowerCase() &&
+              // Only show active events (status = 1 or "active"), exclude closed events
+              (event.status === 1 || event.status === "1" || event.status === "active")
           );
-          setTrendingEvents(localEvents);
 
-          // Initialize like state for trending events
-          const initialLiked = {};
-          localEvents.forEach((ev) => {
-            initialLiked[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
+          // Sort by creation date (latest first) to show trending events
+          const sortedLocalEvents = localEvents.sort((a, b) => {
+            const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
+            const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
+            return dateB - dateA; // Descending order (newest first)
           });
-          setLikedEvents((prev) => ({ ...prev, ...initialLiked }));
 
-          // Set flag if selected city has events
-          setHasLocalEvents(localEvents.length > 0);
+          // If no local events, show all active events from other cities as suggestions
+          if (sortedLocalEvents.length === 0) {
+            console.log("🔍 No local events, showing suggestions from all cities");
+            const allActiveEvents = data.data.eventData.filter(
+              (event) =>
+                // More lenient - show all events that are NOT explicitly closed
+                event.status !== 0 &&
+                event.status !== "0" &&
+                event.status !== "closed" &&
+                event.status !== "Closed"
+            );
+
+            console.log("✅ Suggestion events found:", allActiveEvents.length);
+
+            // Sort suggestions by creation date
+            const sortedSuggestions = allActiveEvents.sort((a, b) => {
+              const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
+              const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
+              return dateB - dateA;
+            });
+
+            setTrendingEvents(sortedSuggestions);
+            setHasLocalEvents(false); // No local events, showing suggestions
+
+            // Initialize like state for suggestion events
+            const initialLiked = {};
+            sortedSuggestions.forEach((ev) => {
+              initialLiked[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
+            });
+            setLikedEvents((prev) => ({ ...prev, ...initialLiked }));
+          } else {
+            // Show local events
+            setTrendingEvents(sortedLocalEvents);
+            setHasLocalEvents(true);
+
+            // Initialize like state for trending events
+            const initialLiked = {};
+            sortedLocalEvents.forEach((ev) => {
+              initialLiked[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
+            });
+            setLikedEvents((prev) => ({ ...prev, ...initialLiked }));
+          }
         } else {
           // No events at all
           setTrendingEvents([]);
           setHasLocalEvents(false);
         }
 
-        // Set upcoming events (UpcomingEventData from API) - show all events
+        // Set upcoming events (UpcomingEventData from API) - show all events sorted by date
         if (
           data.data.UpcomingEventData &&
           data.data.UpcomingEventData.length > 0
         ) {
-          setUpcomingEvents(data.data.UpcomingEventData);
+          // Sort upcoming events by start_time (earliest first)
+          const sortedUpcomingEvents = data.data.UpcomingEventData.sort((a, b) => {
+            const dateA = a.start_time ? new Date(a.start_time * 1000) : new Date(0);
+            const dateB = b.start_time ? new Date(b.start_time * 1000) : new Date(0);
+            return dateA - dateB; // Ascending order (earliest first)
+          });
+
+          setUpcomingEvents(sortedUpcomingEvents);
 
           // Initialize like state for upcoming events
           const initialLiked = {};
-          data.data.UpcomingEventData.forEach((ev) => {
+          sortedUpcomingEvents.forEach((ev) => {
             initialLiked[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
           });
           setLikedEvents((prev) => ({ ...prev, ...initialLiked }));

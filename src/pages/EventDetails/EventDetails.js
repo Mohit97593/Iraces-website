@@ -512,7 +512,21 @@ export default function EventDetails() {
               {!registrationClosed && !registrationNotStarted && (
                 <button
                   className="btn-register"
-                  onClick={() => navigate(`/checkout/${eventId}`)}
+                  onClick={() => {
+                    // Check if user is logged in
+                    const token = localStorage.getItem("token");
+                    if (!token) {
+                      // Save current URL for redirect after login
+                      const currentPath = window.location.pathname + window.location.search;
+                      localStorage.setItem("redirectAfterLogin", currentPath);
+                      console.log("💾 Saved redirect URL before login:", currentPath);
+                      // Redirect to login
+                      navigate("/login");
+                    } else {
+                      // User is logged in, proceed to checkout
+                      navigate(`/checkout/${eventId}`);
+                    }
+                  }}
                 >
                   Register Now
                 </button>

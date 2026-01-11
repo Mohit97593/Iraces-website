@@ -238,7 +238,17 @@ export default function Login() {
         const result = await loginWithOTP(otpData);
         if (result.success) {
           console.log("OTP Login successful:", result.data);
-          navigate("/"); // Redirect to home page
+          // Check if there's a redirect URL saved before login
+          const redirectUrl = localStorage.getItem("redirectAfterLogin");
+          console.log("🔍 Checking redirect URL:", redirectUrl);
+          if (redirectUrl) {
+            localStorage.removeItem("redirectAfterLogin");
+            console.log("✅ Redirecting to:", redirectUrl);
+            navigate(redirectUrl);
+          } else {
+            console.log("🏠 No redirect URL, going to home");
+            navigate("/"); // Redirect to home page
+          }
         } else {
           setErrors({
             general: result.message || "OTP login failed. Please try again.",
@@ -265,7 +275,17 @@ export default function Login() {
           setTimeout(() => {
             const token = localStorage.getItem("token");
             if (token) {
-              navigate("/");
+              // Check if there's a redirect URL saved before login
+              const redirectUrl = localStorage.getItem("redirectAfterLogin");
+              console.log("🔍 Checking redirect URL (password login):", redirectUrl);
+              if (redirectUrl) {
+                localStorage.removeItem("redirectAfterLogin");
+                console.log("✅ Redirecting to:", redirectUrl);
+                navigate(redirectUrl);
+              } else {
+                console.log("🏠 No redirect URL, going to home");
+                navigate("/");
+              }
             } else {
               setErrors({
                 general:

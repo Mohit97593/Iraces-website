@@ -371,8 +371,17 @@ const GeneralFormQuestions = ({
       question.question_form_option || question.questionFormOption || [];
     cloned.selected_option_id =
       question.selected_option_id ?? question.selectedOptionId ?? "";
-    cloned.add_subquestions =
-      question.add_subquestions ?? question.sub_questions_added_flag ?? false;
+
+    // Check if question has sub-questions
+    const hasSubQuestions = question.sub_questions_array &&
+      Array.isArray(question.sub_questions_array) &&
+      question.sub_questions_array.length > 0;
+
+    cloned.add_subquestions = hasSubQuestions || (
+      question.add_subquestions ??
+      question.sub_questions_added_flag ??
+      false
+    );
 
     // Initialize date range fields for date inputs
     cloned.date_range_enabled =
@@ -381,6 +390,104 @@ const GeneralFormQuestions = ({
     cloned.end_date = question.end_date ?? question.endDate ?? "";
 
     setSelectedQuestion(cloned);
+
+    // Load sub-questions if they exist
+    if (hasSubQuestions) {
+      console.log("📥 Loading existing sub-questions:", question.sub_questions_array);
+
+      const loadedSubQuestions = question.sub_questions_array.map((subQ) => {
+        // Map the parent option ID from question_form_option
+        // Find which option this sub-question belongs to
+        let selectedOptionId = "";
+        if (cloned.question_form_option && Array.isArray(cloned.question_form_option)) {
+          // Check if any option has this sub-question's general_form_id as child_question_id
+          const matchingOption = cloned.question_form_option.find(opt =>
+            opt.child_question_id === String(subQ.general_form_id)
+          );
+          if (matchingOption) {
+            selectedOptionId = String(matchingOption.id);
+          } else {
+            // Fallback: use first option if no match found
+            selectedOptionId = cloned.question_form_option[0]?.id ? String(cloned.question_form_option[0].id) : "";
+          }
+        }
+
+        const loadedSubQ = {
+          selectedOptionId: selectedOptionId,
+          subQuestionTitle: subQ.question_label || "",
+          subQueHintType: subQ.hint_type ? String(subQ.hint_type) : "1",
+          subQuestionHint: subQ.question_hint || "",
+          subQuestionHintFile: null,
+          subQuestionFormType: subQ.question_form_type || "",
+          subQuestionMandatory: subQ.is_manadatory === 1 || subQ.is_manadatory === "1" ? "1" : "0",
+          childSubquestions: [],
+          options: [],
+          priceEnabled: false,
+          maxCountEnabled: false,
+          newOptionLabel: "",
+          newOptionPrice: "",
+          newOptionCount: ""
+        };
+
+        // Load options if the sub-question has them
+        if (subQ.question_form_option && Array.isArray(subQ.question_form_option)) {
+          loadedSubQ.options = subQ.question_form_option.map(opt => ({
+            label: opt.label || opt.option_name || "",
+            price: opt.price || "",
+            count: opt.count || ""
+          }));
+
+          // Check if any option has price or count
+          loadedSubQ.priceEnabled = loadedSubQ.options.some(opt => opt.price);
+          loadedSubQ.maxCountEnabled = loadedSubQ.options.some(opt => opt.count);
+        }
+
+        // Load child sub-questions (nested) if they exist
+        if (subQ.sub_questions_array && Array.isArray(subQ.sub_questions_array) && subQ.sub_questions_array.length > 0) {
+          console.log("📥 Loading child sub-questions for parent:", subQ.question_label);
+
+          loadedSubQ.childSubquestions = subQ.sub_questions_array.map((childSubQ) => {
+            const loadedChildSubQ = {
+              subQuestionTitle: childSubQ.question_label || "",
+              subQueHintType: childSubQ.hint_type ? String(childSubQ.hint_type) : "1",
+              subQuestionHint: childSubQ.question_hint || "",
+              subQuestionHintFile: null,
+              subQuestionFormType: childSubQ.question_form_type || "",
+              subQuestionMandatory: childSubQ.is_manadatory === 1 || childSubQ.is_manadatory === "1" ? "1" : "0",
+              options: [],
+              priceEnabled: false,
+              maxCountEnabled: false,
+              newOptionLabel: "",
+              newOptionPrice: "",
+              newOptionCount: ""
+            };
+
+            // Load child options if they exist
+            if (childSubQ.question_form_option && Array.isArray(childSubQ.question_form_option)) {
+              loadedChildSubQ.options = childSubQ.question_form_option.map(opt => ({
+                label: opt.label || opt.option_name || "",
+                price: opt.price || "",
+                count: opt.count || ""
+              }));
+
+              loadedChildSubQ.priceEnabled = loadedChildSubQ.options.some(opt => opt.price);
+              loadedChildSubQ.maxCountEnabled = loadedChildSubQ.options.some(opt => opt.count);
+            }
+
+            return loadedChildSubQ;
+          });
+        }
+
+        return loadedSubQ;
+      });
+
+      console.log("✅ Loaded sub-questions:", loadedSubQuestions);
+      setSubQuestions(loadedSubQuestions);
+    } else {
+      // No sub-questions, reset to empty
+      setSubQuestions([]);
+    }
+
     setShowModal(true);
     setDisplayNameError("");
   };
@@ -1109,12 +1216,69 @@ const GeneralFormQuestions = ({
       console.log("Sending addGeneralFormQuestions payload", selectedQuestion);
       console.log("📤 FormData sub_questions value:", formData.get("sub_questions"));
 
-      res = await authAPI.addGeneralFormQuestions(formData);
-      console.log("addGeneralFormQuestions response:", res);
+      // Detect if we're editing an existing question
+      const isEditMode = !!(
+        selectedQuestion.event_form_id ||
+        selectedQuestion.event_form_question_id ||
+        (selectedQuestion.id && selectedQuestion.event_id)
+      );
+
+      console.log("🔍 Operation mode:", isEditMode ? "UPDATE" : "CREATE");
+      console.log("🔍 Question identifiers:", {
+        event_form_id: selectedQuestion.event_form_id,
+        event_form_question_id: selectedQuestion.event_form_question_id,
+        id: selectedQuestion.id,
+        general_form_id: selectedQuestion.general_form_id
+      });
+
+      if (isEditMode) {
+        // UPDATE MODE: Use updateEventFormQuestion API with JSON payload
+        console.log("📝 Using UPDATE API");
+
+        const updatePayload = {
+          event_id: eventId,
+          general_form_id: selectedQuestion.general_form_id || selectedQuestion.id || "",
+          user_id: userId,
+          question_mandatory_status: (selectedQuestion.is_mandatory === "1" || selectedQuestion.is_manadatory === "1" || selectedQuestion.is_manadatory === 1) ? 1 : 0,
+          question_label: selectedQuestion.question_label || "",
+          show_on_ticket_pdf: selectedQuestion.show_on_ticket_pdf || 0,
+          apply_ticket: checkedCount,
+          ticket_selected_data: JSON.stringify(ticketPayload),
+          limit_length_check: selectedQuestion.limit_length_enabled ? "true" : "false",
+          min_length: selectedQuestion.min_length || "",
+          max_length: selectedQuestion.max_length || "",
+          field_mapping: selectedQuestion.field_mapping_original || selectedQuestion.field_mapping || "",
+          main_question_hint: selectedQuestion.question_hint || selectedQuestion.main_question_hint || "",
+          hint_type: hintTypeValue === "2" ? 2 : 1,
+          date_range: selectedQuestion.date_range_enabled ? 1 : 0,
+          range_start_date: selectedQuestion.start_date || "",
+          range_end_date: selectedQuestion.end_date || "",
+          specific_domain: selectedQuestion.email_validation_enabled ? 1 : 0,
+          domain_name: selectedQuestion.email_domain || "",
+        };
+
+        // Add sub_questions as JSON string if subquestions exist
+        if (selectedQuestion.add_subquestions && subQuestionsArray && subQuestionsArray.length > 0) {
+          updatePayload.sub_questions = JSON.stringify(subQuestionsArray);
+        } else if (!selectedQuestion.add_subquestions) {
+          // If subquestions toggle is OFF, send empty array to remove all subquestions
+          updatePayload.sub_questions = "[]";
+        }
+
+        console.log("📤 UPDATE payload:", JSON.stringify(updatePayload, null, 2));
+
+        res = await authAPI.updateEventFormQuestion(updatePayload);
+        console.log("✅ updateEventFormQuestion response:", res);
+      } else {
+        // CREATE MODE: Use addGeneralFormQuestions API with FormData
+        console.log("➕ Using CREATE API");
+        res = await authAPI.addGeneralFormQuestions(formData);
+        console.log("✅ addGeneralFormQuestions response:", res);
+      }
     } catch (err) {
-      console.error("Error on addGeneralFormQuestions:", err);
+      console.error("Error on save question:", err);
       // capture error info into res for downstream messaging
-      res = err || { message: "Add API failed" };
+      res = err || { message: "Save API failed" };
     }
 
     // Always attempt to refresh eventFormQuestions after the add call completes
@@ -2325,30 +2489,28 @@ const GeneralFormQuestions = ({
                         ))}
 
                         {/* Add More Subquestion Button - shown as + icon */}
-                        {subQuestions.length < (selectedQuestion.question_form_option?.length || 0) && (
-                          <button
-                            type="button"
-                            onClick={addSubQuestion}
-                            style={{
-                              background: "#fff",
-                              border: "2px solid #da251c",
-                              color: "#da251c",
-                              borderRadius: "50%",
-                              width: 40,
-                              height: 40,
-                              cursor: "pointer",
-                              fontSize: "1.5rem",
-                              fontWeight: 600,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              marginTop: 8
-                            }}
-                            title="Add another subquestion"
-                          >
-                            +
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={addSubQuestion}
+                          style={{
+                            background: "#fff",
+                            border: "2px solid #da251c",
+                            color: "#da251c",
+                            borderRadius: "50%",
+                            width: 40,
+                            height: 40,
+                            cursor: "pointer",
+                            fontSize: "1.5rem",
+                            fontWeight: 600,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 8
+                          }}
+                          title="Add another subquestion"
+                        >
+                          +
+                        </button>
                       </div>
                     )}
                   </div>
@@ -3278,30 +3440,28 @@ const GeneralFormQuestions = ({
                         ))}
 
                         {/* Add More Subquestion Button - shown as + icon */}
-                        {subQuestions.length < (selectedQuestion.question_form_option?.length || 0) && (
-                          <button
-                            type="button"
-                            onClick={addSubQuestion}
-                            style={{
-                              background: "#fff",
-                              border: "2px solid #da251c",
-                              color: "#da251c",
-                              borderRadius: "50%",
-                              width: 40,
-                              height: 40,
-                              cursor: "pointer",
-                              fontSize: "1.5rem",
-                              fontWeight: 600,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              marginTop: 8
-                            }}
-                            title="Add another subquestion"
-                          >
-                            +
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={addSubQuestion}
+                          style={{
+                            background: "#fff",
+                            border: "2px solid #da251c",
+                            color: "#da251c",
+                            borderRadius: "50%",
+                            width: 40,
+                            height: 40,
+                            cursor: "pointer",
+                            fontSize: "1.5rem",
+                            fontWeight: 600,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginTop: 8
+                          }}
+                          title="Add another subquestion"
+                        >
+                          +
+                        </button>
                       </div>
                     )}
                   </div>
