@@ -726,6 +726,35 @@ export default function CreateEvent() {
     }
   };
 
+  // Sticky event preview scroll behavior
+  useEffect(() => {
+    const handleScroll = () => {
+      // Only enable sticky on desktop (screen width > 991px)
+      if (window.innerWidth <= 991) {
+        return;
+      }
+
+      const previewElement = document.querySelector('.event-preview-sidebar');
+      if (!previewElement) return;
+
+      const previewParent = previewElement.parentElement;
+      const scrollThreshold = 450; // Adjust based on hero section height
+
+      if (window.scrollY > scrollThreshold) {
+        previewElement.classList.add('is-sticky');
+        // Calculate and set the width to match the column width
+        const columnWidth = previewParent.offsetWidth;
+        previewElement.style.width = `${columnWidth}px`;
+      } else {
+        previewElement.classList.remove('is-sticky');
+        previewElement.style.width = '';
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const handleCategoryToggle = (label) => {
     setCategoryError(""); // Clear error when user selects a category
     setSelectedCategories((prev) =>
@@ -1406,7 +1435,7 @@ export default function CreateEvent() {
           </div>
 
           {/* Right Column - Preview, Placeholders, or Money to you */}
-          <div className="col-lg-4">
+          <div className="col-lg-4 event-preview-sidebar">
             {/* Show Placeholders section ONLY when editing communication (step 10 + editing mode) */}
             {currentStep === 10 && isEditingCommunication && (
               <div

@@ -27,6 +27,7 @@ export default function Login() {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isSendingOTP, setIsSendingOTP] = useState(false);
   const [showOTPField, setShowOTPField] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
@@ -377,7 +378,7 @@ export default function Login() {
       }
     }
 
-    setIsLoading(true);
+    setIsSendingOTP(true);
 
     try {
       const cleanMobile =
@@ -418,7 +419,7 @@ export default function Login() {
         general: error.message || "Failed to send OTP. Please try again.",
       });
     } finally {
-      setIsLoading(false);
+      setIsSendingOTP(false);
     }
   };
 
@@ -858,9 +859,20 @@ export default function Login() {
                             type="button"
                             className="btn btn-link text-primary"
                             onClick={handleSendOTP}
-                            disabled={isLoading}
+                            disabled={isSendingOTP || isLoading}
                           >
-                            Resend OTP
+                            {isSendingOTP ? (
+                              <>
+                                <span
+                                  className="spinner-border spinner-border-sm me-2"
+                                  role="status"
+                                  aria-hidden="true"
+                                ></span>
+                                Sending...
+                              </>
+                            ) : (
+                              "Resend OTP"
+                            )}
                           </button>
                         )}
                       </div>
@@ -875,9 +887,20 @@ export default function Login() {
                           type="button"
                           className="btn btn-link text-primary"
                           onClick={handleSendOTP}
-                          disabled={isLoading || !formData.identifier.trim()}
+                          disabled={isSendingOTP || isLoading || !formData.identifier.trim()}
                         >
-                          Send OTP
+                          {isSendingOTP ? (
+                            <>
+                              <span
+                                className="spinner-border spinner-border-sm me-2"
+                                role="status"
+                                aria-hidden="true"
+                              ></span>
+                              Sending OTP...
+                            </>
+                          ) : (
+                            "Send OTP"
+                          )}
                         </button>
                       </div>
                     )}

@@ -110,55 +110,65 @@ export default function TicketDetails() {
 
                                     {/* Right Section - Ticket Details */}
                                     <div className="ticket-right">
-                                        {/* Header with Date and Time */}
-                                        <div className="ticket-header">
-                                            <div className="ticket-datetime">
-                                                <div className="datetime-item">
+                                        {/* Top Section with Badges */}
+                                        <div className="ticket-top-section">
+                                            <div className="ticket-badges">
+                                                <div className="badge-item date-badge">
                                                     <i className="fas fa-calendar-alt"></i>
                                                     <span>{ticket.event_start_date}</span>
                                                 </div>
-                                                <div className="datetime-item">
+                                                <div className="badge-item time-badge">
                                                     <i className="fas fa-clock"></i>
                                                     <span>{ticket.event_time}</span>
                                                 </div>
+                                                <div className="badge-item qr-badge">
+                                                    QR
+                                                </div>
                                             </div>
+                                            <div className="registration-id-badge">
+                                                <div className="reg-id-label">REGISTRATION ID</div>
+                                                <div className="reg-id-value">{ticket.unique_ticket_id}</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Event Title */}
+                                        <h2 className="ticket-event-title">{ticket.EventName}</h2>
+
+                                        {/* Participant Name */}
+                                        <div className="ticket-participant-name">{ticket.attendee_name}</div>
+
+                                        {/* Price */}
+                                        <div className="ticket-price-display">
+                                            {formatPrice(ticket.strike_out_price)}
+                                        </div>
+
+                                        {/* Race Category Box */}
+                                        <div className="ticket-race-category">
+                                            <span className="category-label">Race Category :</span>
+                                            <span className="category-value">{ticket.TicketName}</span>
+                                        </div>
+
+                                        {/* Action Buttons */}
+                                        <div className="ticket-actions">
                                             <button
-                                                className="download-button"
+                                                className="action-btn download-btn"
                                                 onClick={() => handleDownloadTicket(ticket)}
                                                 title="Download Ticket"
                                             >
                                                 <i className="fas fa-download"></i>
                                             </button>
-                                        </div>
-
-                                        {/* Ticket Name */}
-                                        <h2 className="ticket-name">{ticket.EventName}</h2>
-
-                                        {/* Attendee Name */}
-                                        <div className="attendee-name">{ticket.attendee_name}</div>
-
-                                        {/* Price */}
-                                        <div className="ticket-price">
-                                            {formatPrice(ticket.strike_out_price)}
-                                        </div>
-
-                                        {/* Divider Line */}
-                                        <div className="ticket-divider"></div>
-
-                                        {/* Race Category */}
-                                        <div className="ticket-info-section">
-                                            <p className="info-label">Race Category:</p>
-                                            <p className="info-value">{ticket.TicketName}</p>
-                                        </div>
-
-                                        {/* QR Code Section */}
-                                        <div className="ticket-qr-section">
-                                            <div className="qr-code-placeholder">
-                                                <i className="fas fa-qrcode"></i>
-                                            </div>
-                                            <div className="ticket-id">
-                                                {ticket.unique_ticket_id}
-                                            </div>
+                                            <button
+                                                className="action-btn share-btn"
+                                                title="Share Ticket"
+                                            >
+                                                <i className="fas fa-share-alt"></i>
+                                            </button>
+                                            <button
+                                                className="action-btn print-btn"
+                                                title="Print Ticket"
+                                            >
+                                                <i className="fas fa-print"></i>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

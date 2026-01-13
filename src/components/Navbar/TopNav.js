@@ -12,6 +12,7 @@ export default function TopNav() {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showLocationOverlay, setShowLocationOverlay] = useState(false);
   const [popularCities, setPopularCities] = useState([]);
@@ -63,7 +64,13 @@ export default function TopNav() {
     try {
       await logout();
       setShowLogoutConfirm(false);
-      navigate("/");
+      setShowLogoutSuccess(true);
+
+      // Hide success message and navigate after 2 seconds
+      setTimeout(() => {
+        setShowLogoutSuccess(false);
+        navigate("/");
+      }, 2000);
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -498,17 +505,17 @@ export default function TopNav() {
       // Fallback to default location "India"
       localStorage.setItem("detectedCity", "India");
       localStorage.setItem("detectedCitySlug", "india");
-      
+
       // Clear previous selections
       localStorage.removeItem("selectedCityId");
       localStorage.removeItem("selectedCityName");
       localStorage.removeItem("selectedCitySlug");
       localStorage.removeItem("selectedStateId");
       localStorage.removeItem("selectedCountryId");
-      
+
       // Close the overlay
       setShowLocationOverlay(false);
-      
+
       window.dispatchEvent(
         new CustomEvent("locationDetected", {
           detail: { cityName: "India", citySlug: "india" },
@@ -1664,6 +1671,75 @@ export default function TopNav() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Logout Success Modal */}
+      {showLogoutSuccess && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0, 0, 0, 0.5)",
+            zIndex: 10000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: "16px",
+              padding: "40px 50px",
+              textAlign: "center",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+              animation: "slideIn 0.3s ease-out",
+            }}
+          >
+            <div
+              style={{
+                width: "80px",
+                height: "80px",
+                borderRadius: "50%",
+                background: "#27ae60",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 20px",
+              }}
+            >
+              <i
+                className="fas fa-check"
+                style={{
+                  fontSize: "40px",
+                  color: "#fff",
+                }}
+              ></i>
+            </div>
+            <h3
+              style={{
+                fontSize: "24px",
+                fontWeight: "700",
+                color: "#27ae60",
+                marginBottom: "10px",
+              }}
+            >
+              Logout Successful!
+            </h3>
+            <p
+              style={{
+                fontSize: "16px",
+                color: "#666",
+                margin: 0,
+              }}
+            >
+              You have been successfully logged out.
+            </p>
+          </div>
+        </div>
       )}
     </header>
   );

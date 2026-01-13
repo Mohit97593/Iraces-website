@@ -190,8 +190,16 @@ textarea.form-control3 {
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   padding: 25px;
-  position: sticky;
+  position: relative;
+}
+
+.summary-sidebar.is-sticky {
+  position: fixed;
   top: 20px;
+  width: inherit;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  z-index: 50;
 }
 
 .summary-sidebar-title {

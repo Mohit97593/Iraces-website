@@ -48,6 +48,36 @@ export default function SecureCheckout() {
     }
   }, [selectedTickets.length, appliedCoupon]);
 
+  // Sticky summary scroll behavior
+  useEffect(() => {
+    const handleScroll = () => {
+      // Only enable sticky on desktop (screen width > 991px)
+      if (window.innerWidth <= 991) {
+        return;
+      }
+
+      const summaryElement = document.querySelector('.registration-summary');
+      if (!summaryElement) return;
+
+      const summaryParent = summaryElement.parentElement;
+      const parentRect = summaryParent.getBoundingClientRect();
+      const scrollThreshold = 450; // Adjust based on hero section height
+
+      if (window.scrollY > scrollThreshold) {
+        summaryElement.classList.add('is-sticky');
+        // Calculate and set the width to match the column width
+        const columnWidth = summaryParent.offsetWidth;
+        summaryElement.style.width = `${columnWidth}px`;
+      } else {
+        summaryElement.classList.remove('is-sticky');
+        summaryElement.style.width = '';
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const checkUserLoginAndFetch = async () => {
     // Check if user has token/userData in localStorage
     const token = localStorage.getItem("token");

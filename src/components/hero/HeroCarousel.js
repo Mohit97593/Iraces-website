@@ -215,13 +215,21 @@ export default function HeroCarousel() {
           const currentCityName =
             data.data.CityName || cityNameFromSlug || cityName;
 
-          // Filter local events (from selected city)
+          // Filter events for the current city and only show ACTIVE events with OPEN registration
           const localEvents = data.data.eventData.filter(
-            (event) =>
-              event.city_name &&
-              event.city_name.toLowerCase() === currentCityName.toLowerCase() &&
+            (event) => {
+              // Check if event is in the current city
+              const isLocalEvent = event.city_name &&
+                event.city_name.toLowerCase() === currentCityName.toLowerCase();
+
+              // Check if registration is still open (registration_end_time is in the future)
+              const isRegistrationOpen = event.registration_end_time * 1000 > Date.now();
+
               // Only show active events (status = 1 or "1" or "active"), exclude closed events
-              (event.status === 1 || event.status === "1" || event.status === "active")
+              const isActive = event.status === 1 || event.status === "1" || event.status === "active";
+
+              return isLocalEvent && isRegistrationOpen && isActive;
+            }
           );
 
           // Sort by creation date (latest first) to show trending events
@@ -235,17 +243,23 @@ export default function HeroCarousel() {
           if (sortedLocalEvents.length === 0) {
             console.log("🔍 No local events, showing suggestions from all cities");
             const allActiveEvents = data.data.eventData.filter(
-              (event) =>
-                // More lenient - show all events that are NOT explicitly closed
-                event.status !== 0 &&
-                event.status !== "0" &&
-                event.status !== "closed" &&
-                event.status !== "Closed"
+              (event) => {
+                // Check if registration is still open (registration_end_time is in the future)
+                const isRegistrationOpen = event.registration_end_time * 1000 > Date.now();
+
+                // More lenient - show all events that are NOT explicitly closed AND have open registration
+                const isNotClosed = event.status !== 0 &&
+                  event.status !== "0" &&
+                  event.status !== "closed" &&
+                  event.status !== "Closed";
+
+                return isRegistrationOpen && isNotClosed;
+              }
             );
 
             console.log("✅ Suggestion events found:", allActiveEvents.length);
 
-            // Sort suggestions by creation date
+            // Sort suggestions by creation date (latest first)
             const sortedSuggestions = allActiveEvents.sort((a, b) => {
               const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
               const dateB = b.created_at ? new Date(b.created_at) : new Date(0);

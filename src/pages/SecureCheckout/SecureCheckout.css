@@ -170,6 +170,10 @@
   max-width: 1400px;
 }
 
+.checkout-container .row {
+  align-items: flex-start;
+}
+
 /* Event Info Box */
 .event-info-box {
   background: white;
@@ -300,7 +304,7 @@
 .category-price {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: #000;
 }
 
 .btn-add {
@@ -400,8 +404,16 @@
   border-radius: 12px;
   padding: 30px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  position: sticky;
-  top: 100px;
+  position: relative;
+}
+
+.registration-summary.is-sticky {
+  position: fixed;
+  top: 20px;
+  width: inherit;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  z-index: 50;
 }
 
 .summary-header {
@@ -581,7 +593,7 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  color: #555;
+  color: #000;
   font-size: 0.95rem;
   line-height: 1.2;
   margin-bottom: -24px;

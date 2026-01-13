@@ -423,11 +423,40 @@
   transform: translateY(-2px);
 }
 
+/* Event Preview Sidebar - Sticky Behavior */
+.event-preview-sidebar {
+  position: relative;
+}
+
+.event-preview-sidebar.is-sticky {
+  position: fixed;
+  top: 30px;
+  right: calc((100vw - 1400px) / 2 + 15px);
+  width: calc(33.333% - 30px);
+  max-width: 450px;
+  max-height: calc(100vh - 50px);
+  overflow-y: auto;
+  z-index: 50;
+}
+
+@media (max-width: 1400px) {
+  .event-preview-sidebar.is-sticky {
+    right: 15px;
+    width: calc(33.333% - 30px);
+  }
+}
+
 /* Responsive */
 @media (max-width: 991px) {
   .event-preview-card {
     position: static;
     margin-top: 30px;
+  }
+
+  .event-preview-sidebar.is-sticky {
+    position: relative;
+    top: 0;
+    max-height: none;
   }
 }
 

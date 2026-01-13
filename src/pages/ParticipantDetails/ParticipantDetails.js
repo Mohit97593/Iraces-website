@@ -372,6 +372,35 @@ export default function ParticipantDetails() {
     fetchActivePaymentGateway();
   }, [eventId]);
 
+  // Sticky summary scroll behavior
+  useEffect(() => {
+    const handleScroll = () => {
+      // Only enable sticky on desktop (screen width > 991px)
+      if (window.innerWidth <= 991) {
+        return;
+      }
+
+      const summaryElement = document.querySelector('.summary-sidebar');
+      if (!summaryElement) return;
+
+      const summaryParent = summaryElement.parentElement;
+      const scrollThreshold = 450; // Adjust based on hero section height
+
+      if (window.scrollY > scrollThreshold) {
+        summaryElement.classList.add('is-sticky');
+        // Calculate and set the width to match the column width
+        const columnWidth = summaryParent.offsetWidth;
+        summaryElement.style.width = `${columnWidth}px`;
+      } else {
+        summaryElement.classList.remove('is-sticky');
+        summaryElement.style.width = '';
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Auto-fill form when "Myself" is selected
   useEffect(() => {
     if (formData.participantType === "Myself" && profile) {
