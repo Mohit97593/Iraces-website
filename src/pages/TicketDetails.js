@@ -34,10 +34,86 @@ export default function TicketDetails() {
         }
     };
 
-    const handleDownloadTicket = (ticket) => {
-        // TODO: Implement ticket download functionality
-        console.log("Download ticket:", ticket.unique_ticket_id);
-        alert(`Downloading ticket: ${ticket.unique_ticket_id}`);
+    const handleDownloadTicket = async (ticket) => {
+        try {
+            console.log("📥 Starting ticket download...");
+            console.log("Ticket ID:", ticket.unique_ticket_id);
+
+            const payload = {
+                ticket: {
+                    id: ticket.id,
+                    booking_details_id: ticket.booking_details_id,
+                    ticket_id: ticket.ticket_id,
+                    attendee_details: ticket.attendee_details,
+                    email: ticket.email || "",
+                    mobile: ticket.mobile || "",
+                    created_at: ticket.created_at,
+                    registration_id: ticket.registration_id,
+                    ticket_price: ticket.ticket_price,
+                    final_ticket_price: ticket.final_ticket_price,
+                    bulk_upload_flag: ticket.bulk_upload_flag || 0,
+                    cart_detail: ticket.cart_detail || "",
+                    category_change_flag: ticket.category_change_flag || 0,
+                    category_change_date: ticket.category_change_date || 0,
+                    booking_id: ticket.booking_id,
+                    event_id: ticket.event_id,
+                    user_id: ticket.user_id,
+                    quantity: ticket.quantity || 1,
+                    ticket_amount: ticket.ticket_amount,
+                    ticket_discount: ticket.ticket_discount || 0,
+                    booking_date: ticket.booking_date,
+                    total_amount: ticket.total_amount,
+                    total_discount: ticket.total_discount || 0,
+                    utm_campaign: ticket.utm_campaign || "",
+                    cart_details: ticket.cart_details,
+                    transaction_status: ticket.transaction_status,
+                    booking_pay_id: ticket.booking_pay_id,
+                    attendeeId: ticket.attendeeId,
+                    TicketName: ticket.TicketName,
+                    TicketStatus: ticket.TicketStatus,
+                    EventName: ticket.EventName,
+                    EventStartDateTime: ticket.EventStartDateTime,
+                    banner_image: ticket.banner_image,
+                    event_start_date: ticket.event_start_date,
+                    event_time: ticket.event_time,
+                    strike_out_price: ticket.strike_out_price,
+                    name: ticket.name,
+                    display_name: ticket.display_name,
+                    unique_ticket_id: ticket.unique_ticket_id,
+                    attendee_name: ticket.attendee_name || " "
+                },
+                event_link: ticket.event_link || ""
+            };
+
+            console.log("🔄 Calling generatePDF API...");
+            const response = await authAPI.generatePDF(payload);
+            console.log("📦 API Response:", response);
+
+            if (response && response.data && response.data.pdf_link) {
+                console.log("✅ PDF Link received:", response.data.pdf_link);
+
+                // Create a temporary link element to trigger download
+                const link = document.createElement('a');
+                link.href = response.data.pdf_link;
+                link.download = `Ticket_${ticket.unique_ticket_id}.pdf`;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                console.log("✅ Ticket PDF download initiated successfully");
+            } else if (response && response.message) {
+                console.warn("⚠️ API returned message:", response.message);
+                alert(response.message);
+            } else {
+                console.error("❌ Invalid API response");
+                alert("Failed to generate PDF");
+            }
+        } catch (error) {
+            console.error("❌ Error downloading ticket:", error);
+            console.error("Error details:", error.response || error.message);
+            alert(error?.message || "Failed to download ticket. Please try again.");
+        }
     };
 
     const formatPrice = (price) => {

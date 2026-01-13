@@ -440,6 +440,11 @@ const GeneralFormQuestions = ({
           // Check if any option has price or count
           loadedSubQ.priceEnabled = loadedSubQ.options.some(opt => opt.price);
           loadedSubQ.maxCountEnabled = loadedSubQ.options.some(opt => opt.count);
+
+          // NEW: Convert options to comma-separated strings for UI fields
+          loadedSubQ.newOptionLabel = loadedSubQ.options.map(opt => opt.label).join(', ');
+          loadedSubQ.newOptionPrice = loadedSubQ.options.map(opt => opt.price || '').join(', ');
+          loadedSubQ.newOptionCount = loadedSubQ.options.map(opt => opt.count || '').join(', ');
         }
 
         // Load child sub-questions (nested) if they exist
@@ -472,6 +477,11 @@ const GeneralFormQuestions = ({
 
               loadedChildSubQ.priceEnabled = loadedChildSubQ.options.some(opt => opt.price);
               loadedChildSubQ.maxCountEnabled = loadedChildSubQ.options.some(opt => opt.count);
+
+              // NEW: Convert options to comma-separated strings for UI fields
+              loadedChildSubQ.newOptionLabel = loadedChildSubQ.options.map(opt => opt.label).join(', ');
+              loadedChildSubQ.newOptionPrice = loadedChildSubQ.options.map(opt => opt.price || '').join(', ');
+              loadedChildSubQ.newOptionCount = loadedChildSubQ.options.map(opt => opt.count || '').join(', ');
             }
 
             return loadedChildSubQ;

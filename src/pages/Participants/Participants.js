@@ -555,21 +555,21 @@ export default function Participants() {
                 <div className="participants-header">
                     <h2>Participants</h2>
                     <div className="header-actions">
-                        <button className="action-btn send-email-btn" onClick={handleSendEmail}>
+                        <button className="action-btn1 send-email-btn" onClick={handleSendEmail}>
                             <i className="fas fa-envelope"></i> Send Email
                         </button>
-                        <button className="action-btn send-whatsapp-btn" onClick={handleSendWhatsApp} style={{ backgroundColor: '#25D366' }}>
+                        <button className="action-btn1 send-whatsapp-btn" onClick={handleSendWhatsApp} style={{ backgroundColor: '#25D366' }}>
                             <i className="fab fa-whatsapp"></i> Send WhatsApp
                         </button>
                         <button
-                            className="action-btn download-btn"
+                            className="action-btn1 download-btn"
                             onClick={handleDownloadExcel}
                             disabled={downloadingAttendee}
                         >
                             <i className="fas fa-download"></i> {downloadingAttendee ? 'Downloading...' : 'Download'}
                         </button>
                         <button
-                            className="action-btn revenue-btn"
+                            className="action-btn1 revenue-btn"
                             onClick={handleDownloadRevenue}
                             disabled={downloadingRevenue}
                         >

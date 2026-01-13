@@ -728,6 +728,36 @@ const Profile = () => {
     }, 3000);
   };
 
+  // Athlete Card Download Handler
+  const handleAthleteCardDownload = async () => {
+    try {
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+      const userId = userData.id || userData.ID || 0;
+
+      if (!userId) {
+        alert("User ID not found. Please login again.");
+        return;
+      }
+
+      console.log("📥 Downloading Athlete Card for user:", userId);
+
+      const response = await authAPI.athleteCardPreview(userId);
+
+      if (response && response.data && response.data.pdf_path) {
+        window.open(response.data.pdf_path, "_blank");
+        console.log("✅ Athlete Card downloaded successfully");
+        showSuccessMessage("Athlete Card downloaded successfully!");
+      } else if (response && response.message) {
+        alert(response.message);
+      } else {
+        alert("Failed to download Athlete Card");
+      }
+    } catch (error) {
+      console.error("❌ Error downloading Athlete Card:", error);
+      alert(error?.message || "Failed to download Athlete Card. Please try again.");
+    }
+  };
+
   // Extract user fields safely
   const firstName = user?.firstName || user?.firstname || "";
   const lastName = user?.lastName || user?.lastname || "";
@@ -1865,6 +1895,7 @@ const Profile = () => {
           }}
         >
           <button
+            onClick={handleAthleteCardDownload}
             className="profile-athlete-btn"
             style={{
               color: "#e53935",

@@ -1095,6 +1095,33 @@ export default function ParticipantDetails() {
       subQuestionMap[parentId].push(sq);
     });
 
+    // NEW: Process sub_questions_array from API response for nested subquestions
+    const processSubQuestionsArray = (questions) => {
+      questions.forEach(question => {
+        if (question.sub_questions_array && Array.isArray(question.sub_questions_array)) {
+          const questionId = question.general_form_id;
+
+          if (!subQuestionMap[questionId]) {
+            subQuestionMap[questionId] = [];
+          }
+
+          question.sub_questions_array.forEach(subQ => {
+            subQ.is_subquestion = 1;
+            subQ.parent_question_id = questionId;
+            subQuestionMap[questionId].push(subQ);
+
+            // Recursively process nested sub_questions_array
+            if (subQ.sub_questions_array) {
+              processSubQuestionsArray([subQ]);
+            }
+          });
+        }
+      });
+    };
+
+    processSubQuestionsArray(parentQuestions);
+    processSubQuestionsArray(subQuestions);
+
     // Debug logging for nested subquestions
     console.log('📊 Subquestion mapping:', subQuestionMap);
     console.log('📋 All subquestions:', subQuestions.map(sq => ({
@@ -1117,8 +1144,52 @@ export default function ParticipantDetails() {
           parentType: parentQuestion.question_form_type,
           parentIsSubquestion: parentQuestion.is_subquestion,
           selectedValue,
-          parentChildIds: parentQuestion.child_question_ids
+          parentChildIds: parentQuestion.child_question_ids,
+          parentOptionId: subQuestion.parent_option_id  // NEW: Log parent_option_id
         });
+
+        // NEW: Check parent_option_id for sub_questions_array filtering
+        if (subQuestion.parent_option_id) {
+          // Get parent question options
+          const options = parentQuestion.question_form_option
+            ? (typeof parentQuestion.question_form_option === 'string'
+              ? JSON.parse(parentQuestion.question_form_option)
+              : parentQuestion.question_form_option)
+            : [];
+
+          if (Array.isArray(options)) {
+            // Find the selected option
+            const selectedValues = Array.isArray(selectedValue) ? selectedValue : [selectedValue];
+
+            for (const value of selectedValues) {
+              const selectedOption = options.find(opt => {
+                if (typeof opt === 'string') return opt === value;
+                const optLabel = opt.label || opt.name;
+                if (optLabel === value) return true;
+                const splitLabels = optLabel ? optLabel.split(',').map(l => l.trim()) : [];
+                return splitLabels.includes(value);
+              });
+
+              // Check if selected option's ID matches parent_option_id
+              if (selectedOption && selectedOption.id) {
+                const matches = String(selectedOption.id) === String(subQuestion.parent_option_id);
+                console.log('🎯 parent_option_id check:', {
+                  selectedOptionId: selectedOption.id,
+                  requiredParentOptionId: subQuestion.parent_option_id,
+                  matches
+                });
+
+                if (matches) {
+                  return true;
+                }
+              }
+            }
+
+            // If parent_option_id is specified but doesn't match, hide the subquestion
+            console.log('❌ parent_option_id mismatch - hiding subquestion');
+            return false;
+          }
+        }
 
         // CHECKBOX type: Always use question-level child_question_ids
         if (parentQuestion.question_form_type === 'checkbox') {

@@ -1889,6 +1889,60 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Athlete Card Preview API - Download athlete card PDF
+  athleteCardPreview: async (user_id) => {
+    try {
+      const formData = new FormData();
+      formData.append("user_id", user_id);
+      const response = await api.post("/athleteCard", formData);
+      return response.data;
+    } catch (error) {
+      console.error("athleteCardPreview API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Generate Ticket PDF API
+  generatePDF: async (ticketData) => {
+    try {
+      const formData = new FormData();
+
+      // Add all ticket fields to FormData
+      Object.keys(ticketData).forEach(key => {
+        if (key === 'ticket') {
+          // Handle nested ticket object
+          Object.keys(ticketData.ticket).forEach(ticketKey => {
+            formData.append(`ticket[${ticketKey}]`, ticketData.ticket[ticketKey]);
+          });
+        } else {
+          formData.append(key, ticketData[key]);
+        }
+      });
+
+      const response = await api.post("/ticket_pdf", formData);
+      return response.data;
+    } catch (error) {
+      console.error("generatePDF API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Edit group question order
+  editGroupQuestionOrder: async (data) => {
+    try {
+      const formData = new FormData();
+      formData.append("api_token", "test");
+      formData.append("id", data.id);
+      formData.append("order_index", data.order_index);
+
+      const response = await api.post("/edit_group_question", formData);
+      return response.data;
+    } catch (error) {
+      console.error("editGroupQuestionOrder API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 // Token को axios header में set करें app load होते समय

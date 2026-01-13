@@ -24,6 +24,10 @@ const Grouping = ({ onBack, onNext }) => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmModalData, setConfirmModalData] = useState({ questionId: null, fromGroup: "", toGroup: "" });
 
+    // Drag and drop state for group reordering
+    const [draggedGroupIndex, setDraggedGroupIndex] = useState(null);
+    const [draggedOverIndex, setDraggedOverIndex] = useState(null);
+
     const handleSave = () => {
         // Save logic will be implemented later
         onNext();
@@ -434,6 +438,70 @@ const Grouping = ({ onBack, onNext }) => {
         }
     }, [questions, selectedGroupId, showQuestionsModal]);
 
+    // Drag and drop handlers for group reordering
+    const handleDragStart = (e, index) => {
+        setDraggedGroupIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e, index) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        setDraggedOverIndex(index);
+    };
+
+    const handleDragLeave = () => {
+        setDraggedOverIndex(null);
+    };
+
+    const handleDrop = async (e, targetIndex) => {
+        e.preventDefault();
+
+        if (draggedGroupIndex === null || draggedGroupIndex === targetIndex) {
+            setDraggedGroupIndex(null);
+            setDraggedOverIndex(null);
+            return;
+        }
+
+        // Reorder groups locally
+        const reorderedGroups = [...groups];
+        const [draggedGroup] = reorderedGroups.splice(draggedGroupIndex, 1);
+        reorderedGroups.splice(targetIndex, 0, draggedGroup);
+
+        // Update local state immediately
+        setGroups(reorderedGroups);
+        setDraggedGroupIndex(null);
+        setDraggedOverIndex(null);
+
+        // Call API to save new order
+        try {
+            const groupId = draggedGroup.id;
+            const newOrderIndex = targetIndex; // 0-based index
+
+            console.log('Updating group order:', { id: groupId, order_index: newOrderIndex });
+
+            const response = await authAPI.editGroupQuestionOrder({
+                id: groupId,
+                order_index: newOrderIndex
+            });
+
+            console.log('Edit group order response:', response);
+
+            // Optionally refresh groups to get server state
+            await fetchGroupQuestions();
+        } catch (error) {
+            console.error('Error updating group order:', error);
+            alert('Failed to update group order. Please try again.');
+            // Revert to original order on error
+            await fetchGroupQuestions();
+        }
+    };
+
+    const handleDragEnd = () => {
+        setDraggedGroupIndex(null);
+        setDraggedOverIndex(null);
+    };
+
     return (
         <div className="event-form-section">
             <div
@@ -633,13 +701,22 @@ const Grouping = ({ onBack, onNext }) => {
                     </div>
                 ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                        {groups.map((group) => {
+                        {groups.map((group, index) => {
                             console.log("Rendering group:", { id: group.id, name: group.name });
+                            const isDragging = draggedGroupIndex === index;
+                            const isDraggedOver = draggedOverIndex === index;
+
                             return (
                                 <div
                                     key={group.id}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, index)}
+                                    onDragOver={(e) => handleDragOver(e, index)}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(e) => handleDrop(e, index)}
+                                    onDragEnd={handleDragEnd}
                                     style={{
-                                        border: "1.5px solid transparent",
+                                        border: isDraggedOver ? "2px dashed #da251c" : "1.5px solid transparent",
                                         borderRadius: 12,
                                         padding: "24px 20px",
                                         display: "flex",
@@ -647,19 +724,25 @@ const Grouping = ({ onBack, onNext }) => {
                                         justifyContent: "space-between",
                                         alignItems: "center",
                                         background: "#fff",
-                                        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+                                        boxShadow: isDragging ? "0 8px 24px rgba(0, 0, 0, 0.3)" : "0 2px 8px rgba(0, 0, 0, 0.2)",
                                         transition: "all 0.2s ease",
                                         position: "relative",
+                                        opacity: isDragging ? 0.5 : 1,
+                                        cursor: "move",
                                     }}
                                     onMouseEnter={(e) => {
-                                        e.currentTarget.style.border = "1.5px solid #da251c";
-                                        e.currentTarget.style.boxShadow = "0 4px 16px rgba(0, 0, 0, 0.2)";
+                                        if (!isDragging) {
+                                            e.currentTarget.style.border = "1.5px solid #da251c";
+                                            e.currentTarget.style.boxShadow = "0 4px 16px rgba(0, 0, 0, 0.2)";
+                                        }
                                         const icons = e.currentTarget.querySelector('.group-icons');
                                         if (icons) icons.style.opacity = "1";
                                     }}
                                     onMouseLeave={(e) => {
-                                        e.currentTarget.style.border = "1.5px solid transparent";
-                                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.2)";
+                                        if (!isDragging && !isDraggedOver) {
+                                            e.currentTarget.style.border = "1.5px solid transparent";
+                                            e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.2)";
+                                        }
                                         const icons = e.currentTarget.querySelector('.group-icons');
                                         if (icons) icons.style.opacity = "0";
                                     }}
