@@ -1880,7 +1880,7 @@ export default function CreateEvent() {
                   overflow: "hidden",
                   display: "flex",
                   flexDirection: "column",
-                  minHeight: "400px",
+                  minHeight: "418px",
                 }}
               >
                 <div
@@ -1959,64 +1959,81 @@ export default function CreateEvent() {
                 </div>
                 <div
                   style={{
-                    padding: "20px 20px 0 20px",
+                    padding: "20px 20px 24px 20px",
                     flex: "1 1 auto",
                     display: "flex",
                     flexDirection: "column",
                   }}
                 >
+                  {/* Date Badge - Red/White Split Design */}
                   <div
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      marginBottom: "8px",
+                      display: "inline-flex",
+                      alignItems: "stretch",
+                      width: "fit-content",
+                      marginBottom: "16px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      borderRadius: "8px",
+                      overflow: "hidden",
                     }}
                   >
-                    <span
+                    <div
                       style={{
-                        color: "#1565c0",
+                        background: "#da251c",
+                        color: "#fff",
+                        padding: "8px 16px",
                         fontWeight: 700,
-                        fontSize: "1.2rem",
+                        fontSize: "0.85rem",
+                        letterSpacing: "0.5px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
-                      {monthShort}
-                    </span>
-                    <span
+                      {monthShort.toUpperCase()}
+                    </div>
+                    <div
                       style={{
-                        color: "#da251c",
+                        background: "#fff",
+                        color: "#333",
+                        padding: "8px 16px",
                         fontWeight: 700,
                         fontSize: "1.2rem",
+                        border: "1px solid #e0e0e0",
+                        borderLeft: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minWidth: "50px",
                       }}
                     >
                       {day}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: "1.05rem",
-                        fontWeight: 700,
-                        color: "#333",
-                        marginLeft: "8px",
-                      }}
-                    >
-                      {headerTitle}
-                    </span>
+                    </div>
                   </div>
-                  <hr
+
+                  {/* Event Title */}
+                  <h3
                     style={{
-                      margin: "10px 0",
-                      border: "none",
-                      borderTop: "1px solid #e0e0e0",
+                      fontSize: "1.35rem",
+                      fontWeight: 700,
+                      color: "#2c3e50",
+                      marginBottom: "12px",
+                      lineHeight: "1.3",
+                      margin: "0 0 12px 0",
                     }}
-                  />
+                  >
+                    {headerTitle}
+                  </h3>
+
+                  {/* Register By */}
                   <div
                     style={{
                       fontSize: "0.95rem",
-                      color: "#666",
-                      marginBottom: "10px",
+                      color: "#7f8c8d",
+                      marginBottom: "16px",
                     }}
                   >
-                    Register By :{" "}
+                    Register by :{" "}
                     <span
                       style={{
                         color: "#da251c",
@@ -2026,42 +2043,62 @@ export default function CreateEvent() {
                       {registerEndDateDisplay}
                     </span>
                   </div>
+
+                  {/* Registration Status and Register Button */}
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      marginTop: "18px",
+                      marginTop: "auto",
+                      paddingTop: "12px",
                     }}
                   >
                     <span
                       style={{
-                        color: "green",
+                        color: "#27ae60",
                         fontWeight: 600,
-                        fontSize: "0.95rem",
+                        fontSize: "1rem",
                         display: "flex",
                         alignItems: "center",
+                        gap: "6px",
                       }}
                     >
                       <i
                         className="fas fa-check-circle"
-                        style={{ marginRight: 6 }}
+                        style={{ fontSize: "1.1rem" }}
                       ></i>
                       Registration Open
                     </span>
                     <button
                       style={{
-                        background: "transparent",
-                        border: "2px solid #da251c",
-                        color: "#da251c",
-                        borderRadius: "20px",
-                        padding: "6px 24px",
+                        background: "#da251c",
+                        border: "none",
+                        color: "#fff",
+                        borderRadius: "24px",
+                        padding: "10px 24px",
                         fontWeight: 600,
                         fontSize: "1rem",
                         transition: "all 0.3s",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        boxShadow: "0 2px 8px rgba(218, 37, 28, 0.3)",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = "#c41f17";
+                        e.target.style.transform = "translateY(-2px)";
+                        e.target.style.boxShadow = "0 4px 12px rgba(218, 37, 28, 0.4)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = "#da251c";
+                        e.target.style.transform = "translateY(0)";
+                        e.target.style.boxShadow = "0 2px 8px rgba(218, 37, 28, 0.3)";
                       }}
                     >
                       Register
+                      <i className="fas fa-arrow-right" style={{ fontSize: "0.9rem" }}></i>
                     </button>
                   </div>
                 </div>

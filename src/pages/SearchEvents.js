@@ -630,51 +630,154 @@ export default function SearchEvents() {
 
                         {/* Event Body */}
                         <div className="event-card-body">
-                          <div className="event-header">
-                            <div className="event-date-wrapper">
-                              <div className="event-month">
-                                {eventDate.month}
-                              </div>
-                              <div className="event-day">{eventDate.day}</div>
+                          {/* Date Badge - Red/White Split Design */}
+                          <div
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "stretch",
+                              width: "fit-content",
+                              marginBottom: "12px",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                              borderRadius: "8px",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <div
+                              style={{
+                                background: "#da251c",
+                                color: "#fff",
+                                padding: "8px 16px",
+                                fontWeight: 700,
+                                fontSize: "0.75rem",
+                                letterSpacing: "0.5px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              {eventDate.month.toUpperCase()}
                             </div>
-                            <div className="event-title-wrapper">
-                              <h3 className="event-title">{event.name}</h3>
+                            <div
+                              style={{
+                                background: "#fff",
+                                color: "#333",
+                                padding: "8px 16px",
+                                fontWeight: 700,
+                                fontSize: "1.1rem",
+                                border: "1px solid #e0e0e0",
+                                borderLeft: "none",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                minWidth: "45px",
+                              }}
+                            >
+                              {eventDate.day}
                             </div>
                           </div>
 
-                          <hr className="event-divider" />
+                          {/* Event Title */}
+                          <h3
+                            style={{
+                              fontSize: "1.15rem",
+                              fontWeight: 700,
+                              color: "#2c3e50",
+                              marginBottom: "10px",
+                              lineHeight: "1.3",
+                              margin: "0 0 10px 0",
+                            }}
+                          >
+                            {event.name}
+                          </h3>
 
-                          <div className="event-register-info">
-                            Register By :{" "}
-                            <span className="register-date">{registerBy}</span>
+                          {/* Register By */}
+                          <div
+                            style={{
+                              fontSize: "0.85rem",
+                              color: "#7f8c8d",
+                              marginBottom: "12px",
+                            }}
+                          >
+                            Register by :{" "}
+                            <span
+                              style={{
+                                color: "#da251c",
+                                fontWeight: 700,
+                              }}
+                            >
+                              {registerBy}
+                            </span>
                           </div>
 
+                          {/* Registration Status and Register Button */}
                           <div className="event-footer d-flex align-items-center justify-content-between">
                             {registrationClosed ? (
-                              <span className="registration-status">
+                              <span
+                                style={{
+                                  color: "#dc3545",
+                                  fontWeight: 600,
+                                  fontSize: "0.9rem",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                }}
+                              >
                                 <i
                                   className="fas fa-ban"
-                                  style={{ marginRight: 6 }}
+                                  style={{ fontSize: "1rem" }}
                                 ></i>
                                 Registration Closed
                               </span>
                             ) : (
                               <span
-                                className="registration-status"
-                                style={{ color: "green" }}
+                                style={{
+                                  color: "#27ae60",
+                                  fontWeight: 600,
+                                  fontSize: "0.9rem",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                }}
                               >
                                 <i
                                   className="fas fa-check-circle"
-                                  style={{ marginRight: 6 }}
+                                  style={{ fontSize: "1rem" }}
                                 ></i>
                                 Registration Open
                               </span>
                             )}
                             <button
-                              className="btn btn-view"
+                              style={{
+                                background: "#fff",
+                                border: "2px solid #da251c",
+                                color: "#da251c",
+                                borderRadius: "24px",
+                                padding: "8px 20px",
+                                fontWeight: 600,
+                                fontSize: "0.9rem",
+                                transition: "all 0.3s",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                boxShadow: "0 2px 8px rgba(218, 37, 28, 0.2)",
+                              }}
                               onClick={() => navigate(`/event/${event.id}`)}
+                              onMouseEnter={(e) => {
+                                e.target.style.background = "#da251c";
+                                e.target.style.color = "#fff";
+                                e.target.style.transform = "translateY(-2px)";
+                                e.target.style.boxShadow = "0 4px 12px rgba(218, 37, 28, 0.4)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.background = "#fff";
+                                e.target.style.color = "#da251c";
+                                e.target.style.transform = "translateY(0)";
+                                e.target.style.boxShadow = "0 2px 8px rgba(218, 37, 28, 0.2)";
+                              }}
                             >
                               {registrationClosed ? "View" : "Register"}
+                              <i className="fas fa-arrow-right" style={{ fontSize: "0.8rem" }}></i>
                             </button>
                           </div>
                         </div>
