@@ -421,6 +421,30 @@ export default function EventDetails() {
                   );
                 })()}
 
+              {/* Registration Button */}
+              {!registrationClosed && !registrationNotStarted && (
+                <button
+                  className="btn-register"
+                  onClick={() => {
+                    // Check if user is logged in
+                    const token = localStorage.getItem("token");
+                    if (!token) {
+                      // Save current URL for redirect after login
+                      const currentPath = window.location.pathname + window.location.search;
+                      localStorage.setItem("redirectAfterLogin", currentPath);
+                      console.log("💾 Saved redirect URL before login:", currentPath);
+                      // Redirect to login
+                      navigate("/login");
+                    } else {
+                      // User is logged in, proceed to checkout
+                      navigate(`/checkout/${eventId}`);
+                    }
+                  }}
+                >
+                  Register Now
+                </button>
+              )}
+
               <div className="registration-status-section">
                 {registrationClosed ? (
                   <div className="status-badge closed">
@@ -507,30 +531,6 @@ export default function EventDetails() {
                   </div>
                 </div>
               </div>
-
-              {/* Registration Button */}
-              {!registrationClosed && !registrationNotStarted && (
-                <button
-                  className="btn-register"
-                  onClick={() => {
-                    // Check if user is logged in
-                    const token = localStorage.getItem("token");
-                    if (!token) {
-                      // Save current URL for redirect after login
-                      const currentPath = window.location.pathname + window.location.search;
-                      localStorage.setItem("redirectAfterLogin", currentPath);
-                      console.log("💾 Saved redirect URL before login:", currentPath);
-                      // Redirect to login
-                      navigate("/login");
-                    } else {
-                      // User is logged in, proceed to checkout
-                      navigate(`/checkout/${eventId}`);
-                    }
-                  }}
-                >
-                  Register Now
-                </button>
-              )}
             </div>
           </div>
         </div>

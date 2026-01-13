@@ -25,7 +25,7 @@ export default function Signup() {
     password: "",
     confirmPassword: "",
     agreeToTerms: false,
-    phoneCode: "+91",
+    phoneCode: "91",
   });
 
   const [errors, setErrors] = useState({});
@@ -84,8 +84,27 @@ export default function Signup() {
               emoji: code.emoji,
             }))
             .filter((code) => code.phone_code);
-          setPhoneCodes(formattedCodes);
-          console.log("Assigned phoneCodes:", formattedCodes);
+
+          // Sort to ensure India (91 or +91) appears first
+          const sortedCodes = formattedCodes.sort((a, b) => {
+            // Normalize phone codes for comparison
+            const normalizeCode = (code) => code.replace(/^\+/, '');
+            const isIndiaA = normalizeCode(a.phone_code) === "91";
+            const isIndiaB = normalizeCode(b.phone_code) === "91";
+
+            if (isIndiaA && !isIndiaB) return -1;
+            if (!isIndiaA && isIndiaB) return 1;
+            return 0;
+          });
+
+          // Find India's actual phone code format and update formData if needed
+          const indiaCode = sortedCodes.find(code =>
+            code.phone_code.replace(/^\+/, '') === "91"
+          );
+          console.log("India code found:", indiaCode);
+
+          setPhoneCodes(sortedCodes);
+          console.log("Assigned phoneCodes (first 5):", sortedCodes.slice(0, 5));
         } else {
           setPhoneCodes([]);
           console.log("Assigned phoneCodes: []");
@@ -764,8 +783,8 @@ export default function Signup() {
                                 >
                                   <i
                                     className={`fas ${showConfirmPassword
-                                        ? "fa-eye-slash"
-                                        : "fa-eye"
+                                      ? "fa-eye-slash"
+                                      : "fa-eye"
                                       }`}
                                   ></i>
                                 </button>
@@ -1046,8 +1065,8 @@ export default function Signup() {
                                   >
                                     <i
                                       className={`fas ${showConfirmPassword
-                                          ? "fa-eye-slash"
-                                          : "fa-eye"
+                                        ? "fa-eye-slash"
+                                        : "fa-eye"
                                         }`}
                                     ></i>
                                   </button>

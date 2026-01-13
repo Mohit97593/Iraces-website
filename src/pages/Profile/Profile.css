@@ -325,6 +325,8 @@
   gap: 32px;
   font-size: 1.1rem;
   margin-bottom: 4px;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .profile-details-bio {

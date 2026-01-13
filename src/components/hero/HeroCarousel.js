@@ -220,7 +220,7 @@ export default function HeroCarousel() {
             (event) =>
               event.city_name &&
               event.city_name.toLowerCase() === currentCityName.toLowerCase() &&
-              // Only show active events (status = 1 or "active"), exclude closed events
+              // Only show active events (status = 1 or "1" or "active"), exclude closed events
               (event.status === 1 || event.status === "1" || event.status === "active")
           );
 
@@ -279,13 +279,29 @@ export default function HeroCarousel() {
           setHasLocalEvents(false);
         }
 
-        // Set upcoming events (UpcomingEventData from API) - show all events sorted by date
+        // Set upcoming events (UpcomingEventData from API) - show only ACTIVE events sorted by date
         if (
           data.data.UpcomingEventData &&
           data.data.UpcomingEventData.length > 0
         ) {
+          // Filter to exclude closed events and events with closed registration
+          const activeUpcomingEvents = data.data.UpcomingEventData.filter(
+            (event) => {
+              // Check if registration is still open (registration_end_time is in the future)
+              const isRegistrationOpen = event.registration_end_time * 1000 > Date.now();
+
+              // Exclude closed events and events with closed registration
+              const isNotClosed = event.status !== 0 &&
+                event.status !== "0" &&
+                event.status !== "closed" &&
+                event.status !== "Closed";
+
+              return isRegistrationOpen && isNotClosed;
+            }
+          );
+
           // Sort upcoming events by start_time (earliest first)
-          const sortedUpcomingEvents = data.data.UpcomingEventData.sort((a, b) => {
+          const sortedUpcomingEvents = activeUpcomingEvents.sort((a, b) => {
             const dateA = a.start_time ? new Date(a.start_time * 1000) : new Date(0);
             const dateB = b.start_time ? new Date(b.start_time * 1000) : new Date(0);
             return dateA - dateB; // Ascending order (earliest first)

@@ -573,7 +573,7 @@
 .ticket-description {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  /* gap: 12px; */
   margin-bottom: 20px;
 }
 
@@ -583,7 +583,8 @@
   gap: 12px;
   color: #555;
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.2;
+  margin-bottom: -24px;
 }
 
 .ticket-description .feature-item i {

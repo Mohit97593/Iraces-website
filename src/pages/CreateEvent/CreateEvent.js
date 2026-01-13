@@ -36,7 +36,7 @@ export default function CreateEvent() {
   const [savedSteps, setSavedSteps] = useState(new Array(12).fill(false)); // Track saved status for each step (now 12 steps)
   const [showPreview, setShowPreview] = useState(true);
   const [cityName, setCityName] = useState("");
-  const [paidType, setPaidType] = useState("");
+  const [paidType, setPaidType] = useState("Paid");
   const [bannerImageUrl, setBannerImageUrl] = useState(null);
   const [organizerGST, setOrganizerGST] = useState(false); // Track organizer's GST setting
   const [isEditingCommunication, setIsEditingCommunication] = useState(false); // Track if editing communication

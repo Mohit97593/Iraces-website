@@ -52,8 +52,7 @@
   z-index: 1;
 }
 
-.hero-bg::after {
-  /* dark overlay on background only */
+/* .hero-bg::after {
   content: "";
   position: absolute;
   left: 0;
@@ -61,7 +60,7 @@
   top: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.35);
-}
+} */
 
 .hero-overlay {
   position: relative;

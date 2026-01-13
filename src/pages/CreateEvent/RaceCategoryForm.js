@@ -734,6 +734,15 @@ const RaceCategoryForm = ({
                     const price = Number(e.target.value) || 0;
                     handleChange("raceCategoryPrice", e.target.value);
 
+                    // Clear error if valid price is entered
+                    if (price > 0 && errors.raceCategoryPrice) {
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        delete newErrors.raceCategoryPrice;
+                        return newErrors;
+                      });
+                    }
+
                     // Calculate all fees and update eventFormData
                     // Calculate amount for convenience fee calculation
                     // Add GST only if: collectGST=true AND taxType='exclusive'

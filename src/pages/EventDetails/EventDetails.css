@@ -302,6 +302,7 @@
 
 .status-badge.open {
   background-color: #d4edda;
+  margin-top: 12px;
   color: #155724;
 }
 
