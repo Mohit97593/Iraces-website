@@ -316,56 +316,99 @@ const AgeCategory = ({ onBack, onNext }) => {
                   </div>
                 </React.Fragment>
               ) : (
-                <div
-                  style={{
-                    background: "#fff",
-                    borderRadius: 16,
-                    boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
-                    padding: 0,
-                    marginBottom: 24,
-                    overflow: "hidden",
-                    display: "flex",
-                    flexDirection: "column",
-                    minHeight: "260px",
-                    border: "1px solid #eee",
-                    position: "relative",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <div style={{ padding: "48px 24px", textAlign: "center" }}>
-                    <img
-                      src="https://cdn-icons-png.flaticon.com/512/747/747376.png"
-                      alt="No Age Category"
-                      style={{
-                        width: 80,
-                        marginBottom: 16,
-                        display: "block",
-                        marginLeft: "auto",
-                        marginRight: "auto",
-                      }}
-                    />
-                    <h3
-                      style={{
-                        fontWeight: 700,
-                        fontSize: "1.4rem",
-                        marginBottom: 12,
-                      }}
-                    >
-                      No Age Category Added
-                    </h3>
-                    <div
-                      style={{
-                        fontWeight: 500,
-                        fontSize: "1.1rem",
-                        marginBottom: 18,
-                      }}
-                    >
-                      Please click on " + Add Age Category" button to add new
-                      age category.
+                <React.Fragment>
+                  <div
+                    style={{
+                      background: "#fff",
+                      borderRadius: 16,
+                      boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
+                      padding: 0,
+                      marginBottom: 24,
+                      overflow: "hidden",
+                      display: "flex",
+                      flexDirection: "column",
+                      minHeight: "260px",
+                      border: "1px solid #eee",
+                      position: "relative",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div style={{ padding: "48px 24px", textAlign: "center" }}>
+                      <img
+                        src="https://cdn-icons-png.flaticon.com/512/747/747376.png"
+                        alt="No Age Category"
+                        style={{
+                          width: 80,
+                          marginBottom: 16,
+                          display: "block",
+                          marginLeft: "auto",
+                          marginRight: "auto",
+                        }}
+                      />
+                      <h3
+                        style={{
+                          fontWeight: 700,
+                          fontSize: "1.4rem",
+                          marginBottom: 12,
+                        }}
+                      >
+                        No Age Category Added
+                      </h3>
+                      <div
+                        style={{
+                          fontWeight: 500,
+                          fontSize: "1.1rem",
+                          marginBottom: 18,
+                        }}
+                      >
+                        Please click on " + Add Age Category" button to add new
+                        age category.
+                      </div>
                     </div>
                   </div>
-                </div>
+                  {/* Add buttons below empty state */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: 12,
+                      marginTop: 24,
+                    }}
+                  >
+                    <button
+                      onClick={onBack}
+                      style={{
+                        border: "1.5px solid #da251c",
+                        color: "#da251c",
+                        background: "#fff",
+                        borderRadius: 6,
+                        padding: "10px 32px",
+                        fontWeight: 600,
+                        fontSize: "1.1rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Back
+                    </button>
+                    <button
+                      className="next-btn"
+                      onClick={onNext}
+                      style={{
+                        background: "#da251c",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 6,
+                        padding: "10px 32px",
+                        fontWeight: 600,
+                        fontSize: "1.1rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Save & Next (7/11)
+                    </button>
+                  </div>
+                </React.Fragment>
               )}
             </React.Fragment>
           ) : (

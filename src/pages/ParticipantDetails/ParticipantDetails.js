@@ -2314,6 +2314,66 @@ export default function ParticipantDetails() {
           // Call the recursive function for this parent question
           return renderQuestionWithSubquestions(q, 0);
         })}
+
+        {/* Next Group Button */}
+        {hasGroups && (() => {
+          // Build array of all tabs in order
+          const allTabs = [];
+          if (ungroupedQuestions.length > 0) {
+            allTabs.push('general');
+          }
+          allTabs.push(...groupNames);
+
+          // Find current tab index
+          const currentTabIndex = allTabs.indexOf(currentActiveTab);
+          const hasNextGroup = currentTabIndex >= 0 && currentTabIndex < allTabs.length - 1;
+
+          if (hasNextGroup) {
+            const nextTab = allTabs[currentTabIndex + 1];
+            return (
+              <div style={{
+                marginTop: '30px',
+                paddingTop: '20px',
+                borderTop: '2px solid #e0e0e0',
+                display: 'flex',
+                justifyContent: 'flex-end'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setActiveQuestionTab(prev => ({
+                    ...prev,
+                    [participantIndex]: nextTab
+                  }))}
+                  style={{
+                    padding: '12px 32px',
+                    background: '#e74c3c',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 2px 8px rgba(231, 76, 60, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#c0392b';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(231, 76, 60, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = '#e74c3c';
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 2px 8px rgba(231, 76, 60, 0.3)';
+                  }}
+                >
+                  Next Group →
+                </button>
+              </div>
+            );
+          }
+          return null;
+        })()}
       </div >
     );
   };

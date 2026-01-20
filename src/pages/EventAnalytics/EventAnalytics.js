@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
 import { authAPI } from "../../services/authAPI";
 import "./EventAnalytics.css";
@@ -9,8 +9,9 @@ import HighchartsReact from "highcharts-react-official";
 export default function EventAnalytics() {
     const { eventId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
 
-    const [eventName, setEventName] = useState("");
+    const [eventName, setEventName] = useState(location.state?.eventName || "");
     const [loading, setLoading] = useState(false);
     const [ticketCategories, setTicketCategories] = useState([]);
     const [filterData, setFilterData] = useState({
@@ -586,7 +587,7 @@ export default function EventAnalytics() {
                             <div className="stat-info">
                                 <h3>Registrations</h3>
                                 <div className="stat-value">{stats.registrations}</div>
-                                <Link to={`/registrations/${eventId}`} className="view-details">View Details</Link>
+                                <Link to={`/registrations/${eventId}`} state={{ eventName }} className="view-details">View Details</Link>
                             </div>
                             <div className="stat-icon">
                                 <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Registrations" />
@@ -601,7 +602,7 @@ export default function EventAnalytics() {
                             <div className="stat-info">
                                 <h3>Participants</h3>
                                 <div className="stat-value">{stats.participants}</div>
-                                <Link to={`/participants/${eventId}`} className="view-details">View Details</Link>
+                                <Link to={`/participants/${eventId}`} state={{ eventName }} className="view-details">View Details</Link>
                             </div>
                             <div className="stat-icon">
                                 <img src="https://cdn-icons-png.flaticon.com/512/681/681494.png" alt="Participants" />
@@ -672,7 +673,7 @@ export default function EventAnalytics() {
                             <div className="stat-info">
                                 <h3>Payment History</h3>
                                 {/* <div className="stat-value">{stats.pageViews}</div> */}
-                                <Link to={`/payment-log/${eventId}`} className="view-details">View Details</Link>
+                                <Link to={`/payment-log/${eventId}`} state={{ eventName }} className="view-details">View Details</Link>
                             </div>
                             <div className="stat-icon">
                                 <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png" alt="Page Views" />

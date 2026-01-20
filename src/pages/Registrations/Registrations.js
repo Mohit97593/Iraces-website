@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
 import { authAPI } from "../../services/authAPI";
 import "./Registrations.css";
@@ -7,8 +7,9 @@ import "./Registrations.css";
 export default function Registrations() {
     const { eventId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
 
-    const [eventName, setEventName] = useState("");
+    const [eventName, setEventName] = useState(location.state?.eventName || "");
     const [loading, setLoading] = useState(false);
     const [userData, setUserData] = useState([]);
     const [totalRecords, setTotalRecords] = useState(0);
@@ -108,7 +109,7 @@ export default function Registrations() {
     };
 
     const handleBack = () => {
-        navigate(`/event-analytics/${eventId}`);
+        navigate(`/event-analytics/${eventId}`, { state: { eventName } });
     };
 
     const handlePageChange = (newPage) => {
@@ -175,11 +176,12 @@ export default function Registrations() {
                                 onChange={handleFilterChange}
                                 className="filter-select"
                             >
-                                <option value="">-- Select Status --</option>
-                                <option value="101">Pending</option>
+                                <option value="">-- Select Transaction Status --</option>
+                                <option value="2">Failure</option>
+                                <option value="3">Free</option>
                                 <option value="1">Success</option>
-                                <option value="3">In Progress</option>
-                                <option value="102">Success & In Progress</option>
+                                <option value="101">In Progress</option>
+                                <option value="102">Success & Free</option>
                             </select>
                         </div>
                         <div className="filter-group">

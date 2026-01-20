@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
 import { authAPI } from "../../services/authAPI";
 import "./PaymentLog.css";
@@ -7,8 +7,9 @@ import "./PaymentLog.css";
 export default function PaymentLog() {
     const { eventId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
 
-    const [eventName, setEventName] = useState("");
+    const [eventName, setEventName] = useState(location.state?.eventName || "");
     const [loading, setLoading] = useState(false);
     const [paymentData, setPaymentData] = useState([]);
     const [totalRecords, setTotalRecords] = useState(0);
@@ -90,7 +91,7 @@ export default function PaymentLog() {
     }, [currentPage, filters]);
 
     const handleBack = () => {
-        navigate(`/event-analytics/${eventId}`);
+        navigate(`/event-analytics/${eventId}`, { state: { eventName } });
     };
 
     const handleFilterChange = (e) => {
@@ -209,9 +210,9 @@ export default function PaymentLog() {
                                 className="filter-select"
                             >
                                 <option value="">-- Select Transaction Status --</option>
-                                <option value="101">Initiate</option>
+                                <option value="101">In Progress</option>
                                 <option value="1">Success</option>
-                                <option value="2">Fail</option>
+                                <option value="2">Failure</option>
                                 <option value="3">Free</option>
                             </select>
                         </div>
