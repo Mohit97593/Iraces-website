@@ -66,6 +66,10 @@ export default function ParticipantDetails() {
   const [activePaymentGateway, setActivePaymentGateway] = useState(null); // Active payment gateway from admin (phonepe or payu)
   const [gatewayLoading, setGatewayLoading] = useState(true); // Loading state for gateway API call
 
+  // Question prices state - tracks prices from question selections
+  // Format: { "participantIndex_questionId_optionId": { label: "...", price: 100, questionLabel: "..." } }
+  const [questionPrices, setQuestionPrices] = useState({});
+
 
   const fieldMapping = {
     firstname: "firstName",
@@ -658,7 +662,23 @@ export default function ParticipantDetails() {
           if (formQuestions && formQuestions[currentTicket.id]) {
             const questionsData = formQuestions[currentTicket.id];
             const questionsList = questionsData[participantIndex] || questionsData[0] || [];
-            const question = questionsList.find(q => getMappedKey(q) === name);
+
+            // Helper function to find question recursively (including nested subquestions)
+            const findQuestionRecursive = (questions, fieldName) => {
+              for (const q of questions) {
+                if (getMappedKey(q) === fieldName) {
+                  return q;
+                }
+                // Check in sub_questions_array
+                if (q.sub_questions_array && Array.isArray(q.sub_questions_array)) {
+                  const found = findQuestionRecursive(q.sub_questions_array, fieldName);
+                  if (found) return found;
+                }
+              }
+              return null;
+            };
+
+            const question = findQuestionRecursive(questionsList, name);
 
             // Check if this is a date field with range validation
             if (question && question.question_form_type === 'date' && question.date_range === 1 && value) {
@@ -788,6 +808,126 @@ export default function ParticipantDetails() {
                 ...prevSelections,
                 [`${participantIndex}_${question.id}`]: valueToStore
               }));
+
+              // Clear all nested subquestion prices when parent selection changes
+              // This ensures that when switching from Male to Female, the Male's nested prices are removed
+              const clearNestedPrices = (parentQuestionId) => {
+                setQuestionPrices(prevPrices => {
+                  const newPrices = { ...prevPrices };
+
+                  // Helper to recursively find all child question IDs
+                  const getAllChildQuestionIds = (parentId) => {
+                    const childIds = [];
+
+                    // Find the parent question in questionsList
+                    const findQuestionById = (questions, qId) => {
+                      for (const q of questions) {
+                        if (q.id === qId || q.general_form_id === qId) {
+                          return q;
+                        }
+                        if (q.sub_questions_array && Array.isArray(q.sub_questions_array)) {
+                          const found = findQuestionById(q.sub_questions_array, qId);
+                          if (found) return found;
+                        }
+                      }
+                      return null;
+                    };
+
+                    const parentQ = findQuestionById(questionsList, parentId);
+                    if (parentQ && parentQ.sub_questions_array) {
+                      // Recursively collect all nested question IDs
+                      const collectIds = (subQuestions) => {
+                        subQuestions.forEach(sq => {
+                          const sqId = sq.id || sq.general_form_id;
+                          childIds.push(sqId);
+                          if (sq.sub_questions_array && Array.isArray(sq.sub_questions_array)) {
+                            collectIds(sq.sub_questions_array);
+                          }
+                        });
+                      };
+                      collectIds(parentQ.sub_questions_array);
+                    }
+
+                    return childIds;
+                  };
+
+                  // Get all child question IDs
+                  const childQuestionIds = getAllChildQuestionIds(parentQuestionId);
+
+                  // Remove prices for all child questions
+                  Object.keys(newPrices).forEach(key => {
+                    const [pIndex, qId] = key.split('_');
+                    if (parseInt(pIndex) === participantIndex && childQuestionIds.includes(parseInt(qId))) {
+                      delete newPrices[key];
+                      console.log('🗑️ Removed price for nested question:', key);
+                    }
+                  });
+
+                  return newPrices;
+                });
+              };
+
+              // Clear nested prices for this parent question
+              clearNestedPrices(question.id || question.general_form_id);
+            }
+
+            // Track prices from question options (ONLY for select dropdowns, not radio or checkbox)
+            if (question && question.question_form_type === 'select') {
+
+              // Parse question options
+              let options = [];
+              try {
+                if (typeof question.question_form_option === 'string') {
+                  options = JSON.parse(question.question_form_option);
+                } else if (Array.isArray(question.question_form_option)) {
+                  options = question.question_form_option;
+                }
+              } catch (e) {
+                console.error('Error parsing question options:', e);
+              }
+
+              console.log('🔍 Select dropdown changed:', {
+                participantIndex,
+                questionId: question.id,
+                questionLabel: question.question_label,
+                value,
+                options
+              });
+
+              // Update question prices based on selection
+              setQuestionPrices(prevPrices => {
+                const newPrices = { ...prevPrices };
+
+                // Remove all previous prices for this question
+                Object.keys(newPrices).forEach(key => {
+                  if (key.startsWith(`${participantIndex}_${question.id}_`)) {
+                    delete newPrices[key];
+                  }
+                });
+
+                // Add new price if selected option has price
+                if (value) {
+                  const selectedOption = options.find(opt =>
+                    opt.label === value || opt.id == value
+                  );
+
+                  console.log('🔍 Selected option:', selectedOption);
+
+                  if (selectedOption && selectedOption.price) {
+                    const priceKey = `${participantIndex}_${question.id}_${selectedOption.id || selectedOption.label}`;
+                    newPrices[priceKey] = {
+                      label: selectedOption.label,
+                      price: parseFloat(selectedOption.price),
+                      questionLabel: question.question_label
+                    };
+
+                    console.log('✅ Price added:', newPrices[priceKey]);
+                  }
+                }
+
+                console.log('📊 Updated questionPrices:', newPrices);
+                return newPrices;
+              });
             }
           }
 
@@ -2385,12 +2525,18 @@ export default function ParticipantDetails() {
       couponDiscountAmount = Math.min(couponDiscountAmount, basePrice);
     }
 
-    // Final amount after discount
-    const finalAmount = subTotal - couponDiscountAmount;
+    // Calculate total from question prices (attendee selections)
+    const questionPricesTotal = Object.values(questionPrices).reduce((sum, priceData) => {
+      return sum + parseFloat(priceData.price || 0);
+    }, 0);
+
+    // Final amount after discount + question prices
+    const finalAmount = subTotal - couponDiscountAmount + questionPricesTotal;
 
     console.log("✅ Validation passed, proceeding to payment");
     console.log("💰 Subtotal (before discount):", subTotal.toFixed(2));
     console.log("🎟️ Coupon discount:", couponDiscountAmount.toFixed(2));
+    console.log("🎯 Question prices total:", questionPricesTotal.toFixed(2));
     console.log("💵 Final payment amount:", finalAmount.toFixed(2));
 
     // Show payment modal immediately
@@ -3066,6 +3212,46 @@ export default function ParticipantDetails() {
 
               <div className="divider"></div>
 
+              {/* Attendee-specific prices from question selections */}
+              {(() => {
+                // Group question prices by participant index
+                const pricesByParticipant = {};
+                Object.entries(questionPrices).forEach(([key, priceData]) => {
+                  const participantIndex = parseInt(key.split('_')[0]);
+                  if (!pricesByParticipant[participantIndex]) {
+                    pricesByParticipant[participantIndex] = [];
+                  }
+                  pricesByParticipant[participantIndex].push(priceData);
+                });
+
+                // Display prices grouped by participant
+                return Object.entries(pricesByParticipant).map(([participantIndex, prices]) => {
+                  const attendeeNumber = parseInt(participantIndex) + 1;
+                  const totalForAttendee = prices.reduce((sum, p) => sum + p.price, 0);
+
+                  return (
+                    <div key={participantIndex} style={{ marginBottom: '15px' }}>
+                      {/* Attendee header */}
+                      <div className="summary-item" style={{ fontWeight: '600', fontSize: '15px', marginBottom: '8px' }}>
+                        <span>{attendeeNumber === 1 ? '1st' : attendeeNumber === 2 ? '2nd' : attendeeNumber === 3 ? '3rd' : `${attendeeNumber}th`} Attendee</span>
+                        <span>₹{totalForAttendee.toFixed(2)}</span>
+                      </div>
+
+                      {/* Individual question prices */}
+                      {prices.map((priceData, idx) => (
+                        <div key={idx} className="summary-item" style={{ fontSize: '14px', paddingLeft: '10px', color: '#666' }}>
+                          <span>{priceData.label}</span>
+                          <span>₹{priceData.price.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                });
+              })()}
+
+              {/* Add divider if there are question prices */}
+              {Object.keys(questionPrices).length > 0 && <div className="divider"></div>}
+
               {/* Coupon Discount - only show if applied */}
               {appliedCoupon && (() => {
                 // Calculate base price only (without fees and taxes)
@@ -3200,8 +3386,13 @@ export default function ParticipantDetails() {
                       couponDiscountAmount = Math.min(couponDiscountAmount, basePrice);
                     }
 
-                    // Subtract coupon discount from subtotal
-                    const finalTotal = subtotal - couponDiscountAmount;
+                    // Calculate total from question prices
+                    const questionPricesTotal = Object.values(questionPrices).reduce((sum, priceData) => {
+                      return sum + parseFloat(priceData.price || 0);
+                    }, 0);
+
+                    // Subtract coupon discount and add question prices to subtotal
+                    const finalTotal = subtotal - couponDiscountAmount + questionPricesTotal;
                     return finalTotal.toFixed(2);
                   })()}
                 </span>

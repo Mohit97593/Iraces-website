@@ -1196,6 +1196,23 @@ export const authAPI = {
     }
   },
 
+  // Send Message to Organiser API
+  sendOrgMail: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("fullname", payload.fullname);
+      formData.append("email", payload.email);
+      formData.append("contact_no", payload.contact_no);
+      formData.append("message", payload.message);
+
+      const response = await api.post("/send_notification_org", formData);
+      return response.data;
+    } catch (error) {
+      console.error("sendOrgMail API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Get Event Details API
   getEventDetailsPage: async (params = {}) => {
     try {

@@ -16,9 +16,21 @@ export default function OrganiserPublicProfile() {
     const [isFollowing, setIsFollowing] = useState(false);
     const [likedEvents, setLikedEvents] = useState({});
 
+    // Message Modal States
+    const [showMessageModal, setShowMessageModal] = useState(false);
+    const [messageForm, setMessageForm] = useState({
+        fullname: '',
+        email: '',
+        contact_no: '',
+        message: ''
+    });
+    const [formErrors, setFormErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
         fetchOrganiserData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [organiserId, organiserNameParam]);
 
     const fetchOrganiserData = async () => {
@@ -139,6 +151,94 @@ export default function OrganiserPublicProfile() {
         });
     };
 
+    // Message Modal Handlers
+    const handleMessageInputChange = (e) => {
+        const { name, value } = e.target;
+        setMessageForm(prev => ({
+            ...prev,
+            [name]: value
+        }));
+        // Clear error for this field when user starts typing
+        if (formErrors[name]) {
+            setFormErrors(prev => ({
+                ...prev,
+                [name]: ''
+            }));
+        }
+    };
+
+    const validateMessageForm = () => {
+        const errors = {};
+
+        if (!messageForm.fullname.trim()) {
+            errors.fullname = 'Full name is required';
+        }
+
+        if (!messageForm.email.trim()) {
+            errors.email = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(messageForm.email)) {
+            errors.email = 'Please enter a valid email';
+        }
+
+        if (!messageForm.contact_no.trim()) {
+            errors.contact_no = 'Contact number is required';
+        } else if (!/^\d{10}$/.test(messageForm.contact_no.trim())) {
+            errors.contact_no = 'Please enter a valid 10-digit number';
+        }
+
+        if (!messageForm.message.trim()) {
+            errors.message = 'Message is required';
+        }
+
+        return errors;
+    };
+
+    const handleSendMessage = async () => {
+        const errors = validateMessageForm();
+
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            const response = await authAPI.sendOrgMail(messageForm);
+
+            if (response.status === 200) {
+                alert('Message sent successfully!');
+                // Reset form and close modal
+                setMessageForm({
+                    fullname: '',
+                    email: '',
+                    contact_no: '',
+                    message: ''
+                });
+                setFormErrors({});
+                setShowMessageModal(false);
+            } else {
+                alert(response.message || 'Failed to send message');
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            alert(error.message || 'Failed to send message. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleCloseMessageModal = () => {
+        setShowMessageModal(false);
+        setMessageForm({
+            fullname: '',
+            email: '',
+            contact_no: '',
+            message: ''
+        });
+        setFormErrors({});
+    };
+
     if (loading) {
         return (
             <div className="organiser-public-profile-page">
@@ -205,7 +305,7 @@ export default function OrganiserPublicProfile() {
                                 ></i>{" "}
                                 {isFollowing ? "Following" : "Follow"}
                             </button>
-                            <button className="btn-message">
+                            <button className="btn-message" onClick={() => setShowMessageModal(true)}>
                                 <i className="fas fa-envelope"></i>
                             </button>
                         </div>
@@ -256,7 +356,7 @@ export default function OrganiserPublicProfile() {
                                                         require("../../assets/image/09cbb1e84b3bf91549ba83bb53aceeb0.jpg")
                                                     }
                                                     alt={event.name}
-                                                    className="event-card-img"
+                                                    className="event-card-img1"
                                                 />
                                                 <span className="event-card-badge navi-mumbai-badge">
                                                     <i
@@ -297,46 +397,31 @@ export default function OrganiserPublicProfile() {
 
                                             {/* Event Body */}
                                             <div className="event-card-body">
-                                                <div className="event-header">
-                                                    <div className="event-date-wrapper">
-                                                        <div className="event-month">{month}</div>
-                                                        <div className="event-day">{day}</div>
-                                                    </div>
-                                                    <div className="event-title-wrapper">
-                                                        <h3 className="event-title">{event.name}</h3>
-                                                    </div>
+                                                {/* Date Badge */}
+                                                <div className="event-date-badge">
+                                                    <div className="date-month">{month.toUpperCase()}</div>
+                                                    <div className="date-day">{day}</div>
                                                 </div>
 
-                                                <hr className="event-divider" />
+                                                {/* Event Title */}
+                                                <h3 className="event-card-title1">{event.name}</h3>
 
-                                                <div className="event-register-info">
-                                                    Register By :{" "}
-                                                    <span className="register-date">
-                                                        {registerBy}
-                                                    </span>
-                                                </div>
+                                                {/* Register By */}
+                                                <p className="event-register-by">
+                                                    Register by : <span className="register-date-red">{registerBy}</span>
+                                                </p>
 
-                                                <div className="event-footer d-flex align-items-center justify-content-between">
-                                                    <span
-                                                        className="registration-status"
-                                                        style={{
-                                                            color: isOpen ? "green" : "#dc3545",
-                                                        }}
-                                                    >
-                                                        <i
-                                                            className={`fas fa-${isOpen ? "check-circle" : "ban"
-                                                                }`}
-                                                            style={{ marginRight: 6 }}
-                                                        ></i>
-                                                        {isOpen
-                                                            ? "Registration Open"
-                                                            : "Registration Closed"}
-                                                    </span>
+                                                {/* Footer with Status and Button */}
+                                                <div className="event-card-footer">
+                                                    <div className={`registration-badge ${isOpen ? 'open' : 'closed'}`}>
+                                                        <i className={`fas fa-${isOpen ? "check-circle" : "ban"}`}></i>
+                                                        {isOpen ? "Registration Open" : "Registration Closed"}
+                                                    </div>
                                                     <button
-                                                        className="btn btn-view"
+                                                        className="btn-register-card"
                                                         onClick={() => navigate(`/event/${event.id}`)}
                                                     >
-                                                        {isOpen ? "Register" : "View"}
+                                                        {isOpen ? "Register" : "View"} <i className="fas fa-arrow-right"></i>
                                                     </button>
                                                 </div>
                                             </div>
@@ -376,7 +461,7 @@ export default function OrganiserPublicProfile() {
                                                         require("../../assets/image/09cbb1e84b3bf91549ba83bb53aceeb0.jpg")
                                                     }
                                                     alt={event.name}
-                                                    className="event-card-img"
+                                                    className="event-card-img1"
                                                 />
                                                 <span className="event-card-badge navi-mumbai-badge">
                                                     <i
@@ -417,34 +502,26 @@ export default function OrganiserPublicProfile() {
 
                                             {/* Event Body */}
                                             <div className="event-card-body">
-                                                <div className="event-header">
-                                                    <div className="event-date-wrapper">
-                                                        <div className="event-month">{month}</div>
-                                                        <div className="event-day">{day}</div>
-                                                    </div>
-                                                    <div className="event-title-wrapper">
-                                                        <h3 className="event-title">{event.name}</h3>
-                                                    </div>
+                                                {/* Date Badge */}
+                                                <div className="event-date-badge">
+                                                    <div className="date-month">{month.toUpperCase()}</div>
+                                                    <div className="date-day">{day}</div>
                                                 </div>
 
-                                                <hr className="event-divider" />
+                                                {/* Event Title */}
+                                                <h3 className="event-card-title1">{event.name}</h3>
 
-                                                <div className="event-footer d-flex align-items-center justify-content-between">
-                                                    <span
-                                                        className="registration-status"
-                                                        style={{ color: "#dc3545" }}
-                                                    >
-                                                        <i
-                                                            className="fas fa-calendar-check"
-                                                            style={{ marginRight: 6 }}
-                                                        ></i>
+                                                {/* Footer with Status and Button */}
+                                                <div className="event-card-footer" style={{ marginTop: '20px' }}>
+                                                    <div className="registration-badge closed">
+                                                        <i className="fas fa-calendar-check"></i>
                                                         Event Completed
-                                                    </span>
+                                                    </div>
                                                     <button
-                                                        className="btn btn-view"
+                                                        className="btn-register-card"
                                                         onClick={() => navigate(`/event/${event.id}`)}
                                                     >
-                                                        View
+                                                        View <i className="fas fa-arrow-right"></i>
                                                     </button>
                                                 </div>
                                             </div>
@@ -520,7 +597,104 @@ export default function OrganiserPublicProfile() {
                 </div>
             </div>
 
+            {/* Message Modal */}
+            {showMessageModal && (
+                <div className="modal-overlay" onClick={handleCloseMessageModal}>
+                    <div className="message-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">
+                                <i className="fas fa-comment-dots"></i> Send Message To Organiser
+                            </h2>
+                            <button className="modal-close-btn" onClick={handleCloseMessageModal}>
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div className="modal-body">
+                            {/* Full Name */}
+                            <div className="form-group">
+                                <input
+                                    type="text"
+                                    name="fullname"
+                                    className={`form-input ${formErrors.fullname ? 'error' : ''}`}
+                                    placeholder="Your Full Name*"
+                                    value={messageForm.fullname}
+                                    onChange={handleMessageInputChange}
+                                />
+                                {formErrors.fullname && (
+                                    <span className="error-message">{formErrors.fullname}</span>
+                                )}
+                            </div>
+
+                            {/* Email and Contact Number */}
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        className={`form-input ${formErrors.email ? 'error' : ''}`}
+                                        placeholder="Your Email Address*"
+                                        value={messageForm.email}
+                                        onChange={handleMessageInputChange}
+                                    />
+                                    {formErrors.email && (
+                                        <span className="error-message">{formErrors.email}</span>
+                                    )}
+                                </div>
+                                <div className="form-group">
+                                    <input
+                                        type="tel"
+                                        name="contact_no"
+                                        className={`form-input ${formErrors.contact_no ? 'error' : ''}`}
+                                        placeholder="Your Contact number*"
+                                        value={messageForm.contact_no}
+                                        onChange={handleMessageInputChange}
+                                        maxLength="10"
+                                    />
+                                    {formErrors.contact_no && (
+                                        <span className="error-message">{formErrors.contact_no}</span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Message */}
+                            <div className="form-group">
+                                <textarea
+                                    name="message"
+                                    className={`form-textarea ${formErrors.message ? 'error' : ''}`}
+                                    placeholder="Your Message*"
+                                    value={messageForm.message}
+                                    onChange={handleMessageInputChange}
+                                    rows="5"
+                                ></textarea>
+                                {formErrors.message && (
+                                    <span className="error-message">{formErrors.message}</span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="modal-footer">
+                            <button
+                                className="btn-cancel"
+                                onClick={handleCloseMessageModal}
+                                disabled={isSubmitting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn-send"
+                                onClick={handleSendMessage}
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Sending...' : 'Send'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )
+            }
+
             <Footer />
-        </div>
+        </div >
     );
 }

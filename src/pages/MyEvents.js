@@ -360,7 +360,7 @@ export default function MyEvents() {
                               className="event-card-badge"
                               style={{
                                 position: 'absolute',
-                                top: '184px',
+                                top: '168px',
                                 right: '0px',
                                 backgroundColor: '#D4A017',
                                 color: '#fff',
@@ -619,7 +619,7 @@ export default function MyEvents() {
                             ) : (
                               <span
                                 className="registration-status"
-                                style={{ color: "green" }}
+                                style={{ color: "rgb(39, 174, 96)" }}
                               >
                                 <i
                                   className="fas fa-check-circle"

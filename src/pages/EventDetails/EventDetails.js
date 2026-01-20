@@ -191,7 +191,7 @@ export default function EventDetails() {
             <h1 className="event-detail-title">{event.name}</h1>
             <div className="event-breadcrumb">
               <span onClick={() => navigate("/")}>Home</span>
-              <span className="breadcrumb-separator">→</span>
+              <span className="breadcrumb-separator" style={{ color: '#333' }}>/</span>
               <span onClick={() => navigate("/search-events")}>Events</span>
             </div>
           </div>

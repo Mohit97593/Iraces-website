@@ -460,3 +460,430 @@
         font-size: 1rem;
     }
 }
+
+/* NEW Event Card Styles - Matching Screenshot */
+.event-card1 {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid #e0e0e0;
+}
+
+.event-card1:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.event-card-img-wrapper {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+}
+
+.event-card-img1 {
+    width: 100%;
+    height: 100%;
+    /* object-fit: cover; */
+    transition: transform 0.3s ease;
+}
+
+.event-card1:hover .event-card-img1 {
+    transform: scale(1.05);
+}
+
+.event-card-badge.navi-mumbai-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #da251c;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    z-index: 2;
+}
+
+.search-like-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: white;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+}
+
+.search-like-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.event-card-body {
+    padding: 20px;
+}
+
+/* Date Badge - Red Box with White Text */
+.event-date-badge {
+    display: inline-flex;
+    align-items: stretch;
+    width: fit-content;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.date-month {
+    background: #da251c;
+    color: #fff;
+    padding: 8px 16px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-Content: center;
+}
+
+.date-day {
+    background: #fff;
+    color: #333;
+    padding: 8px 16px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    border: 1px solid #e0e0e0;
+    border-left: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 45px;
+}
+
+/* Event Title */
+.event-card-title1 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Register By */
+.event-register-by {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0 0 16px 0;
+}
+
+.register-date-red {
+    color: #da251c;
+    font-weight: 600;
+}
+
+/* Footer with Status and Button */
+.event-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* Registration Badge - Green/Red */
+.registration-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+}
+
+.registration-badge.open {
+    color: #28a745;
+}
+
+.registration-badge.closed {
+    color: #dc3545;
+}
+
+.registration-badge i {
+    font-size: 1rem;
+}
+
+/* Register Button - Red Border Outline */
+.btn-register-card {
+    background: white;
+    color: #da251c;
+    border: 2px solid #da251c;
+    padding: 10px 24px;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-register-card:hover {
+    background: #da251c;
+    color: white;
+    transform: translateX(3px);
+    box-shadow: 0 4px 12px rgba(218, 37, 28, 0.3);
+}
+
+.btn-register-card i {
+    font-size: 0.85rem;
+}
+
+/* Past Event Styling */
+.event-card1.past-event {
+    opacity: 0.9;
+}
+
+.event-card1.past-event:hover {
+    opacity: 1;
+}
+
+/* Responsive for Event Cards */
+@media (max-width: 768px) {
+    .event-card-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-register-card {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .event-card-title1 {
+        font-size: 1rem;
+    }
+}
+
+/* Message Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.message-modal {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 30px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal-title i {
+    color: #da251c;
+    font-size: 1.3rem;
+}
+
+.modal-close-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: #666;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.modal-close-btn:hover {
+    background: #f5f5f5;
+    color: #da251c;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-input,
+.form-textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    background: #fafafa;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: #da251c;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(218, 37, 28, 0.1);
+}
+
+.form-input.error,
+.form-textarea.error {
+    border-color: #dc3545;
+    background: #fff5f5;
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.error-message {
+    display: block;
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+.modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px 30px 30px;
+}
+
+.btn-cancel,
+.btn-send {
+    padding: 12px 32px;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid #da251c;
+}
+
+.btn-cancel {
+    background: white;
+    color: #da251c;
+}
+
+.btn-cancel:hover:not(:disabled) {
+    background: #f5f5f5;
+}
+
+.btn-send {
+    background: #da251c;
+    color: white;
+}
+
+.btn-send:hover:not(:disabled) {
+    background: #b91e16;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(218, 37, 28, 0.3);
+}
+
+.btn-cancel:disabled,
+.btn-send:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Modal Responsive */
+@media (max-width: 768px) {
+    .message-modal {
+        max-width: 95%;
+    }
+
+    .modal-header {
+        padding: 20px;
+    }
+
+    .modal-title {
+        font-size: 1.2rem;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+        padding: 15px 20px 20px;
+    }
+
+    .btn-cancel,
+    .btn-send {
+        width: 100%;
+    }
+}
