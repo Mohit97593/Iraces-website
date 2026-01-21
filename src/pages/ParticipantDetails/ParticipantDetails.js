@@ -7,7 +7,6 @@ import "./ParticipantDetails.css";
 export default function ParticipantDetails() {
   // Get price and coupon info from localStorage
   const couponDiscount = parseFloat(localStorage.getItem("couponDiscount")) || 0;
-  const couponCode = localStorage.getItem("couponCode") || "";
   const { eventId } = useParams();
   const navigate = useNavigate();
 
@@ -58,6 +57,7 @@ export default function ParticipantDetails() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('phonepe'); // Track selected payment method (phonepe or payu)
 
   // Coupon state variables
+  const [couponCode, setCouponCode] = useState(''); // Coupon code input value
   const [appliedCoupon, setAppliedCoupon] = useState(null); // Applied coupon details from API
   const [couponLoading, setCouponLoading] = useState(false); // Loading state for coupon API call
   const [couponError, setCouponError] = useState(''); // Coupon validation error message
@@ -69,6 +69,26 @@ export default function ParticipantDetails() {
   // Question prices state - tracks prices from question selections
   // Format: { "participantIndex_questionId_optionId": { label: "...", price: 100, questionLabel: "..." } }
   const [questionPrices, setQuestionPrices] = useState({});
+
+  // Coupon display location state
+  const [couponDisplayLocation, setCouponDisplayLocation] = useState("both"); // Default to 'both'
+
+  // Load existing coupon from localStorage on mount
+  useEffect(() => {
+    const storedCouponCode = localStorage.getItem('couponCode');
+    const storedCouponData = localStorage.getItem('appliedCoupon');
+
+    if (storedCouponCode && storedCouponData) {
+      try {
+        const couponData = JSON.parse(storedCouponData);
+        setCouponCode(storedCouponCode);
+        setAppliedCoupon(couponData);
+        console.log('✅ Loaded existing coupon from localStorage:', storedCouponCode);
+      } catch (error) {
+        console.error('Error parsing stored coupon data:', error);
+      }
+    }
+  }, []);
 
 
   const fieldMapping = {
@@ -230,6 +250,27 @@ export default function ParticipantDetails() {
       } catch (error) {
         console.error("Error fetching data:", error);
       }
+
+      // Fetch coupon display location
+      try {
+        console.log('🔍 Fetching coupon status for event:', eventId);
+        const couponStatusResponse = await authAPI.getCouponStatus(eventId);
+        console.log("📥 getCouponStatus FULL response:", JSON.stringify(couponStatusResponse, null, 2));
+        if (couponStatusResponse && couponStatusResponse.data) {
+          const location = couponStatusResponse.data.coupon_status || "both"; // Changed from coupon_display_location to coupon_status
+          console.log('🎯 Setting couponDisplayLocation to:', location);
+          setCouponDisplayLocation(location);
+          console.log("✅ Coupon display location SET:", location);
+        } else {
+          console.warn('⚠️ No data in coupon status response, using default "both"');
+          setCouponDisplayLocation("both");
+        }
+      } catch (error) {
+        console.error("❌ Error fetching coupon status:", error);
+        // Default to 'both' if API fails
+        setCouponDisplayLocation("both");
+      }
+
       setLoading(false);
     };
 
@@ -500,6 +541,34 @@ export default function ParticipantDetails() {
       }
     }
   }, [formData.participantType, profile]);
+
+  // Helper function to determine if a question should be shown based on coupon display location
+  const shouldShowQuestion = (question) => {
+    // Check if this is a coupon code question
+    const isCouponQuestion = question.question_label &&
+      String(question.question_label).toLowerCase().includes('coupon');
+
+    // Debug logging
+    if (isCouponQuestion) {
+      console.log('🎫 Coupon Question Check:', {
+        questionLabel: question.question_label,
+        couponDisplayLocation: couponDisplayLocation,
+        shouldShow: couponDisplayLocation === 'inside' || couponDisplayLocation === 'both'
+      });
+    }
+
+    if (!isCouponQuestion) {
+      // Not a coupon question, always show
+      return true;
+    }
+
+    // This is a coupon question, check display location
+    // Show if: inside or both
+    // Hide if: outside or none
+    const shouldShow = couponDisplayLocation === 'inside' || couponDisplayLocation === 'both';
+    console.log('🎫 Coupon Question Decision:', shouldShow ? 'SHOW' : 'HIDE');
+    return shouldShow;
+  };
 
   const handleBack = () => {
     navigate(-1);
@@ -1032,15 +1101,20 @@ export default function ParticipantDetails() {
         const transformedCoupon = {
           ...couponData,
           coupon_code: couponData.discount_code || couponData.coupon_code,
-          discount_type: couponData.discount_amt_per_type,
-          discount_value: couponData.discount_amt_per_type === 2
-            ? couponData.discount_percentage
-            : couponData.discount_amount
+          discount_type: parseInt(couponData.discount_amt_per_type),
+          discount_value: parseInt(couponData.discount_amt_per_type) === 2
+            ? parseFloat(couponData.discount_percentage || 0)
+            : parseFloat(couponData.discount_amount || 0)
         };
 
         // Store applied coupon details
         setAppliedCoupon(transformedCoupon);
         setCouponError('');
+
+        // Store in localStorage for cross-page synchronization
+        localStorage.setItem('couponCode', couponCode.trim());
+        localStorage.setItem('appliedCoupon', JSON.stringify(transformedCoupon));
+        localStorage.setItem('couponDiscount', transformedCoupon.discount_value || '0');
 
         console.log('✅ Coupon applied successfully:', transformedCoupon);
       } else {
@@ -1218,9 +1292,22 @@ export default function ParticipantDetails() {
     };
 
     // Separate parent questions from subquestions and filter out disabled ones
+    console.log('📋 All questions before filtering:', questionsList.map(q => ({
+      id: q.id,
+      label: q.question_label,
+      is_subquestion: q.is_subquestion
+    })));
+
     const parentQuestions = questionsList
       .filter(q => q.is_subquestion === 0 || !q.is_subquestion)
-      .filter(q => isQuestionEnabled(q));
+      .filter(q => isQuestionEnabled(q))
+      .filter(q => {
+        const shouldShow = shouldShowQuestion(q);
+        console.log(`🔍 Filter check for "${q.question_label}": ${shouldShow ? 'KEEP' : 'REMOVE'}`);
+        return shouldShow;
+      }); // Filter coupon questions based on display location
+
+    console.log('✅ Final parentQuestions after all filters:', parentQuestions.map(q => q.question_label));
     const subQuestions = questionsList
       .filter(q => q.is_subquestion === 1)
       .filter(q => isQuestionEnabled(q));
@@ -2374,6 +2461,72 @@ export default function ParticipantDetails() {
           }
           return null;
         })()}
+
+        {/* Coupon Code Input - Only show if location is 'inside' or 'both' */}
+        {(couponDisplayLocation === 'inside' || couponDisplayLocation === 'both') && (
+          <div style={{
+            marginTop: '30px',
+            padding: '20px',
+            backgroundColor: '#f9f9f9',
+            borderRadius: '8px',
+            border: '1px solid #e0e0e0'
+          }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '10px',
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#333'
+            }}>
+              Enter Coupon Code
+            </label>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
+              <input
+                type="text"
+                className="form-control3"
+                placeholder="Enter coupon code"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                disabled={appliedCoupon !== null}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  border: '1px solid #ddd',
+                  borderRadius: '5px',
+                  fontSize: '14px'
+                }}
+              />
+              <button
+                onClick={() => handleApplyCoupon(couponCode, 0, null)}
+                disabled={appliedCoupon !== null || !couponCode.trim()}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: appliedCoupon ? '#28a745' : '#e74c3c',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: appliedCoupon || !couponCode.trim() ? 'not-allowed' : 'pointer',
+                  opacity: appliedCoupon || !couponCode.trim() ? 0.6 : 1,
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                {appliedCoupon ? '✓ Applied' : 'Apply'}
+              </button>
+            </div>
+            {couponError && (
+              <div style={{ color: '#dc3545', fontSize: '14px', marginTop: '5px' }}>
+                {couponError}
+              </div>
+            )}
+            {appliedCoupon && (
+              <div style={{ color: '#28a745', fontSize: '14px', marginTop: '5px' }}>
+                ✓ Coupon "{appliedCoupon.discount_code}" applied successfully!
+              </div>
+            )}
+          </div>
+        )}
       </div >
     );
   };

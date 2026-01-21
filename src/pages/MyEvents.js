@@ -27,6 +27,7 @@ export default function MyEvents() {
   useEffect(() => {
     (async () => {
       try {
+        setLoadingEvents(true);
         const res = await authAPI.getEvents({});
         console.log("MyEvents getEvents API result:", res);
         const profile = await authAPI.getProfile();
@@ -46,6 +47,8 @@ export default function MyEvents() {
         setEvents(parsed);
       } catch (err) {
         console.error("Failed to call APIs:", err);
+      } finally {
+        setLoadingEvents(false);
       }
     })();
     // eslint-disable-next-line
@@ -55,6 +58,7 @@ export default function MyEvents() {
     console.log("callAllEventDetails invoked with type:", type);
     setActiveType(type);
     try {
+      setLoadingEvents(true);
       // Example user_id, read from localStorage or authAPI
       let user_id = getStoredUserId();
       const payload = {
@@ -69,6 +73,8 @@ export default function MyEvents() {
       setEvents(parsed);
     } catch (err) {
       console.error("Failed to call allEventDetails:", err);
+    } finally {
+      setLoadingEvents(false);
     }
   };
 
@@ -313,7 +319,12 @@ export default function MyEvents() {
         </div>
 
         <div style={{ marginTop: 20 }}>
-          {events.length === 0 ? (
+          {loadingEvents ? (
+            <div className="my-events-loading">
+              <div className="loading-spinner"></div>
+              <p className="loading-text">Loading events...</p>
+            </div>
+          ) : events.length === 0 ? (
             <div className="my-events-empty">
               <img
                 src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png"

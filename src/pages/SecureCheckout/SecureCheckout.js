@@ -25,9 +25,29 @@ export default function SecureCheckout() {
   // Tax status state
   const [pricesTaxesStatus, setPricesTaxesStatus] = useState("Exclusive of Taxes");
 
+  // Coupon display location state
+  const [couponDisplayLocation, setCouponDisplayLocation] = useState("both"); // Default to 'both'
+
   useEffect(() => {
     checkUserLoginAndFetch();
   }, [eventId]);
+
+  // Load existing coupon from localStorage on mount
+  useEffect(() => {
+    const storedCouponCode = localStorage.getItem('couponCode');
+    const storedCouponData = localStorage.getItem('appliedCoupon');
+
+    if (storedCouponCode && storedCouponData) {
+      try {
+        const couponData = JSON.parse(storedCouponData);
+        setCouponCode(storedCouponCode);
+        setAppliedCoupon(couponData);
+        console.log('✅ Loaded existing coupon from localStorage:', storedCouponCode);
+      } catch (error) {
+        console.error('Error parsing stored coupon data:', error);
+      }
+    }
+  }, []);
 
   // Scroll to top when page loads
   useEffect(() => {
@@ -58,6 +78,7 @@ export default function SecureCheckout() {
 
       const summaryElement = document.querySelector('.registration-summary');
       if (!summaryElement) return;
+
 
       const summaryParent = summaryElement.parentElement;
       const parentRect = summaryParent.getBoundingClientRect();
@@ -176,6 +197,21 @@ export default function SecureCheckout() {
       console.error("Error fetching event details:", error);
     } finally {
       setLoading(false);
+    }
+
+    // Fetch coupon display location
+    try {
+      const couponStatusResponse = await authAPI.getCouponStatus(eventId);
+      console.log("getCouponStatus response:", couponStatusResponse);
+      if (couponStatusResponse && couponStatusResponse.data) {
+        const location = couponStatusResponse.data.coupon_status || "both"; // Changed from coupon_display_location to coupon_status
+        setCouponDisplayLocation(location);
+        console.log("✅ Coupon display location:", location);
+      }
+    } catch (error) {
+      console.error("Error fetching coupon status:", error);
+      // Default to 'both' if API fails
+      setCouponDisplayLocation("both");
     }
   };
 
@@ -361,10 +397,26 @@ export default function SecureCheckout() {
       // Ensure discount doesn't exceed total price
       calculatedDiscount = Math.min(calculatedDiscount, totalPrice);
 
-      setAppliedCoupon(matchingCoupon);
+      // Standardize coupon data for ParticipantDetails
+      const standardizedCoupon = {
+        ...matchingCoupon,
+        coupon_code: matchingCoupon.discount_code || matchingCoupon.coupon_code,
+        discount_type: parseInt(matchingCoupon.discount_amt_per_type),
+        discount_value: parseInt(matchingCoupon.discount_amt_per_type) === 2
+          ? parseFloat(matchingCoupon.discount_percentage || 0)
+          : parseFloat(matchingCoupon.discount_amount || 0)
+      };
+
+      setAppliedCoupon(standardizedCoupon);
       setDiscount(calculatedDiscount);
       setAvailableCoupons(response.data.Coupons); // Update available coupons from response
-      console.log("✅ Coupon applied successfully");
+
+      // Store in localStorage for cross-page synchronization
+      localStorage.setItem('couponCode', couponCode.trim());
+      localStorage.setItem('appliedCoupon', JSON.stringify(standardizedCoupon));
+      localStorage.setItem('couponDiscount', calculatedDiscount.toString());
+
+      console.log("✅ Coupon applied successfully", standardizedCoupon);
       console.log("💰 Final discount amount:", calculatedDiscount);
     } catch (error) {
       console.error("❌ Error applying coupon:", error);
@@ -425,10 +477,26 @@ export default function SecureCheckout() {
     // Ensure discount doesn't exceed total price
     calculatedDiscount = Math.min(calculatedDiscount, totalPrice);
 
-    setAppliedCoupon(coupon);
+    // Standardize coupon data for ParticipantDetails
+    const standardizedCoupon = {
+      ...coupon,
+      coupon_code: coupon.discount_code || coupon.coupon_code,
+      discount_type: parseInt(coupon.discount_amt_per_type),
+      discount_value: parseInt(coupon.discount_amt_per_type) === 2
+        ? parseFloat(coupon.discount_percentage || 0)
+        : parseFloat(coupon.discount_amount || 0)
+    };
+
+    setAppliedCoupon(standardizedCoupon);
     setDiscount(calculatedDiscount);
-    setCouponCode(coupon.discount_code);
-    console.log("✅ Coupon applied successfully");
+    setCouponCode(standardizedCoupon.coupon_code);
+
+    // Store in localStorage for cross-page synchronization
+    localStorage.setItem('couponCode', standardizedCoupon.coupon_code);
+    localStorage.setItem('appliedCoupon', JSON.stringify(standardizedCoupon));
+    localStorage.setItem('couponDiscount', calculatedDiscount.toString());
+
+    console.log("✅ Coupon applied successfully", standardizedCoupon);
     console.log("💰 Final discount amount:", calculatedDiscount);
   };
 
@@ -819,49 +887,53 @@ export default function SecureCheckout() {
                       <i className="fas fa-arrow-right proceed-arrow"></i>
                     </button>
                   </div>
-                  <div className="coupon-box">
-                    <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
-                      <input
-                        type="text"
-                        className="coupon-input"
-                        placeholder="Enter coupon code"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        disabled={appliedCoupon !== null}
-                        style={{
-                          flex: 1,
-                          padding: '10px',
-                          border: '1px solid #ddd',
-                          borderRadius: '5px'
-                        }}
-                      />
-                      <button
-                        onClick={handleApplyCoupon}
-                        disabled={appliedCoupon !== null || !couponCode.trim()}
-                        style={{
-                          padding: '10px 20px',
-                          backgroundColor: appliedCoupon ? '#28a745' : '#e74c3c',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '5px',
-                          cursor: appliedCoupon || !couponCode.trim() ? 'not-allowed' : 'pointer',
-                          opacity: appliedCoupon || !couponCode.trim() ? 0.6 : 1
-                        }}
-                      >
-                        {appliedCoupon ? '✓ Applied' : 'Apply'}
-                      </button>
+
+                  {/* Coupon Box - Only show if location is 'outside' or 'both' */}
+                  {(couponDisplayLocation === "outside" || couponDisplayLocation === "both") && (
+                    <div className="coupon-box">
+                      <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
+                        <input
+                          type="text"
+                          className="coupon-input"
+                          placeholder="Enter coupon code"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value)}
+                          disabled={appliedCoupon !== null}
+                          style={{
+                            flex: 1,
+                            padding: '10px',
+                            border: '1px solid #ddd',
+                            borderRadius: '5px'
+                          }}
+                        />
+                        <button
+                          onClick={handleApplyCoupon}
+                          disabled={appliedCoupon !== null || !couponCode.trim()}
+                          style={{
+                            padding: '10px 20px',
+                            backgroundColor: appliedCoupon ? '#28a745' : '#e74c3c',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: appliedCoupon || !couponCode.trim() ? 'not-allowed' : 'pointer',
+                            opacity: appliedCoupon || !couponCode.trim() ? 0.6 : 1
+                          }}
+                        >
+                          {appliedCoupon ? '✓ Applied' : 'Apply'}
+                        </button>
+                      </div>
+                      {couponError && (
+                        <div style={{ color: '#dc3545', fontSize: '14px', marginTop: '5px' }}>
+                          {couponError}
+                        </div>
+                      )}
+                      {appliedCoupon && (
+                        <div style={{ color: '#28a745', fontSize: '14px', marginTop: '5px' }}>
+                          ✓ Coupon "{appliedCoupon.discount_code}" applied successfully!
+                        </div>
+                      )}
                     </div>
-                    {couponError && (
-                      <div style={{ color: '#dc3545', fontSize: '14px', marginTop: '5px' }}>
-                        {couponError}
-                      </div>
-                    )}
-                    {appliedCoupon && (
-                      <div style={{ color: '#28a745', fontSize: '14px', marginTop: '5px' }}>
-                        ✓ Coupon "{appliedCoupon.discount_code}" applied successfully!
-                      </div>
-                    )}
-                  </div>
+                  )}
 
                   {/* Available Coupons Cards */}
                   {availableCoupons.length > 0 && (

@@ -386,6 +386,20 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Get Coupon Status API - returns coupon display location
+  getCouponStatus: async (event_id) => {
+    try {
+      const payload = { event_id };
+      const response = await api.post("/getCouponStatus", payload, {
+        headers: { "Content-Type": "application/json" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("getCouponStatus API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
   // Get Roles API
   getRoles: async () => {
     try {

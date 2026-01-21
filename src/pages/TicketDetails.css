@@ -136,7 +136,7 @@
 .ticket-left img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    /* object-fit: cover; */
 }
 
 /* Right Section - Ticket Details */
@@ -410,4 +410,142 @@
     .action-btn i {
         font-size: 14px;
     }
+}
+
+/* QR Code Modal Styles */
+.qr-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+    backdrop-filter: blur(5px);
+}
+
+.qr-modal-content {
+    background: white;
+    width: 100%;
+    max-width: 450px;
+    border-radius: 12px;
+    position: relative;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    animation: modalAppear 0.3s ease-out;
+    padding: 30px;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.qr-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #f0f0f0;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.qr-modal-close:hover {
+    background: #e74c3c;
+    color: white;
+}
+
+.qr-modal-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.qr-modal-header h3 {
+    margin: 0;
+    font-size: 22px;
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.qr-modal-header p {
+    margin: 5px 0 0 0;
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+.qr-canvas-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 25px;
+    padding: 15px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #f0f0f0;
+}
+
+.qr-ticket-info {
+    border-top: 1px solid #f0f0f0;
+    padding-top: 20px;
+    margin-bottom: 25px;
+}
+
+.qr-info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.qr-info-label {
+    color: #7f8c8d;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.qr-info-value {
+    color: #2c3e50;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.qr-modal-footer {
+    display: flex;
+    justify-content: center;
+}
+
+.qr-close-btn {
+    padding: 12px 40px;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.qr-close-btn:hover {
+    background-color: #c0392b;
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.2);
 }

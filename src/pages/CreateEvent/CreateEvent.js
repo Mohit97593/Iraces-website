@@ -432,20 +432,27 @@ export default function CreateEvent() {
                   // Step 1 - Essentials: event exists => saved
                   stepSaved[0] = true;
 
-                  // Helper to check presence in details or top-level det.data
+                  // Enhanced helper to check presence in details or top-level det.data
                   const hasAny = (keys) => {
                     for (const k of keys) {
-                      if (
-                        (details &&
-                          details[k] !== undefined &&
-                          details[k] !== null &&
-                          details[k] !== "") ||
-                        (det.data &&
-                          det.data[k] !== undefined &&
-                          det.data[k] !== null &&
-                          det.data[k] !== "")
-                      )
-                        return true;
+                      // Check in details
+                      if (details && details[k] !== undefined && details[k] !== null && details[k] !== "") {
+                        // If it's an array, check it has length
+                        if (Array.isArray(details[k])) {
+                          if (details[k].length > 0) return true;
+                        } else {
+                          return true;
+                        }
+                      }
+                      // Check in det.data
+                      if (det.data && det.data[k] !== undefined && det.data[k] !== null && det.data[k] !== "") {
+                        // If it's an array, check it has length
+                        if (Array.isArray(det.data[k])) {
+                          if (det.data[k].length > 0) return true;
+                        } else {
+                          return true;
+                        }
+                      }
                     }
                     return false;
                   };
@@ -477,8 +484,11 @@ export default function CreateEvent() {
                   )
                     stepSaved[2] = true;
 
-                  // Step 4 - Settings (heuristic keys)
+                  // Step 4 - Settings - Check for event_setting_details array
                   if (
+                    (det.data &&
+                      Array.isArray(det.data.event_setting_details) &&
+                      det.data.event_setting_details.length > 0) ||
                     hasAny([
                       "payment_type",
                       "paid_status",
@@ -502,49 +512,140 @@ export default function CreateEvent() {
                   )
                     stepSaved[4] = true;
 
-                  // Step 6 - Form Questions
+                  // Step 6 - Form Questions - Check for actual question data
                   if (
+                    (det.data &&
+                      Array.isArray(det.data.GeneralFormQuestions) &&
+                      det.data.GeneralFormQuestions.length > 0) ||
+                    (det.data &&
+                      Array.isArray(det.data.EventFormQuestions) &&
+                      det.data.EventFormQuestions.length > 0) ||
                     hasAny([
                       "form_questions",
                       "event_form_questions",
                       "formQuestions",
+                      "GeneralFormQuestions",
+                      "EventFormQuestions",
                     ])
                   )
                     stepSaved[5] = true;
 
-                  // Step 7 - Grouping
+                  // Step 7 - Grouping - Check for group data
                   if (
-                    hasAny(["grouping", "event_grouping", "groups"])
+                    (det.data &&
+                      Array.isArray(det.data.AllGroupQuestion) &&
+                      det.data.AllGroupQuestion.length > 0) ||
+                    hasAny([
+                      "grouping",
+                      "event_grouping",
+                      "groups",
+                      "AllGroupQuestion",
+                      "group_questions",
+                    ])
                   )
                     stepSaved[6] = true;
 
-                  // Step 8 - Age Category
+                  // Step 8 - Age Category - Check for AllAgeCategory array
                   if (
-                    hasAny(["age_categories", "AllAgeCategory", "ageCategory"])
+                    (det.data &&
+                      Array.isArray(det.data.AllAgeCategory) &&
+                      det.data.AllAgeCategory.length > 0) ||
+                    hasAny([
+                      "age_categories",
+                      "AllAgeCategory",
+                      "ageCategory",
+                      "age_category",
+                    ])
                   )
                     stepSaved[7] = true;
 
-                  // Step 9 - Discount Coupons
-                  if (hasAny(["coupons", "event_coupons", "discounts"]))
+                  // Step 9 - Discount Coupons - Check for coupon data
+                  if (
+                    (det.data &&
+                      Array.isArray(det.data.AllCoupon) &&
+                      det.data.AllCoupon.length > 0) ||
+                    (det.data &&
+                      Array.isArray(det.data.EventCoupons) &&
+                      det.data.EventCoupons.length > 0) ||
+                    hasAny([
+                      "coupons",
+                      "event_coupons",
+                      "discounts",
+                      "AllCoupon",
+                      "EventCoupons",
+                    ])
+                  )
                     stepSaved[8] = true;
 
-                  // Step 10 - Communications
+                  // Step 10 - Communications - Check for communication templates
                   if (
+                    (det.data &&
+                      Array.isArray(det.data.EventCommunication) &&
+                      det.data.EventCommunication.length > 0) ||
+                    (det.data &&
+                      Array.isArray(det.data.event_communications) &&
+                      det.data.event_communications.length > 0) ||
                     hasAny([
                       "communications",
                       "event_comm",
                       "event_communications",
+                      "EventCommunication",
                     ])
                   )
                     stepSaved[9] = true;
 
-                  // Step 11 - FAQs
-                  if (hasAny(["faqs", "EventFaq", "event_faqs"]))
+                  // Step 11 - FAQs - Check for EventFaq array
+                  if (
+                    (det.data &&
+                      Array.isArray(det.data.EventFaq) &&
+                      det.data.EventFaq.length > 0) ||
+                    hasAny([
+                      "faqs",
+                      "EventFaq",
+                      "event_faqs",
+                      "event_faq",
+                    ])
+                  )
                     stepSaved[10] = true;
 
-                  // Step 12 - Integrations
-                  if (hasAny(["integrations", "event_integrations"]))
+                  // Step 12 - Integrations - Check for integration data
+                  if (
+                    (det.data &&
+                      Array.isArray(det.data.EventIntegrations) &&
+                      det.data.EventIntegrations.length > 0) ||
+                    (det.data &&
+                      Array.isArray(det.data.event_integrations) &&
+                      det.data.event_integrations.length > 0) ||
+                    hasAny([
+                      "integrations",
+                      "event_integrations",
+                      "EventIntegrations",
+                    ])
+                  )
                     stepSaved[11] = true;
+
+                  console.log("📊 Saved Steps Detection:", stepSaved);
+
+                  // Try to load saved steps from sessionStorage and merge
+                  try {
+                    const eventId = sessionStorage.getItem("event_id");
+                    if (eventId) {
+                      const savedStepsStr = sessionStorage.getItem(`savedSteps_${eventId}`);
+                      if (savedStepsStr) {
+                        const savedStepsFromStorage = JSON.parse(savedStepsStr);
+                        console.log("📦 Loaded saved steps from sessionStorage:", savedStepsFromStorage);
+                        // Merge: if either API detection OR sessionStorage says it's saved, mark it as saved
+                        for (let i = 0; i < stepSaved.length; i++) {
+                          if (savedStepsFromStorage[i] === true) {
+                            stepSaved[i] = true;
+                          }
+                        }
+                        console.log("✅ Final merged saved steps:", stepSaved);
+                      }
+                    }
+                  } catch (e) {
+                    console.error("Error loading saved steps from sessionStorage:", e);
+                  }
 
                   setSavedSteps(stepSaved);
                 } catch (e) {
@@ -824,6 +925,13 @@ export default function CreateEvent() {
       // mark current as saved
       if (currentStep - 1 >= 0 && currentStep - 1 < updated.length)
         updated[currentStep - 1] = true;
+      // Persist to sessionStorage
+      try {
+        const eventId = sessionStorage.getItem("event_id");
+        if (eventId) {
+          sessionStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+        }
+      } catch (e) { }
       return updated;
     });
     setCurrentStep(targetStep);
@@ -988,6 +1096,13 @@ export default function CreateEvent() {
         setSavedSteps((prev) => {
           const updated = [...prev];
           updated[0] = true;
+          // Persist to sessionStorage
+          try {
+            const eventId = sessionStorage.getItem("event_id");
+            if (eventId) {
+              sessionStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+            }
+          } catch (e) { }
           return updated;
         });
         setCurrentStep(2);
@@ -1006,6 +1121,13 @@ export default function CreateEvent() {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[1] = true;
+      // Persist to sessionStorage
+      try {
+        const eventId = sessionStorage.getItem("event_id");
+        if (eventId) {
+          sessionStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+        }
+      } catch (e) { }
       return updated;
     });
     setCurrentStep(3);
@@ -1015,6 +1137,13 @@ export default function CreateEvent() {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[2] = true;
+      // Persist to sessionStorage
+      try {
+        const eventId = sessionStorage.getItem("event_id");
+        if (eventId) {
+          sessionStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+        }
+      } catch (e) { }
       return updated;
     });
     setCurrentStep(4);
@@ -1023,6 +1152,13 @@ export default function CreateEvent() {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[3] = true;
+      // Persist to sessionStorage
+      try {
+        const eventId = sessionStorage.getItem("event_id");
+        if (eventId) {
+          sessionStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+        }
+      } catch (e) { }
       return updated;
     });
     setCurrentStep(5);
@@ -1031,6 +1167,13 @@ export default function CreateEvent() {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[4] = true;
+      // Persist to sessionStorage
+      try {
+        const eventId = sessionStorage.getItem("event_id");
+        if (eventId) {
+          sessionStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+        }
+      } catch (e) { }
       return updated;
     });
     setCurrentStep(6);
@@ -1039,6 +1182,13 @@ export default function CreateEvent() {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[6] = true;
+      // Persist to sessionStorage
+      try {
+        const eventId = sessionStorage.getItem("event_id");
+        if (eventId) {
+          sessionStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+        }
+      } catch (e) { }
       return updated;
     });
     setCurrentStep(8);

@@ -28,6 +28,15 @@ const GeneralFormQuestions = ({
   const [selectedQuestionForSubDetails, setSelectedQuestionForSubDetails] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // Main question price/count toggle states
+  const [mainQuestionPriceEnabled, setMainQuestionPriceEnabled] = useState(false);
+  const [mainQuestionCountEnabled, setMainQuestionCountEnabled] = useState(false);
+  const [mainQuestionOptionLabels, setMainQuestionOptionLabels] = useState("");
+  const [mainQuestionOptionPrices, setMainQuestionOptionPrices] = useState("");
+  const [mainQuestionOptionCounts, setMainQuestionOptionCounts] = useState("");
+  const [mainQuestionOptions, setMainQuestionOptions] = useState([]);
+
+
   const normalizeKey = (s) =>
     String(s || "")
       .trim()
@@ -496,6 +505,36 @@ const GeneralFormQuestions = ({
     } else {
       // No sub-questions, reset to empty
       setSubQuestions([]);
+    }
+
+    // Initialize main question price/count states
+    if (question.question_form_option && Array.isArray(question.question_form_option) && question.question_form_option.length > 0) {
+      const options = question.question_form_option;
+
+      // Check if any option has price or count
+      const hasPrices = options.some(opt => opt.price);
+      const hasCounts = options.some(opt => opt.count);
+
+      setMainQuestionPriceEnabled(hasPrices);
+      setMainQuestionCountEnabled(hasCounts);
+      setMainQuestionOptions(options.map(opt => ({
+        label: opt.label || opt.option_name || "",
+        price: opt.price || "",
+        count: opt.count || ""
+      })));
+
+      // Convert to comma-separated strings for input fields
+      setMainQuestionOptionLabels(options.map(opt => opt.label || opt.option_name || "").join(", "));
+      setMainQuestionOptionPrices(options.map(opt => opt.price || "").join(", "));
+      setMainQuestionOptionCounts(options.map(opt => opt.count || "").join(", "));
+    } else {
+      // Reset to empty
+      setMainQuestionPriceEnabled(false);
+      setMainQuestionCountEnabled(false);
+      setMainQuestionOptions([]);
+      setMainQuestionOptionLabels("");
+      setMainQuestionOptionPrices("");
+      setMainQuestionOptionCounts("");
     }
 
     setShowModal(true);
@@ -975,6 +1014,56 @@ const GeneralFormQuestions = ({
         selectedQuestion.field_mapping ||
         ""
       );
+
+      // Process main question price/count options if toggles are enabled
+      if ((mainQuestionPriceEnabled || mainQuestionCountEnabled) &&
+        selectedQuestion.question_form_option &&
+        Array.isArray(selectedQuestion.question_form_option) &&
+        selectedQuestion.question_form_option.length > 0) {
+
+        // Use existing labels from question_form_option
+        const existingOptions = selectedQuestion.question_form_option;
+        const labels = existingOptions.map(opt => opt.label || opt.option_name || "");
+
+        const prices = mainQuestionPriceEnabled && mainQuestionOptionPrices
+          ? mainQuestionOptionPrices.split(',').map(p => p.trim()).filter(p => p)
+          : [];
+        const counts = mainQuestionCountEnabled && mainQuestionOptionCounts
+          ? mainQuestionOptionCounts.split(',').map(c => c.trim()).filter(c => c)
+          : [];
+
+        // Validate that counts match number of existing options
+        if (mainQuestionPriceEnabled && prices.length > 0 && prices.length !== labels.length) {
+          alert(`Number of prices (${prices.length}) must match number of options (${labels.length})`);
+          return;
+        }
+        if (mainQuestionCountEnabled && counts.length > 0 && counts.length !== labels.length) {
+          alert(`Number of counts (${counts.length}) must match number of options (${labels.length})`);
+          return;
+        }
+
+        // Build options array with existing labels + new price/count data
+        const processedOptions = existingOptions.map((opt, idx) => {
+          const option = {
+            ...opt,  // Keep existing option data (id, label, child_question_id, etc.)
+            label: opt.label || opt.option_name || "",
+            option_name: opt.label || opt.option_name || ""
+          };
+          if (mainQuestionPriceEnabled && prices[idx]) {
+            option.price = prices[idx];
+          }
+          if (mainQuestionCountEnabled && counts[idx]) {
+            // Use 'limit' to match backend expectation
+            option.limit = counts[idx];
+          }
+          return option;
+        });
+
+        // Update selectedQuestion with processed options
+        selectedQuestion.question_form_option = processedOptions;
+        console.log("📦 Processed main question options with existing labels:", processedOptions);
+      }
+
       formData.append(
         "sub_question_flag",
         selectedQuestion.add_subquestions ? "1" : "0"
@@ -1223,6 +1312,9 @@ const GeneralFormQuestions = ({
       );
       formData.append("domain_name", selectedQuestion.email_domain || "");
 
+      // Coupon display location
+      formData.append("coupon_display_location", selectedQuestion.coupon_display_location || "both");
+
       console.log("Sending addGeneralFormQuestions payload", selectedQuestion);
       console.log("📤 FormData sub_questions value:", formData.get("sub_questions"));
 
@@ -1265,6 +1357,8 @@ const GeneralFormQuestions = ({
           range_end_date: selectedQuestion.end_date || "",
           specific_domain: selectedQuestion.email_validation_enabled ? 1 : 0,
           domain_name: selectedQuestion.email_domain || "",
+          question_form_option: selectedQuestion.question_form_option ? JSON.stringify(selectedQuestion.question_form_option) : "[]",
+          coupon_display_location: selectedQuestion.coupon_display_location || "both",
         };
 
         // Add sub_questions as JSON string if subquestions exist
@@ -1282,6 +1376,14 @@ const GeneralFormQuestions = ({
       } else {
         // CREATE MODE: Use addGeneralFormQuestions API with FormData
         console.log("➕ Using CREATE API");
+
+        // Add question_form_option to FormData for CREATE mode
+        if (selectedQuestion.question_form_option && selectedQuestion.question_form_option.length > 0) {
+          formData.append("question_form_option", JSON.stringify(selectedQuestion.question_form_option));
+        } else {
+          formData.append("question_form_option", "[]");
+        }
+
         res = await authAPI.addGeneralFormQuestions(formData);
         console.log("✅ addGeneralFormQuestions response:", res);
       }
@@ -1473,2124 +1575,2332 @@ const GeneralFormQuestions = ({
                 </div>
               </div>
 
-              {/* Race Categories */}
-              <div className="form-group2">
-                <label className="form-label">Race Categories</label>
-                <div className="race-category-toggle">
-                  <button
-                    className={`race-btn ${raceCategoryMode === "all" ? "active" : ""
-                      }`}
-                    onClick={() => toggleRaceMode("all")}
-                  >
-                    <span className="icon">🔊</span> All Race Categories
-                  </button>
-                  <button
-                    className={`race-btn ${raceCategoryMode === "selected" ? "active" : ""
-                      }`}
-                    onClick={() => toggleRaceMode("selected")}
-                  >
-                    <span className="icon">🔒</span> Selected Race Categories
-                  </button>
-                </div>
-                {raceCategoryMode === "selected" && (
-                  <div className="race-tickets-list">
-                    {raceTickets && raceTickets.length > 0 ? (
-                      raceTickets.map((t) => (
-                        <label key={t.id} className="race-ticket-item">
-                          <span className="ticket-name">
-                            {t.name || `Ticket ${t.id}`}
-                          </span>
-                          <input
-                            type="checkbox"
-                            checked={(
-                              selectedQuestion.selected_race_tickets || []
-                            ).includes(String(t.id))}
-                            onChange={() => handleToggleTicket(t.id)}
-                          />
-                        </label>
-                      ))
-                    ) : (
-                      <div className="muted">No race categories available.</div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Limit Length - only show for text type questions */}
-              {(selectedQuestion.question_form_type || "").toLowerCase() ===
-                "text" && (
-                  <div className="form-group2">
-                    <div className="limit-length-row">
-                      <label className="form-label-inline">
-                        <input
-                          type="checkbox"
-                          className="checkbox"
-                          checked={!!selectedQuestion.limit_length_enabled}
-                          onChange={(e) =>
-                            handleChangeField(
-                              "limit_length_enabled",
-                              e.target.checked
-                            )
-                          }
-                        />
-                        <span>Limit Length</span>
+              {/* Price and Count Toggle Section for Main Question */}
+              {/* Show only for select/dropdown questions */}
+              {(selectedQuestion.question_form_type === "select" ||
+                selectedQuestion.question_form_type === "dropdown") && (
+                  <div className="form-group2" style={{ marginTop: 16 }}>
+                    {/* Price and Count Toggles */}
+                    <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+                      {/* Price Toggle */}
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                        <div
+                          onClick={() => setMainQuestionPriceEnabled(!mainQuestionPriceEnabled)}
+                          style={{
+                            width: 50,
+                            height: 26,
+                            borderRadius: 13,
+                            background: mainQuestionPriceEnabled ? '#da251c' : '#ccc',
+                            position: 'relative',
+                            cursor: 'pointer',
+                            transition: 'background 0.3s'
+                          }}
+                        >
+                          <div style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: '50%',
+                            background: '#fff',
+                            position: 'absolute',
+                            top: 2,
+                            left: mainQuestionPriceEnabled ? 26 : 2,
+                            transition: 'left 0.3s'
+                          }} />
+                        </div>
+                        <span style={{ fontWeight: 500 }}>Price</span>
                       </label>
 
-                      <div
-                        className="limit-length-inputs"
-                        style={{
-                          display: selectedQuestion.limit_length_enabled
-                            ? "flex"
-                            : "none",
-                        }}
-                      >
-                        <div className="input-group">
-                          <label className="sub-label">Min Length*</label>
-                          <input
-                            type="number"
-                            min="0"
-                            className="form-input-small"
-                            placeholder=""
-                            value={selectedQuestion.min_length || ""}
-                            onChange={(e) =>
-                              handleChangeField("min_length", e.target.value)
-                            }
-                          />
-                        </div>
-                        <div className="input-group">
-                          <label className="sub-label">Max Length*</label>
-                          <input
-                            type="number"
-                            min="0"
-                            className="form-input-small"
-                            placeholder=""
-                            value={selectedQuestion.max_length || ""}
-                            onChange={(e) =>
-                              handleChangeField("max_length", e.target.value)
-                            }
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-              {/* Radio/Checkbox type: show Add Subquestions toggle and dynamic subquestion forms */}
-              {((selectedQuestion.question_form_type || "").toLowerCase() === "radio" ||
-                (selectedQuestion.question_form_type || "").toLowerCase() === "checkbox") && (
-                  <div className="form-group2">
-                    <label
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        marginTop: 22,
-                        cursor: 'pointer',
-                        userSelect: 'none'
-                      }}
-                    >
-                      {/* Toggle Switch */}
-                      <div
-                        onClick={() => {
-                          const newValue = !selectedQuestion.add_subquestions;
-                          handleChangeField("add_subquestions", newValue);
-                          if (newValue && subQuestions.length === 0) {
-                            // Add first subquestion when toggle is turned on
-                            addSubQuestion();
-                          } else if (!newValue) {
-                            // Clear all subquestions when turned off
-                            setSubQuestions([]);
-                          }
-                        }}
-                        style={{
-                          position: 'relative',
-                          width: 48,
-                          height: 28,
-                          borderRadius: 14,
-                          background: selectedQuestion.add_subquestions ? '#da251c' : '#ccc',
-                          transition: 'background 0.3s',
-                          cursor: 'pointer',
-                          flexShrink: 0
-                        }}
-                      >
+                      {/* Count Toggle */}
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                         <div
+                          onClick={() => setMainQuestionCountEnabled(!mainQuestionCountEnabled)}
                           style={{
+                            width: 50,
+                            height: 26,
+                            borderRadius: 13,
+                            background: mainQuestionCountEnabled ? '#da251c' : '#ccc',
+                            position: 'relative',
+                            cursor: 'pointer',
+                            transition: 'background 0.3s'
+                          }}
+                        >
+                          <div style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: '50%',
+                            background: '#fff',
                             position: 'absolute',
                             top: 2,
-                            left: selectedQuestion.add_subquestions ? 22 : 2,
-                            width: 24,
-                            height: 24,
-                            borderRadius: 12,
-                            background: '#fff',
-                            transition: 'left 0.3s',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                          }}
-                        />
-                      </div>
-                      <span style={{ fontWeight: 500, fontSize: '0.95rem' }}>Add Subquestions</span>
-                      <span style={{
-                        fontSize: '0.85rem',
-                        color: '#666',
-                        marginLeft: 'auto'
-                      }}>
-                        {selectedQuestion.add_subquestions ? subQuestions.length : 0}
-                      </span>
-                    </label>
-
-                    {selectedQuestion.add_subquestions && (
-                      <div style={{ marginTop: 16, width: '100%' }}>
-                        {/* Display each subquestion */}
-                        {subQuestions.map((subQ, index) => (
-                          <div key={index} style={{ marginBottom: 20, width: '100%' }}>
-                            {/* Question Option Type Dropdown */}
-                            <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
-                              <label className="form-label">
-                                Question Option Type <span style={{ color: "#da251c" }}>*</span>
-                              </label>
-                              <select
-                                className="form-input compact"
-                                value={subQ.selectedOptionId || ""}
-                                onChange={(e) => {
-                                  updateSubQuestion(index, "selectedOptionId", e.target.value);
-                                  // Clear error when user selects an option
-                                  if (e.target.value) {
-                                    setSubQuestionErrors(prev => {
-                                      const newErrors = { ...prev };
-                                      delete newErrors[`${index}_selectedOptionId`];
-                                      return newErrors;
-                                    });
-                                  }
-                                }}
-                              >
-                                <option value="">-- Select --</option>
-                                {getAvailableOptions(index).map((opt) => (
-                                  <option key={opt.id} value={String(opt.id)}>
-                                    {opt.label}
-                                  </option>
-                                ))}
-                              </select>
-                              {subQuestionErrors[`${index}_selectedOptionId`] && (
-                                <div style={{ color: "#da251c", fontSize: "0.85rem", marginTop: 4 }}>
-                                  {subQuestionErrors[`${index}_selectedOptionId`]}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Show full form only if option is selected */}
-                            {subQ.selectedOptionId && (
-                              <>
-                                {/* Question Title */}
-                                <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
-                                  <label className="form-label">
-                                    Question Title <span style={{ color: "#da251c" }}>*</span>
-                                    {subQ.subQuestionMandatory === "1" && (
-                                      <span style={{ color: "#da251c", marginLeft: 8, fontSize: "0.9em" }}>
-                                        * (Mandatory)
-                                      </span>
-                                    )}
-                                  </label>
-                                  <input
-                                    type="text"
-                                    className="form-input compact"
-                                    value={subQ.subQuestionTitle || ""}
-                                    onChange={(e) => {
-                                      updateSubQuestion(index, "subQuestionTitle", e.target.value);
-                                      // Clear error when user types
-                                      if (e.target.value.trim()) {
-                                        setSubQuestionErrors(prev => {
-                                          const newErrors = { ...prev };
-                                          delete newErrors[`${index}_title`];
-                                          return newErrors;
-                                        });
-                                      }
-                                    }}
-                                    placeholder=""
-                                  />
-                                  {subQuestionErrors[`${index}_title`] && (
-                                    <div style={{ color: "#da251c", fontSize: "0.85rem", marginTop: 4 }}>
-                                      {subQuestionErrors[`${index}_title`]}
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Hint Type and Sub Question Hint - side by side */}
-                                <div style={{ display: 'flex', gap: '16px', marginBottom: 12, width: '100%' }}>
-                                  {/* Hint Type */}
-                                  <div className="form-group2" style={{ flex: 1 }}>
-                                    <label className="form-label">Hint Type <span style={{ color: "#da251c" }}>*</span></label>
-                                    <select
-                                      className="form-input compact"
-                                      value={subQ.subQueHintType || "1"}
-                                      onChange={(e) =>
-                                        updateSubQuestion(index, "subQueHintType", e.target.value)
-                                      }
-                                    >
-                                      <option value="1">Text</option>
-                                      <option value="2">Image</option>
-                                    </select>
-                                  </div>
-
-                                  {/* Sub Question Hint */}
-                                  <div className="form-group2" style={{ flex: 1 }}>
-                                    <label className="form-label">Sub Question Hint</label>
-                                    {subQ.subQueHintType === "2" ? (
-                                      <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="form-input compact"
-                                        onChange={(e) => {
-                                          const file = e.target.files && e.target.files[0];
-                                          updateSubQuestion(index, "subQuestionHintFile", file || null);
-                                        }}
-                                      />
-                                    ) : (
-                                      <input
-                                        type="text"
-                                        className="form-input compact"
-                                        value={subQ.subQuestionHint || ""}
-                                        onChange={(e) =>
-                                          updateSubQuestion(index, "subQuestionHint", e.target.value)
-                                        }
-                                        placeholder=""
-                                      />
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Question Input Type */}
-                                <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
-                                  <label className="form-label">
-                                    Question Input Type <span style={{ color: "#da251c" }}>*</span>
-                                  </label>
-                                  <select
-                                    className="form-input compact"
-                                    value={subQ.subQuestionFormType || ""}
-                                    onChange={(e) => {
-                                      updateSubQuestion(index, "subQuestionFormType", e.target.value);
-                                      // Clear error when user selects
-                                      if (e.target.value) {
-                                        setSubQuestionErrors(prev => {
-                                          const newErrors = { ...prev };
-                                          delete newErrors[`${index}_formType`];
-                                          return newErrors;
-                                        });
-                                      }
-                                    }}
-                                  >
-                                    <option value="">-- Select --</option>
-                                    <option value="text">Text</option>
-                                    <option value="email">Email</option>
-                                    <option value="mobile">Mobile</option>
-                                    <option value="amount">Amount</option>
-                                    <option value="textarea">Textarea</option>
-                                    <option value="checkbox">Checkboxes</option>
-                                    <option value="radio">Radio</option>
-                                    <option value="date">Date</option>
-                                    <option value="time">Time</option>
-                                    <option value="file">File</option>
-                                    <option value="select">Select (Dropdown)</option>
-                                  </select>
-                                  {subQuestionErrors[`${index}_formType`] && (
-                                    <div style={{ color: "#da251c", fontSize: "0.85rem", marginTop: 4 }}>
-                                      {subQuestionErrors[`${index}_formType`]}
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Options UI for checkbox, radio, and select types */}
-                                {(subQ.subQuestionFormType === 'checkbox' ||
-                                  subQ.subQuestionFormType === 'radio' ||
-                                  subQ.subQuestionFormType === 'select') && (
-                                    <div style={{ marginBottom: 12, width: '100%' }}>
-                                      {/* Price and Maximum Count Limit RED TOGGLES */}
-                                      <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
-                                        {/* Price Toggle */}
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                                          <div
-                                            onClick={() => updateSubQuestion(index, 'priceEnabled', !subQ.priceEnabled)}
-                                            style={{
-                                              width: 50,
-                                              height: 26,
-                                              borderRadius: 13,
-                                              background: subQ.priceEnabled ? '#da251c' : '#ccc',
-                                              position: 'relative',
-                                              cursor: 'pointer',
-                                              transition: 'background 0.3s'
-                                            }}
-                                          >
-                                            <div style={{
-                                              width: 22,
-                                              height: 22,
-                                              borderRadius: '50%',
-                                              background: '#fff',
-                                              position: 'absolute',
-                                              top: 2,
-                                              left: subQ.priceEnabled ? 26 : 2,
-                                              transition: 'left 0.3s'
-                                            }} />
-                                          </div>
-                                          <span style={{ fontWeight: 500 }}>Price</span>
-                                        </label>
-
-                                        {/* Maximum Count Limit Toggle */}
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                                          <div
-                                            onClick={() => updateSubQuestion(index, 'maxCountEnabled', !subQ.maxCountEnabled)}
-                                            style={{
-                                              width: 50,
-                                              height: 26,
-                                              borderRadius: 13,
-                                              background: subQ.maxCountEnabled ? '#da251c' : '#ccc',
-                                              position: 'relative',
-                                              cursor: 'pointer',
-                                              transition: 'background 0.3s'
-                                            }}
-                                          >
-                                            <div style={{
-                                              width: 22,
-                                              height: 22,
-                                              borderRadius: '50%',
-                                              background: '#fff',
-                                              position: 'absolute',
-                                              top: 2,
-                                              left: subQ.maxCountEnabled ? 26 : 2,
-                                              transition: 'left 0.3s'
-                                            }} />
-                                          </div>
-                                          <span style={{ fontWeight: 500 }}>Maximum Count Limit</span>
-                                        </label>
-                                      </div>
-
-                                      {/* Options Table with DYNAMIC columns */}
-                                      <div style={{
-                                        background: '#fff0f0',
-                                        borderRadius: 8,
-                                        padding: '16px',
-                                        marginBottom: 12
-                                      }}>
-                                        {/* Existing options display */}
-                                        {(subQ.options || []).length > 0 && (
-                                          <>
-                                            <div style={{
-                                              display: 'grid',
-                                              gridTemplateColumns: `1fr ${subQ.priceEnabled ? 'auto ' : ''}${subQ.maxCountEnabled ? 'auto ' : ''}auto`,
-                                              gap: 16,
-                                              marginBottom: 12,
-                                              paddingBottom: 8,
-                                              borderBottom: '2px solid #da251c'
-                                            }}>
-                                              <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Label</div>
-                                              {subQ.priceEnabled && <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Price</div>}
-                                              {subQ.maxCountEnabled && <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Count</div>}
-                                              <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Action</div>
-                                            </div>
-
-                                            {/* Existing options - Dynamic columns */}
-                                            {(subQ.options || []).map((opt, optIdx) => (
-                                              <div
-                                                key={optIdx}
-                                                style={{
-                                                  display: 'grid',
-                                                  gridTemplateColumns: `1fr ${subQ.priceEnabled ? 'auto ' : ''}${subQ.maxCountEnabled ? 'auto ' : ''}auto`,
-                                                  gap: 16,
-                                                  alignItems: 'center',
-                                                  marginBottom: 8,
-                                                  paddingBottom: 8,
-                                                  borderBottom: '1px solid #eee'
-                                                }}
-                                              >
-                                                <div style={{ color: '#333' }}>{opt.label || opt}</div>
-                                                {subQ.priceEnabled && <div style={{ color: '#666' }}>{opt.price || '-'}</div>}
-                                                {subQ.maxCountEnabled && <div style={{ color: '#666' }}>{opt.count || '-'}</div>}
-                                                <button
-                                                  type="button"
-                                                  onClick={() => {
-                                                    const newOptions = [...(subQ.options || [])];
-                                                    newOptions.splice(optIdx, 1);
-                                                    updateSubQuestion(index, 'options', newOptions);
-                                                  }}
-                                                  style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
-                                                    color: '#e74c3c',
-                                                    cursor: 'pointer',
-                                                    fontSize: '1.2rem',
-                                                    padding: 4
-                                                  }}
-                                                  title="Delete option"
-                                                >
-                                                  🗑
-                                                </button>
-                                              </div>
-                                            ))}
-                                          </>
-                                        )}
-
-                                        {/* Comma-separated input section */}
-                                        <div style={{
-                                          marginTop: (subQ.options || []).length > 0 ? 16 : 0,
-                                          paddingTop: (subQ.options || []).length > 0 ? 16 : 0,
-                                          borderTop: (subQ.options || []).length > 0 ? '1px dashed #ddd' : 'none'
-                                        }}>
-                                          {/* Label input */}
-                                          <div style={{ marginBottom: 12 }}>
-                                            <label style={{
-                                              display: 'block',
-                                              fontWeight: 600,
-                                              fontSize: '0.9rem',
-                                              marginBottom: 6,
-                                              color: '#333'
-                                            }}>
-                                              Labels (comma-separated) <span style={{ color: '#da251c' }}>*</span>
-                                            </label>
-                                            <input
-                                              type="text"
-                                              placeholder="e.g., Male, Female, Other"
-                                              value={subQ.newOptionLabel || ''}
-                                              onChange={(e) => updateSubQuestion(index, 'newOptionLabel', e.target.value)}
-                                              style={{
-                                                width: '100%',
-                                                padding: '10px 12px',
-                                                border: '1px solid #ddd',
-                                                borderRadius: 6,
-                                                fontSize: '0.95rem'
-                                              }}
-                                            />
-                                          </div>
-
-                                          {/* Price input (if enabled) */}
-                                          {subQ.priceEnabled && (
-                                            <div style={{ marginBottom: 12 }}>
-                                              <label style={{
-                                                display: 'block',
-                                                fontWeight: 600,
-                                                fontSize: '0.9rem',
-                                                marginBottom: 6,
-                                                color: '#333'
-                                              }}>
-                                                Prices (comma-separated)
-                                              </label>
-                                              <input
-                                                type="text"
-                                                placeholder="e.g., 100, 200, 150"
-                                                value={subQ.newOptionPrice || ''}
-                                                onChange={(e) => updateSubQuestion(index, 'newOptionPrice', e.target.value)}
-                                                style={{
-                                                  width: '100%',
-                                                  padding: '10px 12px',
-                                                  border: '1px solid #ddd',
-                                                  borderRadius: 6,
-                                                  fontSize: '0.95rem'
-                                                }}
-                                              />
-                                            </div>
-                                          )}
-
-                                          {/* Count input (if enabled) */}
-                                          {subQ.maxCountEnabled && (
-                                            <div style={{ marginBottom: 12 }}>
-                                              <label style={{
-                                                display: 'block',
-                                                fontWeight: 600,
-                                                fontSize: '0.9rem',
-                                                marginBottom: 6,
-                                                color: '#333'
-                                              }}>
-                                                Counts (comma-separated)
-                                              </label>
-                                              <input
-                                                type="text"
-                                                placeholder="e.g., 50, 75, 100"
-                                                value={subQ.newOptionCount || ''}
-                                                onChange={(e) => updateSubQuestion(index, 'newOptionCount', e.target.value)}
-                                                style={{
-                                                  width: '100%',
-                                                  padding: '10px 12px',
-                                                  border: '1px solid #ddd',
-                                                  borderRadius: 6,
-                                                  fontSize: '0.95rem'
-                                                }}
-                                              />
-                                            </div>
-                                          )}
-
-                                          {/* Hint text */}
-                                          <div style={{
-                                            background: '#e8f5e9',
-                                            border: '1px solid #4caf50',
-                                            borderRadius: 6,
-                                            padding: '10px 12px',
-                                            fontSize: '0.85rem',
-                                            color: '#2e7d32'
-                                          }}>
-                                            <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                                              💡 Tip: You can send different values in a single line
-                                            </div>
-                                            <div>
-                                              • Separate multiple values with comma (,)<br />
-                                              • Example: Male, Female, Other<br />
-                                              • If you have 3 labels, provide 3 prices and 3 counts
-                                            </div>
-                                          </div>
-
-                                          {/* Error message display */}
-                                          {subQ.optionError && (
-                                            <div style={{
-                                              background: '#ffebee',
-                                              border: '1px solid #f44336',
-                                              borderRadius: 6,
-                                              padding: '10px 12px',
-                                              marginTop: 12,
-                                              fontSize: '0.85rem',
-                                              color: '#c62828'
-                                            }}>
-                                              ⚠️ {subQ.optionError}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                {/* Mandatory/Optional Toggle */}
-                                <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
-                                  <div className="status-toggle">
-                                    <button
-                                      type="button"
-                                      className={`status-btn ${subQ.subQuestionMandatory === "1" ? "active" : ""}`}
-                                      onClick={() =>
-                                        updateSubQuestion(index, "subQuestionMandatory", "1")
-                                      }
-                                    >
-                                      <span className="star-icon">★</span> Mandatory
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className={`status-btn ${subQ.subQuestionMandatory !== "1" ? "active" : ""}`}
-                                      onClick={() =>
-                                        updateSubQuestion(index, "subQuestionMandatory", "0")
-                                      }
-                                    >
-                                      <span className="star-icon">☆</span> Optional
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Delete button for this subquestion (except first one) */}
-                                {index > 0 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => removeSubQuestion(index)}
-                                    style={{
-                                      background: "#fff",
-                                      border: "1px solid #e74c3c",
-                                      color: "#e74c3c",
-                                      borderRadius: 6,
-                                      padding: "6px 12px",
-                                      cursor: "pointer",
-                                      fontSize: "0.9rem",
-                                      marginBottom: 12
-                                    }}
-                                  >
-                                    🗑 Remove
-                                  </button>
-                                )}
-
-                                {/* CHILD SUBQUESTIONS SECTION - Only show for option-based input types */}
-                                {(subQ.subQuestionFormType === 'radio' ||
-                                  subQ.subQuestionFormType === 'checkbox' ||
-                                  subQ.subQuestionFormType === 'select') && (
-                                    <div style={{
-                                      marginTop: '20px',
-                                      paddingTop: '16px',
-                                      borderTop: '2px dashed #4CAF50'
-                                    }}>
-                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                        <label style={{ fontWeight: '600', fontSize: '0.9rem', color: '#4CAF50' }}>
-                                          🔹 Child Sub-Questions (Unlimited)
-                                        </label>
-                                        <button
-                                          type="button"
-                                          onClick={() => addChildSubQuestion(index)}
-                                          style={{
-                                            padding: '6px 14px',
-                                            backgroundColor: '#4CAF50',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                            fontSize: '0.85rem',
-                                            fontWeight: '600'
-                                          }}
-                                        >
-                                          ➕ Add Subquestion (Inside This)
-                                        </button>
-                                      </div>
-
-                                      {/* Render Child Subquestions */}
-                                      {subQ.childSubquestions && subQ.childSubquestions.length > 0 ? (
-                                        <div>
-                                          {subQ.childSubquestions.map((child, childIdx) => (
-                                            <div
-                                              key={childIdx}
-                                              style={{
-                                                marginLeft: '20px',
-                                                marginBottom: '16px',
-                                                padding: '16px',
-                                                borderLeft: '4px solid #4CAF50',
-                                                backgroundColor: '#f9fdf9',
-                                                borderRadius: '6px'
-                                              }}
-                                            >
-                                              <div style={{ fontSize: '0.8rem', color: '#4CAF50', marginBottom: '12px', fontWeight: 'bold' }}>
-                                                📌 Child Sub-Question #{childIdx + 1}
-                                              </div>
-
-                                              {/* Child Title */}
-                                              <div className="form-group2" style={{ marginBottom: '12px' }}>
-                                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Title <span style={{ color: "#da251c" }}>*</span></label>
-                                                <input
-                                                  type="text"
-                                                  className="form-input compact"
-                                                  value={child.subQuestionTitle || ""}
-                                                  onChange={(e) => {
-                                                    updateChildSubQuestion(index, childIdx, 'subQuestionTitle', e.target.value);
-                                                    // Clear error when user types
-                                                    if (e.target.value.trim()) {
-                                                      setSubQuestionErrors(prev => {
-                                                        const newErrors = { ...prev };
-                                                        delete newErrors[`${index}_child_${childIdx}_title`];
-                                                        return newErrors;
-                                                      });
-                                                    }
-                                                  }}
-                                                  placeholder="Enter child title"
-                                                />
-                                                {subQuestionErrors[`${index}_child_${childIdx}_title`] && (
-                                                  <div style={{ color: "#da251c", fontSize: "0.75rem", marginTop: 4 }}>
-                                                    {subQuestionErrors[`${index}_child_${childIdx}_title`]}
-                                                  </div>
-                                                )}
-                                              </div>
-
-                                              {/* Child Hint Type and Hint - side by side */}
-                                              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                                                {/* Hint Type */}
-                                                <div className="form-group2" style={{ flex: 1 }}>
-                                                  <label className="form-label" style={{ fontSize: '0.85rem' }}>Hint Type<span style={{ color: "#da251c" }}>*</span></label>
-                                                  <select
-                                                    className="form-input compact"
-                                                    value={child.subQueHintType || "1"}
-                                                    onChange={(e) => updateChildSubQuestion(index, childIdx, 'subQueHintType', e.target.value)}
-                                                  >
-                                                    <option value="1">Text</option>
-                                                    <option value="2">Image</option>
-                                                  </select>
-                                                </div>
-
-                                                {/* Sub Question Hint */}
-                                                <div className="form-group2" style={{ flex: 1 }}>
-                                                  <label className="form-label" style={{ fontSize: '0.85rem' }}>Sub Question Hint</label>
-                                                  {child.subQueHintType === "2" ? (
-                                                    <input
-                                                      type="file"
-                                                      accept="image/*"
-                                                      className="form-input compact"
-                                                      onChange={(e) => {
-                                                        const file = e.target.files && e.target.files[0];
-                                                        updateChildSubQuestion(index, childIdx, 'subQuestionHintFile', file || null);
-                                                      }}
-                                                    />
-                                                  ) : (
-                                                    <input
-                                                      type="text"
-                                                      className="form-input compact"
-                                                      value={child.subQuestionHint || ""}
-                                                      onChange={(e) => updateChildSubQuestion(index, childIdx, 'subQuestionHint', e.target.value)}
-                                                      placeholder=""
-                                                    />
-                                                  )}
-                                                </div>
-                                              </div>
-
-                                              {/* Child Form Type */}
-                                              <div className="form-group2" style={{ marginBottom: '12px' }}>
-                                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Form Type <span style={{ color: "#da251c" }}>*</span></label>
-                                                <select
-                                                  className="form-input compact"
-                                                  value={child.subQuestionFormType || ""}
-                                                  onChange={(e) => {
-                                                    updateChildSubQuestion(index, childIdx, 'subQuestionFormType', e.target.value);
-                                                    // Clear error when user selects
-                                                    if (e.target.value) {
-                                                      setSubQuestionErrors(prev => {
-                                                        const newErrors = { ...prev };
-                                                        delete newErrors[`${index}_child_${childIdx}_formType`];
-                                                        return newErrors;
-                                                      });
-                                                    }
-                                                  }}
-                                                >
-                                                  <option value="">-- Select --</option>
-                                                  <option value="text">Text</option>
-                                                  <option value="email">Email</option>
-                                                  <option value="mobile">Mobile</option>
-                                                  <option value="amount">Amount</option>
-                                                  <option value="textarea">Textarea</option>
-                                                  <option value="checkbox">Checkboxes</option>
-                                                  <option value="radio">Radio</option>
-                                                  <option value="date">Date</option>
-                                                  <option value="time">Time</option>
-                                                  <option value="file">File</option>
-                                                  <option value="select">Select (Dropdown)</option>
-                                                </select>
-                                                {subQuestionErrors[`${index}_child_${childIdx}_formType`] && (
-                                                  <div style={{ color: "#da251c", fontSize: "0.75rem", marginTop: 4 }}>
-                                                    {subQuestionErrors[`${index}_child_${childIdx}_formType`]}
-                                                  </div>
-                                                )}
-                                              </div>
-
-                                              {/* Options UI for checkbox, radio, and select types in child subquestions */}
-                                              {(child.subQuestionFormType === 'checkbox' ||
-                                                child.subQuestionFormType === 'radio' ||
-                                                child.subQuestionFormType === 'select') && (
-                                                  <div style={{ marginBottom: 12, width: '100%' }}>
-                                                    {/* Price and Maximum Count Limit toggle switches */}
-                                                    <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
-                                                      {/* Price Toggle */}
-                                                      <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-                                                        <div
-                                                          onClick={() => updateChildSubQuestion(index, childIdx, 'priceEnabled', !child.priceEnabled)}
-                                                          style={{
-                                                            width: 48,
-                                                            height: 28,
-                                                            borderRadius: 14,
-                                                            background: child.priceEnabled ? '#da251c' : '#ccc',
-                                                            position: 'relative',
-                                                            transition: 'background 0.3s',
-                                                            cursor: 'pointer'
-                                                          }}
-                                                        >
-                                                          <div
-                                                            style={{
-                                                              position: 'absolute',
-                                                              top: 2,
-                                                              left: child.priceEnabled ? 22 : 2,
-                                                              width: 24,
-                                                              height: 24,
-                                                              borderRadius: 12,
-                                                              background: '#fff',
-                                                              transition: 'left 0.3s',
-                                                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                                            }}
-                                                          />
-                                                        </div>
-                                                        <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Price</span>
-                                                      </label>
-
-                                                      {/* Maximum Count Limit Toggle */}
-                                                      <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-                                                        <div
-                                                          onClick={() => updateChildSubQuestion(index, childIdx, 'maxCountEnabled', !child.maxCountEnabled)}
-                                                          style={{
-                                                            width: 48,
-                                                            height: 28,
-                                                            borderRadius: 14,
-                                                            background: child.maxCountEnabled ? '#da251c' : '#ccc',
-                                                            position: 'relative',
-                                                            transition: 'background 0.3s',
-                                                            cursor: 'pointer'
-                                                          }}
-                                                        >
-                                                          <div
-                                                            style={{
-                                                              position: 'absolute',
-                                                              top: 2,
-                                                              left: child.maxCountEnabled ? 22 : 2,
-                                                              width: 24,
-                                                              height: 24,
-                                                              borderRadius: 12,
-                                                              background: '#fff',
-                                                              transition: 'left 0.3s',
-                                                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                                            }}
-                                                          />
-                                                        </div>
-                                                        <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Maximum Count Limit</span>
-                                                      </label>
-                                                    </div>
-
-                                                    {/* Options input section with pink background */}
-                                                    <div style={{
-                                                      background: '#fff0f0',
-                                                      borderRadius: 8,
-                                                      padding: '16px',
-                                                      marginBottom: 12
-                                                    }}>
-                                                      {/* Label input */}
-                                                      <div style={{ marginBottom: 12 }}>
-                                                        <label style={{
-                                                          display: 'block',
-                                                          fontWeight: 600,
-                                                          fontSize: '0.85rem',
-                                                          marginBottom: 6,
-                                                          color: '#333',
-                                                          textAlign: 'center'
-                                                        }}>
-                                                          Labels (comma-separated) <span style={{ color: '#da251c' }}>*</span>
-                                                        </label>
-                                                        <input
-                                                          type="text"
-                                                          placeholder="e.g., Male, Female, Other"
-                                                          value={child.newOptionLabel || ''}
-                                                          onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionLabel', e.target.value)}
-                                                          style={{
-                                                            width: '100%',
-                                                            padding: '8px 10px',
-                                                            border: '1px solid #ddd',
-                                                            borderRadius: 6,
-                                                            fontSize: '0.85rem'
-                                                          }}
-                                                        />
-                                                      </div>
-
-                                                      {/* Price input (if enabled) */}
-                                                      {child.priceEnabled && (
-                                                        <div style={{ marginBottom: 12 }}>
-                                                          <label style={{
-                                                            display: 'block',
-                                                            fontWeight: 600,
-                                                            fontSize: '0.85rem',
-                                                            marginBottom: 6,
-                                                            color: '#333',
-                                                            textAlign: 'center'
-                                                          }}>
-                                                            Prices (comma-separated)
-                                                          </label>
-                                                          <input
-                                                            type="text"
-                                                            placeholder="e.g., 100, 200, 150"
-                                                            value={child.newOptionPrice || ''}
-                                                            onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionPrice', e.target.value)}
-                                                            style={{
-                                                              width: '100%',
-                                                              padding: '8px 10px',
-                                                              border: '1px solid #ddd',
-                                                              borderRadius: 6,
-                                                              fontSize: '0.85rem'
-                                                            }}
-                                                          />
-                                                        </div>
-                                                      )}
-
-                                                      {/* Count input (if enabled) */}
-                                                      {child.maxCountEnabled && (
-                                                        <div style={{ marginBottom: 12 }}>
-                                                          <label style={{
-                                                            display: 'block',
-                                                            fontWeight: 600,
-                                                            fontSize: '0.85rem',
-                                                            marginBottom: 6,
-                                                            color: '#333',
-                                                            textAlign: 'center'
-                                                          }}>
-                                                            Counts (comma-separated)
-                                                          </label>
-                                                          <input
-                                                            type="text"
-                                                            placeholder="e.g., 50, 75, 100"
-                                                            value={child.newOptionCount || ''}
-                                                            onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionCount', e.target.value)}
-                                                            style={{
-                                                              width: '100%',
-                                                              padding: '8px 10px',
-                                                              border: '1px solid #ddd',
-                                                              borderRadius: 6,
-                                                              fontSize: '0.85rem'
-                                                            }}
-                                                          />
-                                                        </div>
-                                                      )}
-
-                                                      {/* Hint text */}
-                                                      <div style={{
-                                                        background: '#e8f5e9',
-                                                        border: '1px solid #4caf50',
-                                                        borderRadius: 6,
-                                                        padding: '8px 10px',
-                                                        fontSize: '0.75rem',
-                                                        color: '#2e7d32',
-                                                        textAlign: 'center'
-                                                      }}>
-                                                        <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                                                          💡 Tip: You can send different values in a single line
-                                                        </div>
-                                                        <div>
-                                                          • Separate multiple values with comma (,)<br />
-                                                          • Example: Male, Female, Other<br />
-                                                          • If you have 3 labels, provide 3 prices and 3 counts
-                                                        </div>
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                )}
-
-                                              {/* Child Mandatory */}
-                                              <div className="form-group2" style={{ marginBottom: '12px' }}>
-                                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Status</label>
-                                                <div className="email-toggle-group">
-                                                  <button
-                                                    type="button"
-                                                    className={`email-toggle-btn ${child.subQuestionMandatory === "1" ? "active yes" : ""}`}
-                                                    onClick={() => updateChildSubQuestion(index, childIdx, 'subQuestionMandatory', "1")}
-                                                    style={{ fontSize: '0.85rem' }}
-                                                  >
-                                                    <span className="lock-icon">🔒</span> Mandatory
-                                                  </button>
-                                                  <button
-                                                    type="button"
-                                                    className={`email-toggle-btn ${child.subQuestionMandatory !== "1" ? "active" : ""}`}
-                                                    onClick={() => updateChildSubQuestion(index, childIdx, 'subQuestionMandatory', "0")}
-                                                    style={{ fontSize: '0.85rem' }}
-                                                  >
-                                                    <span className="unlock-icon">🔓</span> Optional
-                                                  </button>
-                                                </div>
-                                              </div>
-
-                                              {/* Remove Child Button */}
-                                              <button
-                                                type="button"
-                                                onClick={() => removeChildSubQuestion(index, childIdx)}
-                                                style={{
-                                                  background: "#fff",
-                                                  border: "1px solid #e74c3c",
-                                                  color: "#e74c3c",
-                                                  borderRadius: 6,
-                                                  padding: "6px 12px",
-                                                  cursor: "pointer",
-                                                  fontSize: "0.85rem"
-                                                }}
-                                              >
-                                                🗑 Remove Child
-                                              </button>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      ) : (
-                                        <div style={{
-                                          padding: '16px',
-                                          textAlign: 'center',
-                                          color: '#999',
-                                          backgroundColor: '#fafafa',
-                                          borderRadius: '6px',
-                                          border: '1px dashed #ddd',
-                                          fontSize: '0.85rem'
-                                        }}>
-                                          No child sub-questions yet. Click "➕ Add Subquestion (Inside This)" to add one.
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                              </>
-                            )}
-                          </div>
-                        ))}
-
-                        {/* Add More Subquestion Button - shown as + icon */}
-                        <button
-                          type="button"
-                          onClick={addSubQuestion}
-                          style={{
-                            background: "#fff",
-                            border: "2px solid #da251c",
-                            color: "#da251c",
-                            borderRadius: "50%",
-                            width: 40,
-                            height: 40,
-                            cursor: "pointer",
-                            fontSize: "1.5rem",
-                            fontWeight: 600,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginTop: 8
-                          }}
-                          title="Add another subquestion"
-                        >
-                          +
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-              {/* Select type: same UI as radio for subquestions + dynamic subquestion forms */}
-              {(selectedQuestion.question_form_type || "").toLowerCase() ===
-                "select" && (
-                  <div className="form-group2">
-                    <label
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        marginTop: 12,
-                        cursor: 'pointer',
-                        userSelect: 'none'
-                      }}
-                    >
-                      {/* Toggle Switch */}
-                      <div
-                        onClick={() => {
-                          const newValue = !selectedQuestion.add_subquestions;
-                          handleChangeField("add_subquestions", newValue);
-                          if (newValue && subQuestions.length === 0) {
-                            // Add first subquestion when toggle is turned on
-                            addSubQuestion();
-                          } else if (!newValue) {
-                            // Clear all subquestions when turned off
-                            setSubQuestions([]);
-                          }
-                        }}
-                        style={{
-                          position: 'relative',
-                          width: 48,
-                          height: 28,
-                          borderRadius: 14,
-                          background: selectedQuestion.add_subquestions ? '#da251c' : '#ccc',
-                          transition: 'background 0.3s',
-                          cursor: 'pointer',
-                          flexShrink: 0
-                        }}
-                      >
-                        <div
-                          style={{
-                            position: 'absolute',
-                            top: 2,
-                            left: selectedQuestion.add_subquestions ? 22 : 2,
-                            width: 24,
-                            height: 24,
-                            borderRadius: 12,
-                            background: '#fff',
-                            transition: 'left 0.3s',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                          }}
-                        />
-                      </div>
-                      <span style={{ fontWeight: 500, fontSize: '0.95rem' }}>Add Subquestions</span>
-                      <span style={{
-                        fontSize: '0.85rem',
-                        color: '#666',
-                        marginLeft: 'auto'
-                      }}>
-                        {selectedQuestion.add_subquestions ? subQuestions.length : 0}
-                      </span>
-                    </label>
-
-                    {selectedQuestion.add_subquestions && (
-                      <div style={{ marginTop: 16, width: '100%' }}>
-                        {/* Display each subquestion */}
-                        {subQuestions.map((subQ, index) => (
-                          <div key={index} style={{ marginBottom: 20, width: '100%' }}>
-                            {/* Question Option Type Dropdown */}
-                            <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
-                              <label className="form-label">
-                                Question Option Type <span style={{ color: "#da251c" }}>*</span>
-                              </label>
-                              <select
-                                className="form-input compact"
-                                value={subQ.selectedOptionId || ""}
-                                onChange={(e) => {
-                                  updateSubQuestion(index, "selectedOptionId", e.target.value);
-                                  // Clear error when user selects an option
-                                  if (e.target.value) {
-                                    setSubQuestionErrors(prev => {
-                                      const newErrors = { ...prev };
-                                      delete newErrors[`${index}_selectedOptionId`];
-                                      return newErrors;
-                                    });
-                                  }
-                                }}
-                              >
-                                <option value="">-- Select --</option>
-                                {getAvailableOptions(index).map((opt) => (
-                                  <option key={opt.id} value={String(opt.id)}>
-                                    {opt.label}
-                                  </option>
-                                ))}
-                              </select>
-                              {subQuestionErrors[`${index}_selectedOptionId`] && (
-                                <div style={{ color: "#da251c", fontSize: "0.85rem", marginTop: 4 }}>
-                                  {subQuestionErrors[`${index}_selectedOptionId`]}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Show full form only if option is selected */}
-                            {subQ.selectedOptionId && (
-                              <>
-                                {/* Question Title */}
-                                <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
-                                  <label className="form-label">
-                                    Question Title <span style={{ color: "#da251c" }}>*</span>
-                                    {subQ.subQuestionMandatory === "1" && (
-                                      <span style={{ color: "#da251c", marginLeft: 8, fontSize: "0.9em" }}>
-                                        * (Mandatory)
-                                      </span>
-                                    )}
-                                  </label>
-                                  <input
-                                    type="text"
-                                    className="form-input compact"
-                                    value={subQ.subQuestionTitle || ""}
-                                    onChange={(e) => {
-                                      updateSubQuestion(index, "subQuestionTitle", e.target.value);
-                                      // Clear error when user types
-                                      if (e.target.value.trim()) {
-                                        setSubQuestionErrors(prev => {
-                                          const newErrors = { ...prev };
-                                          delete newErrors[`${index}_title`];
-                                          return newErrors;
-                                        });
-                                      }
-                                    }}
-                                    placeholder=""
-                                  />
-                                  {subQuestionErrors[`${index}_title`] && (
-                                    <div style={{ color: "#da251c", fontSize: "0.85rem", marginTop: 4 }}>
-                                      {subQuestionErrors[`${index}_title`]}
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Hint Type and Sub Question Hint - side by side */}
-                                <div style={{ display: 'flex', gap: '16px', marginBottom: 12, width: '100%' }}>
-                                  {/* Hint Type */}
-                                  <div className="form-group2" style={{ flex: 1 }}>
-                                    <label className="form-label">Hint Type <span style={{ color: "#da251c" }}>*</span></label>
-                                    <select
-                                      className="form-input compact"
-                                      value={subQ.subQueHintType || "1"}
-                                      onChange={(e) =>
-                                        updateSubQuestion(index, "subQueHintType", e.target.value)
-                                      }
-                                    >
-                                      <option value="1">Text</option>
-                                      <option value="2">Image</option>
-                                    </select>
-                                  </div>
-
-                                  {/* Sub Question Hint */}
-                                  <div className="form-group2" style={{ flex: 1 }}>
-                                    <label className="form-label">Sub Question Hint</label>
-                                    {subQ.subQueHintType === "2" ? (
-                                      <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="form-input compact"
-                                        onChange={(e) => {
-                                          const file = e.target.files && e.target.files[0];
-                                          updateSubQuestion(index, "subQuestionHintFile", file || null);
-                                        }}
-                                      />
-                                    ) : (
-                                      <input
-                                        type="text"
-                                        className="form-input compact"
-                                        value={subQ.subQuestionHint || ""}
-                                        onChange={(e) =>
-                                          updateSubQuestion(index, "subQuestionHint", e.target.value)
-                                        }
-                                        placeholder=""
-                                      />
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Question Input Type */}
-                                <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
-                                  <label className="form-label">
-                                    Question Input Type <span style={{ color: "#da251c" }}>*</span>
-                                  </label>
-                                  <select
-                                    className="form-input compact"
-                                    value={subQ.subQuestionFormType || ""}
-                                    onChange={(e) => {
-                                      updateSubQuestion(index, "subQuestionFormType", e.target.value);
-                                      // Clear error when user selects
-                                      if (e.target.value) {
-                                        setSubQuestionErrors(prev => {
-                                          const newErrors = { ...prev };
-                                          delete newErrors[`${index}_formType`];
-                                          return newErrors;
-                                        });
-                                      }
-                                    }}
-                                  >
-                                    <option value="">-- Select --</option>
-                                    <option value="text">Text</option>
-                                    <option value="email">Email</option>
-                                    <option value="mobile">Mobile</option>
-                                    <option value="amount">Amount</option>
-                                    <option value="textarea">Textarea</option>
-                                    <option value="checkbox">Checkboxes</option>
-                                    <option value="radio">Radio</option>
-                                    <option value="date">Date</option>
-                                    <option value="time">Time</option>
-                                    <option value="file">File</option>
-                                    <option value="select">Select (Dropdown)</option>
-                                  </select>
-                                  {subQuestionErrors[`${index}_formType`] && (
-                                    <div style={{ color: "#da251c", fontSize: "0.85rem", marginTop: 4 }}>
-                                      {subQuestionErrors[`${index}_formType`]}
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Options UI for checkbox, radio, and select types */}
-                                {(subQ.subQuestionFormType === 'checkbox' ||
-                                  subQ.subQuestionFormType === 'radio' ||
-                                  subQ.subQuestionFormType === 'select') && (
-                                    <div style={{ marginBottom: 12, width: '100%' }}>
-                                      {/* Price and Maximum Count Limit toggle switches */}
-                                      <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
-                                        {/* Price Toggle */}
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-                                          <div
-                                            onClick={() => updateSubQuestion(index, 'priceEnabled', !subQ.priceEnabled)}
-                                            style={{
-                                              width: 48,
-                                              height: 28,
-                                              borderRadius: 14,
-                                              background: subQ.priceEnabled ? '#da251c' : '#ccc',
-                                              position: 'relative',
-                                              transition: 'background 0.3s',
-                                              cursor: 'pointer'
-                                            }}
-                                          >
-                                            <div
-                                              style={{
-                                                position: 'absolute',
-                                                top: 2,
-                                                left: subQ.priceEnabled ? 22 : 2,
-                                                width: 24,
-                                                height: 24,
-                                                borderRadius: 12,
-                                                background: '#fff',
-                                                transition: 'left 0.3s',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                              }}
-                                            />
-                                          </div>
-                                          <span style={{ fontWeight: 500, fontSize: '1rem' }}>Price</span>
-                                        </label>
-
-                                        {/* Maximum Count Limit Toggle */}
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-                                          <div
-                                            onClick={() => updateSubQuestion(index, 'maxCountEnabled', !subQ.maxCountEnabled)}
-                                            style={{
-                                              width: 48,
-                                              height: 28,
-                                              borderRadius: 14,
-                                              background: subQ.maxCountEnabled ? '#da251c' : '#ccc',
-                                              position: 'relative',
-                                              transition: 'background 0.3s',
-                                              cursor: 'pointer'
-                                            }}
-                                          >
-                                            <div
-                                              style={{
-                                                position: 'absolute',
-                                                top: 2,
-                                                left: subQ.maxCountEnabled ? 22 : 2,
-                                                width: 24,
-                                                height: 24,
-                                                borderRadius: 12,
-                                                background: '#fff',
-                                                transition: 'left 0.3s',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                              }}
-                                            />
-                                          </div>
-                                          <span style={{ fontWeight: 500, fontSize: '1rem' }}>Maximum Count Limit</span>
-                                        </label>
-                                      </div>
-
-                                      {/* Options Table */}
-                                      <div style={{
-                                        background: '#fff0f0',
-                                        borderRadius: 8,
-                                        padding: '16px',
-                                        marginBottom: 12
-                                      }}>
-                                        {/* Existing options display */}
-                                        {(subQ.options || []).length > 0 && (
-                                          <>
-                                            {/* Table Header */}
-                                            <div style={{
-                                              display: 'grid',
-                                              gridTemplateColumns: subQ.priceEnabled && subQ.maxCountEnabled
-                                                ? '2fr 1fr 1fr auto'
-                                                : subQ.priceEnabled || subQ.maxCountEnabled
-                                                  ? '2fr 1fr auto'
-                                                  : '1fr auto',
-                                              gap: 16,
-                                              marginBottom: 12,
-                                              paddingBottom: 8,
-                                              borderBottom: '2px solid #da251c'
-                                            }}>
-                                              <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Label</div>
-                                              {subQ.priceEnabled && <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Price</div>}
-                                              {subQ.maxCountEnabled && <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Count</div>}
-                                              <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Action</div>
-                                            </div>
-
-                                            {/* Existing options */}
-                                            {(subQ.options || []).map((opt, optIdx) => (
-                                              <div
-                                                key={optIdx}
-                                                style={{
-                                                  display: 'grid',
-                                                  gridTemplateColumns: subQ.priceEnabled && subQ.maxCountEnabled
-                                                    ? '2fr 1fr 1fr auto'
-                                                    : subQ.priceEnabled || subQ.maxCountEnabled
-                                                      ? '2fr 1fr auto'
-                                                      : '1fr auto',
-                                                  gap: 16,
-                                                  alignItems: 'center',
-                                                  marginBottom: 8,
-                                                  paddingBottom: 8,
-                                                  borderBottom: '1px solid #eee'
-                                                }}
-                                              >
-                                                <div style={{ color: '#333' }}>{opt.label || opt}</div>
-                                                {subQ.priceEnabled && <div style={{ color: '#666' }}>{opt.price || '-'}</div>}
-                                                {subQ.maxCountEnabled && <div style={{ color: '#666' }}>{opt.count || '-'}</div>}
-                                                <button
-                                                  type="button"
-                                                  onClick={() => {
-                                                    const newOptions = [...(subQ.options || [])];
-                                                    newOptions.splice(optIdx, 1);
-                                                    updateSubQuestion(index, 'options', newOptions);
-                                                  }}
-                                                  style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
-                                                    color: '#e74c3c',
-                                                    cursor: 'pointer',
-                                                    fontSize: '1.2rem',
-                                                    padding: 4
-                                                  }}
-                                                  title="Delete option"
-                                                >
-                                                  🗑
-                                                </button>
-                                              </div>
-                                            ))}
-                                          </>
-                                        )}
-
-                                        {/* Comma-separated input section */}
-                                        <div style={{
-                                          marginTop: (subQ.options || []).length > 0 ? 16 : 0,
-                                          paddingTop: (subQ.options || []).length > 0 ? 16 : 0,
-                                          borderTop: (subQ.options || []).length > 0 ? '1px dashed #ddd' : 'none'
-                                        }}>
-                                          {/* Label input */}
-                                          <div style={{ marginBottom: 12 }}>
-                                            <label style={{
-                                              display: 'block',
-                                              fontWeight: 600,
-                                              fontSize: '0.9rem',
-                                              marginBottom: 6,
-                                              color: '#333'
-                                            }}>
-                                              Labels (comma-separated) <span style={{ color: '#da251c' }}>*</span>
-                                            </label>
-                                            <input
-                                              type="text"
-                                              placeholder="e.g., Male, Female, Other"
-                                              value={subQ.newOptionLabel || ''}
-                                              onChange={(e) => updateSubQuestion(index, 'newOptionLabel', e.target.value)}
-                                              style={{
-                                                width: '100%',
-                                                padding: '10px 12px',
-                                                border: '1px solid #ddd',
-                                                borderRadius: 6,
-                                                fontSize: '0.95rem'
-                                              }}
-                                            />
-                                          </div>
-
-                                          {/* Price input (if enabled) */}
-                                          {subQ.priceEnabled && (
-                                            <div style={{ marginBottom: 12 }}>
-                                              <label style={{
-                                                display: 'block',
-                                                fontWeight: 600,
-                                                fontSize: '0.9rem',
-                                                marginBottom: 6,
-                                                color: '#333'
-                                              }}>
-                                                Prices (comma-separated)
-                                              </label>
-                                              <input
-                                                type="text"
-                                                placeholder="e.g., 100, 200, 150"
-                                                value={subQ.newOptionPrice || ''}
-                                                onChange={(e) => updateSubQuestion(index, 'newOptionPrice', e.target.value)}
-                                                style={{
-                                                  width: '100%',
-                                                  padding: '10px 12px',
-                                                  border: '1px solid #ddd',
-                                                  borderRadius: 6,
-                                                  fontSize: '0.95rem'
-                                                }}
-                                              />
-                                            </div>
-                                          )}
-
-                                          {/* Count input (if enabled) */}
-                                          {subQ.maxCountEnabled && (
-                                            <div style={{ marginBottom: 12 }}>
-                                              <label style={{
-                                                display: 'block',
-                                                fontWeight: 600,
-                                                fontSize: '0.9rem',
-                                                marginBottom: 6,
-                                                color: '#333'
-                                              }}>
-                                                Counts (comma-separated)
-                                              </label>
-                                              <input
-                                                type="text"
-                                                placeholder="e.g., 50, 75, 100"
-                                                value={subQ.newOptionCount || ''}
-                                                onChange={(e) => updateSubQuestion(index, 'newOptionCount', e.target.value)}
-                                                style={{
-                                                  width: '100%',
-                                                  padding: '10px 12px',
-                                                  border: '1px solid #ddd',
-                                                  borderRadius: 6,
-                                                  fontSize: '0.95rem'
-                                                }}
-                                              />
-                                            </div>
-                                          )}
-
-                                          {/* Hint text */}
-                                          <div style={{
-                                            background: '#e8f5e9',
-                                            border: '1px solid #4caf50',
-                                            borderRadius: 6,
-                                            padding: '10px 12px',
-                                            fontSize: '0.85rem',
-                                            color: '#2e7d32'
-                                          }}>
-                                            <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                                              💡 Tip: You can send different values in a single line
-                                            </div>
-                                            <div>
-                                              • Separate multiple values with comma (,)<br />
-                                              • Example: Male, Female, Other<br />
-                                              • If you have 3 labels, provide 3 prices and 3 counts
-                                            </div>
-                                          </div>
-
-                                          {/* Error message display */}
-                                          {subQ.optionError && (
-                                            <div style={{
-                                              background: '#ffebee',
-                                              border: '1px solid #f44336',
-                                              borderRadius: 6,
-                                              padding: '10px 12px',
-                                              marginTop: 12,
-                                              fontSize: '0.85rem',
-                                              color: '#c62828'
-                                            }}>
-                                              ⚠️ {subQ.optionError}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-
-                                {/* Mandatory/Optional Toggle */}
-                                <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
-                                  <div className="status-toggle">
-                                    <button
-                                      type="button"
-                                      className={`status-btn ${subQ.subQuestionMandatory === "1" ? "active" : ""}`}
-                                      onClick={() =>
-                                        updateSubQuestion(index, "subQuestionMandatory", "1")
-                                      }
-                                    >
-                                      <span className="star-icon">★</span> Mandatory
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className={`status-btn ${subQ.subQuestionMandatory !== "1" ? "active" : ""}`}
-                                      onClick={() =>
-                                        updateSubQuestion(index, "subQuestionMandatory", "0")
-                                      }
-                                    >
-                                      <span className="star-icon">☆</span> Optional
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Delete button for this subquestion (except first one) */}
-                                {index > 0 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => removeSubQuestion(index)}
-                                    style={{
-                                      background: "#fff",
-                                      border: "1px solid #e74c3c",
-                                      color: "#e74c3c",
-                                      borderRadius: 6,
-                                      padding: "6px 12px",
-                                      cursor: "pointer",
-                                      fontSize: "0.9rem",
-                                      marginBottom: 12
-                                    }}
-                                  >
-                                    🗑 Remove
-                                  </button>
-                                )}
-
-                                {/* CHILD SUBQUESTIONS SECTION - Only show for option-based input types */}
-                                {(subQ.subQuestionFormType === 'radio' ||
-                                  subQ.subQuestionFormType === 'checkbox' ||
-                                  subQ.subQuestionFormType === 'select') && (
-                                    <div style={{
-                                      marginTop: '20px',
-                                      paddingTop: '16px',
-                                      borderTop: '2px dashed #4CAF50'
-                                    }}>
-                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                        <label style={{ fontWeight: '600', fontSize: '0.9rem', color: '#4CAF50' }}>
-                                          🔹 Child Sub-Questions (Unlimited)
-                                        </label>
-                                        <button
-                                          type="button"
-                                          onClick={() => addChildSubQuestion(index)}
-                                          style={{
-                                            padding: '6px 14px',
-                                            backgroundColor: '#4CAF50',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                            fontSize: '0.85rem',
-                                            fontWeight: '600'
-                                          }}
-                                        >
-                                          ➕ Add Subquestion (Inside This)
-                                        </button>
-                                      </div>
-
-                                      {/* Render Child Subquestions */}
-                                      {subQ.childSubquestions && subQ.childSubquestions.length > 0 ? (
-                                        <div>
-                                          {subQ.childSubquestions.map((child, childIdx) => (
-                                            <div
-                                              key={childIdx}
-                                              style={{
-                                                marginLeft: '20px',
-                                                marginBottom: '16px',
-                                                padding: '16px',
-                                                borderLeft: '4px solid #4CAF50',
-                                                backgroundColor: '#f9fdf9',
-                                                borderRadius: '6px'
-                                              }}
-                                            >
-                                              <div style={{ fontSize: '0.8rem', color: '#4CAF50', marginBottom: '12px', fontWeight: 'bold' }}>
-                                                📌 Child Sub-Question #{childIdx + 1}
-                                              </div>
-
-                                              {/* Child Title */}
-                                              <div className="form-group2" style={{ marginBottom: '12px' }}>
-                                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Title *</label>
-                                                <input
-                                                  type="text"
-                                                  className="form-input compact"
-                                                  value={child.subQuestionTitle || ""}
-                                                  onChange={(e) => updateChildSubQuestion(index, childIdx, 'subQuestionTitle', e.target.value)}
-                                                  placeholder="Enter child title"
-                                                />
-                                              </div>
-
-                                              {/* Child Hint Type and Hint - side by side */}
-                                              <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                                                {/* Hint Type */}
-                                                <div className="form-group2" style={{ flex: 1 }}>
-                                                  <label className="form-label" style={{ fontSize: '0.85rem' }}>Hint Type <span style={{ color: "#da251c" }}>*</span></label>
-                                                  <select
-                                                    className="form-input compact"
-                                                    value={child.subQueHintType || "1"}
-                                                    onChange={(e) => updateChildSubQuestion(index, childIdx, 'subQueHintType', e.target.value)}
-                                                  >
-                                                    <option value="1">Text</option>
-                                                    <option value="2">Image</option>
-                                                  </select>
-                                                </div>
-
-                                                {/* Sub Question Hint */}
-                                                <div className="form-group2" style={{ flex: 1 }}>
-                                                  <label className="form-label" style={{ fontSize: '0.85rem' }}>Sub Question Hint</label>
-                                                  {child.subQueHintType === "2" ? (
-                                                    <input
-                                                      type="file"
-                                                      accept="image/*"
-                                                      className="form-input compact"
-                                                      onChange={(e) => {
-                                                        const file = e.target.files && e.target.files[0];
-                                                        updateChildSubQuestion(index, childIdx, 'subQuestionHintFile', file || null);
-                                                      }}
-                                                    />
-                                                  ) : (
-                                                    <input
-                                                      type="text"
-                                                      className="form-input compact"
-                                                      value={child.subQuestionHint || ""}
-                                                      onChange={(e) => updateChildSubQuestion(index, childIdx, 'subQuestionHint', e.target.value)}
-                                                      placeholder=""
-                                                    />
-                                                  )}
-                                                </div>
-                                              </div>
-
-                                              {/* Child Form Type */}
-                                              <div className="form-group2" style={{ marginBottom: '12px' }}>
-                                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Form Type <span style={{ color: "#da251c" }}>*</span></label>
-                                                <select
-                                                  className="form-input compact"
-                                                  value={child.subQuestionFormType || ""}
-                                                  onChange={(e) => {
-                                                    updateChildSubQuestion(index, childIdx, 'subQuestionFormType', e.target.value);
-                                                    // Clear error when user selects
-                                                    if (e.target.value) {
-                                                      setSubQuestionErrors(prev => {
-                                                        const newErrors = { ...prev };
-                                                        delete newErrors[`${index}_child_${childIdx}_formType`];
-                                                        return newErrors;
-                                                      });
-                                                    }
-                                                  }}
-                                                >
-                                                  <option value="">-- Select --</option>
-                                                  <option value="text">Text</option>
-                                                  <option value="email">Email</option>
-                                                  <option value="mobile">Mobile</option>
-                                                  <option value="amount">Amount</option>
-                                                  <option value="textarea">Textarea</option>
-                                                  <option value="checkbox">Checkboxes</option>
-                                                  <option value="radio">Radio</option>
-                                                  <option value="date">Date</option>
-                                                  <option value="time">Time</option>
-                                                  <option value="file">File</option>
-                                                  <option value="select">Select (Dropdown)</option>
-                                                </select>
-                                                {subQuestionErrors[`${index}_child_${childIdx}_formType`] && (
-                                                  <div style={{ color: "#da251c", fontSize: "0.75rem", marginTop: 4 }}>
-                                                    {subQuestionErrors[`${index}_child_${childIdx}_formType`]}
-                                                  </div>
-                                                )}
-                                              </div>
-
-                                              {/* Options UI for checkbox, radio, and select types in child subquestions */}
-                                              {(child.subQuestionFormType === 'checkbox' ||
-                                                child.subQuestionFormType === 'radio' ||
-                                                child.subQuestionFormType === 'select') && (
-                                                  <div style={{ marginBottom: 12, width: '100%' }}>
-                                                    {/* Price and Maximum Count Limit toggle switches */}
-                                                    <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
-                                                      {/* Price Toggle */}
-                                                      <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-                                                        <div
-                                                          onClick={() => updateChildSubQuestion(index, childIdx, 'priceEnabled', !child.priceEnabled)}
-                                                          style={{
-                                                            width: 48,
-                                                            height: 28,
-                                                            borderRadius: 14,
-                                                            background: child.priceEnabled ? '#da251c' : '#ccc',
-                                                            position: 'relative',
-                                                            transition: 'background 0.3s',
-                                                            cursor: 'pointer'
-                                                          }}
-                                                        >
-                                                          <div
-                                                            style={{
-                                                              position: 'absolute',
-                                                              top: 2,
-                                                              left: child.priceEnabled ? 22 : 2,
-                                                              width: 24,
-                                                              height: 24,
-                                                              borderRadius: 12,
-                                                              background: '#fff',
-                                                              transition: 'left 0.3s',
-                                                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                                            }}
-                                                          />
-                                                        </div>
-                                                        <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Price</span>
-                                                      </label>
-
-                                                      {/* Maximum Count Limit Toggle */}
-                                                      <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-                                                        <div
-                                                          onClick={() => updateChildSubQuestion(index, childIdx, 'maxCountEnabled', !child.maxCountEnabled)}
-                                                          style={{
-                                                            width: 48,
-                                                            height: 28,
-                                                            borderRadius: 14,
-                                                            background: child.maxCountEnabled ? '#da251c' : '#ccc',
-                                                            position: 'relative',
-                                                            transition: 'background 0.3s',
-                                                            cursor: 'pointer'
-                                                          }}
-                                                        >
-                                                          <div
-                                                            style={{
-                                                              position: 'absolute',
-                                                              top: 2,
-                                                              left: child.maxCountEnabled ? 22 : 2,
-                                                              width: 24,
-                                                              height: 24,
-                                                              borderRadius: 12,
-                                                              background: '#fff',
-                                                              transition: 'left 0.3s',
-                                                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                                            }}
-                                                          />
-                                                        </div>
-                                                        <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Maximum Count Limit</span>
-                                                      </label>
-                                                    </div>
-
-                                                    {/* Options input section with pink background */}
-                                                    <div style={{
-                                                      background: '#fff0f0',
-                                                      borderRadius: 8,
-                                                      padding: '16px',
-                                                      marginBottom: 12
-                                                    }}>
-                                                      {/* Label input */}
-                                                      <div style={{ marginBottom: 12 }}>
-                                                        <label style={{
-                                                          display: 'block',
-                                                          fontWeight: 600,
-                                                          fontSize: '0.85rem',
-                                                          marginBottom: 6,
-                                                          color: '#333',
-                                                          textAlign: 'center'
-                                                        }}>
-                                                          Labels (comma-separated) <span style={{ color: '#da251c' }}>*</span>
-                                                        </label>
-                                                        <input
-                                                          type="text"
-                                                          placeholder="e.g., Male, Female, Other"
-                                                          value={child.newOptionLabel || ''}
-                                                          onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionLabel', e.target.value)}
-                                                          style={{
-                                                            width: '100%',
-                                                            padding: '8px 10px',
-                                                            border: '1px solid #ddd',
-                                                            borderRadius: 6,
-                                                            fontSize: '0.85rem'
-                                                          }}
-                                                        />
-                                                      </div>
-
-                                                      {/* Price input (if enabled) */}
-                                                      {child.priceEnabled && (
-                                                        <div style={{ marginBottom: 12 }}>
-                                                          <label style={{
-                                                            display: 'block',
-                                                            fontWeight: 600,
-                                                            fontSize: '0.85rem',
-                                                            marginBottom: 6,
-                                                            color: '#333',
-                                                            textAlign: 'center'
-                                                          }}>
-                                                            Prices (comma-separated)
-                                                          </label>
-                                                          <input
-                                                            type="text"
-                                                            placeholder="e.g., 100, 200, 150"
-                                                            value={child.newOptionPrice || ''}
-                                                            onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionPrice', e.target.value)}
-                                                            style={{
-                                                              width: '100%',
-                                                              padding: '8px 10px',
-                                                              border: '1px solid #ddd',
-                                                              borderRadius: 6,
-                                                              fontSize: '0.85rem'
-                                                            }}
-                                                          />
-                                                        </div>
-                                                      )}
-
-                                                      {/* Count input (if enabled) */}
-                                                      {child.maxCountEnabled && (
-                                                        <div style={{ marginBottom: 12 }}>
-                                                          <label style={{
-                                                            display: 'block',
-                                                            fontWeight: 600,
-                                                            fontSize: '0.85rem',
-                                                            marginBottom: 6,
-                                                            color: '#333',
-                                                            textAlign: 'center'
-                                                          }}>
-                                                            Counts (comma-separated)
-                                                          </label>
-                                                          <input
-                                                            type="text"
-                                                            placeholder="e.g., 50, 75, 100"
-                                                            value={child.newOptionCount || ''}
-                                                            onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionCount', e.target.value)}
-                                                            style={{
-                                                              width: '100%',
-                                                              padding: '8px 10px',
-                                                              border: '1px solid #ddd',
-                                                              borderRadius: 6,
-                                                              fontSize: '0.85rem'
-                                                            }}
-                                                          />
-                                                        </div>
-                                                      )}
-
-                                                      {/* Hint text */}
-                                                      <div style={{
-                                                        background: '#e8f5e9',
-                                                        border: '1px solid #4caf50',
-                                                        borderRadius: 6,
-                                                        padding: '8px 10px',
-                                                        fontSize: '0.75rem',
-                                                        color: '#2e7d32',
-                                                        textAlign: 'center'
-                                                      }}>
-                                                        <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                                                          💡 Tip: You can send different values in a single line
-                                                        </div>
-                                                        <div>
-                                                          • Separate multiple values with comma (,)<br />
-                                                          • Example: Male, Female, Other<br />
-                                                          • If you have 3 labels, provide 3 prices and 3 counts
-                                                        </div>
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                )}
-
-                                              {/* Child Mandatory */}
-                                              <div className="form-group2" style={{ marginBottom: '12px' }}>
-                                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Status</label>
-                                                <div className="email-toggle-group">
-                                                  <button
-                                                    type="button"
-                                                    className={`email-toggle-btn ${child.subQuestionMandatory === "1" ? "active yes" : ""}`}
-                                                    onClick={() => updateChildSubQuestion(index, childIdx, 'subQuestionMandatory', "1")}
-                                                    style={{ fontSize: '0.85rem' }}
-                                                  >
-                                                    <span className="lock-icon">🔒</span> Mandatory
-                                                  </button>
-                                                  <button
-                                                    type="button"
-                                                    className={`email-toggle-btn ${child.subQuestionMandatory !== "1" ? "active" : ""}`}
-                                                    onClick={() => updateChildSubQuestion(index, childIdx, 'subQuestionMandatory', "0")}
-                                                    style={{ fontSize: '0.85rem' }}
-                                                  >
-                                                    <span className="unlock-icon">🔓</span> Optional
-                                                  </button>
-                                                </div>
-                                              </div>
-
-                                              {/* Remove Child Button */}
-                                              <button
-                                                type="button"
-                                                onClick={() => removeChildSubQuestion(index, childIdx)}
-                                                style={{
-                                                  background: "#fff",
-                                                  border: "1px solid #e74c3c",
-                                                  color: "#e74c3c",
-                                                  borderRadius: 6,
-                                                  padding: "6px 12px",
-                                                  cursor: "pointer",
-                                                  fontSize: "0.85rem"
-                                                }}
-                                              >
-                                                🗑 Remove Child
-                                              </button>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      ) : (
-                                        <div style={{
-                                          padding: '16px',
-                                          textAlign: 'center',
-                                          color: '#999',
-                                          backgroundColor: '#fafafa',
-                                          borderRadius: '6px',
-                                          border: '1px dashed #ddd',
-                                          fontSize: '0.85rem'
-                                        }}>
-                                          No child sub-questions yet. Click "➕ Add Subquestion (Inside This)" to add one.
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                              </>
-                            )}
-                          </div>
-                        ))}
-
-                        {/* Add More Subquestion Button - shown as + icon */}
-                        <button
-                          type="button"
-                          onClick={addSubQuestion}
-                          style={{
-                            background: "#fff",
-                            border: "2px solid #da251c",
-                            color: "#da251c",
-                            borderRadius: "50%",
-                            width: 40,
-                            height: 40,
-                            cursor: "pointer",
-                            fontSize: "1.5rem",
-                            fontWeight: 600,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginTop: 8
-                          }}
-                          title="Add another subquestion"
-                        >
-                          +
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-
-
-              {/* Date Range - only for date type questions */}
-              {(selectedQuestion.question_form_type || "").toLowerCase() ===
-                "date" && (
-                  <div className="form-group2">
-                    <label className="form-label">Date Range</label>
-                    <div className="email-toggle-group">
-                      <button
-                        className={`email-toggle-btn ${!selectedQuestion.date_range_enabled ? "active" : ""
-                          }`}
-                        onClick={() =>
-                          handleChangeField("date_range_enabled", false)
-                        }
-                      >
-                        <span className="unlock-icon">🔓</span> No
-                      </button>
-                      <button
-                        className={`email-toggle-btn ${selectedQuestion.date_range_enabled ? "active yes" : ""
-                          }`}
-                        onClick={() =>
-                          handleChangeField("date_range_enabled", true)
-                        }
-                      >
-                        <span className="lock-icon">🔒</span> Yes
-                      </button>
+                            left: mainQuestionCountEnabled ? 26 : 2,
+                            transition: 'left 0.3s'
+                          }} />
+                        </div>
+                        <span style={{ fontWeight: 500 }}>Count</span>
+                      </label>
                     </div>
 
-                    {selectedQuestion.date_range_enabled && (
-                      <div
-                        className="limit-length-inputs"
-                        style={{ marginTop: 12 }}
-                      >
-                        <div className="input-group">
-                          <label className="sub-label">Start Date</label>
+                    {/* Comma-separated Input Fields */}
+                    {(mainQuestionPriceEnabled || mainQuestionCountEnabled) && (
+                      <div style={{
+                        background: '#fff0f0',
+                        borderRadius: 8,
+                        padding: 16,
+                        marginBottom: 12
+                      }}>
+                        {/* Hint Text */}
+                        <div style={{
+                          background: '#fff',
+                          border: '1px solid #da251c',
+                          borderRadius: 6,
+                          padding: 12,
+                          marginBottom: 16,
+                          fontSize: '0.9rem',
+                          color: '#666'
+                        }}>
+                          <strong style={{ color: '#da251c' }}>💡 Hint:</strong> Options already exist for this question.
+                          You can add <strong>prices and counts</strong> for each option. Enter values separated by commas - the number of entries must match the number of options!
+                        </div>
+
+                        {/* Labels Input - DISABLED (labels already exist) */}
+                        <div style={{ marginBottom: 12 }}>
+                          <label style={{
+                            display: 'block',
+                            fontWeight: 600,
+                            fontSize: '0.9rem',
+                            marginBottom: 6,
+                            color: '#999'
+                          }}>
+                            Labels (from existing options)
+                          </label>
                           <input
-                            type="date"
-                            className="form-input compact"
-                            value={selectedQuestion.start_date || ""}
-                            onChange={(e) =>
-                              handleChangeField("start_date", e.target.value)
-                            }
+                            type="text"
+                            placeholder="Labels are already defined in question options"
+                            value={mainQuestionOptionLabels}
+                            disabled
+                            style={{
+                              width: '100%',
+                              padding: '10px 12px',
+                              border: '1px solid #ddd',
+                              borderRadius: 6,
+                              fontSize: '0.95rem',
+                              background: '#f5f5f5',
+                              color: '#999',
+                              cursor: 'not-allowed'
+                            }}
                           />
                         </div>
-                        <div className="input-group">
-                          <label className="sub-label">End Date</label>
-                          <input
-                            type="date"
-                            className="form-input compact"
-                            value={selectedQuestion.end_date || ""}
-                            onChange={(e) =>
-                              handleChangeField("end_date", e.target.value)
-                            }
-                          />
-                        </div>
+
+                        {/* Prices Input (if enabled) */}
+                        {mainQuestionPriceEnabled && (
+                          <div style={{ marginBottom: 12 }}>
+                            <label style={{
+                              display: 'block',
+                              fontWeight: 600,
+                              fontSize: '0.9rem',
+                              marginBottom: 6,
+                              color: '#333'
+                            }}>
+                              Prices (comma-separated)
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g., 100, 150, 200, 250, 300, 350"
+                              value={mainQuestionOptionPrices}
+                              onChange={(e) => setMainQuestionOptionPrices(e.target.value)}
+                              style={{
+                                width: '100%',
+                                padding: '10px 12px',
+                                border: '1px solid #ddd',
+                                borderRadius: 6,
+                                fontSize: '0.95rem'
+                              }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Counts Input (if enabled) */}
+                        {mainQuestionCountEnabled && (
+                          <div style={{ marginBottom: 12 }}>
+                            <label style={{
+                              display: 'block',
+                              fontWeight: 600,
+                              fontSize: '0.9rem',
+                              marginBottom: 6,
+                              color: '#333'
+                            }}>
+                              Counts (comma-separated)
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g., 50, 100, 150, 200, 250, 300"
+                              value={mainQuestionOptionCounts}
+                              onChange={(e) => setMainQuestionOptionCounts(e.target.value)}
+                              style={{
+                                width: '100%',
+                                padding: '10px 12px',
+                                border: '1px solid #ddd',
+                                borderRadius: 6,
+                                fontSize: '0.95rem'
+                              }}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
                 )}
+            </div>
 
-              {/* Email Domain Validation - only for email type questions */}
-              {(selectedQuestion.question_form_type || "").toLowerCase() ===
-                "email" && (
-                  <div className="form-group2">
-                    <label className="form-label">
-                      Apply Validation For Specific Domain
-                    </label>
-                    <div className="email-toggle-group">
-                      <button
-                        className={`email-toggle-btn ${!selectedQuestion.email_validation_enabled
-                          ? "active"
-                          : ""
-                          }`}
-                        onClick={() =>
-                          handleChangeField("email_validation_enabled", false)
-                        }
-                      >
-                        <span className="unlock-icon">🔓</span> No
-                      </button>
-                      <button
-                        className={`email-toggle-btn ${selectedQuestion.email_validation_enabled
-                          ? "active yes"
-                          : ""
-                          }`}
-                        onClick={() =>
-                          handleChangeField("email_validation_enabled", true)
-                        }
-                      >
-                        <span className="lock-icon">🔒</span> Yes
-                      </button>
-                    </div>
 
-                    {selectedQuestion.email_validation_enabled && (
-                      <div
-                        className="form-group2 email-validation-input"
-                        style={{ marginTop: 12 }}
-                      >
-                        <label className="form-label">Domain Name</label>
+            {/* Race Categories */}
+            <div className="form-group2">
+              <label className="form-label">Race Categories</label>
+              <div className="race-category-toggle">
+                <button
+                  className={`race-btn ${raceCategoryMode === "all" ? "active" : ""
+                    }`}
+                  onClick={() => toggleRaceMode("all")}
+                >
+                  <span className="icon">🔊</span> All Race Categories
+                </button>
+                <button
+                  className={`race-btn ${raceCategoryMode === "selected" ? "active" : ""
+                    }`}
+                  onClick={() => toggleRaceMode("selected")}
+                >
+                  <span className="icon">🔒</span> Selected Race Categories
+                </button>
+              </div>
+              {raceCategoryMode === "selected" && (
+                <div className="race-tickets-list">
+                  {raceTickets && raceTickets.length > 0 ? (
+                    raceTickets.map((t) => (
+                      <label key={t.id} className="race-ticket-item">
+                        <span className="ticket-name">
+                          {t.name || `Ticket ${t.id}`}
+                        </span>
                         <input
-                          type="text"
-                          className="form-input compact full-width"
-                          value={selectedQuestion.email_domain || ""}
+                          type="checkbox"
+                          checked={(
+                            selectedQuestion.selected_race_tickets || []
+                          ).includes(String(t.id))}
+                          onChange={() => handleToggleTicket(t.id)}
+                        />
+                      </label>
+                    ))
+                  ) : (
+                    <div className="muted">No race categories available.</div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Limit Length - only show for text type questions */}
+            {(selectedQuestion.question_form_type || "").toLowerCase() ===
+              "text" && (
+                <div className="form-group2">
+                  <div className="limit-length-row">
+                    <label className="form-label-inline">
+                      <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={!!selectedQuestion.limit_length_enabled}
+                        onChange={(e) =>
+                          handleChangeField(
+                            "limit_length_enabled",
+                            e.target.checked
+                          )
+                        }
+                      />
+                      <span>Limit Length</span>
+                    </label>
+
+                    <div
+                      className="limit-length-inputs"
+                      style={{
+                        display: selectedQuestion.limit_length_enabled
+                          ? "flex"
+                          : "none",
+                      }}
+                    >
+                      <div className="input-group">
+                        <label className="sub-label">Min Length*</label>
+                        <input
+                          type="number"
+                          min="0"
+                          className="form-input-small"
+                          placeholder=""
+                          value={selectedQuestion.min_length || ""}
                           onChange={(e) =>
-                            handleChangeField("email_domain", e.target.value)
+                            handleChangeField("min_length", e.target.value)
                           }
-                          placeholder="example.com"
                         />
                       </div>
-                    )}
+                      <div className="input-group">
+                        <label className="sub-label">Max Length*</label>
+                        <input
+                          type="number"
+                          min="0"
+                          className="form-input-small"
+                          placeholder=""
+                          value={selectedQuestion.max_length || ""}
+                          onChange={(e) =>
+                            handleChangeField("max_length", e.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
                   </div>
-                )}
+                </div>
+              )}
 
-              {/* Limit Length */}
-              {/* <div className="form-group2">
+            {/* Coupon Display Location - Only for Coupon Code questions */}
+            {(String(selectedQuestion.field_mapping || "").toLowerCase().includes("coupon") ||
+              String(selectedQuestion.question_label || "").toLowerCase().includes("coupon")) && (
+                <div className="form-group2">
+                  <label className="form-label">Coupon Display Location</label>
+                  <div className="status-toggle" style={{ marginTop: 8 }}>
+                    <button
+                      type="button"
+                      className={`status-btn ${(selectedQuestion.coupon_display_location || "both") === "both" ? "active" : ""}`}
+                      onClick={() => handleChangeField("coupon_display_location", "both")}
+                    >
+                      Both
+                    </button>
+                    <button
+                      type="button"
+                      className={`status-btn ${selectedQuestion.coupon_display_location === "outside" ? "active" : ""}`}
+                      onClick={() => handleChangeField("coupon_display_location", "outside")}
+                    >
+                      Outside
+                    </button>
+                    <button
+                      type="button"
+                      className={`status-btn ${selectedQuestion.coupon_display_location === "inside" ? "active" : ""}`}
+                      onClick={() => handleChangeField("coupon_display_location", "inside")}
+                    >
+                      Inside
+                    </button>
+                  </div>
+                </div>
+              )}
+
+            {/* Radio/Checkbox type: show Add Subquestions toggle and dynamic subquestion forms */}
+            {((selectedQuestion.question_form_type || "").toLowerCase() === "radio" ||
+              (selectedQuestion.question_form_type || "").toLowerCase() === "checkbox") && (
+                <div className="form-group2">
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      marginTop: 22,
+                      cursor: 'pointer',
+                      userSelect: 'none'
+                    }}
+                  >
+                    {/* Toggle Switch */}
+                    <div
+                      onClick={() => {
+                        const newValue = !selectedQuestion.add_subquestions;
+                        handleChangeField("add_subquestions", newValue);
+                        if (newValue && subQuestions.length === 0) {
+                          // Add first subquestion when toggle is turned on
+                          addSubQuestion();
+                        } else if (!newValue) {
+                          // Clear all subquestions when turned off
+                          setSubQuestions([]);
+                        }
+                      }}
+                      style={{
+                        position: 'relative',
+                        width: 48,
+                        height: 28,
+                        borderRadius: 14,
+                        background: selectedQuestion.add_subquestions ? '#da251c' : '#ccc',
+                        transition: 'background 0.3s',
+                        cursor: 'pointer',
+                        flexShrink: 0
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 2,
+                          left: selectedQuestion.add_subquestions ? 22 : 2,
+                          width: 24,
+                          height: 24,
+                          borderRadius: 12,
+                          background: '#fff',
+                          transition: 'left 0.3s',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }}
+                      />
+                    </div>
+                    <span style={{ fontWeight: 500, fontSize: '0.95rem' }}>Add Subquestions</span>
+                    <span style={{
+                      fontSize: '0.85rem',
+                      color: '#666',
+                      marginLeft: 'auto'
+                    }}>
+                      {selectedQuestion.add_subquestions ? subQuestions.length : 0}
+                    </span>
+                  </label>
+
+                  {selectedQuestion.add_subquestions && (
+                    <div style={{ marginTop: 16, width: '100%' }}>
+                      {/* Display each subquestion */}
+                      {subQuestions.map((subQ, index) => (
+                        <div key={index} style={{ marginBottom: 20, width: '100%' }}>
+                          {/* Question Option Type Dropdown */}
+                          <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                            <label className="form-label">
+                              Question Option Type <span style={{ color: "#da251c" }}>*</span>
+                            </label>
+                            <select
+                              className="form-input compact"
+                              value={subQ.selectedOptionId || ""}
+                              onChange={(e) => {
+                                updateSubQuestion(index, "selectedOptionId", e.target.value);
+                                // Clear error when user selects an option
+                                if (e.target.value) {
+                                  setSubQuestionErrors(prev => {
+                                    const newErrors = { ...prev };
+                                    delete newErrors[`${index}_selectedOptionId`];
+                                    return newErrors;
+                                  });
+                                }
+                              }}
+                            >
+                              <option value="">-- Select --</option>
+                              {getAvailableOptions(index).map((opt) => (
+                                <option key={opt.id} value={String(opt.id)}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                            {subQuestionErrors[`${index}_selectedOptionId`] && (
+                              <div style={{ color: "#da251c", fontSize: "0.85rem", marginTop: 4 }}>
+                                {subQuestionErrors[`${index}_selectedOptionId`]}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Show full form only if option is selected */}
+                          {subQ.selectedOptionId && (
+                            <>
+                              {/* Question Title */}
+                              <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                                <label className="form-label">
+                                  Question Title <span style={{ color: "#da251c" }}>*</span>
+                                  {subQ.subQuestionMandatory === "1" && (
+                                    <span style={{ color: "#da251c", marginLeft: 8, fontSize: "0.9em" }}>
+                                      * (Mandatory)
+                                    </span>
+                                  )}
+                                </label>
+                                <input
+                                  type="text"
+                                  className="form-input compact"
+                                  value={subQ.subQuestionTitle || ""}
+                                  onChange={(e) => {
+                                    updateSubQuestion(index, "subQuestionTitle", e.target.value);
+                                    // Clear error when user types
+                                    if (e.target.value.trim()) {
+                                      setSubQuestionErrors(prev => {
+                                        const newErrors = { ...prev };
+                                        delete newErrors[`${index}_title`];
+                                        return newErrors;
+                                      });
+                                    }
+                                  }}
+                                  placeholder=""
+                                />
+                                {subQuestionErrors[`${index}_title`] && (
+                                  <div style={{ color: "#da251c", fontSize: "0.85rem", marginTop: 4 }}>
+                                    {subQuestionErrors[`${index}_title`]}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Hint Type and Sub Question Hint - side by side */}
+                              <div style={{ display: 'flex', gap: '16px', marginBottom: 12, width: '100%' }}>
+                                {/* Hint Type */}
+                                <div className="form-group2" style={{ flex: 1 }}>
+                                  <label className="form-label">Hint Type <span style={{ color: "#da251c" }}>*</span></label>
+                                  <select
+                                    className="form-input compact"
+                                    value={subQ.subQueHintType || "1"}
+                                    onChange={(e) =>
+                                      updateSubQuestion(index, "subQueHintType", e.target.value)
+                                    }
+                                  >
+                                    <option value="1">Text</option>
+                                    <option value="2">Image</option>
+                                  </select>
+                                </div>
+
+                                {/* Sub Question Hint */}
+                                <div className="form-group2" style={{ flex: 1 }}>
+                                  <label className="form-label">Sub Question Hint</label>
+                                  {subQ.subQueHintType === "2" ? (
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="form-input compact"
+                                      onChange={(e) => {
+                                        const file = e.target.files && e.target.files[0];
+                                        updateSubQuestion(index, "subQuestionHintFile", file || null);
+                                      }}
+                                    />
+                                  ) : (
+                                    <input
+                                      type="text"
+                                      className="form-input compact"
+                                      value={subQ.subQuestionHint || ""}
+                                      onChange={(e) =>
+                                        updateSubQuestion(index, "subQuestionHint", e.target.value)
+                                      }
+                                      placeholder=""
+                                    />
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Question Input Type */}
+                              <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                                <label className="form-label">
+                                  Question Input Type <span style={{ color: "#da251c" }}>*</span>
+                                </label>
+                                <select
+                                  className="form-input compact"
+                                  value={subQ.subQuestionFormType || ""}
+                                  onChange={(e) => {
+                                    updateSubQuestion(index, "subQuestionFormType", e.target.value);
+                                    // Clear error when user selects
+                                    if (e.target.value) {
+                                      setSubQuestionErrors(prev => {
+                                        const newErrors = { ...prev };
+                                        delete newErrors[`${index}_formType`];
+                                        return newErrors;
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <option value="">-- Select --</option>
+                                  <option value="text">Text</option>
+                                  <option value="email">Email</option>
+                                  <option value="mobile">Mobile</option>
+                                  <option value="amount">Amount</option>
+                                  <option value="textarea">Textarea</option>
+                                  <option value="checkbox">Checkboxes</option>
+                                  <option value="radio">Radio</option>
+                                  <option value="date">Date</option>
+                                  <option value="time">Time</option>
+                                  <option value="file">File</option>
+                                  <option value="select">Select (Dropdown)</option>
+                                </select>
+                                {subQuestionErrors[`${index}_formType`] && (
+                                  <div style={{ color: "#da251c", fontSize: "0.85rem", marginTop: 4 }}>
+                                    {subQuestionErrors[`${index}_formType`]}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Options UI for checkbox, radio, and select types */}
+                              {(subQ.subQuestionFormType === 'checkbox' ||
+                                subQ.subQuestionFormType === 'radio' ||
+                                subQ.subQuestionFormType === 'select') && (
+                                  <div style={{ marginBottom: 12, width: '100%' }}>
+                                    {/* Price and Maximum Count Limit RED TOGGLES */}
+                                    <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+                                      {/* Price Toggle */}
+                                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                                        <div
+                                          onClick={() => updateSubQuestion(index, 'priceEnabled', !subQ.priceEnabled)}
+                                          style={{
+                                            width: 50,
+                                            height: 26,
+                                            borderRadius: 13,
+                                            background: subQ.priceEnabled ? '#da251c' : '#ccc',
+                                            position: 'relative',
+                                            cursor: 'pointer',
+                                            transition: 'background 0.3s'
+                                          }}
+                                        >
+                                          <div style={{
+                                            width: 22,
+                                            height: 22,
+                                            borderRadius: '50%',
+                                            background: '#fff',
+                                            position: 'absolute',
+                                            top: 2,
+                                            left: subQ.priceEnabled ? 26 : 2,
+                                            transition: 'left 0.3s'
+                                          }} />
+                                        </div>
+                                        <span style={{ fontWeight: 500 }}>Price</span>
+                                      </label>
+
+                                      {/* Maximum Count Limit Toggle */}
+                                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                                        <div
+                                          onClick={() => updateSubQuestion(index, 'maxCountEnabled', !subQ.maxCountEnabled)}
+                                          style={{
+                                            width: 50,
+                                            height: 26,
+                                            borderRadius: 13,
+                                            background: subQ.maxCountEnabled ? '#da251c' : '#ccc',
+                                            position: 'relative',
+                                            cursor: 'pointer',
+                                            transition: 'background 0.3s'
+                                          }}
+                                        >
+                                          <div style={{
+                                            width: 22,
+                                            height: 22,
+                                            borderRadius: '50%',
+                                            background: '#fff',
+                                            position: 'absolute',
+                                            top: 2,
+                                            left: subQ.maxCountEnabled ? 26 : 2,
+                                            transition: 'left 0.3s'
+                                          }} />
+                                        </div>
+                                        <span style={{ fontWeight: 500 }}>Maximum Count Limit</span>
+                                      </label>
+                                    </div>
+
+                                    {/* Options Table with DYNAMIC columns */}
+                                    <div style={{
+                                      background: '#fff0f0',
+                                      borderRadius: 8,
+                                      padding: '16px',
+                                      marginBottom: 12
+                                    }}>
+                                      {/* Existing options display */}
+                                      {(subQ.options || []).length > 0 && (
+                                        <>
+                                          <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: `1fr ${subQ.priceEnabled ? 'auto ' : ''}${subQ.maxCountEnabled ? 'auto ' : ''}auto`,
+                                            gap: 16,
+                                            marginBottom: 12,
+                                            paddingBottom: 8,
+                                            borderBottom: '2px solid #da251c'
+                                          }}>
+                                            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Label</div>
+                                            {subQ.priceEnabled && <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Price</div>}
+                                            {subQ.maxCountEnabled && <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Count</div>}
+                                            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Action</div>
+                                          </div>
+
+                                          {/* Existing options - Dynamic columns */}
+                                          {(subQ.options || []).map((opt, optIdx) => (
+                                            <div
+                                              key={optIdx}
+                                              style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: `1fr ${subQ.priceEnabled ? 'auto ' : ''}${subQ.maxCountEnabled ? 'auto ' : ''}auto`,
+                                                gap: 16,
+                                                alignItems: 'center',
+                                                marginBottom: 8,
+                                                paddingBottom: 8,
+                                                borderBottom: '1px solid #eee'
+                                              }}
+                                            >
+                                              <div style={{ color: '#333' }}>{opt.label || opt}</div>
+                                              {subQ.priceEnabled && <div style={{ color: '#666' }}>{opt.price || '-'}</div>}
+                                              {subQ.maxCountEnabled && <div style={{ color: '#666' }}>{opt.count || '-'}</div>}
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const newOptions = [...(subQ.options || [])];
+                                                  newOptions.splice(optIdx, 1);
+                                                  updateSubQuestion(index, 'options', newOptions);
+                                                }}
+                                                style={{
+                                                  background: 'transparent',
+                                                  border: 'none',
+                                                  color: '#e74c3c',
+                                                  cursor: 'pointer',
+                                                  fontSize: '1.2rem',
+                                                  padding: 4
+                                                }}
+                                                title="Delete option"
+                                              >
+                                                🗑
+                                              </button>
+                                            </div>
+                                          ))}
+                                        </>
+                                      )}
+
+                                      {/* Comma-separated input section */}
+                                      <div style={{
+                                        marginTop: (subQ.options || []).length > 0 ? 16 : 0,
+                                        paddingTop: (subQ.options || []).length > 0 ? 16 : 0,
+                                        borderTop: (subQ.options || []).length > 0 ? '1px dashed #ddd' : 'none'
+                                      }}>
+                                        {/* Label input */}
+                                        <div style={{ marginBottom: 12 }}>
+                                          <label style={{
+                                            display: 'block',
+                                            fontWeight: 600,
+                                            fontSize: '0.9rem',
+                                            marginBottom: 6,
+                                            color: '#333'
+                                          }}>
+                                            Labels (comma-separated) <span style={{ color: '#da251c' }}>*</span>
+                                          </label>
+                                          <input
+                                            type="text"
+                                            placeholder="e.g., Male, Female, Other"
+                                            value={subQ.newOptionLabel || ''}
+                                            onChange={(e) => updateSubQuestion(index, 'newOptionLabel', e.target.value)}
+                                            style={{
+                                              width: '100%',
+                                              padding: '10px 12px',
+                                              border: '1px solid #ddd',
+                                              borderRadius: 6,
+                                              fontSize: '0.95rem'
+                                            }}
+                                          />
+                                        </div>
+
+                                        {/* Price input (if enabled) */}
+                                        {subQ.priceEnabled && (
+                                          <div style={{ marginBottom: 12 }}>
+                                            <label style={{
+                                              display: 'block',
+                                              fontWeight: 600,
+                                              fontSize: '0.9rem',
+                                              marginBottom: 6,
+                                              color: '#333'
+                                            }}>
+                                              Prices (comma-separated)
+                                            </label>
+                                            <input
+                                              type="text"
+                                              placeholder="e.g., 100, 200, 150"
+                                              value={subQ.newOptionPrice || ''}
+                                              onChange={(e) => updateSubQuestion(index, 'newOptionPrice', e.target.value)}
+                                              style={{
+                                                width: '100%',
+                                                padding: '10px 12px',
+                                                border: '1px solid #ddd',
+                                                borderRadius: 6,
+                                                fontSize: '0.95rem'
+                                              }}
+                                            />
+                                          </div>
+                                        )}
+
+                                        {/* Count input (if enabled) */}
+                                        {subQ.maxCountEnabled && (
+                                          <div style={{ marginBottom: 12 }}>
+                                            <label style={{
+                                              display: 'block',
+                                              fontWeight: 600,
+                                              fontSize: '0.9rem',
+                                              marginBottom: 6,
+                                              color: '#333'
+                                            }}>
+                                              Counts (comma-separated)
+                                            </label>
+                                            <input
+                                              type="text"
+                                              placeholder="e.g., 50, 75, 100"
+                                              value={subQ.newOptionCount || ''}
+                                              onChange={(e) => updateSubQuestion(index, 'newOptionCount', e.target.value)}
+                                              style={{
+                                                width: '100%',
+                                                padding: '10px 12px',
+                                                border: '1px solid #ddd',
+                                                borderRadius: 6,
+                                                fontSize: '0.95rem'
+                                              }}
+                                            />
+                                          </div>
+                                        )}
+
+                                        {/* Hint text */}
+                                        <div style={{
+                                          background: '#e8f5e9',
+                                          border: '1px solid #4caf50',
+                                          borderRadius: 6,
+                                          padding: '10px 12px',
+                                          fontSize: '0.85rem',
+                                          color: '#2e7d32'
+                                        }}>
+                                          <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                                            💡 Tip: You can send different values in a single line
+                                          </div>
+                                          <div>
+                                            • Separate multiple values with comma (,)<br />
+                                            • Example: Male, Female, Other<br />
+                                            • If you have 3 labels, provide 3 prices and 3 counts
+                                          </div>
+                                        </div>
+
+                                        {/* Error message display */}
+                                        {subQ.optionError && (
+                                          <div style={{
+                                            background: '#ffebee',
+                                            border: '1px solid #f44336',
+                                            borderRadius: 6,
+                                            padding: '10px 12px',
+                                            marginTop: 12,
+                                            fontSize: '0.85rem',
+                                            color: '#c62828'
+                                          }}>
+                                            ⚠️ {subQ.optionError}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                              {/* Mandatory/Optional Toggle */}
+                              <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                                <div className="status-toggle">
+                                  <button
+                                    type="button"
+                                    className={`status-btn ${subQ.subQuestionMandatory === "1" ? "active" : ""}`}
+                                    onClick={() =>
+                                      updateSubQuestion(index, "subQuestionMandatory", "1")
+                                    }
+                                  >
+                                    <span className="star-icon">★</span> Mandatory
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={`status-btn ${subQ.subQuestionMandatory !== "1" ? "active" : ""}`}
+                                    onClick={() =>
+                                      updateSubQuestion(index, "subQuestionMandatory", "0")
+                                    }
+                                  >
+                                    <span className="star-icon">☆</span> Optional
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Delete button for this subquestion (except first one) */}
+                              {index > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeSubQuestion(index)}
+                                  style={{
+                                    background: "#fff",
+                                    border: "1px solid #e74c3c",
+                                    color: "#e74c3c",
+                                    borderRadius: 6,
+                                    padding: "6px 12px",
+                                    cursor: "pointer",
+                                    fontSize: "0.9rem",
+                                    marginBottom: 12
+                                  }}
+                                >
+                                  🗑 Remove
+                                </button>
+                              )}
+
+                              {/* CHILD SUBQUESTIONS SECTION - Only show for option-based input types */}
+                              {(subQ.subQuestionFormType === 'radio' ||
+                                subQ.subQuestionFormType === 'checkbox' ||
+                                subQ.subQuestionFormType === 'select') && (
+                                  <div style={{
+                                    marginTop: '20px',
+                                    paddingTop: '16px',
+                                    borderTop: '2px dashed #4CAF50'
+                                  }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                      <label style={{ fontWeight: '600', fontSize: '0.9rem', color: '#4CAF50' }}>
+                                        🔹 Child Sub-Questions (Unlimited)
+                                      </label>
+                                      <button
+                                        type="button"
+                                        onClick={() => addChildSubQuestion(index)}
+                                        style={{
+                                          padding: '6px 14px',
+                                          backgroundColor: '#4CAF50',
+                                          color: 'white',
+                                          border: 'none',
+                                          borderRadius: '6px',
+                                          cursor: 'pointer',
+                                          fontSize: '0.85rem',
+                                          fontWeight: '600'
+                                        }}
+                                      >
+                                        ➕ Add Subquestion (Inside This)
+                                      </button>
+                                    </div>
+
+                                    {/* Render Child Subquestions */}
+                                    {subQ.childSubquestions && subQ.childSubquestions.length > 0 ? (
+                                      <div>
+                                        {subQ.childSubquestions.map((child, childIdx) => (
+                                          <div
+                                            key={childIdx}
+                                            style={{
+                                              marginLeft: '20px',
+                                              marginBottom: '16px',
+                                              padding: '16px',
+                                              borderLeft: '4px solid #4CAF50',
+                                              backgroundColor: '#f9fdf9',
+                                              borderRadius: '6px'
+                                            }}
+                                          >
+                                            <div style={{ fontSize: '0.8rem', color: '#4CAF50', marginBottom: '12px', fontWeight: 'bold' }}>
+                                              📌 Child Sub-Question #{childIdx + 1}
+                                            </div>
+
+                                            {/* Child Title */}
+                                            <div className="form-group2" style={{ marginBottom: '12px' }}>
+                                              <label className="form-label" style={{ fontSize: '0.85rem' }}>Title <span style={{ color: "#da251c" }}>*</span></label>
+                                              <input
+                                                type="text"
+                                                className="form-input compact"
+                                                value={child.subQuestionTitle || ""}
+                                                onChange={(e) => {
+                                                  updateChildSubQuestion(index, childIdx, 'subQuestionTitle', e.target.value);
+                                                  // Clear error when user types
+                                                  if (e.target.value.trim()) {
+                                                    setSubQuestionErrors(prev => {
+                                                      const newErrors = { ...prev };
+                                                      delete newErrors[`${index}_child_${childIdx}_title`];
+                                                      return newErrors;
+                                                    });
+                                                  }
+                                                }}
+                                                placeholder="Enter child title"
+                                              />
+                                              {subQuestionErrors[`${index}_child_${childIdx}_title`] && (
+                                                <div style={{ color: "#da251c", fontSize: "0.75rem", marginTop: 4 }}>
+                                                  {subQuestionErrors[`${index}_child_${childIdx}_title`]}
+                                                </div>
+                                              )}
+                                            </div>
+
+                                            {/* Child Hint Type and Hint - side by side */}
+                                            <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                                              {/* Hint Type */}
+                                              <div className="form-group2" style={{ flex: 1 }}>
+                                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Hint Type<span style={{ color: "#da251c" }}>*</span></label>
+                                                <select
+                                                  className="form-input compact"
+                                                  value={child.subQueHintType || "1"}
+                                                  onChange={(e) => updateChildSubQuestion(index, childIdx, 'subQueHintType', e.target.value)}
+                                                >
+                                                  <option value="1">Text</option>
+                                                  <option value="2">Image</option>
+                                                </select>
+                                              </div>
+
+                                              {/* Sub Question Hint */}
+                                              <div className="form-group2" style={{ flex: 1 }}>
+                                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Sub Question Hint</label>
+                                                {child.subQueHintType === "2" ? (
+                                                  <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="form-input compact"
+                                                    onChange={(e) => {
+                                                      const file = e.target.files && e.target.files[0];
+                                                      updateChildSubQuestion(index, childIdx, 'subQuestionHintFile', file || null);
+                                                    }}
+                                                  />
+                                                ) : (
+                                                  <input
+                                                    type="text"
+                                                    className="form-input compact"
+                                                    value={child.subQuestionHint || ""}
+                                                    onChange={(e) => updateChildSubQuestion(index, childIdx, 'subQuestionHint', e.target.value)}
+                                                    placeholder=""
+                                                  />
+                                                )}
+                                              </div>
+                                            </div>
+
+                                            {/* Child Form Type */}
+                                            <div className="form-group2" style={{ marginBottom: '12px' }}>
+                                              <label className="form-label" style={{ fontSize: '0.85rem' }}>Form Type <span style={{ color: "#da251c" }}>*</span></label>
+                                              <select
+                                                className="form-input compact"
+                                                value={child.subQuestionFormType || ""}
+                                                onChange={(e) => {
+                                                  updateChildSubQuestion(index, childIdx, 'subQuestionFormType', e.target.value);
+                                                  // Clear error when user selects
+                                                  if (e.target.value) {
+                                                    setSubQuestionErrors(prev => {
+                                                      const newErrors = { ...prev };
+                                                      delete newErrors[`${index}_child_${childIdx}_formType`];
+                                                      return newErrors;
+                                                    });
+                                                  }
+                                                }}
+                                              >
+                                                <option value="">-- Select --</option>
+                                                <option value="text">Text</option>
+                                                <option value="email">Email</option>
+                                                <option value="mobile">Mobile</option>
+                                                <option value="amount">Amount</option>
+                                                <option value="textarea">Textarea</option>
+                                                <option value="checkbox">Checkboxes</option>
+                                                <option value="radio">Radio</option>
+                                                <option value="date">Date</option>
+                                                <option value="time">Time</option>
+                                                <option value="file">File</option>
+                                                <option value="select">Select (Dropdown)</option>
+                                              </select>
+                                              {subQuestionErrors[`${index}_child_${childIdx}_formType`] && (
+                                                <div style={{ color: "#da251c", fontSize: "0.75rem", marginTop: 4 }}>
+                                                  {subQuestionErrors[`${index}_child_${childIdx}_formType`]}
+                                                </div>
+                                              )}
+                                            </div>
+
+                                            {/* Options UI for checkbox, radio, and select types in child subquestions */}
+                                            {(child.subQuestionFormType === 'checkbox' ||
+                                              child.subQuestionFormType === 'radio' ||
+                                              child.subQuestionFormType === 'select') && (
+                                                <div style={{ marginBottom: 12, width: '100%' }}>
+                                                  {/* Price and Maximum Count Limit toggle switches */}
+                                                  <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
+                                                    {/* Price Toggle */}
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                                                      <div
+                                                        onClick={() => updateChildSubQuestion(index, childIdx, 'priceEnabled', !child.priceEnabled)}
+                                                        style={{
+                                                          width: 48,
+                                                          height: 28,
+                                                          borderRadius: 14,
+                                                          background: child.priceEnabled ? '#da251c' : '#ccc',
+                                                          position: 'relative',
+                                                          transition: 'background 0.3s',
+                                                          cursor: 'pointer'
+                                                        }}
+                                                      >
+                                                        <div
+                                                          style={{
+                                                            position: 'absolute',
+                                                            top: 2,
+                                                            left: child.priceEnabled ? 22 : 2,
+                                                            width: 24,
+                                                            height: 24,
+                                                            borderRadius: 12,
+                                                            background: '#fff',
+                                                            transition: 'left 0.3s',
+                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                          }}
+                                                        />
+                                                      </div>
+                                                      <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Price</span>
+                                                    </label>
+
+                                                    {/* Maximum Count Limit Toggle */}
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                                                      <div
+                                                        onClick={() => updateChildSubQuestion(index, childIdx, 'maxCountEnabled', !child.maxCountEnabled)}
+                                                        style={{
+                                                          width: 48,
+                                                          height: 28,
+                                                          borderRadius: 14,
+                                                          background: child.maxCountEnabled ? '#da251c' : '#ccc',
+                                                          position: 'relative',
+                                                          transition: 'background 0.3s',
+                                                          cursor: 'pointer'
+                                                        }}
+                                                      >
+                                                        <div
+                                                          style={{
+                                                            position: 'absolute',
+                                                            top: 2,
+                                                            left: child.maxCountEnabled ? 22 : 2,
+                                                            width: 24,
+                                                            height: 24,
+                                                            borderRadius: 12,
+                                                            background: '#fff',
+                                                            transition: 'left 0.3s',
+                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                          }}
+                                                        />
+                                                      </div>
+                                                      <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Maximum Count Limit</span>
+                                                    </label>
+                                                  </div>
+
+                                                  {/* Options input section with pink background */}
+                                                  <div style={{
+                                                    background: '#fff0f0',
+                                                    borderRadius: 8,
+                                                    padding: '16px',
+                                                    marginBottom: 12
+                                                  }}>
+                                                    {/* Label input */}
+                                                    <div style={{ marginBottom: 12 }}>
+                                                      <label style={{
+                                                        display: 'block',
+                                                        fontWeight: 600,
+                                                        fontSize: '0.85rem',
+                                                        marginBottom: 6,
+                                                        color: '#333',
+                                                        textAlign: 'center'
+                                                      }}>
+                                                        Labels (comma-separated) <span style={{ color: '#da251c' }}>*</span>
+                                                      </label>
+                                                      <input
+                                                        type="text"
+                                                        placeholder="e.g., Male, Female, Other"
+                                                        value={child.newOptionLabel || ''}
+                                                        onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionLabel', e.target.value)}
+                                                        style={{
+                                                          width: '100%',
+                                                          padding: '8px 10px',
+                                                          border: '1px solid #ddd',
+                                                          borderRadius: 6,
+                                                          fontSize: '0.85rem'
+                                                        }}
+                                                      />
+                                                    </div>
+
+                                                    {/* Price input (if enabled) */}
+                                                    {child.priceEnabled && (
+                                                      <div style={{ marginBottom: 12 }}>
+                                                        <label style={{
+                                                          display: 'block',
+                                                          fontWeight: 600,
+                                                          fontSize: '0.85rem',
+                                                          marginBottom: 6,
+                                                          color: '#333',
+                                                          textAlign: 'center'
+                                                        }}>
+                                                          Prices (comma-separated)
+                                                        </label>
+                                                        <input
+                                                          type="text"
+                                                          placeholder="e.g., 100, 200, 150"
+                                                          value={child.newOptionPrice || ''}
+                                                          onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionPrice', e.target.value)}
+                                                          style={{
+                                                            width: '100%',
+                                                            padding: '8px 10px',
+                                                            border: '1px solid #ddd',
+                                                            borderRadius: 6,
+                                                            fontSize: '0.85rem'
+                                                          }}
+                                                        />
+                                                      </div>
+                                                    )}
+
+                                                    {/* Count input (if enabled) */}
+                                                    {child.maxCountEnabled && (
+                                                      <div style={{ marginBottom: 12 }}>
+                                                        <label style={{
+                                                          display: 'block',
+                                                          fontWeight: 600,
+                                                          fontSize: '0.85rem',
+                                                          marginBottom: 6,
+                                                          color: '#333',
+                                                          textAlign: 'center'
+                                                        }}>
+                                                          Counts (comma-separated)
+                                                        </label>
+                                                        <input
+                                                          type="text"
+                                                          placeholder="e.g., 50, 75, 100"
+                                                          value={child.newOptionCount || ''}
+                                                          onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionCount', e.target.value)}
+                                                          style={{
+                                                            width: '100%',
+                                                            padding: '8px 10px',
+                                                            border: '1px solid #ddd',
+                                                            borderRadius: 6,
+                                                            fontSize: '0.85rem'
+                                                          }}
+                                                        />
+                                                      </div>
+                                                    )}
+
+                                                    {/* Hint text */}
+                                                    <div style={{
+                                                      background: '#e8f5e9',
+                                                      border: '1px solid #4caf50',
+                                                      borderRadius: 6,
+                                                      padding: '8px 10px',
+                                                      fontSize: '0.75rem',
+                                                      color: '#2e7d32',
+                                                      textAlign: 'center'
+                                                    }}>
+                                                      <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                                                        💡 Tip: You can send different values in a single line
+                                                      </div>
+                                                      <div>
+                                                        • Separate multiple values with comma (,)<br />
+                                                        • Example: Male, Female, Other<br />
+                                                        • If you have 3 labels, provide 3 prices and 3 counts
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              )}
+
+                                            {/* Child Mandatory */}
+                                            <div className="form-group2" style={{ marginBottom: '12px' }}>
+                                              <label className="form-label" style={{ fontSize: '0.85rem' }}>Status</label>
+                                              <div className="email-toggle-group">
+                                                <button
+                                                  type="button"
+                                                  className={`email-toggle-btn ${child.subQuestionMandatory === "1" ? "active yes" : ""}`}
+                                                  onClick={() => updateChildSubQuestion(index, childIdx, 'subQuestionMandatory', "1")}
+                                                  style={{ fontSize: '0.85rem' }}
+                                                >
+                                                  <span className="lock-icon">🔒</span> Mandatory
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  className={`email-toggle-btn ${child.subQuestionMandatory !== "1" ? "active" : ""}`}
+                                                  onClick={() => updateChildSubQuestion(index, childIdx, 'subQuestionMandatory', "0")}
+                                                  style={{ fontSize: '0.85rem' }}
+                                                >
+                                                  <span className="unlock-icon">🔓</span> Optional
+                                                </button>
+                                              </div>
+                                            </div>
+
+                                            {/* Remove Child Button */}
+                                            <button
+                                              type="button"
+                                              onClick={() => removeChildSubQuestion(index, childIdx)}
+                                              style={{
+                                                background: "#fff",
+                                                border: "1px solid #e74c3c",
+                                                color: "#e74c3c",
+                                                borderRadius: 6,
+                                                padding: "6px 12px",
+                                                cursor: "pointer",
+                                                fontSize: "0.85rem"
+                                              }}
+                                            >
+                                              🗑 Remove Child
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div style={{
+                                        padding: '16px',
+                                        textAlign: 'center',
+                                        color: '#999',
+                                        backgroundColor: '#fafafa',
+                                        borderRadius: '6px',
+                                        border: '1px dashed #ddd',
+                                        fontSize: '0.85rem'
+                                      }}>
+                                        No child sub-questions yet. Click "➕ Add Subquestion (Inside This)" to add one.
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+
+                      {/* Add More Subquestion Button - shown as + icon */}
+                      <button
+                        type="button"
+                        onClick={addSubQuestion}
+                        style={{
+                          background: "#fff",
+                          border: "2px solid #da251c",
+                          color: "#da251c",
+                          borderRadius: "50%",
+                          width: 40,
+                          height: 40,
+                          cursor: "pointer",
+                          fontSize: "1.5rem",
+                          fontWeight: 600,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginTop: 8
+                        }}
+                        title="Add another subquestion"
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+            {/* Select type: same UI as radio for subquestions + dynamic subquestion forms */}
+            {(selectedQuestion.question_form_type || "").toLowerCase() ===
+              "select" && (
+                <div className="form-group2">
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      marginTop: 12,
+                      cursor: 'pointer',
+                      userSelect: 'none'
+                    }}
+                  >
+                    {/* Toggle Switch */}
+                    <div
+                      onClick={() => {
+                        const newValue = !selectedQuestion.add_subquestions;
+                        handleChangeField("add_subquestions", newValue);
+                        if (newValue && subQuestions.length === 0) {
+                          // Add first subquestion when toggle is turned on
+                          addSubQuestion();
+                        } else if (!newValue) {
+                          // Clear all subquestions when turned off
+                          setSubQuestions([]);
+                        }
+                      }}
+                      style={{
+                        position: 'relative',
+                        width: 48,
+                        height: 28,
+                        borderRadius: 14,
+                        background: selectedQuestion.add_subquestions ? '#da251c' : '#ccc',
+                        transition: 'background 0.3s',
+                        cursor: 'pointer',
+                        flexShrink: 0
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 2,
+                          left: selectedQuestion.add_subquestions ? 22 : 2,
+                          width: 24,
+                          height: 24,
+                          borderRadius: 12,
+                          background: '#fff',
+                          transition: 'left 0.3s',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }}
+                      />
+                    </div>
+                    <span style={{ fontWeight: 500, fontSize: '0.95rem' }}>Add Subquestions</span>
+                    <span style={{
+                      fontSize: '0.85rem',
+                      color: '#666',
+                      marginLeft: 'auto'
+                    }}>
+                      {selectedQuestion.add_subquestions ? subQuestions.length : 0}
+                    </span>
+                  </label>
+
+                  {selectedQuestion.add_subquestions && (
+                    <div style={{ marginTop: 16, width: '100%' }}>
+                      {/* Display each subquestion */}
+                      {subQuestions.map((subQ, index) => (
+                        <div key={index} style={{ marginBottom: 20, width: '100%' }}>
+                          {/* Question Option Type Dropdown */}
+                          <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                            <label className="form-label">
+                              Question Option Type <span style={{ color: "#da251c" }}>*</span>
+                            </label>
+                            <select
+                              className="form-input compact"
+                              value={subQ.selectedOptionId || ""}
+                              onChange={(e) => {
+                                updateSubQuestion(index, "selectedOptionId", e.target.value);
+                                // Clear error when user selects an option
+                                if (e.target.value) {
+                                  setSubQuestionErrors(prev => {
+                                    const newErrors = { ...prev };
+                                    delete newErrors[`${index}_selectedOptionId`];
+                                    return newErrors;
+                                  });
+                                }
+                              }}
+                            >
+                              <option value="">-- Select --</option>
+                              {getAvailableOptions(index).map((opt) => (
+                                <option key={opt.id} value={String(opt.id)}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                            {subQuestionErrors[`${index}_selectedOptionId`] && (
+                              <div style={{ color: "#da251c", fontSize: "0.85rem", marginTop: 4 }}>
+                                {subQuestionErrors[`${index}_selectedOptionId`]}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Show full form only if option is selected */}
+                          {subQ.selectedOptionId && (
+                            <>
+                              {/* Question Title */}
+                              <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                                <label className="form-label">
+                                  Question Title <span style={{ color: "#da251c" }}>*</span>
+                                  {subQ.subQuestionMandatory === "1" && (
+                                    <span style={{ color: "#da251c", marginLeft: 8, fontSize: "0.9em" }}>
+                                      * (Mandatory)
+                                    </span>
+                                  )}
+                                </label>
+                                <input
+                                  type="text"
+                                  className="form-input compact"
+                                  value={subQ.subQuestionTitle || ""}
+                                  onChange={(e) => {
+                                    updateSubQuestion(index, "subQuestionTitle", e.target.value);
+                                    // Clear error when user types
+                                    if (e.target.value.trim()) {
+                                      setSubQuestionErrors(prev => {
+                                        const newErrors = { ...prev };
+                                        delete newErrors[`${index}_title`];
+                                        return newErrors;
+                                      });
+                                    }
+                                  }}
+                                  placeholder=""
+                                />
+                                {subQuestionErrors[`${index}_title`] && (
+                                  <div style={{ color: "#da251c", fontSize: "0.85rem", marginTop: 4 }}>
+                                    {subQuestionErrors[`${index}_title`]}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Hint Type and Sub Question Hint - side by side */}
+                              <div style={{ display: 'flex', gap: '16px', marginBottom: 12, width: '100%' }}>
+                                {/* Hint Type */}
+                                <div className="form-group2" style={{ flex: 1 }}>
+                                  <label className="form-label">Hint Type <span style={{ color: "#da251c" }}>*</span></label>
+                                  <select
+                                    className="form-input compact"
+                                    value={subQ.subQueHintType || "1"}
+                                    onChange={(e) =>
+                                      updateSubQuestion(index, "subQueHintType", e.target.value)
+                                    }
+                                  >
+                                    <option value="1">Text</option>
+                                    <option value="2">Image</option>
+                                  </select>
+                                </div>
+
+                                {/* Sub Question Hint */}
+                                <div className="form-group2" style={{ flex: 1 }}>
+                                  <label className="form-label">Sub Question Hint</label>
+                                  {subQ.subQueHintType === "2" ? (
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="form-input compact"
+                                      onChange={(e) => {
+                                        const file = e.target.files && e.target.files[0];
+                                        updateSubQuestion(index, "subQuestionHintFile", file || null);
+                                      }}
+                                    />
+                                  ) : (
+                                    <input
+                                      type="text"
+                                      className="form-input compact"
+                                      value={subQ.subQuestionHint || ""}
+                                      onChange={(e) =>
+                                        updateSubQuestion(index, "subQuestionHint", e.target.value)
+                                      }
+                                      placeholder=""
+                                    />
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Question Input Type */}
+                              <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                                <label className="form-label">
+                                  Question Input Type <span style={{ color: "#da251c" }}>*</span>
+                                </label>
+                                <select
+                                  className="form-input compact"
+                                  value={subQ.subQuestionFormType || ""}
+                                  onChange={(e) => {
+                                    updateSubQuestion(index, "subQuestionFormType", e.target.value);
+                                    // Clear error when user selects
+                                    if (e.target.value) {
+                                      setSubQuestionErrors(prev => {
+                                        const newErrors = { ...prev };
+                                        delete newErrors[`${index}_formType`];
+                                        return newErrors;
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <option value="">-- Select --</option>
+                                  <option value="text">Text</option>
+                                  <option value="email">Email</option>
+                                  <option value="mobile">Mobile</option>
+                                  <option value="amount">Amount</option>
+                                  <option value="textarea">Textarea</option>
+                                  <option value="checkbox">Checkboxes</option>
+                                  <option value="radio">Radio</option>
+                                  <option value="date">Date</option>
+                                  <option value="time">Time</option>
+                                  <option value="file">File</option>
+                                  <option value="select">Select (Dropdown)</option>
+                                </select>
+                                {subQuestionErrors[`${index}_formType`] && (
+                                  <div style={{ color: "#da251c", fontSize: "0.85rem", marginTop: 4 }}>
+                                    {subQuestionErrors[`${index}_formType`]}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Options UI for checkbox, radio, and select types */}
+                              {(subQ.subQuestionFormType === 'checkbox' ||
+                                subQ.subQuestionFormType === 'radio' ||
+                                subQ.subQuestionFormType === 'select') && (
+                                  <div style={{ marginBottom: 12, width: '100%' }}>
+                                    {/* Price and Maximum Count Limit toggle switches */}
+                                    <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
+                                      {/* Price Toggle */}
+                                      <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                                        <div
+                                          onClick={() => updateSubQuestion(index, 'priceEnabled', !subQ.priceEnabled)}
+                                          style={{
+                                            width: 48,
+                                            height: 28,
+                                            borderRadius: 14,
+                                            background: subQ.priceEnabled ? '#da251c' : '#ccc',
+                                            position: 'relative',
+                                            transition: 'background 0.3s',
+                                            cursor: 'pointer'
+                                          }}
+                                        >
+                                          <div
+                                            style={{
+                                              position: 'absolute',
+                                              top: 2,
+                                              left: subQ.priceEnabled ? 22 : 2,
+                                              width: 24,
+                                              height: 24,
+                                              borderRadius: 12,
+                                              background: '#fff',
+                                              transition: 'left 0.3s',
+                                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                            }}
+                                          />
+                                        </div>
+                                        <span style={{ fontWeight: 500, fontSize: '1rem' }}>Price</span>
+                                      </label>
+
+                                      {/* Maximum Count Limit Toggle */}
+                                      <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                                        <div
+                                          onClick={() => updateSubQuestion(index, 'maxCountEnabled', !subQ.maxCountEnabled)}
+                                          style={{
+                                            width: 48,
+                                            height: 28,
+                                            borderRadius: 14,
+                                            background: subQ.maxCountEnabled ? '#da251c' : '#ccc',
+                                            position: 'relative',
+                                            transition: 'background 0.3s',
+                                            cursor: 'pointer'
+                                          }}
+                                        >
+                                          <div
+                                            style={{
+                                              position: 'absolute',
+                                              top: 2,
+                                              left: subQ.maxCountEnabled ? 22 : 2,
+                                              width: 24,
+                                              height: 24,
+                                              borderRadius: 12,
+                                              background: '#fff',
+                                              transition: 'left 0.3s',
+                                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                            }}
+                                          />
+                                        </div>
+                                        <span style={{ fontWeight: 500, fontSize: '1rem' }}>Maximum Count Limit</span>
+                                      </label>
+                                    </div>
+
+                                    {/* Options Table */}
+                                    <div style={{
+                                      background: '#fff0f0',
+                                      borderRadius: 8,
+                                      padding: '16px',
+                                      marginBottom: 12
+                                    }}>
+                                      {/* Existing options display */}
+                                      {(subQ.options || []).length > 0 && (
+                                        <>
+                                          {/* Table Header */}
+                                          <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: subQ.priceEnabled && subQ.maxCountEnabled
+                                              ? '2fr 1fr 1fr auto'
+                                              : subQ.priceEnabled || subQ.maxCountEnabled
+                                                ? '2fr 1fr auto'
+                                                : '1fr auto',
+                                            gap: 16,
+                                            marginBottom: 12,
+                                            paddingBottom: 8,
+                                            borderBottom: '2px solid #da251c'
+                                          }}>
+                                            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Label</div>
+                                            {subQ.priceEnabled && <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Price</div>}
+                                            {subQ.maxCountEnabled && <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Count</div>}
+                                            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Action</div>
+                                          </div>
+
+                                          {/* Existing options */}
+                                          {(subQ.options || []).map((opt, optIdx) => (
+                                            <div
+                                              key={optIdx}
+                                              style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: subQ.priceEnabled && subQ.maxCountEnabled
+                                                  ? '2fr 1fr 1fr auto'
+                                                  : subQ.priceEnabled || subQ.maxCountEnabled
+                                                    ? '2fr 1fr auto'
+                                                    : '1fr auto',
+                                                gap: 16,
+                                                alignItems: 'center',
+                                                marginBottom: 8,
+                                                paddingBottom: 8,
+                                                borderBottom: '1px solid #eee'
+                                              }}
+                                            >
+                                              <div style={{ color: '#333' }}>{opt.label || opt}</div>
+                                              {subQ.priceEnabled && <div style={{ color: '#666' }}>{opt.price || '-'}</div>}
+                                              {subQ.maxCountEnabled && <div style={{ color: '#666' }}>{opt.count || '-'}</div>}
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const newOptions = [...(subQ.options || [])];
+                                                  newOptions.splice(optIdx, 1);
+                                                  updateSubQuestion(index, 'options', newOptions);
+                                                }}
+                                                style={{
+                                                  background: 'transparent',
+                                                  border: 'none',
+                                                  color: '#e74c3c',
+                                                  cursor: 'pointer',
+                                                  fontSize: '1.2rem',
+                                                  padding: 4
+                                                }}
+                                                title="Delete option"
+                                              >
+                                                🗑
+                                              </button>
+                                            </div>
+                                          ))}
+                                        </>
+                                      )}
+
+                                      {/* Comma-separated input section */}
+                                      <div style={{
+                                        marginTop: (subQ.options || []).length > 0 ? 16 : 0,
+                                        paddingTop: (subQ.options || []).length > 0 ? 16 : 0,
+                                        borderTop: (subQ.options || []).length > 0 ? '1px dashed #ddd' : 'none'
+                                      }}>
+                                        {/* Label input */}
+                                        <div style={{ marginBottom: 12 }}>
+                                          <label style={{
+                                            display: 'block',
+                                            fontWeight: 600,
+                                            fontSize: '0.9rem',
+                                            marginBottom: 6,
+                                            color: '#333'
+                                          }}>
+                                            Labels (comma-separated) <span style={{ color: '#da251c' }}>*</span>
+                                          </label>
+                                          <input
+                                            type="text"
+                                            placeholder="e.g., Male, Female, Other"
+                                            value={subQ.newOptionLabel || ''}
+                                            onChange={(e) => updateSubQuestion(index, 'newOptionLabel', e.target.value)}
+                                            style={{
+                                              width: '100%',
+                                              padding: '10px 12px',
+                                              border: '1px solid #ddd',
+                                              borderRadius: 6,
+                                              fontSize: '0.95rem'
+                                            }}
+                                          />
+                                        </div>
+
+                                        {/* Price input (if enabled) */}
+                                        {subQ.priceEnabled && (
+                                          <div style={{ marginBottom: 12 }}>
+                                            <label style={{
+                                              display: 'block',
+                                              fontWeight: 600,
+                                              fontSize: '0.9rem',
+                                              marginBottom: 6,
+                                              color: '#333'
+                                            }}>
+                                              Prices (comma-separated)
+                                            </label>
+                                            <input
+                                              type="text"
+                                              placeholder="e.g., 100, 200, 150"
+                                              value={subQ.newOptionPrice || ''}
+                                              onChange={(e) => updateSubQuestion(index, 'newOptionPrice', e.target.value)}
+                                              style={{
+                                                width: '100%',
+                                                padding: '10px 12px',
+                                                border: '1px solid #ddd',
+                                                borderRadius: 6,
+                                                fontSize: '0.95rem'
+                                              }}
+                                            />
+                                          </div>
+                                        )}
+
+                                        {/* Count input (if enabled) */}
+                                        {subQ.maxCountEnabled && (
+                                          <div style={{ marginBottom: 12 }}>
+                                            <label style={{
+                                              display: 'block',
+                                              fontWeight: 600,
+                                              fontSize: '0.9rem',
+                                              marginBottom: 6,
+                                              color: '#333'
+                                            }}>
+                                              Counts (comma-separated)
+                                            </label>
+                                            <input
+                                              type="text"
+                                              placeholder="e.g., 50, 75, 100"
+                                              value={subQ.newOptionCount || ''}
+                                              onChange={(e) => updateSubQuestion(index, 'newOptionCount', e.target.value)}
+                                              style={{
+                                                width: '100%',
+                                                padding: '10px 12px',
+                                                border: '1px solid #ddd',
+                                                borderRadius: 6,
+                                                fontSize: '0.95rem'
+                                              }}
+                                            />
+                                          </div>
+                                        )}
+
+                                        {/* Hint text */}
+                                        <div style={{
+                                          background: '#e8f5e9',
+                                          border: '1px solid #4caf50',
+                                          borderRadius: 6,
+                                          padding: '10px 12px',
+                                          fontSize: '0.85rem',
+                                          color: '#2e7d32'
+                                        }}>
+                                          <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                                            💡 Tip: You can send different values in a single line
+                                          </div>
+                                          <div>
+                                            • Separate multiple values with comma (,)<br />
+                                            • Example: Male, Female, Other<br />
+                                            • If you have 3 labels, provide 3 prices and 3 counts
+                                          </div>
+                                        </div>
+
+                                        {/* Error message display */}
+                                        {subQ.optionError && (
+                                          <div style={{
+                                            background: '#ffebee',
+                                            border: '1px solid #f44336',
+                                            borderRadius: 6,
+                                            padding: '10px 12px',
+                                            marginTop: 12,
+                                            fontSize: '0.85rem',
+                                            color: '#c62828'
+                                          }}>
+                                            ⚠️ {subQ.optionError}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                              {/* Mandatory/Optional Toggle */}
+                              <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                                <div className="status-toggle">
+                                  <button
+                                    type="button"
+                                    className={`status-btn ${subQ.subQuestionMandatory === "1" ? "active" : ""}`}
+                                    onClick={() =>
+                                      updateSubQuestion(index, "subQuestionMandatory", "1")
+                                    }
+                                  >
+                                    <span className="star-icon">★</span> Mandatory
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={`status-btn ${subQ.subQuestionMandatory !== "1" ? "active" : ""}`}
+                                    onClick={() =>
+                                      updateSubQuestion(index, "subQuestionMandatory", "0")
+                                    }
+                                  >
+                                    <span className="star-icon">☆</span> Optional
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Delete button for this subquestion (except first one) */}
+                              {index > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeSubQuestion(index)}
+                                  style={{
+                                    background: "#fff",
+                                    border: "1px solid #e74c3c",
+                                    color: "#e74c3c",
+                                    borderRadius: 6,
+                                    padding: "6px 12px",
+                                    cursor: "pointer",
+                                    fontSize: "0.9rem",
+                                    marginBottom: 12
+                                  }}
+                                >
+                                  🗑 Remove
+                                </button>
+                              )}
+
+                              {/* CHILD SUBQUESTIONS SECTION - Only show for option-based input types */}
+                              {(subQ.subQuestionFormType === 'radio' ||
+                                subQ.subQuestionFormType === 'checkbox' ||
+                                subQ.subQuestionFormType === 'select') && (
+                                  <div style={{
+                                    marginTop: '20px',
+                                    paddingTop: '16px',
+                                    borderTop: '2px dashed #4CAF50'
+                                  }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                      <label style={{ fontWeight: '600', fontSize: '0.9rem', color: '#4CAF50' }}>
+                                        🔹 Child Sub-Questions (Unlimited)
+                                      </label>
+                                      <button
+                                        type="button"
+                                        onClick={() => addChildSubQuestion(index)}
+                                        style={{
+                                          padding: '6px 14px',
+                                          backgroundColor: '#4CAF50',
+                                          color: 'white',
+                                          border: 'none',
+                                          borderRadius: '6px',
+                                          cursor: 'pointer',
+                                          fontSize: '0.85rem',
+                                          fontWeight: '600'
+                                        }}
+                                      >
+                                        ➕ Add Subquestion (Inside This)
+                                      </button>
+                                    </div>
+
+                                    {/* Render Child Subquestions */}
+                                    {subQ.childSubquestions && subQ.childSubquestions.length > 0 ? (
+                                      <div>
+                                        {subQ.childSubquestions.map((child, childIdx) => (
+                                          <div
+                                            key={childIdx}
+                                            style={{
+                                              marginLeft: '20px',
+                                              marginBottom: '16px',
+                                              padding: '16px',
+                                              borderLeft: '4px solid #4CAF50',
+                                              backgroundColor: '#f9fdf9',
+                                              borderRadius: '6px'
+                                            }}
+                                          >
+                                            <div style={{ fontSize: '0.8rem', color: '#4CAF50', marginBottom: '12px', fontWeight: 'bold' }}>
+                                              📌 Child Sub-Question #{childIdx + 1}
+                                            </div>
+
+                                            {/* Child Title */}
+                                            <div className="form-group2" style={{ marginBottom: '12px' }}>
+                                              <label className="form-label" style={{ fontSize: '0.85rem' }}>Title *</label>
+                                              <input
+                                                type="text"
+                                                className="form-input compact"
+                                                value={child.subQuestionTitle || ""}
+                                                onChange={(e) => updateChildSubQuestion(index, childIdx, 'subQuestionTitle', e.target.value)}
+                                                placeholder="Enter child title"
+                                              />
+                                            </div>
+
+                                            {/* Child Hint Type and Hint - side by side */}
+                                            <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                                              {/* Hint Type */}
+                                              <div className="form-group2" style={{ flex: 1 }}>
+                                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Hint Type <span style={{ color: "#da251c" }}>*</span></label>
+                                                <select
+                                                  className="form-input compact"
+                                                  value={child.subQueHintType || "1"}
+                                                  onChange={(e) => updateChildSubQuestion(index, childIdx, 'subQueHintType', e.target.value)}
+                                                >
+                                                  <option value="1">Text</option>
+                                                  <option value="2">Image</option>
+                                                </select>
+                                              </div>
+
+                                              {/* Sub Question Hint */}
+                                              <div className="form-group2" style={{ flex: 1 }}>
+                                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Sub Question Hint</label>
+                                                {child.subQueHintType === "2" ? (
+                                                  <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="form-input compact"
+                                                    onChange={(e) => {
+                                                      const file = e.target.files && e.target.files[0];
+                                                      updateChildSubQuestion(index, childIdx, 'subQuestionHintFile', file || null);
+                                                    }}
+                                                  />
+                                                ) : (
+                                                  <input
+                                                    type="text"
+                                                    className="form-input compact"
+                                                    value={child.subQuestionHint || ""}
+                                                    onChange={(e) => updateChildSubQuestion(index, childIdx, 'subQuestionHint', e.target.value)}
+                                                    placeholder=""
+                                                  />
+                                                )}
+                                              </div>
+                                            </div>
+
+                                            {/* Child Form Type */}
+                                            <div className="form-group2" style={{ marginBottom: '12px' }}>
+                                              <label className="form-label" style={{ fontSize: '0.85rem' }}>Form Type <span style={{ color: "#da251c" }}>*</span></label>
+                                              <select
+                                                className="form-input compact"
+                                                value={child.subQuestionFormType || ""}
+                                                onChange={(e) => {
+                                                  updateChildSubQuestion(index, childIdx, 'subQuestionFormType', e.target.value);
+                                                  // Clear error when user selects
+                                                  if (e.target.value) {
+                                                    setSubQuestionErrors(prev => {
+                                                      const newErrors = { ...prev };
+                                                      delete newErrors[`${index}_child_${childIdx}_formType`];
+                                                      return newErrors;
+                                                    });
+                                                  }
+                                                }}
+                                              >
+                                                <option value="">-- Select --</option>
+                                                <option value="text">Text</option>
+                                                <option value="email">Email</option>
+                                                <option value="mobile">Mobile</option>
+                                                <option value="amount">Amount</option>
+                                                <option value="textarea">Textarea</option>
+                                                <option value="checkbox">Checkboxes</option>
+                                                <option value="radio">Radio</option>
+                                                <option value="date">Date</option>
+                                                <option value="time">Time</option>
+                                                <option value="file">File</option>
+                                                <option value="select">Select (Dropdown)</option>
+                                              </select>
+                                              {subQuestionErrors[`${index}_child_${childIdx}_formType`] && (
+                                                <div style={{ color: "#da251c", fontSize: "0.75rem", marginTop: 4 }}>
+                                                  {subQuestionErrors[`${index}_child_${childIdx}_formType`]}
+                                                </div>
+                                              )}
+                                            </div>
+
+                                            {/* Options UI for checkbox, radio, and select types in child subquestions */}
+                                            {(child.subQuestionFormType === 'checkbox' ||
+                                              child.subQuestionFormType === 'radio' ||
+                                              child.subQuestionFormType === 'select') && (
+                                                <div style={{ marginBottom: 12, width: '100%' }}>
+                                                  {/* Price and Maximum Count Limit toggle switches */}
+                                                  <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
+                                                    {/* Price Toggle */}
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                                                      <div
+                                                        onClick={() => updateChildSubQuestion(index, childIdx, 'priceEnabled', !child.priceEnabled)}
+                                                        style={{
+                                                          width: 48,
+                                                          height: 28,
+                                                          borderRadius: 14,
+                                                          background: child.priceEnabled ? '#da251c' : '#ccc',
+                                                          position: 'relative',
+                                                          transition: 'background 0.3s',
+                                                          cursor: 'pointer'
+                                                        }}
+                                                      >
+                                                        <div
+                                                          style={{
+                                                            position: 'absolute',
+                                                            top: 2,
+                                                            left: child.priceEnabled ? 22 : 2,
+                                                            width: 24,
+                                                            height: 24,
+                                                            borderRadius: 12,
+                                                            background: '#fff',
+                                                            transition: 'left 0.3s',
+                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                          }}
+                                                        />
+                                                      </div>
+                                                      <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Price</span>
+                                                    </label>
+
+                                                    {/* Maximum Count Limit Toggle */}
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                                                      <div
+                                                        onClick={() => updateChildSubQuestion(index, childIdx, 'maxCountEnabled', !child.maxCountEnabled)}
+                                                        style={{
+                                                          width: 48,
+                                                          height: 28,
+                                                          borderRadius: 14,
+                                                          background: child.maxCountEnabled ? '#da251c' : '#ccc',
+                                                          position: 'relative',
+                                                          transition: 'background 0.3s',
+                                                          cursor: 'pointer'
+                                                        }}
+                                                      >
+                                                        <div
+                                                          style={{
+                                                            position: 'absolute',
+                                                            top: 2,
+                                                            left: child.maxCountEnabled ? 22 : 2,
+                                                            width: 24,
+                                                            height: 24,
+                                                            borderRadius: 12,
+                                                            background: '#fff',
+                                                            transition: 'left 0.3s',
+                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                                          }}
+                                                        />
+                                                      </div>
+                                                      <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>Maximum Count Limit</span>
+                                                    </label>
+                                                  </div>
+
+                                                  {/* Options input section with pink background */}
+                                                  <div style={{
+                                                    background: '#fff0f0',
+                                                    borderRadius: 8,
+                                                    padding: '16px',
+                                                    marginBottom: 12
+                                                  }}>
+                                                    {/* Label input */}
+                                                    <div style={{ marginBottom: 12 }}>
+                                                      <label style={{
+                                                        display: 'block',
+                                                        fontWeight: 600,
+                                                        fontSize: '0.85rem',
+                                                        marginBottom: 6,
+                                                        color: '#333',
+                                                        textAlign: 'center'
+                                                      }}>
+                                                        Labels (comma-separated) <span style={{ color: '#da251c' }}>*</span>
+                                                      </label>
+                                                      <input
+                                                        type="text"
+                                                        placeholder="e.g., Male, Female, Other"
+                                                        value={child.newOptionLabel || ''}
+                                                        onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionLabel', e.target.value)}
+                                                        style={{
+                                                          width: '100%',
+                                                          padding: '8px 10px',
+                                                          border: '1px solid #ddd',
+                                                          borderRadius: 6,
+                                                          fontSize: '0.85rem'
+                                                        }}
+                                                      />
+                                                    </div>
+
+                                                    {/* Price input (if enabled) */}
+                                                    {child.priceEnabled && (
+                                                      <div style={{ marginBottom: 12 }}>
+                                                        <label style={{
+                                                          display: 'block',
+                                                          fontWeight: 600,
+                                                          fontSize: '0.85rem',
+                                                          marginBottom: 6,
+                                                          color: '#333',
+                                                          textAlign: 'center'
+                                                        }}>
+                                                          Prices (comma-separated)
+                                                        </label>
+                                                        <input
+                                                          type="text"
+                                                          placeholder="e.g., 100, 200, 150"
+                                                          value={child.newOptionPrice || ''}
+                                                          onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionPrice', e.target.value)}
+                                                          style={{
+                                                            width: '100%',
+                                                            padding: '8px 10px',
+                                                            border: '1px solid #ddd',
+                                                            borderRadius: 6,
+                                                            fontSize: '0.85rem'
+                                                          }}
+                                                        />
+                                                      </div>
+                                                    )}
+
+                                                    {/* Count input (if enabled) */}
+                                                    {child.maxCountEnabled && (
+                                                      <div style={{ marginBottom: 12 }}>
+                                                        <label style={{
+                                                          display: 'block',
+                                                          fontWeight: 600,
+                                                          fontSize: '0.85rem',
+                                                          marginBottom: 6,
+                                                          color: '#333',
+                                                          textAlign: 'center'
+                                                        }}>
+                                                          Counts (comma-separated)
+                                                        </label>
+                                                        <input
+                                                          type="text"
+                                                          placeholder="e.g., 50, 75, 100"
+                                                          value={child.newOptionCount || ''}
+                                                          onChange={(e) => updateChildSubQuestion(index, childIdx, 'newOptionCount', e.target.value)}
+                                                          style={{
+                                                            width: '100%',
+                                                            padding: '8px 10px',
+                                                            border: '1px solid #ddd',
+                                                            borderRadius: 6,
+                                                            fontSize: '0.85rem'
+                                                          }}
+                                                        />
+                                                      </div>
+                                                    )}
+
+                                                    {/* Hint text */}
+                                                    <div style={{
+                                                      background: '#e8f5e9',
+                                                      border: '1px solid #4caf50',
+                                                      borderRadius: 6,
+                                                      padding: '8px 10px',
+                                                      fontSize: '0.75rem',
+                                                      color: '#2e7d32',
+                                                      textAlign: 'center'
+                                                    }}>
+                                                      <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                                                        💡 Tip: You can send different values in a single line
+                                                      </div>
+                                                      <div>
+                                                        • Separate multiple values with comma (,)<br />
+                                                        • Example: Male, Female, Other<br />
+                                                        • If you have 3 labels, provide 3 prices and 3 counts
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              )}
+
+                                            {/* Child Mandatory */}
+                                            <div className="form-group2" style={{ marginBottom: '12px' }}>
+                                              <label className="form-label" style={{ fontSize: '0.85rem' }}>Status</label>
+                                              <div className="email-toggle-group">
+                                                <button
+                                                  type="button"
+                                                  className={`email-toggle-btn ${child.subQuestionMandatory === "1" ? "active yes" : ""}`}
+                                                  onClick={() => updateChildSubQuestion(index, childIdx, 'subQuestionMandatory', "1")}
+                                                  style={{ fontSize: '0.85rem' }}
+                                                >
+                                                  <span className="lock-icon">🔒</span> Mandatory
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  className={`email-toggle-btn ${child.subQuestionMandatory !== "1" ? "active" : ""}`}
+                                                  onClick={() => updateChildSubQuestion(index, childIdx, 'subQuestionMandatory', "0")}
+                                                  style={{ fontSize: '0.85rem' }}
+                                                >
+                                                  <span className="unlock-icon">🔓</span> Optional
+                                                </button>
+                                              </div>
+                                            </div>
+
+                                            {/* Remove Child Button */}
+                                            <button
+                                              type="button"
+                                              onClick={() => removeChildSubQuestion(index, childIdx)}
+                                              style={{
+                                                background: "#fff",
+                                                border: "1px solid #e74c3c",
+                                                color: "#e74c3c",
+                                                borderRadius: 6,
+                                                padding: "6px 12px",
+                                                cursor: "pointer",
+                                                fontSize: "0.85rem"
+                                              }}
+                                            >
+                                              🗑 Remove Child
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div style={{
+                                        padding: '16px',
+                                        textAlign: 'center',
+                                        color: '#999',
+                                        backgroundColor: '#fafafa',
+                                        borderRadius: '6px',
+                                        border: '1px dashed #ddd',
+                                        fontSize: '0.85rem'
+                                      }}>
+                                        No child sub-questions yet. Click "➕ Add Subquestion (Inside This)" to add one.
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+
+                      {/* Add More Subquestion Button - shown as + icon */}
+                      <button
+                        type="button"
+                        onClick={addSubQuestion}
+                        style={{
+                          background: "#fff",
+                          border: "2px solid #da251c",
+                          color: "#da251c",
+                          borderRadius: "50%",
+                          width: 40,
+                          height: 40,
+                          cursor: "pointer",
+                          fontSize: "1.5rem",
+                          fontWeight: 600,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginTop: 8
+                        }}
+                        title="Add another subquestion"
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+
+
+            {/* Date Range - only for date type questions */}
+            {(selectedQuestion.question_form_type || "").toLowerCase() ===
+              "date" && (
+                <div className="form-group2">
+                  <label className="form-label">Date Range</label>
+                  <div className="email-toggle-group">
+                    <button
+                      className={`email-toggle-btn ${!selectedQuestion.date_range_enabled ? "active" : ""
+                        }`}
+                      onClick={() =>
+                        handleChangeField("date_range_enabled", false)
+                      }
+                    >
+                      <span className="unlock-icon">🔓</span> No
+                    </button>
+                    <button
+                      className={`email-toggle-btn ${selectedQuestion.date_range_enabled ? "active yes" : ""
+                        }`}
+                      onClick={() =>
+                        handleChangeField("date_range_enabled", true)
+                      }
+                    >
+                      <span className="lock-icon">🔒</span> Yes
+                    </button>
+                  </div>
+
+                  {selectedQuestion.date_range_enabled && (
+                    <div
+                      className="limit-length-inputs"
+                      style={{ marginTop: 12 }}
+                    >
+                      <div className="input-group">
+                        <label className="sub-label">Start Date</label>
+                        <input
+                          type="date"
+                          className="form-input compact"
+                          value={selectedQuestion.start_date || ""}
+                          onChange={(e) =>
+                            handleChangeField("start_date", e.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="input-group">
+                        <label className="sub-label">End Date</label>
+                        <input
+                          type="date"
+                          className="form-input compact"
+                          value={selectedQuestion.end_date || ""}
+                          onChange={(e) =>
+                            handleChangeField("end_date", e.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+            {/* Email Domain Validation - only for email type questions */}
+            {(selectedQuestion.question_form_type || "").toLowerCase() ===
+              "email" && (
+                <div className="form-group2">
+                  <label className="form-label">
+                    Apply Validation For Specific Domain
+                  </label>
+                  <div className="email-toggle-group">
+                    <button
+                      className={`email-toggle-btn ${!selectedQuestion.email_validation_enabled
+                        ? "active"
+                        : ""
+                        }`}
+                      onClick={() =>
+                        handleChangeField("email_validation_enabled", false)
+                      }
+                    >
+                      <span className="unlock-icon">🔓</span> No
+                    </button>
+                    <button
+                      className={`email-toggle-btn ${selectedQuestion.email_validation_enabled
+                        ? "active yes"
+                        : ""
+                        }`}
+                      onClick={() =>
+                        handleChangeField("email_validation_enabled", true)
+                      }
+                    >
+                      <span className="lock-icon">🔒</span> Yes
+                    </button>
+                  </div>
+
+                  {selectedQuestion.email_validation_enabled && (
+                    <div
+                      className="form-group2 email-validation-input"
+                      style={{ marginTop: 12 }}
+                    >
+                      <label className="form-label">Domain Name</label>
+                      <input
+                        type="text"
+                        className="form-input compact full-width"
+                        value={selectedQuestion.email_domain || ""}
+                        onChange={(e) =>
+                          handleChangeField("email_domain", e.target.value)
+                        }
+                        placeholder="example.com"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+            {/* Limit Length */}
+            {/* <div className="form-group2">
                 <label className="form-label-inline">
                   <input type="checkbox" className="checkbox" />
                   <span>Limit Length</span>
@@ -3609,7 +3919,7 @@ const GeneralFormQuestions = ({
                   </div>
                 </div>
               </div> */}
-            </div>
+
 
             {/* Modal Footer */}
             <div className="modal-footer">
@@ -3621,7 +3931,7 @@ const GeneralFormQuestions = ({
               </button>
             </div>
           </div>
-        </div>
+        // </div>
       )}
 
       {/* Subquestion Details Modal */}
@@ -3718,7 +4028,7 @@ const GeneralFormQuestions = ({
         </div>
       )}
 
-
+      {/* Main Content */}
       {!showAddCustomForm ? (
         <>
           <div className="modal-header">
