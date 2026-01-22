@@ -68,6 +68,43 @@ export default function SecureCheckout() {
     }
   }, [selectedTickets.length, appliedCoupon]);
 
+  // Fetch available coupons when tickets are selected
+  useEffect(() => {
+    const fetchAvailableCoupons = async () => {
+      if (selectedTickets.length === 0) {
+        setAvailableCoupons([]);
+        return;
+      }
+
+      try {
+        const ticketIds = selectedTickets.map(t => t.id);
+        console.log("📤 Fetching available coupons for tickets:", ticketIds);
+
+        // Call getCoupons API without coupon_code to get all available coupons
+        const response = await authAPI.getCoupons({
+          event_id: eventId,
+          ticket_ids: ticketIds,
+          coupon_code: "" // Empty string to get all coupons
+        });
+
+        console.log("📥 Available coupons response:", response);
+
+        if (response && response.data && response.data.Coupons && response.data.Coupons.length > 0) {
+          setAvailableCoupons(response.data.Coupons);
+          console.log("✅ Found", response.data.Coupons.length, "available coupons");
+        } else {
+          setAvailableCoupons([]);
+          console.log("ℹ️ No coupons available for selected tickets");
+        }
+      } catch (error) {
+        console.error("❌ Error fetching available coupons:", error);
+        setAvailableCoupons([]);
+      }
+    };
+
+    fetchAvailableCoupons();
+  }, [selectedTickets, eventId]);
+
   // Sticky summary scroll behavior
   useEffect(() => {
     const handleScroll = () => {
@@ -944,9 +981,11 @@ export default function SecureCheckout() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                         {availableCoupons.map((coupon) => {
                           const isApplied = appliedCoupon && appliedCoupon.id === coupon.id;
-                          const discountText = coupon.discount_type === 1
-                            ? `₹${coupon.discount_amount}`
-                            : `${coupon.discount_percentage}%`;
+                          // discount_amt_per_type: "1" = fixed amount, "2" = percentage
+                          const amtPerType = parseInt(coupon.discount_amt_per_type);
+                          const discountText = amtPerType === 1
+                            ? `₹${coupon.discount_amount || 0}`
+                            : `${coupon.discount_percentage || 0}%`;
 
                           return (
                             <div

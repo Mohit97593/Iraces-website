@@ -422,6 +422,16 @@ const DiscountCoupons = ({ onBack, onNext }) => {
           setSelectedTickets(ticketIds);
           setApplyToCategories("selected");
         }
+        // Set showPublic state from API response
+        // show_public: 0 = No, 1 = Yes
+        if (c.show_public !== undefined && c.show_public !== null) {
+          setShowPublic(c.show_public === 1 || c.show_public === "1");
+        }
+        // Set useType state from API response
+        // use_type: 1 = one time, 2 = multiple
+        if (c.use_type !== undefined && c.use_type !== null) {
+          setUseType(c.use_type === 1 || c.use_type === "1" ? "oneTime" : "multiple");
+        }
         setAttemptedSave(false);
         setShowForm(true);
       } else {
