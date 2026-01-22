@@ -32,6 +32,7 @@ import EventAnalytics from "../pages/EventAnalytics/EventAnalytics";
 import Registrations from "../pages/Registrations/Registrations";
 import Participants from "../pages/Participants/Participants";
 import PaymentLog from "../pages/PaymentLog/PaymentLog";
+import RemittanceDetails from "../pages/RemittanceDetails/RemittanceDetails";
 import PaymentSuccess from "../pages/PaymentSuccess";
 import PaymentFailure from "../pages/PaymentFailure";
 import TicketDetails from "../pages/TicketDetails";
@@ -315,6 +316,15 @@ const AppRouter = createBrowserRouter([
     element: (
       <ErrorBoundary>
         <PaymentLog />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/remittance-details/:eventId",
+    element: (
+      <ErrorBoundary>
+        <RemittanceDetails />
       </ErrorBoundary>
     ),
     errorElement: <NotFound />,

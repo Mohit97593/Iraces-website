@@ -737,6 +737,20 @@ export default function EventAnalytics() {
                         </div>
                         <i className="info-icon fas fa-info-circle"></i>
                     </div>
+
+                    {/* Remittance Details */}
+                    <div className="stat-card">
+                        <div className="stat-content">
+                            <div className="stat-info">
+                                <h3>Remittance Details</h3>
+                                <Link to={`/remittance-details/${eventId}`} state={{ eventName }} className="view-details">View Details</Link>
+                            </div>
+                            <div className="stat-icon">
+                                <img src="https://cdn-icons-png.flaticon.com/512/2331/2331978.png" alt="Remittance" />
+                            </div>
+                        </div>
+                        <i className="info-icon fas fa-info-circle"></i>
+                    </div>
                 </div>
 
                 {/* Charts Section */}

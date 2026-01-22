@@ -1974,6 +1974,22 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Get Remittance By Event API
+  getRemittanceByEvent: async (event_id) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", event_id);
+
+      const response = await api.post("/get_remittance_by_event", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("getRemittanceByEvent API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 // Token को axios header में set करें app load होते समय

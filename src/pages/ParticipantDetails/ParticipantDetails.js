@@ -545,13 +545,16 @@ export default function ParticipantDetails() {
   // Helper function to determine if a question should be shown based on coupon display location
   const shouldShowQuestion = (question) => {
     // Check if this is a coupon code question
-    const isCouponQuestion = question.question_label &&
-      String(question.question_label).toLowerCase().includes('coupon');
+    // Check both question_label and question_form_type
+    const isCouponQuestion = (question.question_label &&
+      String(question.question_label).toLowerCase().includes('coupon')) ||
+      (question.question_form_type && String(question.question_form_type).toLowerCase() === 'coupon_code');
 
     // Debug logging
     if (isCouponQuestion) {
       console.log('🎫 Coupon Question Check:', {
         questionLabel: question.question_label,
+        questionFormType: question.question_form_type,
         couponDisplayLocation: couponDisplayLocation,
         shouldShow: couponDisplayLocation === 'inside' || couponDisplayLocation === 'both'
       });
@@ -564,7 +567,7 @@ export default function ParticipantDetails() {
 
     // This is a coupon question, check display location
     // Show if: inside or both
-    // Hide if: outside or none
+    // Hide if: outside or none or any other value
     const shouldShow = couponDisplayLocation === 'inside' || couponDisplayLocation === 'both';
     console.log('🎫 Coupon Question Decision:', shouldShow ? 'SHOW' : 'HIDE');
     return shouldShow;
@@ -2461,72 +2464,6 @@ export default function ParticipantDetails() {
           }
           return null;
         })()}
-
-        {/* Coupon Code Input - Only show if location is 'inside' or 'both' */}
-        {(couponDisplayLocation === 'inside' || couponDisplayLocation === 'both') && (
-          <div style={{
-            marginTop: '30px',
-            padding: '20px',
-            backgroundColor: '#f9f9f9',
-            borderRadius: '8px',
-            border: '1px solid #e0e0e0'
-          }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '10px',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#333'
-            }}>
-              Enter Coupon Code
-            </label>
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
-              <input
-                type="text"
-                className="form-control3"
-                placeholder="Enter coupon code"
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-                disabled={appliedCoupon !== null}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  border: '1px solid #ddd',
-                  borderRadius: '5px',
-                  fontSize: '14px'
-                }}
-              />
-              <button
-                onClick={() => handleApplyCoupon(couponCode, 0, null)}
-                disabled={appliedCoupon !== null || !couponCode.trim()}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: appliedCoupon ? '#28a745' : '#e74c3c',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: appliedCoupon || !couponCode.trim() ? 'not-allowed' : 'pointer',
-                  opacity: appliedCoupon || !couponCode.trim() ? 0.6 : 1,
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                {appliedCoupon ? '✓ Applied' : 'Apply'}
-              </button>
-            </div>
-            {couponError && (
-              <div style={{ color: '#dc3545', fontSize: '14px', marginTop: '5px' }}>
-                {couponError}
-              </div>
-            )}
-            {appliedCoupon && (
-              <div style={{ color: '#28a745', fontSize: '14px', marginTop: '5px' }}>
-                ✓ Coupon "{appliedCoupon.discount_code}" applied successfully!
-              </div>
-            )}
-          </div>
-        )}
       </div >
     );
   };

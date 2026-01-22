@@ -1,0 +1,115 @@
+.remittance-container {
+    max-width: 1600px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.remittance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.remittance-header h2 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.back-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s;
+}
+
+.back-btn:hover {
+    background-color: #c0392b;
+}
+
+.back-btn i {
+    font-size: 14px;
+}
+
+/* Table Container */
+.table-container {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+}
+
+.remittance-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1400px;
+}
+
+.remittance-table thead {
+    background-color: #3498db;
+    color: white;
+}
+
+.remittance-table th {
+    padding: 15px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.remittance-table tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+    transition: background-color 0.2s;
+}
+
+.remittance-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.remittance-table td {
+    padding: 15px 12px;
+    font-size: 14px;
+    color: #555;
+}
+
+/* Total Row */
+.total-row {
+    background-color: #f8f9fa !important;
+    font-weight: 600;
+    border-top: 2px solid #3498db !important;
+}
+
+.total-row td {
+    color: #2c3e50 !important;
+    font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .remittance-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .table-container {
+        padding: 10px;
+    }
+
+    .remittance-table th,
+    .remittance-table td {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+}
