@@ -920,11 +920,79 @@ export default function EventAnalytics() {
                                                 const total = coupon.TotalDiscountCode || 0;
                                                 const used = coupon.CouponCount || 0;
                                                 const pending = total - used;
+
+                                                // Extract the coupon code for display
+                                                let couponCode = 'Unknown';
+
+                                                // Check each field and only use it if it's a string and not a number
+                                                const possibleFields = [
+                                                    coupon.DiscountCode,
+                                                    coupon.DiscountName,
+                                                    coupon.discount_code,
+                                                    coupon.discount_name,
+                                                    coupon.coupon_code,
+                                                    coupon.code,
+                                                    coupon.CouponCode,
+                                                    coupon.CouponName
+                                                ];
+
+                                                for (const field of possibleFields) {
+                                                    if (field && typeof field === 'string' && field !== 'Unknown' && isNaN(field)) {
+                                                        couponCode = field;
+                                                        break;
+                                                    }
+                                                }
+
+                                                // Get coupon ID for API (this is what the API expects)
+                                                const couponId = coupon.coupon_id || coupon.id || 0;
+
+                                                console.log('🎫 Coupon data:', {
+                                                    index,
+                                                    coupon,
+                                                    displayCode: couponCode,
+                                                    couponId: couponId,
+                                                    used
+                                                });
+
                                                 return (
                                                     <tr key={index}>
-                                                        <td>{coupon.DiscountCode || coupon.DiscountName || 'Unknown'}</td>
+                                                        <td>{couponCode}</td>
                                                         <td>{total}</td>
-                                                        <td>{used}</td>
+                                                        <td>
+                                                            {used > 0 ? (
+                                                                <Link
+                                                                    to={`/participants/${eventId}`}
+                                                                    state={{
+                                                                        coupon_used_flag: couponId,
+                                                                        event_id: eventId,
+                                                                        limit: 30,
+                                                                        page: 1
+                                                                    }}
+                                                                    onClick={() => {
+                                                                        console.log('🔗 Coupon link clicked!', {
+                                                                            displayCode: couponCode,
+                                                                            couponId: couponId,
+                                                                            stateBeingSent: {
+                                                                                coupon_used_flag: couponId,
+                                                                                event_id: eventId,
+                                                                                limit: 30,
+                                                                                page: 1
+                                                                            }
+                                                                        });
+                                                                    }}
+                                                                    style={{
+                                                                        color: '#3498db',
+                                                                        textDecoration: 'underline',
+                                                                        cursor: 'pointer',
+                                                                        fontWeight: '500'
+                                                                    }}
+                                                                >
+                                                                    {used}
+                                                                </Link>
+                                                            ) : (
+                                                                used
+                                                            )}
+                                                        </td>
                                                         <td>{pending}</td>
                                                     </tr>
                                                 );
@@ -965,6 +1033,61 @@ export default function EventAnalytics() {
                                 )}
                             </div>
                         </div>
+
+                        {/* Custom Questions (CountArray) */}
+                        {categoryData.customQuestions && Object.keys(categoryData.customQuestions).length > 0 && (
+                            <>
+                                {Object.entries(categoryData.customQuestions).map(([questionId, questionData]) => {
+                                    // Extract question label
+                                    const questionLabel = questionData.question_label || `Question ${questionId}`;
+
+                                    // Extract options data (all keys except 'question_label')
+                                    const optionsData = Object.entries(questionData)
+                                        .filter(([key]) => key !== 'question_label')
+                                        .map(([optionId, optionData]) => ({
+                                            id: optionId,
+                                            label: optionData.label || 'Unknown',
+                                            count: optionData.count || 0,
+                                            limit: optionData.limit || 0
+                                        }));
+
+                                    // Calculate totals
+                                    const totalCount = optionsData.reduce((sum, opt) => sum + opt.count, 0);
+                                    const totalLimit = optionsData.reduce((sum, opt) => sum + opt.limit, 0);
+
+                                    return (
+                                        <div className="col-lg-6" key={questionId}>
+                                            <div className="chart-card">
+                                                <h3 className="chart-title">{questionLabel}</h3>
+                                                <table className="utm-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Label</th>
+                                                            <th>Count</th>
+                                                            <th>Limit</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {optionsData.map((option) => (
+                                                            <tr key={option.id}>
+                                                                <td>{option.label}</td>
+                                                                <td>{option.count}</td>
+                                                                <td>{option.limit}</td>
+                                                            </tr>
+                                                        ))}
+                                                        <tr className="total-row">
+                                                            <td><strong>Total</strong></td>
+                                                            <td><strong>{totalCount}</strong></td>
+                                                            <td><strong>{totalLimit}</strong></td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </>
+                        )}
 
                         {/* Age Category */}
                         <div className="col-lg-6">

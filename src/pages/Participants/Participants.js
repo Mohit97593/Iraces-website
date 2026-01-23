@@ -53,12 +53,13 @@ export default function Participants() {
         try {
             setLoading(true);
             console.log("📊 Fetching participants for event:", eventId);
+            console.log("🎫 Coupon filter from location.state:", location.state?.coupon_used_flag);
 
             const payload = {
                 event_id: eventId,
                 page: pagination.page,
                 limit: pagination.limit,
-                coupon_used_flag: 0
+                coupon_used_flag: location.state?.coupon_used_flag || 0
             };
 
             // Add filters if provided
@@ -168,7 +169,7 @@ export default function Participants() {
                 event_id: eventId,
                 page: 1,
                 limit: pagination.limit,
-                coupon_used_flag: 0
+                coupon_used_flag: location.state?.coupon_used_flag || 0
             };
 
             console.log("📤 Clear filters payload:", payload);
@@ -411,7 +412,7 @@ export default function Participants() {
             const payload = {
                 event_id: eventId,
                 command: 'attendee',
-                coupon_used_flag: 0
+                coupon_used_flag: location.state?.coupon_used_flag || 0
             };
 
             // Add filters if provided
@@ -473,7 +474,7 @@ export default function Participants() {
             const payload = {
                 event_id: eventId,
                 command: 'revenue',
-                coupon_used_flag: 0
+                coupon_used_flag: location.state?.coupon_used_flag || 0
             };
 
             // Add filters if provided
