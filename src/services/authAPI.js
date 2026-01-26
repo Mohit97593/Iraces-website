@@ -3,6 +3,8 @@ import axios from "axios";
 const BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:8000/api";
 
+const IMG_BASE_URL = BASE_URL.replace("/api", "") + "/uploads/profile_images/";
+
 // Axios instance बनाएं
 const api = axios.create({
   baseURL: BASE_URL,
@@ -61,6 +63,13 @@ api.interceptors.response.use(
 
 // Auth API Functions
 export const authAPI = {
+  // Helper to get full image URL
+  getImageUrl: (path) => {
+    if (!path || path.trim() === "")
+      return "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+    if (path.startsWith("http")) return path;
+    return `${IMG_BASE_URL}${path}`;
+  },
   // All Event Details API (for MyEvents page)
   allEventDetails: async (payload) => {
     try {
@@ -435,6 +444,21 @@ export const authAPI = {
     }
   },
 
+  // Get Marketing by Event API
+  getMarketingByEvent: async (payload) => {
+    try {
+      const formData = new FormData();
+      if (payload.event_id) {
+        formData.append("event_id", payload.event_id);
+      }
+      const response = await api.post("/get_marketing_by_event", formData);
+      return response.data;
+    } catch (error) {
+      console.error("getMarketingByEvent API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Get Category API
   getCategory: async () => {
     try {
@@ -483,6 +507,19 @@ export const authAPI = {
       return response.data;
     } catch (error) {
       console.error("getEventDetails API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Copy Event API
+  copyEvent: async (payload) => {
+    try {
+      const response = await api.post("/copy_event", payload, {
+        headers: { "Content-Type": "application/json" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("copyEvent API error:", error);
       throw error.response?.data || error.message;
     }
   },

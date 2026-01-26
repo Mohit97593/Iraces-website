@@ -549,3 +549,176 @@
     background-color: #c0392b;
     box-shadow: 0 4px 12px rgba(231, 76, 60, 0.2);
 }
+
+/* Share Modal Styles */
+.share-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    padding: 20px;
+    backdrop-filter: blur(5px);
+}
+
+.share-modal-content {
+    background: white;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 12px;
+    position: relative;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    animation: modalAppear 0.3s ease-out;
+    padding: 30px;
+}
+
+.share-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #f0f0f0;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.share-modal-close:hover {
+    background: #e74c3c;
+    color: white;
+}
+
+.share-modal-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.share-modal-header h3 {
+    margin: 0;
+    font-size: 22px;
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.share-modal-header p {
+    margin: 5px 0 0 0;
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+.share-modal-body {
+    padding: 10px 0;
+}
+
+.share-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.share-option-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.share-option-btn.whatsapp {
+    background-color: #25D366;
+    color: white;
+}
+
+.share-option-btn.whatsapp:hover {
+    background-color: #1ebe57;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.share-option-btn.email {
+    background-color: #3498db;
+    color: white;
+}
+
+.share-option-btn.email:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.share-option-btn.copy {
+    background-color: #7f8c8d;
+    color: white;
+}
+
+.share-option-btn.copy:hover {
+    background-color: #636e72;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(127, 140, 141, 0.3);
+}
+
+.share-option-btn i {
+    font-size: 20px;
+}
+
+.sharing-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0;
+    gap: 15px;
+}
+
+.sharing-loader i {
+    font-size: 30px;
+    color: #3498db;
+}
+
+.sharing-loader p {
+    margin: 0;
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+.share-modal-footer {
+    display: flex;
+    justify-content: center;
+    margin-top: 25px;
+}
+
+.share-close-btn {
+    padding: 10px 20px;
+    background-color: #f0f0f0;
+    color: #7f8c8d;
+    border: none;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.share-close-btn:hover {
+    background-color: #e0e0e0;
+    color: #2c3e50;
+}

@@ -617,6 +617,67 @@ const GeneralFormQuestions = ({
     setSubQuestions([]); // Reset subquestions when closing modal
   };
 
+  const handleDeleteQuestion = async (e, question) => {
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to delete "${question.question_label}"?`)) {
+      return;
+    }
+
+    try {
+      console.log("🟡 Initiating delete for question ID:", question.id);
+      const res = await authAPI.deleteGeneralFormQuestion(question.id);
+      console.log("🟢 Delete API raw response:", res);
+
+      // Robust success check (some APIs return validate: 0, some success: true, etc.)
+      const isActuallySuccess = res && (
+        res.status === 1 ||
+        res.status === "1" ||
+        res.success === true ||
+        res.success === 1 ||
+        res.validate === 0 ||
+        res.validate === "0" ||
+        res.status === 200 ||
+        (res.message && res.message.toLowerCase().includes("success"))
+      );
+
+      if (isActuallySuccess) {
+        // 1. Update local state IMMEDIATELY for zero-latency UI removal
+        if (apiQuestions) {
+          console.log("⏱️ Performing optimistic local state update...");
+          setApiQuestions(prev => {
+            if (!prev) return prev;
+            const updated = { ...prev };
+            Object.keys(updated).forEach(formName => {
+              if (Array.isArray(updated[formName])) {
+                // Use String comparison to handle both numeric and string IDs
+                updated[formName] = updated[formName].filter(q => String(q.id) !== String(question.id));
+              }
+            });
+            return updated;
+          });
+        }
+
+        alert(res.message || "Question deleted successfully");
+
+        // 2. Force full API refresh to ensure UI is in sync with server
+        console.log("🔄 Triggering fetchGeneral() for full sync...");
+        await fetchGeneral();
+
+        // 3. Fallback: trigger refresh via effect
+        setRefreshTrigger(prev => prev + 1);
+
+      } else {
+        console.warn("🔴 Delete API returned failure:", res);
+        alert(res?.message || "Failed to delete question. Please check if it's already removed.");
+        // Even if API reports failure, sometimes it actually deleted. Let's refresh anyway.
+        await fetchGeneral();
+      }
+    } catch (err) {
+      console.error("❌ Delete question error:", err);
+      alert("An error occurred while deleting the question. Please try refreshing the page.");
+    }
+  };
+
   // Helper functions for managing subquestions (2-level system)
   // Level 1: Parent subquestions (limited by dropdown options)
   // Level 2: Child subquestions (unlimited inside each parent)
@@ -4153,6 +4214,23 @@ const GeneralFormQuestions = ({
                                   }}
                                 >
                                   +
+                                </button>
+                              )}
+                              {/* Delete button only for custom questions */}
+                              {(q.is_custom_form == 1 || q.is_custom == 1 || q.is_custom_form == '1' || q.is_custom == '1' || (q.created_by && q.created_by != 0) || q.user_id || q.question_id || q.id > 50) && (
+                                <button
+                                  className="btn-toggle delete-btn"
+                                  title="Delete question"
+                                  onClick={(e) => handleDeleteQuestion(e, q)}
+                                  style={{
+                                    marginLeft: 8,
+                                    background: "#dc3545",
+                                    color: "#fff",
+                                    fontSize: "1rem",
+                                    padding: "4px 8px"
+                                  }}
+                                >
+                                  🗑
                                 </button>
                               )}
                             </div>

@@ -12,6 +12,9 @@ export default function TicketDetails() {
     const [error, setError] = useState(null);
     const [showQRModal, setShowQRModal] = useState(false);
     const [selectedTicketForQR, setSelectedTicketForQR] = useState(null);
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [selectedTicketForShare, setSelectedTicketForShare] = useState(null);
+    const [sharingInProgress, setSharingInProgress] = useState(false);
     useEffect(() => {
         fetchTickets();
     }, [eventId]);
@@ -183,6 +186,228 @@ export default function TicketDetails() {
             alert(error?.message || "Failed to print ticket. Please try again.");
         }
     };
+    const handleOpenShare = (ticket) => {
+        setSelectedTicketForShare(ticket);
+        setShowShareModal(true);
+    };
+
+    const handleCloseShare = () => {
+        setShowShareModal(false);
+        setSelectedTicketForShare(null);
+        setSharingInProgress(false);
+    };
+
+    const handleShareViaWhatsApp = async (ticket) => {
+        try {
+            setSharingInProgress(true);
+            const payload = {
+                ticket: {
+                    id: ticket.id,
+                    booking_details_id: ticket.booking_details_id,
+                    ticket_id: ticket.ticket_id,
+                    attendee_details: ticket.attendee_details,
+                    email: ticket.email || "",
+                    mobile: ticket.mobile || "",
+                    created_at: ticket.created_at,
+                    registration_id: ticket.registration_id,
+                    ticket_price: ticket.ticket_price,
+                    final_ticket_price: ticket.final_ticket_price,
+                    bulk_upload_flag: ticket.bulk_upload_flag || 0,
+                    cart_detail: ticket.cart_detail || "",
+                    category_change_flag: ticket.category_change_flag || 0,
+                    category_change_date: ticket.category_change_date || 0,
+                    booking_id: ticket.booking_id,
+                    event_id: ticket.event_id,
+                    user_id: ticket.user_id,
+                    quantity: ticket.quantity || 1,
+                    ticket_amount: ticket.ticket_amount,
+                    ticket_discount: ticket.ticket_discount || 0,
+                    booking_date: ticket.booking_date,
+                    total_amount: ticket.total_amount,
+                    total_discount: ticket.total_discount || 0,
+                    utm_campaign: ticket.utm_campaign || "",
+                    cart_details: ticket.cart_details,
+                    transaction_status: ticket.transaction_status,
+                    booking_pay_id: ticket.booking_pay_id,
+                    attendeeId: ticket.attendeeId,
+                    TicketName: ticket.TicketName,
+                    TicketStatus: ticket.TicketStatus,
+                    EventName: ticket.EventName,
+                    EventStartDateTime: ticket.EventStartDateTime,
+                    banner_image: ticket.banner_image,
+                    event_start_date: ticket.event_start_date,
+                    event_time: ticket.event_time,
+                    strike_out_price: ticket.strike_out_price,
+                    name: ticket.name,
+                    display_name: ticket.display_name,
+                    unique_ticket_id: ticket.unique_ticket_id,
+                    attendee_name: ticket.attendee_name || " "
+                },
+                event_link: ticket.event_link || ""
+            };
+
+            const response = await authAPI.generatePDF(payload);
+            if (response && response.data && response.data.pdf_link) {
+                const text = `Check out my ticket for ${ticket.EventName}: ${response.data.pdf_link}`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                handleCloseShare();
+            } else {
+                alert("Failed to generate PDF for sharing");
+            }
+        } catch (error) {
+            console.error("Error sharing via WhatsApp:", error);
+            alert("Failed to share via WhatsApp");
+        } finally {
+            setSharingInProgress(false);
+        }
+    };
+
+    const handleShareViaEmail = async (ticket) => {
+        try {
+            console.log("📧 Starting email share for ticket:", ticket.unique_ticket_id);
+            setSharingInProgress(true);
+            const payload = {
+                ticket: {
+                    id: ticket.id,
+                    booking_details_id: ticket.booking_details_id,
+                    ticket_id: ticket.ticket_id,
+                    attendee_details: ticket.attendee_details,
+                    email: ticket.email || "",
+                    mobile: ticket.mobile || "",
+                    created_at: ticket.created_at,
+                    registration_id: ticket.registration_id,
+                    ticket_price: ticket.ticket_price,
+                    final_ticket_price: ticket.final_ticket_price,
+                    bulk_upload_flag: ticket.bulk_upload_flag || 0,
+                    cart_detail: ticket.cart_detail || "",
+                    category_change_flag: ticket.category_change_flag || 0,
+                    category_change_date: ticket.category_change_date || 0,
+                    booking_id: ticket.booking_id,
+                    event_id: ticket.event_id,
+                    user_id: ticket.user_id,
+                    quantity: ticket.quantity || 1,
+                    ticket_amount: ticket.ticket_amount,
+                    ticket_discount: ticket.ticket_discount || 0,
+                    booking_date: ticket.booking_date,
+                    total_amount: ticket.total_amount,
+                    total_discount: ticket.total_discount || 0,
+                    utm_campaign: ticket.utm_campaign || "",
+                    cart_details: ticket.cart_details,
+                    transaction_status: ticket.transaction_status,
+                    booking_pay_id: ticket.booking_pay_id,
+                    attendeeId: ticket.attendeeId,
+                    TicketName: ticket.TicketName,
+                    TicketStatus: ticket.TicketStatus,
+                    EventName: ticket.EventName,
+                    EventStartDateTime: ticket.EventStartDateTime,
+                    banner_image: ticket.banner_image,
+                    event_start_date: ticket.event_start_date,
+                    event_time: ticket.event_time,
+                    strike_out_price: ticket.strike_out_price,
+                    name: ticket.name,
+                    display_name: ticket.display_name,
+                    unique_ticket_id: ticket.unique_ticket_id,
+                    attendee_name: ticket.attendee_name || " "
+                },
+                event_link: ticket.event_link || ""
+            };
+
+            const response = await authAPI.generatePDF(payload);
+            console.log("📦 PDF API Response for Email:", response);
+
+            if (response && response.data && response.data.pdf_link) {
+                const pdfLink = response.data.pdf_link;
+                console.log("✅ PDF Link received:", pdfLink);
+
+                const eventName = ticket.EventName || "Your Ticket";
+                const subject = encodeURIComponent(`Ticket for ${eventName}`);
+                const body = encodeURIComponent(`Hi,\n\nPlease find the ticket for ${eventName} below:\n\n${pdfLink}\n\nRegistration ID: ${ticket.unique_ticket_id}`);
+                const mailtoLink = `mailto:?subject=${subject}&body=${body}`;
+
+                console.log("🚀 Triggering mailto with window.open");
+                window.open(mailtoLink, '_blank');
+
+                setTimeout(() => {
+                    handleCloseShare();
+                }, 500);
+            } else {
+                console.error("❌ PDF generation failed - no link in response");
+                alert(response?.message || "Failed to generate PDF for sharing");
+            }
+        } catch (error) {
+            console.error("❌ Error sharing via Email:", error);
+            alert("Failed to share via Email. Please ensure you have an email client configured.");
+        } finally {
+            setSharingInProgress(false);
+        }
+    };
+
+    const handleCopyLink = async (ticket) => {
+        try {
+            console.log("📋 Copying link for ticket:", ticket.unique_ticket_id);
+            setSharingInProgress(true);
+            const payload = {
+                ticket: {
+                    id: ticket.id,
+                    booking_details_id: ticket.booking_details_id,
+                    ticket_id: ticket.ticket_id,
+                    attendee_details: ticket.attendee_details,
+                    email: ticket.email || "",
+                    mobile: ticket.mobile || "",
+                    created_at: ticket.created_at,
+                    registration_id: ticket.registration_id,
+                    ticket_price: ticket.ticket_price,
+                    final_ticket_price: ticket.final_ticket_price,
+                    bulk_upload_flag: ticket.bulk_upload_flag || 0,
+                    cart_detail: ticket.cart_detail || "",
+                    category_change_flag: ticket.category_change_flag || 0,
+                    category_change_date: ticket.category_change_date || 0,
+                    booking_id: ticket.booking_id,
+                    event_id: ticket.event_id,
+                    user_id: ticket.user_id,
+                    quantity: ticket.quantity || 1,
+                    ticket_amount: ticket.ticket_amount,
+                    ticket_discount: ticket.ticket_discount || 0,
+                    booking_date: ticket.booking_date,
+                    total_amount: ticket.total_amount,
+                    total_discount: ticket.total_discount || 0,
+                    utm_campaign: ticket.utm_campaign || "",
+                    cart_details: ticket.cart_details,
+                    transaction_status: ticket.transaction_status,
+                    booking_pay_id: ticket.booking_pay_id,
+                    attendeeId: ticket.attendeeId,
+                    TicketName: ticket.TicketName,
+                    TicketStatus: ticket.TicketStatus,
+                    EventName: ticket.EventName,
+                    EventStartDateTime: ticket.EventStartDateTime,
+                    banner_image: ticket.banner_image,
+                    event_start_date: ticket.event_start_date,
+                    event_time: ticket.event_time,
+                    strike_out_price: ticket.strike_out_price,
+                    name: ticket.name,
+                    display_name: ticket.display_name,
+                    unique_ticket_id: ticket.unique_ticket_id,
+                    attendee_name: ticket.attendee_name || " "
+                },
+                event_link: ticket.event_link || ""
+            };
+
+            const response = await authAPI.generatePDF(payload);
+            if (response && response.data && response.data.pdf_link) {
+                await navigator.clipboard.writeText(response.data.pdf_link);
+                alert("Ticket link copied to clipboard!");
+                handleCloseShare();
+            } else {
+                alert("Failed to generate PDF link");
+            }
+        } catch (error) {
+            console.error("Error copying link:", error);
+            alert("Failed to copy link");
+        } finally {
+            setSharingInProgress(false);
+        }
+    };
+
     const handleOpenQR = (ticket) => {
         setSelectedTicketForQR(ticket);
         setShowQRModal(true);
@@ -306,6 +531,7 @@ export default function TicketDetails() {
                                             <button
                                                 className="action-btn share-btn"
                                                 title="Share Ticket"
+                                                onClick={() => handleOpenShare(ticket)}
                                             >
                                                 <i className="fas fa-share-alt"></i>
                                             </button>
@@ -357,6 +583,52 @@ export default function TicketDetails() {
                             </div>
                             <div className="qr-modal-footer">
                                 <button className="qr-close-btn" onClick={handleCloseQR}>Close</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {showShareModal && selectedTicketForShare && (
+                    <div className="share-modal-overlay" onClick={handleCloseShare}>
+                        <div className="share-modal-content" onClick={(e) => e.stopPropagation()}>
+                            <button className="share-modal-close" onClick={handleCloseShare}>&times;</button>
+                            <div className="share-modal-header">
+                                <h3>Share Ticket</h3>
+                                <p>Select a platform to share your ticket</p>
+                            </div>
+                            <div className="share-modal-body">
+                                {sharingInProgress ? (
+                                    <div className="sharing-loader">
+                                        <i className="fas fa-spinner fa-spin"></i>
+                                        <p>Generating PDF link...</p>
+                                    </div>
+                                ) : (
+                                    <div className="share-options">
+                                        <button
+                                            className="share-option-btn whatsapp"
+                                            onClick={() => handleShareViaWhatsApp(selectedTicketForShare)}
+                                        >
+                                            <i className="fab fa-whatsapp"></i>
+                                            <span>WhatsApp</span>
+                                        </button>
+                                        <button
+                                            className="share-option-btn email"
+                                            onClick={() => handleShareViaEmail(selectedTicketForShare)}
+                                        >
+                                            <i className="fas fa-envelope"></i>
+                                            <span>Email</span>
+                                        </button>
+                                        <button
+                                            className="share-option-btn copy"
+                                            onClick={() => handleCopyLink(selectedTicketForShare)}
+                                        >
+                                            <i className="fas fa-copy"></i>
+                                            <span>Copy Link</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="share-modal-footer">
+                                <button className="share-close-btn" onClick={handleCloseShare}>Cancel</button>
                             </div>
                         </div>
                     </div>

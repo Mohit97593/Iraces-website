@@ -1201,9 +1201,7 @@ export default function TopNav() {
                     {(() => {
                       const userData = JSON.parse(localStorage.getItem("userData") || "{}");
                       if (userData?.profile_pic) {
-                        const profilePicUrl = userData.profile_pic.startsWith('http')
-                          ? userData.profile_pic
-                          : `https://api.iraces.in/uploads/profile_images/${userData.profile_pic}`;
+                        const profilePicUrl = authAPI.getImageUrl(userData.profile_pic);
                         return (
                           <img
                             src={profilePicUrl}

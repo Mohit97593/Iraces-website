@@ -49,6 +49,10 @@ export default function EventAnalytics() {
         customQuestions: {}
     });
 
+    const [marketingData, setMarketingData] = useState([]);
+    const [showMarketingModal, setShowMarketingModal] = useState(false);
+    const [marketingLoading, setMarketingLoading] = useState(false);
+
     // Fetch insights data
     const fetchInsights = async () => {
         try {
@@ -200,8 +204,23 @@ export default function EventAnalytics() {
             fetchData();
             fetchInsights();
             fetchCategoryWiseData();
+            fetchMarketingData();
         }
     }, [eventId]);
+
+    const fetchMarketingData = async () => {
+        try {
+            setMarketingLoading(true);
+            const response = await authAPI.getMarketingByEvent({ event_id: eventId });
+            if (response && response.success) {
+                setMarketingData(response.data || []);
+            }
+        } catch (error) {
+            console.error("❌ Error fetching marketing data:", error);
+        } finally {
+            setMarketingLoading(false);
+        }
+    };
 
     // Refetch insights and category data when filters change
     useEffect(() => {
@@ -236,6 +255,15 @@ export default function EventAnalytics() {
             fetchBothAPIs();
         }
     }, [filterData.filter, filterData.category, filterData.dateFrom, filterData.dateTo, eventId]);
+
+    const handleViewMarketingDetails = async () => {
+        console.log("🖱️ Marketing View Details clicked");
+        setShowMarketingModal(true);
+        if (marketingData.length === 0) {
+            console.log("🔄 No marketing data found, fetching...");
+            await fetchMarketingData();
+        }
+    };
 
     const handleBack = () => {
         navigate("/myevents");
@@ -751,6 +779,27 @@ export default function EventAnalytics() {
                         </div>
                         <i className="info-icon fas fa-info-circle"></i>
                     </div>
+
+                    {/* Marketing Card */}
+                    <div className="stat-card">
+                        <div className="stat-content">
+                            <div className="stat-info">
+                                <h3>Marketing</h3>
+                                <div className="stat-value">{marketingData.length} Campaigns</div>
+                                <button
+                                    className="view-details"
+                                    onClick={handleViewMarketingDetails}
+                                    style={{ border: 'none', background: 'none', padding: 0, color: '#3498db', cursor: 'pointer', textAlign: 'left', display: 'block' }}
+                                >
+                                    View Details
+                                </button>
+                            </div>
+                            <div className="stat-icon">
+                                <img src="https://cdn-icons-png.flaticon.com/512/1998/1998087.png" alt="Marketing" />
+                            </div>
+                        </div>
+                        <i className="info-icon fas fa-info-circle"></i>
+                    </div>
                 </div>
 
                 {/* Charts Section */}
@@ -1122,6 +1171,63 @@ export default function EventAnalytics() {
                     </div>
                 </div>
             </div>
+            {/* Marketing Details Modal */}
+            {showMarketingModal && (
+                <div className="analytics-modal-overlay">
+                    <div className="analytics-modal-content">
+                        <div className="analytics-modal-header">
+                            <h2>Marketing Campaign Details</h2>
+                            <button className="close-modal-btn" onClick={() => setShowMarketingModal(false)}>
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div className="analytics-modal-body">
+                            {marketingLoading ? (
+                                <div className="modal-loading">
+                                    <div className="spinner"></div>
+                                    <p>Loading campaign data...</p>
+                                </div>
+                            ) : marketingData.length > 0 ? (
+                                <div className="table-responsive">
+                                    <table className="utm-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Campaign Name</th>
+                                                <th>Type</th>
+                                                <th>Total Count</th>
+                                                <th>Start Date</th>
+                                                <th>End Date</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {marketingData.map((campaign) => (
+                                                <tr key={campaign.id}>
+                                                    <td>{campaign.campaign_name}</td>
+                                                    <td>{campaign.campaign_type}</td>
+                                                    <td>{campaign.count}</td>
+                                                    <td>{new Date(campaign.start_date * 1000).toLocaleDateString()}</td>
+                                                    <td>{new Date(campaign.end_date * 1000).toLocaleDateString()}</td>
+                                                    <td>
+                                                        <span className={`status-badge ${campaign.status === 1 ? 'status-active' : 'status-inactive'}`}>
+                                                            {campaign.status === 1 ? 'Active' : 'Inactive'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="no-data-placeholder">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/4076/4076478.png" alt="No Data" />
+                                    <p>No marketing campaigns found for this event.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

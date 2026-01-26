@@ -115,6 +115,10 @@ export default function MyEvents() {
   const [toggleStates, setToggleStates] = useState({});
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [copyingEvents, setCopyingEvents] = useState({});
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [selectedEventToCopy, setSelectedEventToCopy] = useState(null);
+  const [newEventName, setNewName] = useState("");
+  const [isCopying, setIsCopying] = useState(false);
 
   useEffect(() => {
     if (events && events.length > 0) {
@@ -247,6 +251,46 @@ export default function MyEvents() {
       console.error("Direct refresh after delete failed:", e);
       // final fallback: remove locally so UI updates
       setEvents((prev) => prev.filter((ev) => ev.id !== eventId));
+    }
+  };
+
+  const handleCopyEvent = async () => {
+    if (!selectedEventToCopy || !newEventName.trim()) return;
+
+    try {
+      setIsCopying(true);
+      const payload = {
+        event_id: selectedEventToCopy.id,
+        new_event_name: newEventName.trim(),
+        copy_tickets: true,
+        copy_questions: true,
+        copy_age_criteria: true,
+        copy_communications: true
+      };
+
+      console.log("🚀 Copying event with payload:", payload);
+      const res = await authAPI.copyEvent(payload);
+      console.log("✅ Copy response:", res);
+
+      if (res && (res.status == 1 || res.status == "1" || res.status == 200 || res.validate == 0 || res.validate == "0" || res.success || (res.message && res.message.toLowerCase().includes("success")))) {
+        // Close modal and stop loading BEFORE the long refresh call
+        setShowCopyModal(false);
+        setIsCopying(false);
+
+        // Trigger refresh in background (don't await if we want instant close)
+        callAllEventDetails(3);
+
+        setTimeout(() => {
+          alert(res.message || "Event copied successfully! Check Drafts tab.");
+        }, 200);
+      } else {
+        alert(res?.message || "Failed to copy event");
+      }
+    } catch (err) {
+      console.error("❌ Copy event error:", err);
+      alert(err || "An error occurred while copying the event");
+    } finally {
+      setIsCopying(false);
     }
   };
 
@@ -403,167 +447,13 @@ export default function MyEvents() {
                             <button
                               className="event-copy-btn"
                               aria-label="Copy event"
-                              onClick={async () => {
-                                // prevent double clicks
-                                if (copyingEvents[event.id]) return;
-                                try {
-                                  setCopyingEvents((p) => ({
-                                    ...p,
-                                    [event.id]: true,
-                                  }));
-                                  // Fetch full event details
-                                  const det = await authAPI.getEventDetails(
-                                    event.id
-                                  );
-                                  const details =
-                                    (det &&
-                                      det.data &&
-                                      det.data.EventData &&
-                                      det.data.EventData[0]) ||
-                                    det.data ||
-                                    det ||
-                                    {};
-
-                                  // Build a unique name based on existing events
-                                  const existingNames = events.map((ev) =>
-                                    (ev.name || ev.event_name || "")
-                                      .trim()
-                                      .toLowerCase()
-                                  );
-                                  let baseName = (
-                                    details.event_name ||
-                                    details.eventName ||
-                                    details.name ||
-                                    event.name ||
-                                    "Untitled Event"
-                                  ).trim();
-                                  let newName = `${baseName} Copy`;
-                                  let suffix = 1;
-                                  while (
-                                    existingNames.includes(
-                                      newName.trim().toLowerCase()
-                                    )
-                                  ) {
-                                    suffix += 1;
-                                    newName = `${baseName} Copy (${suffix})`;
-                                  }
-
-                                  // Prepare category_id similar to CreateEvent
-                                  let category_id = [];
-                                  const cats =
-                                    details.categories ||
-                                    details.event_categories ||
-                                    det.data?.AllEventTypes ||
-                                    [];
-                                  if (Array.isArray(cats)) {
-                                    category_id = cats
-                                      .map((c) => {
-                                        if (!c) return null;
-                                        if (typeof c === "string") {
-                                          return {
-                                            id: "",
-                                            name: c,
-                                            logo: c,
-                                            active: 1,
-                                            checked: "true",
-                                          };
-                                        }
-                                        // object
-                                        return {
-                                          id: c.id || c.category_id || "",
-                                          name: c.name || c.category_name || "",
-                                          logo: c.logo || c.name || "",
-                                          active: c.active || 1,
-                                          checked: "true",
-                                        };
-                                      })
-                                      .filter(Boolean);
-                                  }
-
-                                  // status mapping
-                                  const st =
-                                    details.event_info_status ||
-                                    details.status ||
-                                    3;
-
-                                  // created_by
-                                  let user_id = 0;
-                                  try {
-                                    const ud = JSON.parse(
-                                      localStorage.getItem("userData")
-                                    );
-                                    if (ud && ud.user_id) user_id = ud.user_id;
-                                  } catch (e) { }
-
-                                  const payload = {
-                                    event_info_status: st,
-                                    event_name: newName,
-                                    display_name_status: 0,
-                                    display_name: "",
-                                    event_type: 0,
-                                    category_id: category_id,
-                                    event_types: [],
-                                    created_by: user_id || "",
-                                    by_admin: "",
-                                    url_link: window.location.origin,
-                                  };
-
-                                  const createRes =
-                                    await authAPI.createEventBasicInfo(payload);
-                                  const newEventId =
-                                    createRes?.data?.event_id ||
-                                    createRes?.event_id ||
-                                    createRes?.data?.data?.event_id ||
-                                    null;
-
-                                  // Build a minimal event object for UI insertion
-                                  const newEvent = {
-                                    id: newEventId || Date.now(),
-                                    name: newName,
-                                    banner_image:
-                                      details.banner_image ||
-                                      details.image ||
-                                      null,
-                                    city_name:
-                                      details.city_name || details.city || "",
-                                    start_time:
-                                      details.start_time ||
-                                      details.event_start_date ||
-                                      0,
-                                    registration_end_time:
-                                      details.registration_end_time || 0,
-                                    active: details.active || 1,
-                                  };
-
-                                  setEvents((prev) => [
-                                    newEvent,
-                                    ...(prev || []),
-                                  ]);
-                                  try {
-                                    alert("Event copied successfully");
-                                  } catch (e) { }
-                                } catch (err) {
-                                  console.error("Failed to copy event:", err);
-                                  try {
-                                    alert(
-                                      "Failed to copy event. Please try again."
-                                    );
-                                  } catch (e) { }
-                                } finally {
-                                  setCopyingEvents((p) => ({
-                                    ...p,
-                                    [event.id]: false,
-                                  }));
-                                }
+                              onClick={() => {
+                                setSelectedEventToCopy(event);
+                                setNewName(`${event.name || event.event_name || "Event"} Copy`);
+                                setShowCopyModal(true);
                               }}
                             >
-                              {copyingEvents[event.id] ? (
-                                <span style={{ padding: "6px 8px" }}>
-                                  Copying...
-                                </span>
-                              ) : (
-                                <i className="fas fa-copy"></i>
-                              )}
+                              <i className="fas fa-copy"></i>
                             </button>
                             <button
                               className="event-edit-btn"
@@ -739,6 +629,85 @@ export default function MyEvents() {
           )}
         </div>
       </div>
+      {/* Copy Event Modal */}
+      {showCopyModal && (
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <div className="modal-card" style={{
+            background: '#fff',
+            padding: '30px',
+            borderRadius: '16px',
+            width: '90%',
+            maxWidth: '500px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+          }}>
+            <h3 style={{ marginBottom: '20px', fontWeight: 700, color: '#2c3e50' }}>Copy Event</h3>
+            <div className="form-group" style={{ marginBottom: '25px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#34495e' }}>
+                New Event Name <span style={{ color: '#da251c' }}>*</span>
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                style={{
+                  width: '100%',
+                  padding: '12px 15px',
+                  borderRadius: '10px',
+                  border: '1px solid #ddd',
+                  fontSize: '1rem'
+                }}
+                value={newEventName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Enter new name for the event"
+                autoFocus
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
+              <button
+                className="btn-cancel"
+                onClick={() => setShowCopyModal(false)}
+                style={{
+                  padding: '10px 25px',
+                  borderRadius: '10px',
+                  border: '1px solid #ddd',
+                  background: '#f8f9fa',
+                  cursor: 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-save"
+                onClick={handleCopyEvent}
+                disabled={isCopying || !newEventName.trim()}
+                style={{
+                  padding: '10px 30px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: '#da251c',
+                  color: '#fff',
+                  cursor: (isCopying || !newEventName.trim()) ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                  opacity: (isCopying || !newEventName.trim()) ? 0.7 : 1
+                }}
+              >
+                {isCopying ? 'Copying...' : 'Copy Event'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

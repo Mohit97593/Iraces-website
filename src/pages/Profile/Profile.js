@@ -1925,12 +1925,7 @@ const Profile = () => {
                 <div className="profile-card profile-card-horizontal">
                   <img
                     className="profile-avatar"
-                    src={(userData?.profile_pic && userData.profile_pic.trim() !== '')
-                      ? (userData.profile_pic.startsWith('http')
-                        ? userData.profile_pic
-                        : `https://api.iraces.in/uploads/profile_images/${userData.profile_pic}`)
-                      : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                    }
+                    src={authAPI.getImageUrl(userData?.profile_pic)}
                     alt="avatar"
                     onError={(e) => {
                       e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
@@ -2059,12 +2054,7 @@ const Profile = () => {
                         <div className="profile-details-card">
                           <img
                             className="profile-avatar-large"
-                            src={(userData?.profile_pic && userData.profile_pic.trim() !== '')
-                              ? (userData.profile_pic.startsWith('http')
-                                ? userData.profile_pic
-                                : `https://api.iraces.in/uploads/profile_images/${userData.profile_pic}`)
-                              : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                            }
+                            src={authAPI.getImageUrl(userData?.profile_pic)}
                             alt="avatar"
                             onError={(e) => {
                               e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
@@ -2133,12 +2123,7 @@ const Profile = () => {
                             }}
                           >
                             <img
-                              src={(userData?.profile_pic && userData.profile_pic.trim() !== '')
-                                ? (userData.profile_pic.startsWith('http')
-                                  ? userData.profile_pic
-                                  : `https://api.iraces.in/uploads/profile_images/${userData.profile_pic}`)
-                                : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                              }
+                              src={authAPI.getImageUrl(userData?.profile_pic)}
                               alt="avatar"
                               onError={(e) => {
                                 e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
