@@ -186,6 +186,18 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+  // Delete General Form Question API
+  deleteGeneralFormQuestion: async (id) => {
+    try {
+      const response = await api.post("/deleteGeneralFormQuestion", { id }, {
+        headers: { "Content-Type": "application/json" }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("deleteGeneralFormQuestion API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
   // Delete Event Ticket API
   deleteEventTicket: async (formData) => {
     try {
