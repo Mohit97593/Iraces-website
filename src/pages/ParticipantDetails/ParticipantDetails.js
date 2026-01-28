@@ -64,6 +64,8 @@ export default function ParticipantDetails() {
 
   // Active payment gateway state
   const [activePaymentGateway, setActivePaymentGateway] = useState(null); // Active payment gateway from admin (phonepe or payu)
+  const [availableGateways, setAvailableGateways] = useState([]); // List of all available gateways
+  const [showGatewayModal, setShowGatewayModal] = useState(false); // Controls selection modal
   const [gatewayLoading, setGatewayLoading] = useState(true); // Loading state for gateway API call
 
   // Question prices state - tracks prices from question selections
@@ -381,11 +383,18 @@ export default function ParticipantDetails() {
         setGatewayLoading(true);
         console.log("🔍 Fetching active payment gateway for event:", eventId);
 
-        const response = await authAPI.getActivePaymentGateway(eventId);
+        const response = await authAPI.getActivePaymentGateway();
         console.log("✅ Active payment gateway response:", response);
 
         if (response && response.gateway) {
           const gateway = response.gateway.toLowerCase();
+
+          // Store all available gateways
+          if (response.gateways && Array.isArray(response.gateways)) {
+            setAvailableGateways(response.gateways);
+          } else {
+            setAvailableGateways([response.gateway]);
+          }
 
           // Normalize gateway name: "phonepe" or "payu"
           let normalizedGateway = gateway;
@@ -403,12 +412,14 @@ export default function ParticipantDetails() {
           console.warn("⚠️ No active gateway found, defaulting to PhonePe");
           setActivePaymentGateway('phonepe');
           setSelectedPaymentMethod('phonepe');
+          setAvailableGateways(['PhonePe']);
         }
       } catch (error) {
         console.error("❌ Error fetching active payment gateway:", error);
         // Fallback to PhonePe on error
         setActivePaymentGateway('phonepe');
         setSelectedPaymentMethod('phonepe');
+        setAvailableGateways(['PhonePe']);
       } finally {
         setGatewayLoading(false);
       }
@@ -2594,12 +2605,25 @@ export default function ParticipantDetails() {
   const handleProceedPayment = async (e) => {
     e.preventDefault();
     console.log("🚀 Proceed button clicked");
-    console.log("💳 Active payment gateway:", activePaymentGateway);
 
     if (!validateForm()) {
       console.log("❌ Validation failed, stopping proceed");
       return;
     }
+
+    if (availableGateways.length > 1) {
+      console.log("Multiple gateways available, showing selection modal");
+      setShowGatewayModal(true);
+    } else {
+      console.log("Single gateway available, proceeding directly");
+      const gateway = availableGateways[0]?.toLowerCase().includes('phone') ? 'phonepe' : (availableGateways[0]?.toLowerCase().includes('pay') ? 'payu' : activePaymentGateway);
+      executePaymentInitiation(gateway);
+    }
+  };
+
+  const executePaymentInitiation = async (gatewayOverride) => {
+    const targetGateway = gatewayOverride || activePaymentGateway;
+    console.log("💳 Initiating payment with gateway:", targetGateway);
 
     // Calculate subTotal
     const subTotal = selectedTickets.reduce((sum, ticket) => {
@@ -2683,7 +2707,6 @@ export default function ParticipantDetails() {
     // Final amount after discount + question prices
     const finalAmount = subTotal - couponDiscountAmount + questionPricesTotal;
 
-    console.log("✅ Validation passed, proceeding to payment");
     console.log("💰 Subtotal (before discount):", subTotal.toFixed(2));
     console.log("🎟️ Coupon discount:", couponDiscountAmount.toFixed(2));
     console.log("🎯 Question prices total:", questionPricesTotal.toFixed(2));
@@ -2694,7 +2717,7 @@ export default function ParticipantDetails() {
 
     try {
       // Check which payment gateway is active and call appropriate API
-      if (activePaymentGateway === 'phonepe') {
+      if (targetGateway === 'phonepe') {
         // Call PhonePe payment initiation API
         console.log("📤 Calling PhonePe payment API...");
 
@@ -2723,7 +2746,7 @@ export default function ParticipantDetails() {
         } else {
           throw new Error("Invalid response from PhonePe payment API");
         }
-      } else if (activePaymentGateway === 'payu') {
+      } else if (targetGateway === 'payu') {
         // Call PayU payment API
         console.log("📤 Calling PayU payment API...");
 
@@ -2754,7 +2777,7 @@ export default function ParticipantDetails() {
           throw new Error("Invalid response from PayU payment API");
         }
       } else {
-        throw new Error(`Unknown payment gateway: ${activePaymentGateway}`);
+        throw new Error(`Unknown payment gateway: ${targetGateway}`);
       }
     } catch (error) {
       console.error("❌ Payment Error:", error);
@@ -3617,7 +3640,7 @@ export default function ParticipantDetails() {
                   <span className="proceed-text">
                     {gatewayLoading
                       ? 'LOADING...'
-                      : `PROCEED WITH ${activePaymentGateway?.toUpperCase() || 'PAYMENT'}`
+                      : `PROCEED`
                     }
                   </span>
                   <i className="fas fa-arrow-right"></i>
@@ -3627,6 +3650,96 @@ export default function ParticipantDetails() {
           </div>
         </div>
       </div>
+      {/* Gateway Selection Modal */}
+      {showGatewayModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1001
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '30px',
+            borderRadius: '15px',
+            textAlign: 'center',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+            position: 'relative'
+          }}>
+            <button
+              onClick={() => setShowGatewayModal(false)}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '15px',
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: '#999'
+              }}
+            >×</button>
+
+            <h2 style={{ marginBottom: '20px', fontWeight: '600', fontSize: '20px' }}>Select Payment Method</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {availableGateways.map((gw, idx) => {
+                const normalizedGW = gw.toLowerCase().includes('phone') ? 'phonepe' : (gw.toLowerCase().includes('pay') ? 'payu' : gw.toLowerCase());
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setActivePaymentGateway(normalizedGW);
+                      setSelectedPaymentMethod(normalizedGW);
+                      setShowGatewayModal(false);
+                      executePaymentInitiation(normalizedGW);
+                    }}
+                    style={{
+                      padding: '15px',
+                      borderRadius: '10px',
+                      border: '1px solid #ddd',
+                      background: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      fontSize: '16px',
+                      fontWeight: '500'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#e74c3c';
+                      e.currentTarget.style.backgroundColor = '#fff5f5';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#ddd';
+                      e.currentTarget.style.backgroundColor = 'white';
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {normalizedGW === 'phonepe' ? (
+                        <i className="fas fa-mobile-alt" style={{ color: '#5f259f' }}></i>
+                      ) : (
+                        <i className="fas fa-credit-card" style={{ color: '#17C653' }}></i>
+                      )}
+                      {gw}
+                    </span>
+                    <i className="fas fa-chevron-right" style={{ fontSize: '12px', color: '#ccc' }}></i>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Payment Modal */}
       {showPaymentModal && (
         <div style={{

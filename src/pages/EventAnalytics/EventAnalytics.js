@@ -212,8 +212,8 @@ export default function EventAnalytics() {
         try {
             setMarketingLoading(true);
             const response = await authAPI.getMarketingByEvent({ event_id: eventId });
-            if (response && response.success) {
-                setMarketingData(response.data || []);
+            if (response && response.status) {
+                setMarketingData(response.data?.campaigns || []);
             }
         } catch (error) {
             console.error("❌ Error fetching marketing data:", error);

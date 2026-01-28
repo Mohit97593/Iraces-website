@@ -468,31 +468,35 @@ const Grouping = ({ onBack, onNext }) => {
         const [draggedGroup] = reorderedGroups.splice(draggedGroupIndex, 1);
         reorderedGroups.splice(targetIndex, 0, draggedGroup);
 
-        // Update local state immediately
+        // Update local state immediately for snappy UI
         setGroups(reorderedGroups);
         setDraggedGroupIndex(null);
         setDraggedOverIndex(null);
 
-        // Call API to save new order
+        // Call API for all affected groups to ensure the entire order is saved correctly
         try {
-            const groupId = draggedGroup.id;
-            const newOrderIndex = targetIndex; // 0-based index
+            console.log('Syncing entire group order with server...');
 
-            console.log('Updating group order:', { id: groupId, order_index: newOrderIndex });
-
-            const response = await authAPI.editGroupQuestionOrder({
-                id: groupId,
-                order_index: newOrderIndex
+            // We update all groups to their new positions (1-based index)
+            // This avoids conflicts if the server doesn't handle shifts automatically
+            const updatePromises = reorderedGroups.map((group, idx) => {
+                const newOrderIndex = idx + 1;
+                console.log(`Updating group "${group.name}" (ID: ${group.id}) to order_index: ${newOrderIndex}`);
+                return authAPI.editGroupQuestionOrder({
+                    id: group.id,
+                    order_index: newOrderIndex
+                });
             });
 
-            console.log('Edit group order response:', response);
+            const results = await Promise.all(updatePromises);
+            console.log('Bulk update results:', results);
 
-            // Optionally refresh groups to get server state
+            // Fetch refreshed groups to ensure we are in sync with the source of truth
             await fetchGroupQuestions();
         } catch (error) {
-            console.error('Error updating group order:', error);
-            alert('Failed to update group order. Please try again.');
-            // Revert to original order on error
+            console.error('Error syncing group order:', error);
+            alert('Failed to update group order on server. Reverting to previous state.');
+            // Revert to server state on error
             await fetchGroupQuestions();
         }
     };

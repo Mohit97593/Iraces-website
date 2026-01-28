@@ -59,7 +59,8 @@ export default function Participants() {
                 event_id: eventId,
                 page: pagination.page,
                 limit: pagination.limit,
-                coupon_used_flag: location.state?.coupon_used_flag || 0
+                coupon_used_flag: location.state?.coupon_used_flag || 0,
+                include_pending: 1
             };
 
             // Add filters if provided
@@ -169,7 +170,8 @@ export default function Participants() {
                 event_id: eventId,
                 page: 1,
                 limit: pagination.limit,
-                coupon_used_flag: location.state?.coupon_used_flag || 0
+                coupon_used_flag: location.state?.coupon_used_flag || 0,
+                include_pending: 1
             };
 
             console.log("📤 Clear filters payload:", payload);
@@ -412,7 +414,8 @@ export default function Participants() {
             const payload = {
                 event_id: eventId,
                 command: 'attendee',
-                coupon_used_flag: location.state?.coupon_used_flag || 0
+                coupon_used_flag: location.state?.coupon_used_flag || 0,
+                include_pending: 1
             };
 
             // Add filters if provided
@@ -474,7 +477,8 @@ export default function Participants() {
             const payload = {
                 event_id: eventId,
                 command: 'revenue',
-                coupon_used_flag: location.state?.coupon_used_flag || 0
+                coupon_used_flag: location.state?.coupon_used_flag || 0,
+                include_pending: 1
             };
 
             // Add filters if provided

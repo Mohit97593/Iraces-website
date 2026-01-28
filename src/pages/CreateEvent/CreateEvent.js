@@ -986,7 +986,7 @@ export default function CreateEvent() {
         event_types: event_types,
         created_by: profile?.user_id || "",
         by_admin: "",
-        url_link: window.location.origin,
+        // url_link: window.location.origin,
       };
 
       // If editing existing event, add event_id. Prefer canonical places, fallback to sessionStorage.
@@ -2079,7 +2079,6 @@ export default function CreateEvent() {
                     style={{
                       width: "100%",
                       height: "100%",
-                      objectFit: "cover",
                       borderTopLeftRadius: "16px",
                       borderTopRightRadius: "16px",
                     }}

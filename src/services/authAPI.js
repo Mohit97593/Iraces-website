@@ -1655,6 +1655,9 @@ export const authAPI = {
       if (payload.TransactionID) {
         formData.append("TransactionID", payload.TransactionID);
       }
+      if (payload.include_pending !== undefined) {
+        formData.append("include_pending", payload.include_pending);
+      }
       formData.append("limit", payload.limit || 30);
       formData.append("page", payload.page || 1);
 
@@ -1705,6 +1708,9 @@ export const authAPI = {
       }
       if (payload.TransactionID) {
         formData.append("TransactionID", payload.TransactionID);
+      }
+      if (payload.include_pending !== undefined) {
+        formData.append("include_pending", payload.include_pending);
       }
 
       const response = await api.post("/attendeeNetsalesExcellData", formData, {
@@ -1804,9 +1810,9 @@ export const authAPI = {
   },
 
   // Get Active Payment Gateway API
-  getActivePaymentGateway: async (event_id) => {
+  getActivePaymentGateway: async () => {
     try {
-      const response = await api.get(`/active-payment-gateway?event_id=${event_id}`);
+      const response = await api.get(`/active-payment-gateway`);
       return response.data;
     } catch (error) {
       console.error("getActivePaymentGateway API error:", error);
@@ -1924,6 +1930,9 @@ export const authAPI = {
       }
       if (payload.TransactionID) {
         formData.append("TransactionID", payload.TransactionID);
+      }
+      if (payload.include_pending !== undefined) {
+        formData.append("include_pending", payload.include_pending);
       }
 
       const response = await api.post("/attendee_netsales_excell_data", formData, {
