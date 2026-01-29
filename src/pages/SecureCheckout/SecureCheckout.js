@@ -21,6 +21,7 @@ export default function SecureCheckout() {
   const [availableCoupons, setAvailableCoupons] = useState([]);
   const [discount, setDiscount] = useState(0);
   const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
 
   // Tax status state
   const [pricesTaxesStatus, setPricesTaxesStatus] = useState("Exclusive of Taxes");
@@ -350,6 +351,7 @@ export default function SecureCheckout() {
 
   const handleApplyCoupon = async () => {
     setCouponError("");
+    setCouponLoading(true);
 
     if (!couponCode.trim()) {
       setCouponError("Please enter a coupon code");
@@ -458,6 +460,8 @@ export default function SecureCheckout() {
     } catch (error) {
       console.error("❌ Error applying coupon:", error);
       setCouponError("Failed to apply coupon. Please try again.");
+    } finally {
+      setCouponLoading(false);
     }
   };
 
@@ -945,18 +949,30 @@ export default function SecureCheckout() {
                         />
                         <button
                           onClick={handleApplyCoupon}
-                          disabled={appliedCoupon !== null || !couponCode.trim()}
+                          disabled={appliedCoupon !== null || !couponCode.trim() || couponLoading}
                           style={{
                             padding: '10px 20px',
                             backgroundColor: appliedCoupon ? '#28a745' : '#e74c3c',
                             color: 'white',
                             border: 'none',
                             borderRadius: '5px',
-                            cursor: appliedCoupon || !couponCode.trim() ? 'not-allowed' : 'pointer',
-                            opacity: appliedCoupon || !couponCode.trim() ? 0.6 : 1
+                            cursor: appliedCoupon || !couponCode.trim() || couponLoading ? 'not-allowed' : 'pointer',
+                            opacity: appliedCoupon || !couponCode.trim() || couponLoading ? 0.6 : 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            minWidth: '100px'
                           }}
                         >
-                          {appliedCoupon ? '✓ Applied' : 'Apply'}
+                          {couponLoading ? (
+                            <>
+                              <i className="fas fa-spinner fa-spin"></i>
+                              Applying...
+                            </>
+                          ) : (
+                            appliedCoupon ? '✓ Applied' : 'Apply'
+                          )}
                         </button>
                       </div>
                       {couponError && (

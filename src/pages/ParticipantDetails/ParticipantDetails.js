@@ -61,6 +61,7 @@ export default function ParticipantDetails() {
   const [appliedCoupon, setAppliedCoupon] = useState(null); // Applied coupon details from API
   const [couponLoading, setCouponLoading] = useState(false); // Loading state for coupon API call
   const [couponError, setCouponError] = useState(''); // Coupon validation error message
+  const [isProceeding, setIsProceeding] = useState(false); // Loading state for payment initiation
 
   // Active payment gateway state
   const [activePaymentGateway, setActivePaymentGateway] = useState(null); // Active payment gateway from admin (phonepe or payu)
@@ -1906,10 +1907,20 @@ export default function ParticipantDetails() {
                               fontSize: '14px',
                               fontWeight: '600',
                               cursor: (!currentValue || couponLoading) ? 'not-allowed' : 'pointer',
-                              transition: 'background-color 0.3s'
+                              transition: 'background-color 0.3s',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '8px',
+                              minWidth: '100px'
                             }}
                           >
-                            {couponLoading ? 'Applying...' : 'Apply'}
+                            {couponLoading ? (
+                              <>
+                                <i className="fas fa-spinner fa-spin"></i>
+                                Applying...
+                              </>
+                            ) : 'Apply'}
                           </button>
                         ) : (
                           <button
@@ -2624,6 +2635,7 @@ export default function ParticipantDetails() {
   const executePaymentInitiation = async (gatewayOverride) => {
     const targetGateway = gatewayOverride || activePaymentGateway;
     console.log("💳 Initiating payment with gateway:", targetGateway);
+    setIsProceeding(true);
 
     // Calculate subTotal
     const subTotal = selectedTickets.reduce((sum, ticket) => {
@@ -2783,6 +2795,8 @@ export default function ParticipantDetails() {
       console.error("❌ Payment Error:", error);
       alert(`Payment initiation failed: ${error.response?.data?.message || error.message || 'Please try again'}`);
       setShowPaymentModal(false);
+    } finally {
+      setIsProceeding(false);
     }
   };
 
@@ -3625,25 +3639,34 @@ export default function ParticipantDetails() {
                 <button
                   className="btn-proceed-final"
                   onClick={handleProceedPayment}
-                  disabled={gatewayLoading}
+                  disabled={gatewayLoading || isProceeding}
                   style={{
                     marginBottom: '0',
                     backgroundColor: activePaymentGateway === 'payu' ? '#17C653' : '#5f259f',
-                    opacity: gatewayLoading ? 0.6 : 1,
-                    cursor: gatewayLoading ? 'not-allowed' : 'pointer'
+                    opacity: (gatewayLoading || isProceeding) ? 0.6 : 1,
+                    cursor: (gatewayLoading || isProceeding) ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  <i className="fas fa-users"></i>
-                  <span className="proceed-count">
-                    {selectedTickets.reduce((sum, t) => sum + t.quantity, 0)}
-                  </span>
-                  <span className="proceed-text">
-                    {gatewayLoading
-                      ? 'LOADING...'
-                      : `PROCEED`
-                    }
-                  </span>
-                  <i className="fas fa-arrow-right"></i>
+                  {isProceeding ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin"></i>
+                      <span className="proceed-text">PLEASE WAIT...</span>
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-users"></i>
+                      <span className="proceed-count">
+                        {selectedTickets.reduce((sum, t) => sum + t.quantity, 0)}
+                      </span>
+                      <span className="proceed-text">
+                        {gatewayLoading
+                          ? 'LOADING...'
+                          : `PROCEED`
+                        }
+                      </span>
+                      <i className="fas fa-arrow-right"></i>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

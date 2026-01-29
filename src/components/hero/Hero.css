@@ -35,7 +35,7 @@
 
 .hero-slide {
   position: relative;
-  height: 95vh;
+  height: 450px;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -45,7 +45,7 @@
 .hero-bg {
   position: absolute;
   inset: 0;
-  background-size: cover;
+  background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
   transition: background-image 0.8s ease-in-out;
@@ -431,7 +431,7 @@
 
 @media (max-width: 992px) {
   .hero-slide {
-    height: 80vh;
+    height: 380px;
   }
 
   .hero-title {
@@ -469,7 +469,7 @@
   }
 
   .hero-slide {
-    height: 70vh;
+    height: 300px;
     border-radius: 0;
   }
 
@@ -609,7 +609,7 @@
   }
 
   .hero-slide {
-    height: 60vh;
+    height: 250px;
     border-radius: 0;
   }
 
@@ -702,7 +702,7 @@
   }
 
   .hero-slide {
-    height: 50vh;
+    height: 220px;
     border-radius: 0;
   }
 
@@ -749,7 +749,7 @@
 /* Mobile-first approach for better responsiveness */
 @media (max-width: 375px) {
   .hero-slide {
-    height: 50vh;
+    height: 180px;
   }
 
   /* Tiny mobile banner fit adjustment - show full image */
