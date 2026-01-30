@@ -9,6 +9,7 @@ export default function ParticipantDetails() {
   const couponDiscount = parseFloat(localStorage.getItem("couponDiscount")) || 0;
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const isGuestLogin = localStorage.getItem("isGuestLogin") === "true";
 
   const [formData, setFormData] = useState({
     participantType: "",
@@ -2036,6 +2037,11 @@ export default function ParticipantDetails() {
                 <div className="form-group" key={question.id}>
                   <label>
                     {question.question_label}
+                    {question.question_description && (
+                      <span style={{ fontSize: '12px', color: '#888', marginLeft: '5px', fontWeight: 'normal' }}>
+                        ({question.question_description})
+                      </span>
+                    )}
                     {isRequired && <span style={{ color: 'red' }}>*</span>}
                     {/* Hint icon */}
                     {question.question_hint && question.question_hint.trim() !== '' && (
@@ -2101,6 +2107,11 @@ export default function ParticipantDetails() {
                 <div className="form-group" key={question.id}>
                   <label>
                     {question.question_label}
+                    {question.question_description && (
+                      <span style={{ fontSize: '12px', color: '#888', marginLeft: '5px', fontWeight: 'normal' }}>
+                        ({question.question_description})
+                      </span>
+                    )}
                     {isRequired && <span style={{ color: 'red' }}>*</span>}
                     {/* Hint icon */}
                     {question.question_hint && question.question_hint.trim() !== '' && (
@@ -2195,6 +2206,11 @@ export default function ParticipantDetails() {
                 <div className="form-group" key={question.id}>
                   <label>
                     {question.question_label}
+                    {question.question_description && (
+                      <span style={{ fontSize: '12px', color: '#888', marginLeft: '5px', fontWeight: 'normal' }}>
+                        ({question.question_description})
+                      </span>
+                    )}
                     {isRequired && <span style={{ color: 'red' }}>*</span>}
                     {/* Hint icon */}
                     {question.question_hint && question.question_hint.trim() !== '' && (
@@ -2348,6 +2364,11 @@ export default function ParticipantDetails() {
                 <div className="form-group" key={question.id}>
                   <label>
                     {question.question_label}
+                    {question.question_description && (
+                      <span style={{ fontSize: '12px', color: '#888', marginLeft: '5px', fontWeight: 'normal' }}>
+                        ({question.question_description})
+                      </span>
+                    )}
                     {isRequired && <span style={{ color: 'red' }}>*</span>}
                     {/* Hint icon */}
                     {question.question_hint && question.question_hint.trim() !== '' && (
@@ -3180,20 +3201,22 @@ export default function ParticipantDetails() {
 
                 <div className="form-content">
                   {/* Participant Type Dropdown */}
-                  <div className="form-group">
-                    <select
-                      name="participantType"
-                      className="form-select"
-                      value={participantForm.formData.participantType}
-                      onChange={(e) => handleInputChange(participantIndex, e)}
-                    >
-                      <option value="" disabled>
-                        Registration For
-                      </option>
-                      <option value="Myself">Myself</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
+                  {!isGuestLogin && (
+                    <div className="form-group">
+                      <select
+                        name="participantType"
+                        className="form-select"
+                        value={participantForm.formData.participantType}
+                        onChange={(e) => handleInputChange(participantIndex, e)}
+                      >
+                        <option value="" disabled>
+                          Registration For
+                        </option>
+                        <option value="Myself">Myself</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  )}
 
                   {/* Dynamic Fields */}
                   {renderDynamicFields(participantIndex)}

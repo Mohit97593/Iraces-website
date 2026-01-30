@@ -1282,9 +1282,11 @@ export default function TopNav() {
                       style={{ backgroundColor: "#f8f9fa" }}
                     >
                       <div className="fw-bold text-dark">{getUserName()}</div>
-                      <div className="text-muted small">
-                        {getUserDisplayInfo()}
-                      </div>
+                      {localStorage.getItem("isGuestLogin") !== "true" && (
+                        <div className="text-muted small">
+                          {getUserDisplayInfo()}
+                        </div>
+                      )}
                     </div>
 
                     {localStorage.getItem("isGuestLogin") !== "true" && (
