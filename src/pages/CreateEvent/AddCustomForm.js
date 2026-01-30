@@ -24,7 +24,7 @@ const AddCustomForm = ({ onCancel }) => {
     try {
       const fd = new FormData();
       fd.append("form_name", newFormName.trim());
-      fd.append("form_edit_id", editingFormId ? String(editingFormId) : "0");
+      // fd.append("form_edit_id", editingFormId ? String(editingFormId) : "0");
       fd.append("form_action_flag", "data_add_edit");
       // include form_flag for server to know which form master to update
       fd.append("form_flag", "general_form");
@@ -38,7 +38,7 @@ const AddCustomForm = ({ onCancel }) => {
       try {
         const fd2 = new FormData();
         fd2.append("form_name", "");
-        fd2.append("form_edit_id", "0");
+        // fd2.append("form_edit_id", "0");
         fd2.append("form_action_flag", "form_details");
         fd2.append("form_flag", "general_form");
         const commonRes = await authAPI.formCommonDetails(fd2);
@@ -81,7 +81,7 @@ const AddCustomForm = ({ onCancel }) => {
     const fd = new FormData();
     fd.append("user_id", localStorage.getItem("user_id") || "");
     // Use default form_id as "1" since Choose Form dropdown is removed
-    fd.append("form_id", selectedFormId || "1");
+    // fd.append("form_id", selectedFormId || "1");
     fd.append("question_label", question_label);
     fd.append(
       "question_form_type",
@@ -141,7 +141,7 @@ const AddCustomForm = ({ onCancel }) => {
       try {
         const fd = new FormData();
         fd.append("form_name", "");
-        fd.append("form_edit_id", "0");
+        // fd.append("form_edit_id", "0");
         fd.append("form_action_flag", "form_details");
         fd.append("form_flag", "general_form");
         const commonRes = await authAPI.formCommonDetails(fd);
@@ -176,7 +176,7 @@ const AddCustomForm = ({ onCancel }) => {
       try {
         const fd = new FormData();
         fd.append("form_name", "");
-        fd.append("form_edit_id", "0");
+        // fd.append("form_edit_id", "0");
         fd.append("form_action_flag", "form_details");
         fd.append("form_flag", "general_form");
         const commonRes = await authAPI.formCommonDetails(fd);
