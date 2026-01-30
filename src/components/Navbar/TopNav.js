@@ -63,6 +63,12 @@ export default function TopNav() {
   const confirmLogout = async () => {
     try {
       await logout();
+      // Clear guest login info
+      localStorage.removeItem("guestEmail");
+      localStorage.removeItem("guestAllowedEventId");
+      localStorage.removeItem("guestAllowedEventName");
+      localStorage.removeItem("isGuestLogin");
+
       setShowLogoutConfirm(false);
       setShowLogoutSuccess(true);
 
@@ -87,6 +93,11 @@ export default function TopNav() {
   };
 
   const getUserName = () => {
+    // Check if logged in as guest
+    if (localStorage.getItem("isGuestLogin") === "true") {
+      return "Guest Login";
+    }
+
     // Try to get full name first
     if (user?.firstName && user?.lastName) {
       return `${user.firstName} ${user.lastName}`;
@@ -1199,8 +1210,9 @@ export default function TopNav() {
                     }}
                   >
                     {(() => {
+                      const isGuest = localStorage.getItem("isGuestLogin") === "true";
                       const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-                      if (userData?.profile_pic) {
+                      if (!isGuest && userData?.profile_pic) {
                         const profilePicUrl = authAPI.getImageUrl(userData.profile_pic);
                         return (
                           <img
@@ -1219,12 +1231,13 @@ export default function TopNav() {
                       } else {
                         return (
                           <img
-                            src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                            alt="Profile"
+                            src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png"
+                            alt="Guest"
                             style={{
                               width: "100%",
                               height: "100%",
-                              objectFit: "cover"
+                              objectFit: "cover",
+                              opacity: isGuest ? 0.7 : 1
                             }}
                           />
                         );
@@ -1274,61 +1287,65 @@ export default function TopNav() {
                       </div>
                     </div>
 
-                    <NavLink
-                      to="/profile"
-                      className="dropdown-item d-flex align-items-center gap-2 px-3 py-2"
-                      style={{ textDecoration: "none", color: "#333" }}
-                      onClick={() => setShowProfileDropdown(false)}
-                    >
-                      <i className="fas fa-user" style={{ width: "16px" }}></i>
-                      My Profile
-                    </NavLink>
+                    {localStorage.getItem("isGuestLogin") !== "true" && (
+                      <>
+                        <NavLink
+                          to="/profile"
+                          className="dropdown-item d-flex align-items-center gap-2 px-3 py-2"
+                          style={{ textDecoration: "none", color: "#333" }}
+                          onClick={() => setShowProfileDropdown(false)}
+                        >
+                          <i className="fas fa-user" style={{ width: "16px" }}></i>
+                          My Profile
+                        </NavLink>
 
-                    <NavLink
-                      to="/myevents"
-                      className="dropdown-item d-flex align-items-center gap-2 px-3 py-2"
-                      style={{ textDecoration: "none", color: "#333" }}
-                      onClick={() => setShowProfileDropdown(false)}
-                    >
-                      <i
-                        className="fas fa-tachometer-alt"
-                        style={{ width: "16px" }}
-                      ></i>
-                      My Events
-                    </NavLink>
+                        <NavLink
+                          to="/myevents"
+                          className="dropdown-item d-flex align-items-center gap-2 px-3 py-2"
+                          style={{ textDecoration: "none", color: "#333" }}
+                          onClick={() => setShowProfileDropdown(false)}
+                        >
+                          <i
+                            className="fas fa-tachometer-alt"
+                            style={{ width: "16px" }}
+                          ></i>
+                          My Events
+                        </NavLink>
 
-                    <NavLink
-                      to="/organiser-profile"
-                      className="dropdown-item d-flex align-items-center gap-2 px-3 py-2"
-                      style={{ textDecoration: "none", color: "#333" }}
-                      onClick={() => setShowProfileDropdown(false)}
-                    >
-                      <i
-                        className="fas fa-calendar-check"
-                        style={{ width: "16px" }}
-                      ></i>
-                      Organiser Profile
-                    </NavLink>
+                        <NavLink
+                          to="/organiser-profile"
+                          className="dropdown-item d-flex align-items-center gap-2 px-3 py-2"
+                          style={{ textDecoration: "none", color: "#333" }}
+                          onClick={() => setShowProfileDropdown(false)}
+                        >
+                          <i
+                            className="fas fa-calendar-check"
+                            style={{ width: "16px" }}
+                          ></i>
+                          Organiser Profile
+                        </NavLink>
 
-                    <NavLink
-                      to="/favourites"
-                      className="dropdown-item d-flex align-items-center gap-2 px-3 py-2"
-                      style={{ textDecoration: "none", color: "#333" }}
-                      onClick={() => setShowProfileDropdown(false)}
-                    >
-                      <i className="fas fa-cog" style={{ width: "16px" }}></i>
-                      My Favourites
-                    </NavLink>
+                        <NavLink
+                          to="/favourites"
+                          className="dropdown-item d-flex align-items-center gap-2 px-3 py-2"
+                          style={{ textDecoration: "none", color: "#333" }}
+                          onClick={() => setShowProfileDropdown(false)}
+                        >
+                          <i className="fas fa-cog" style={{ width: "16px" }}></i>
+                          My Favourites
+                        </NavLink>
 
-                    <NavLink
-                      to="/registration-tracker"
-                      className="dropdown-item d-flex align-items-center gap-2 px-3 py-2"
-                      style={{ textDecoration: "none", color: "#333" }}
-                      onClick={() => setShowProfileDropdown(false)}
-                    >
-                      <i className="fas fa-list-alt" style={{ width: "16px" }}></i>
-                      Registration Tracker
-                    </NavLink>
+                        <NavLink
+                          to="/registration-tracker"
+                          className="dropdown-item d-flex align-items-center gap-2 px-3 py-2"
+                          style={{ textDecoration: "none", color: "#333" }}
+                          onClick={() => setShowProfileDropdown(false)}
+                        >
+                          <i className="fas fa-list-alt" style={{ width: "16px" }}></i>
+                          Registration Tracker
+                        </NavLink>
+                      </>
+                    )}
 
                     <div className="dropdown-divider"></div>
 

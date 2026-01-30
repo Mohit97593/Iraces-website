@@ -1770,6 +1770,11 @@ export default function ParticipantDetails() {
                 <div className="form-group" key={question.id}>
                   <label>
                     {question.question_label}
+                    {question.question_description && (
+                      <span style={{ fontSize: '12px', color: '#888', marginLeft: '5px', fontWeight: 'normal' }}>
+                        ({question.question_description})
+                      </span>
+                    )}
                     {isRequired && <span style={{ color: 'red' }}>*</span>}
                     {/* Hint icon - show if question_hint exists */}
                     {question.question_hint && question.question_hint.trim() !== '' && (
@@ -2306,6 +2311,11 @@ export default function ParticipantDetails() {
                 <div className="form-group" key={question.id}>
                   <label>
                     {question.question_label}
+                    {question.question_description && (
+                      <span style={{ fontSize: '12px', color: '#888', marginLeft: '5px', fontWeight: 'normal' }}>
+                        ({question.question_description})
+                      </span>
+                    )}
                     {isRequired && <span style={{ color: 'red' }}>*</span>}
                   </label>
                   <textarea

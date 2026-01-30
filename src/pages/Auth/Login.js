@@ -45,6 +45,7 @@ export default function Login() {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [resetStatus, setResetStatus] = useState("");
   const [otpTimer, setOtpTimer] = useState(30);
+  const [hasGuestInfo, setHasGuestInfo] = useState(false);
   const otpIntervalRef = useRef(null);
 
   // Fetch phone codes on component mount
@@ -98,6 +99,16 @@ export default function Login() {
     };
 
     fetchPhoneCodes();
+  }, []);
+
+  // Check for guest login info on mount
+  useEffect(() => {
+    const email = localStorage.getItem("guestEmail");
+    const eventId = localStorage.getItem("guestAllowedEventId");
+    if (email && eventId) {
+      setHasGuestInfo(true);
+      console.log("🎟️ Guest login info detected for email:", email);
+    }
   }, []);
 
   useEffect(() => {
@@ -484,6 +495,55 @@ export default function Login() {
       }
     } catch (err) {
       setResetStatus("Error resetting password. Try again later.");
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    const guestEmail = localStorage.getItem("guestEmail");
+    if (!guestEmail) {
+      setErrors({ general: "Guest login information not found. Please go back to the event page." });
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      const loginData = {
+        email: guestEmail.toLowerCase().trim(),
+        mobile: "",
+        password: "1234567a",
+        loginType: 1, // 1=Password login
+        phoneCode: "",
+      };
+
+      const result = await login(loginData);
+      if (result.success) {
+        console.log("🎟️ Guest Login successful");
+        localStorage.setItem("isGuestLogin", "true");
+
+        // Wait a bit for token to be saved by useAuth
+        setTimeout(() => {
+          const redirectUrl = localStorage.getItem("redirectAfterLogin");
+          if (redirectUrl) {
+            localStorage.removeItem("redirectAfterLogin");
+            navigate(redirectUrl);
+          } else {
+            navigate("/");
+          }
+        }, 500);
+      } else {
+        setErrors({
+          general: result.message || "Guest login failed. Please try again.",
+        });
+      }
+    } catch (error) {
+      console.error("Guest login error:", error);
+      setErrors({
+        general: error.message || "Guest login failed. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -936,6 +996,56 @@ export default function Login() {
                     )}
                   </button>
 
+                  {/* Guest Login Button */}
+                  {hasGuestInfo && !showOTPField && (
+                    <div className="guest-login-container" style={{ marginTop: "16px" }}>
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        margin: "16px 0",
+                        color: "#999"
+                      }}>
+                        <div style={{ flex: 1, height: "1px", background: "#eee" }}></div>
+                        <span style={{ padding: "0 10px", fontSize: "14px" }}>OR</span>
+                        <div style={{ flex: 1, height: "1px", background: "#eee" }}></div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn w-100"
+                        onClick={handleGuestLogin}
+                        disabled={isLoading}
+                        style={{
+                          backgroundColor: "#fff",
+                          border: "2px solid #da251c",
+                          color: "#da251c",
+                          fontWeight: "bold",
+                          borderRadius: "12px",
+                          padding: "12px",
+                          transition: "all 0.3s ease"
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = "#da251c";
+                          e.target.style.color = "#fff";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = "#fff";
+                          e.target.style.color = "#da251c";
+                        }}
+                      >
+                        <i className="fas fa-user-secret me-2"></i>
+                        Guest Login
+                      </button>
+                      <p style={{
+                        fontSize: "12px",
+                        color: "#666",
+                        textAlign: "center",
+                        marginTop: "8px"
+                      }}>
+                        Continue as guest for <b>{localStorage.getItem("guestAllowedEventName")}</b>
+                      </p>
+                    </div>
+                  )}
+
                   {/* Resend OTP or Back to Password */}
                 </form>
                 <div className="auth-footer">
@@ -1073,6 +1183,6 @@ export default function Login() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

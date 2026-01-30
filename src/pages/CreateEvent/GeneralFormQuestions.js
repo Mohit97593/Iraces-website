@@ -398,6 +398,9 @@ const GeneralFormQuestions = ({
     cloned.start_date = question.start_date ?? question.startDate ?? "";
     cloned.end_date = question.end_date ?? question.endDate ?? "";
 
+    // Initialize question description (Label field)
+    cloned.question_description = question.question_description || "";
+
     setSelectedQuestion(cloned);
 
     // Load sub-questions if they exist
@@ -429,6 +432,7 @@ const GeneralFormQuestions = ({
           subQuestionHintFile: null,
           subQuestionFormType: subQ.question_form_type || "",
           subQuestionMandatory: subQ.is_manadatory === 1 || subQ.is_manadatory === "1" ? "1" : "0",
+          subQuestionDescription: subQ.question_description || "",
           childSubquestions: [],
           options: [],
           priceEnabled: false,
@@ -468,6 +472,7 @@ const GeneralFormQuestions = ({
               subQuestionHintFile: null,
               subQuestionFormType: childSubQ.question_form_type || "",
               subQuestionMandatory: childSubQ.is_manadatory === 1 || childSubQ.is_manadatory === "1" ? "1" : "0",
+              subQuestionDescription: childSubQ.question_description || "",
               options: [],
               priceEnabled: false,
               maxCountEnabled: false,
@@ -691,6 +696,7 @@ const GeneralFormQuestions = ({
       subQuestionHintFile: null,
       subQuestionFormType: "",
       subQuestionMandatory: "0",
+      subQuestionDescription: "",
       childSubquestions: [],  // Array for unlimited children
       options: [],  // Initialize empty options array
       priceEnabled: false,  // Initialize price toggle
@@ -724,6 +730,7 @@ const GeneralFormQuestions = ({
       subQuestionHintFile: null,
       subQuestionFormType: "",
       subQuestionMandatory: "0",
+      subQuestionDescription: "",
       // Options UI fields
       priceEnabled: false,
       maxCountEnabled: false,
@@ -1075,6 +1082,10 @@ const GeneralFormQuestions = ({
         selectedQuestion.field_mapping ||
         ""
       );
+      formData.append(
+        "question_description",
+        selectedQuestion.question_description || ""
+      );
 
       // Process main question price/count options if toggles are enabled
       if ((mainQuestionPriceEnabled || mainQuestionCountEnabled) &&
@@ -1178,6 +1189,7 @@ const GeneralFormQuestions = ({
             title: subQ.subQuestionTitle || "",
             form_type: subQ.subQuestionFormType || "",
             mandatory: subQ.subQuestionMandatory === "1" ? 1 : 0,
+            question_description: subQ.subQuestionDescription || "",
           };
 
           // Add options if the subquestion has any (for select, radio, checkbox types)
@@ -1243,7 +1255,8 @@ const GeneralFormQuestions = ({
                 question_type: childFormTypeNumeric,
                 title: childSubQ.subQuestionTitle || "",
                 form_type: childSubQ.subQuestionFormType || "",
-                mandatory: childSubQ.subQuestionMandatory === "1" ? 1 : 0
+                mandatory: childSubQ.subQuestionMandatory === "1" ? 1 : 0,
+                question_description: childSubQ.subQuestionDescription || ""
               };
 
               // Add options data for checkbox/radio/select types
@@ -1557,6 +1570,20 @@ const GeneralFormQuestions = ({
                     {displayNameError}
                   </div>
                 )}
+              </div>
+
+              {/* Question Label (Optional) */}
+              <div className="form-group2">
+                <label className="form-label">Label (Optional)</label>
+                <input
+                  type="text"
+                  className="form-input compact"
+                  value={selectedQuestion.question_description || ""}
+                  onChange={(e) =>
+                    handleChangeField("question_description", e.target.value)
+                  }
+                  placeholder="Enter label"
+                />
               </div>
 
               {/* Field Mapping */}
@@ -2084,6 +2111,20 @@ const GeneralFormQuestions = ({
                                 )}
                               </div>
 
+                              {/* Question Label (Optional) */}
+                              <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
+                                <label className="form-label">Label (Optional)</label>
+                                <input
+                                  type="text"
+                                  className="form-input compact"
+                                  value={subQ.subQuestionDescription || ""}
+                                  onChange={(e) =>
+                                    updateSubQuestion(index, "subQuestionDescription", e.target.value)
+                                  }
+                                  placeholder="Enter label"
+                                />
+                              </div>
+
                               {/* Hint Type and Sub Question Hint - side by side */}
                               <div style={{ display: 'flex', gap: '16px', marginBottom: 12, width: '100%' }}>
                                 {/* Hint Type */}
@@ -2542,6 +2583,20 @@ const GeneralFormQuestions = ({
                                                   {subQuestionErrors[`${index}_child_${childIdx}_title`]}
                                                 </div>
                                               )}
+                                            </div>
+
+                                            {/* Child Label (Optional) */}
+                                            <div className="form-group2" style={{ marginBottom: '12px' }}>
+                                              <label className="form-label" style={{ fontSize: '0.85rem' }}>Label (Optional)</label>
+                                              <input
+                                                type="text"
+                                                className="form-input compact"
+                                                value={child.subQuestionDescription || ""}
+                                                onChange={(e) =>
+                                                  updateChildSubQuestion(index, childIdx, 'subQuestionDescription', e.target.value)
+                                                }
+                                                placeholder="Enter label"
+                                              />
                                             </div>
 
                                             {/* Child Hint Type and Hint - side by side */}
@@ -3492,6 +3547,20 @@ const GeneralFormQuestions = ({
                                                 value={child.subQuestionTitle || ""}
                                                 onChange={(e) => updateChildSubQuestion(index, childIdx, 'subQuestionTitle', e.target.value)}
                                                 placeholder="Enter child title"
+                                              />
+                                            </div>
+
+                                            {/* Child Label (Optional) */}
+                                            <div className="form-group2" style={{ marginBottom: '12px' }}>
+                                              <label className="form-label" style={{ fontSize: '0.85rem' }}>Label (Optional)</label>
+                                              <input
+                                                type="text"
+                                                className="form-input compact"
+                                                value={child.subQuestionDescription || ""}
+                                                onChange={(e) =>
+                                                  updateChildSubQuestion(index, childIdx, 'subQuestionDescription', e.target.value)
+                                                }
+                                                placeholder="Enter label"
                                               />
                                             </div>
 

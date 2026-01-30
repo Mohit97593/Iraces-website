@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
+import { useAuth } from "../../contexts/AuthContext";
 import { authAPI } from "../../services/authAPI";
 import Footer from "../../components/Footer/Footer";
 import "./EventDetails.css";
@@ -8,6 +9,7 @@ import "./EventDetails.css";
 export default function EventDetails() {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [event, setEvent] = useState(null);
   const [eventDetails, setEventDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,6 +17,7 @@ export default function EventDetails() {
   const [faq, setFaq] = useState([]);
   const [tickets, setTickets] = useState([]);
   const [organiserName, setOrganiserName] = useState("");
+  const [showGuestLogoutPopup, setShowGuestLogoutPopup] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -433,10 +436,36 @@ export default function EventDetails() {
                       const currentPath = window.location.pathname + window.location.search;
                       localStorage.setItem("redirectAfterLogin", currentPath);
                       console.log("💾 Saved redirect URL before login:", currentPath);
+
+                      // Check for guest login availability
+                      const allowGuest = eventDetails?.EventData?.[0]?.allow_guest_login;
+                      const guestEmail = eventDetails?.UserEmail;
+
+                      if (allowGuest === 1 || allowGuest === "1") {
+                        localStorage.setItem("guestEmail", guestEmail || "");
+                        localStorage.setItem("guestAllowedEventId", eventId);
+                        localStorage.setItem("guestAllowedEventName", event?.name || "");
+                        console.log("🎟️ Guest login info saved:", { guestEmail, eventId });
+                      } else {
+                        // Clear any old guest info
+                        localStorage.removeItem("guestEmail");
+                        localStorage.removeItem("guestAllowedEventId");
+                        localStorage.removeItem("guestAllowedEventName");
+                      }
+
                       // Redirect to login
                       navigate("/login");
                     } else {
                       // User is logged in, proceed to checkout
+                      // Guest Login Restriction Check
+                      const isGuest = localStorage.getItem("isGuestLogin") === "true";
+                      const allowedEventId = localStorage.getItem("guestAllowedEventId");
+
+                      if (isGuest && allowedEventId && String(eventId) !== String(allowedEventId)) {
+                        setShowGuestLogoutPopup(true);
+                        return;
+                      }
+
                       navigate(`/checkout/${eventId}`);
                     }
                   }}
@@ -536,6 +565,94 @@ export default function EventDetails() {
         </div>
       </div>
       <Footer />
+
+      {/* Guest Logout Confirmation Modal */}
+      {showGuestLogoutPopup && (
+        <div className="guest-logout-overlay" style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundColor: "rgba(0,0,0,0.7)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 10000
+        }}>
+          <div className="guest-logout-modal" style={{
+            backgroundColor: "white",
+            padding: "32px",
+            borderRadius: "20px",
+            maxWidth: "450px",
+            width: "90%",
+            textAlign: "center",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.2)"
+          }}>
+            <div style={{
+              width: "80px",
+              height: "80px",
+              backgroundColor: "#fff5f3",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 20px"
+            }}>
+              <i className="fas fa-exclamation-triangle" style={{ fontSize: "40px", color: "#da251c" }}></i>
+            </div>
+            <h3 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "12px", color: "#333" }}>Action Required</h3>
+            <p style={{ color: "#666", lineHeight: "1.6", marginBottom: "24px" }}>
+              You are currently logged in as a <b>Guest</b> for another event. To register for this event, you need to logout first.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <button
+                onClick={async () => {
+                  try {
+                    await logout();
+                    localStorage.removeItem("isGuestLogin");
+                    localStorage.removeItem("guestEmail");
+                    localStorage.removeItem("guestAllowedEventId");
+                    localStorage.removeItem("guestAllowedEventName");
+                    setShowGuestLogoutPopup(false);
+                    navigate("/login");
+                  } catch (error) {
+                    console.error("Logout error:", error);
+                  }
+                }}
+                style={{
+                  backgroundColor: "#da251c",
+                  color: "white",
+                  border: "none",
+                  padding: "14px",
+                  borderRadius: "12px",
+                  fontWeight: "bold",
+                  fontSize: "16px",
+                  cursor: "pointer",
+                  transition: "background 0.3s"
+                }}
+              >
+                Logout & Continue Login
+              </button>
+              <button
+                onClick={() => setShowGuestLogoutPopup(false)}
+                style={{
+                  backgroundColor: "transparent",
+                  color: "#666",
+                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "12px",
+                  fontWeight: "600",
+                  fontSize: "15px",
+                  cursor: "pointer"
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

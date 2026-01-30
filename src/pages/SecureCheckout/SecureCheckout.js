@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
+import { useAuth } from "../../contexts/AuthContext";
 import { authAPI } from "../../services/authAPI";
 import "./SecureCheckout.css";
 
 export default function SecureCheckout() {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [event, setEvent] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showGuestLogoutPopup, setShowGuestLogoutPopup] = useState(false);
   const [selectedTickets, setSelectedTickets] = useState([]);
   const [registrationStatus, setRegistrationStatus] = useState(null);
   const [overallLimit, setOverallLimit] = useState(null);
@@ -145,6 +148,17 @@ export default function SecureCheckout() {
     if (!token || !userData) {
       // No token or userData, redirect to login
       navigate("/login");
+      return;
+    }
+
+    // Guest Login Restriction
+    const isGuest = localStorage.getItem("isGuestLogin") === "true";
+    const allowedEventId = localStorage.getItem("guestAllowedEventId");
+
+    if (isGuest && allowedEventId && String(eventId) !== String(allowedEventId)) {
+      console.log("🚫 Guest user attempting to access restricted event:", eventId);
+      setShowGuestLogoutPopup(true);
+      setLoading(false);
       return;
     }
 
@@ -556,6 +570,57 @@ export default function SecureCheckout() {
   }
 
   if (!event) {
+    // If it's a guest restriction, show the logout screen instead of "Event Not Found"
+    if (showGuestLogoutPopup) {
+      return (
+        <div className="secure-checkout-page">
+          <TopNav />
+          <div className="error-container" style={{ padding: "60px 20px", textAlign: "center" }}>
+            <div style={{
+              width: "100px",
+              height: "100px",
+              backgroundColor: "#fff5f3",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 24px"
+            }}>
+              <i className="fas fa-user-lock" style={{ fontSize: "50px", color: "#da251c" }}></i>
+            </div>
+            <h2 style={{ fontSize: "28px", fontWeight: "700", color: "#333", marginBottom: "16px" }}>Guest Login Logout</h2>
+            <p style={{ color: "#666", maxWidth: "500px", margin: "0 auto 32px", fontSize: "16px", lineHeight: "1.6" }}>
+              You are currently logged in as a guest for another event. Please logout to register for this event.
+            </p>
+            <button
+              className="btn"
+              style={{
+                backgroundColor: "#da251c",
+                color: "white",
+                padding: "14px 40px",
+                borderRadius: "30px",
+                fontWeight: "700",
+                fontSize: "18px",
+                border: "none",
+                boxShadow: "0 4px 15px rgba(218,37,28,0.3)"
+              }}
+              onClick={async () => {
+                await logout();
+                localStorage.removeItem("isGuestLogin");
+                localStorage.removeItem("guestEmail");
+                localStorage.removeItem("guestAllowedEventId");
+                localStorage.removeItem("guestAllowedEventName");
+                setShowGuestLogoutPopup(false);
+                navigate("/login");
+              }}
+            >
+              Logout Now
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="secure-checkout-page">
         <TopNav />
@@ -579,6 +644,92 @@ export default function SecureCheckout() {
   return (
     <div className="secure-checkout-page">
       <TopNav />
+
+      {/* Guest Logout Confirmation Popup */}
+      {showGuestLogoutPopup && (
+        <div className="guest-logout-overlay" style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundColor: "rgba(0,0,0,0.7)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 10000
+        }}>
+          <div className="guest-logout-modal" style={{
+            backgroundColor: "white",
+            padding: "32px",
+            borderRadius: "20px",
+            maxWidth: "450px",
+            width: "90%",
+            textAlign: "center",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.2)"
+          }}>
+            <div style={{
+              width: "80px",
+              height: "80px",
+              backgroundColor: "#fff5f3",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 20px"
+            }}>
+              <i className="fas fa-exclamation-triangle" style={{ fontSize: "40px", color: "#da251c" }}></i>
+            </div>
+            <h3 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "12px", color: "#333" }}>Action Required</h3>
+            <p style={{ color: "#666", lineHeight: "1.6", marginBottom: "24px" }}>
+              You are currently logged in as a <b>Guest</b> for another event. To register for this event, you need to logout first.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <button
+                onClick={async () => {
+                  await logout();
+                  localStorage.removeItem("isGuestLogin");
+                  localStorage.removeItem("guestEmail");
+                  localStorage.removeItem("guestAllowedEventId");
+                  localStorage.removeItem("guestAllowedEventName");
+                  setShowGuestLogoutPopup(false);
+                  navigate("/login");
+                }}
+                style={{
+                  backgroundColor: "#da251c",
+                  color: "white",
+                  border: "none",
+                  padding: "14px",
+                  borderRadius: "12px",
+                  fontWeight: "bold",
+                  fontSize: "16px",
+                  cursor: "pointer",
+                  transition: "background 0.3s"
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = "#b91e14"}
+                onMouseLeave={(e) => e.target.style.backgroundColor = "#da251c"}
+              >
+                Logout & Continue Login
+              </button>
+              <button
+                onClick={() => navigate("/")}
+                style={{
+                  backgroundColor: "transparent",
+                  color: "#666",
+                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "12px",
+                  fontWeight: "600",
+                  fontSize: "15px",
+                  cursor: "pointer"
+                }}
+              >
+                Cancel and Go Home
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Blue Header Section */}
       {/* Hero Section */}
