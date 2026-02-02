@@ -19,6 +19,7 @@ export default function TopNav() {
   const [searchCities, setSearchCities] = useState([]);
   const [citySearchQuery, setCitySearchQuery] = useState("");
   const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [eventSuggestions, setEventSuggestions] = useState([]);
   const [showEventSuggestions, setShowEventSuggestions] = useState(false);
   const [showEventTypeModal, setShowEventTypeModal] = useState(false);
@@ -353,6 +354,8 @@ export default function TopNav() {
       return;
     }
 
+    setIsDetectingLocation(true);
+
     // Request location permission and get coordinates
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -362,7 +365,7 @@ export default function TopNav() {
         try {
           // Use reverse geocoding to get city name from coordinates
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`,
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=12&addressdetails=1`,
             {
               headers: {
                 'User-Agent': 'iRaces-Website/1.0'
@@ -375,14 +378,20 @@ export default function TopNav() {
           }
 
           const data = await response.json();
+          console.log("Nominatim data:", data);
 
-          // Try to get city name from various address fields
+          // Try to get city name from various address fields in order of specificity
           let detectedCityName =
             data?.address?.city ||
             data?.address?.town ||
             data?.address?.village ||
+            data?.address?.municipality ||
+            data?.address?.suburb ||
+            data?.address?.neighbourhood ||
+            data?.address?.city_district ||
+            data?.address?.district ||
+            data?.address?.state_district ||
             data?.address?.state ||
-            data?.address?.county ||
             "";
 
           // If no valid city name found or it's empty, use "India" as fallback
@@ -393,7 +402,8 @@ export default function TopNav() {
           const detectedCitySlug = detectedCityName
             .toLowerCase()
             .replace(/\s+/g, "-")
-            .replace(/[^\w-]/g, "");
+            .replace(/[^\w-]/g, "")
+            || "india";
 
           // Store detected city
           localStorage.setItem("detectedCity", detectedCityName);
@@ -408,6 +418,7 @@ export default function TopNav() {
 
           // Close the overlay
           setShowLocationOverlay(false);
+          setIsDetectingLocation(false);
 
           // Dispatch event to update homepage
           window.dispatchEvent(
@@ -423,31 +434,33 @@ export default function TopNav() {
 
           // Navigate to detected location
           const currentPath = window.location.pathname;
-          if (currentPath === "/" || currentPath.startsWith("/in/")) {
+          if ((currentPath === "/" || currentPath.startsWith("/in/")) && detectedCitySlug) {
             navigate(`/in/${detectedCitySlug}`);
           }
         } catch (error) {
           console.error("Error reverse geocoding:", error);
           // Fallback to IP-based location
           await handleIPBasedLocation();
+          setIsDetectingLocation(false);
         }
       },
       async (error) => {
         console.error("Geolocation error:", error);
+        setIsDetectingLocation(false);
 
         // Handle different error cases
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            alert("Location permission denied. Using IP-based location instead.");
+            alert("Location permission denied. Please enable location access in your browser settings or use IP-based location.");
             break;
           case error.POSITION_UNAVAILABLE:
-            alert("Location information unavailable. Using IP-based location instead.");
+            alert("Location information is currently unavailable at your position.");
             break;
           case error.TIMEOUT:
-            alert("Location request timed out. Using IP-based location instead.");
+            alert("The request to get user location timed out.");
             break;
           default:
-            alert("An unknown error occurred. Using IP-based location instead.");
+            alert("An unknown error occurred while detecting location.");
         }
 
         // Fallback to IP-based location
@@ -483,7 +496,8 @@ export default function TopNav() {
       const detectedCitySlug = detectedCityName
         .toLowerCase()
         .replace(/\s+/g, "-")
-        .replace(/[^\w-]/g, "");
+        .replace(/[^\w-]/g, "")
+        || "india";
 
       // Store detected city
       localStorage.setItem("detectedCity", detectedCityName);
@@ -508,7 +522,7 @@ export default function TopNav() {
 
       // Navigate to detected location
       const currentPath = window.location.pathname;
-      if (currentPath === "/" || currentPath.startsWith("/in/")) {
+      if ((currentPath === "/" || currentPath.startsWith("/in/")) && detectedCitySlug) {
         navigate(`/in/${detectedCitySlug}`);
       }
     } catch (error) {
@@ -767,11 +781,17 @@ export default function TopNav() {
                     <span>Detect my location</span>
                   </button> */}
                   <button
-                    className="delete-location-btn-top"
+                    className="detect-location-btn-top"
                     onClick={handleDetectLocation}
+                    disabled={isDetectingLocation}
+                    style={{ opacity: isDetectingLocation ? 0.7 : 1 }}
                   >
-                    <i className="fas fa-crosshairs"></i>
-                    <span>Detect my location</span>
+                    {isDetectingLocation ? (
+                      <i className="fas fa-spinner fa-spin"></i>
+                    ) : (
+                      <i className="fas fa-crosshairs"></i>
+                    )}
+                    <span>{isDetectingLocation ? "Detecting..." : "Detect my location"}</span>
                   </button>
                 </div>
 

@@ -400,6 +400,8 @@ const GeneralFormQuestions = ({
 
     // Initialize question description (Label field)
     cloned.question_description = question.question_description || "";
+    cloned.label_color = question.label_color || "#000000";
+    cloned.description_color = question.description_color || "#888888";
 
     setSelectedQuestion(cloned);
 
@@ -703,7 +705,9 @@ const GeneralFormQuestions = ({
       maxCountEnabled: false,  // Initialize count toggle
       newOptionLabel: "",  // Initialize input fields
       newOptionPrice: "",
-      newOptionCount: ""
+      newOptionCount: "",
+      label_color: "#000000",
+      description_color: "#888888"
     }]);
   };
 
@@ -737,7 +741,9 @@ const GeneralFormQuestions = ({
       newOptionLabel: "",
       newOptionPrice: "",
       newOptionCount: "",
-      options: []
+      options: [],
+      label_color: "#000000",
+      description_color: "#888888"
     });
     setSubQuestions(updated);
   };
@@ -1086,6 +1092,14 @@ const GeneralFormQuestions = ({
         "question_description",
         selectedQuestion.question_description || ""
       );
+      formData.append(
+        "label_color",
+        selectedQuestion.label_color || "#000000"
+      );
+      formData.append(
+        "description_color",
+        selectedQuestion.description_color || "#888888"
+      );
 
       // Process main question price/count options if toggles are enabled
       if ((mainQuestionPriceEnabled || mainQuestionCountEnabled) &&
@@ -1190,6 +1204,8 @@ const GeneralFormQuestions = ({
             form_type: subQ.subQuestionFormType || "",
             mandatory: subQ.subQuestionMandatory === "1" ? 1 : 0,
             question_description: subQ.subQuestionDescription || "",
+            label_color: subQ.label_color || "#000000",
+            description_color: subQ.description_color || "#888888"
           };
 
           // Add options if the subquestion has any (for select, radio, checkbox types)
@@ -1256,7 +1272,9 @@ const GeneralFormQuestions = ({
                 title: childSubQ.subQuestionTitle || "",
                 form_type: childSubQ.subQuestionFormType || "",
                 mandatory: childSubQ.subQuestionMandatory === "1" ? 1 : 0,
-                question_description: childSubQ.subQuestionDescription || ""
+                question_description: childSubQ.subQuestionDescription || "",
+                label_color: childSubQ.label_color || "#000000",
+                description_color: childSubQ.description_color || "#888888"
               };
 
               // Add options data for checkbox/radio/select types
@@ -1574,16 +1592,33 @@ const GeneralFormQuestions = ({
 
               {/* Question Label (Optional) */}
               <div className="form-group2">
-                <label className="form-label">Label (Optional)</label>
-                <input
-                  type="text"
-                  className="form-input compact"
-                  value={selectedQuestion.question_description || ""}
-                  onChange={(e) =>
-                    handleChangeField("question_description", e.target.value)
-                  }
-                  placeholder="Enter label"
-                />
+                <label className="form-label" style={{ color: selectedQuestion.description_color || "#888" }}>Label (Optional)</label>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    className="form-input compact"
+                    style={{ flex: 1 }}
+                    value={selectedQuestion.question_description || ""}
+                    onChange={(e) =>
+                      handleChangeField("question_description", e.target.value)
+                    }
+                    placeholder="Enter label"
+                  />
+                  <input
+                    type="color"
+                    value={selectedQuestion.description_color || "#888888"}
+                    onChange={(e) => handleChangeField("description_color", e.target.value)}
+                    style={{
+                      width: '40px',
+                      height: '38px',
+                      padding: '2px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                    title="Pick Description Color"
+                  />
+                </div>
               </div>
 
               {/* Field Mapping */}
@@ -2113,16 +2148,25 @@ const GeneralFormQuestions = ({
 
                               {/* Question Label (Optional) */}
                               <div className="form-group2" style={{ marginBottom: 12, width: '100%' }}>
-                                <label className="form-label">Label (Optional)</label>
-                                <input
-                                  type="text"
-                                  className="form-input compact"
-                                  value={subQ.subQuestionDescription || ""}
-                                  onChange={(e) =>
-                                    updateSubQuestion(index, "subQuestionDescription", e.target.value)
-                                  }
-                                  placeholder="Enter label"
-                                />
+                                <label className="form-label" style={{ color: subQ.description_color || "#888" }}>Label (Optional)</label>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                  <input
+                                    type="text"
+                                    className="form-input compact"
+                                    style={{ flex: 1 }}
+                                    value={subQ.subQuestionDescription || ""}
+                                    onChange={(e) =>
+                                      updateSubQuestion(index, "subQuestionDescription", e.target.value)
+                                    }
+                                    placeholder="Enter label"
+                                  />
+                                  <input
+                                    type="color"
+                                    value={subQ.description_color || "#888888"}
+                                    onChange={(e) => updateSubQuestion(index, "description_color", e.target.value)}
+                                    style={{ width: '36px', height: '32px', padding: '2px' }}
+                                  />
+                                </div>
                               </div>
 
                               {/* Hint Type and Sub Question Hint - side by side */}
@@ -2587,16 +2631,25 @@ const GeneralFormQuestions = ({
 
                                             {/* Child Label (Optional) */}
                                             <div className="form-group2" style={{ marginBottom: '12px' }}>
-                                              <label className="form-label" style={{ fontSize: '0.85rem' }}>Label (Optional)</label>
-                                              <input
-                                                type="text"
-                                                className="form-input compact"
-                                                value={child.subQuestionDescription || ""}
-                                                onChange={(e) =>
-                                                  updateChildSubQuestion(index, childIdx, 'subQuestionDescription', e.target.value)
-                                                }
-                                                placeholder="Enter label"
-                                              />
+                                              <label className="form-label" style={{ fontSize: '0.85rem', color: child.description_color || "#888" }}>Label (Optional)</label>
+                                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                <input
+                                                  type="text"
+                                                  className="form-input compact"
+                                                  style={{ flex: 1 }}
+                                                  value={child.subQuestionDescription || ""}
+                                                  onChange={(e) =>
+                                                    updateChildSubQuestion(index, childIdx, 'subQuestionDescription', e.target.value)
+                                                  }
+                                                  placeholder="Enter label"
+                                                />
+                                                <input
+                                                  type="color"
+                                                  value={child.description_color || "#888888"}
+                                                  onChange={(e) => updateChildSubQuestion(index, childIdx, "description_color", e.target.value)}
+                                                  style={{ width: '32px', height: '28px', padding: '2px' }}
+                                                />
+                                              </div>
                                             </div>
 
                                             {/* Child Hint Type and Hint - side by side */}
@@ -3552,16 +3605,25 @@ const GeneralFormQuestions = ({
 
                                             {/* Child Label (Optional) */}
                                             <div className="form-group2" style={{ marginBottom: '12px' }}>
-                                              <label className="form-label" style={{ fontSize: '0.85rem' }}>Label (Optional)</label>
-                                              <input
-                                                type="text"
-                                                className="form-input compact"
-                                                value={child.subQuestionDescription || ""}
-                                                onChange={(e) =>
-                                                  updateChildSubQuestion(index, childIdx, 'subQuestionDescription', e.target.value)
-                                                }
-                                                placeholder="Enter label"
-                                              />
+                                              <label className="form-label" style={{ fontSize: '0.85rem', color: child.description_color || "#888" }}>Label (Optional)</label>
+                                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                <input
+                                                  type="text"
+                                                  className="form-input compact"
+                                                  style={{ flex: 1 }}
+                                                  value={child.subQuestionDescription || ""}
+                                                  onChange={(e) =>
+                                                    updateChildSubQuestion(index, childIdx, 'subQuestionDescription', e.target.value)
+                                                  }
+                                                  placeholder="Enter label"
+                                                />
+                                                <input
+                                                  type="color"
+                                                  value={child.description_color || "#888888"}
+                                                  onChange={(e) => updateChildSubQuestion(index, childIdx, "description_color", e.target.value)}
+                                                  style={{ width: '32px', height: '28px', padding: '2px' }}
+                                                />
+                                              </div>
                                             </div>
 
                                             {/* Child Hint Type and Hint - side by side */}

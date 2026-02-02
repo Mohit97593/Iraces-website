@@ -619,6 +619,7 @@ export default function Participants() {
                                 <option value="1">Success</option>
                                 <option value="101">In Progress</option>
                                 <option value="102">Success & Free</option>
+                                <option value="5">Refund</option>
                             </select>
                         </div>
                         <div className="filter-group">
