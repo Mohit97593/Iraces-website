@@ -1071,65 +1071,69 @@ export default function TopNav() {
                 <div className="flex-grow-1 overflow-auto">
                   {isAuthenticated ? (
                     <div className="p-2">
-                      <NavLink
-                        to="/profile"
-                        className="d-flex align-items-center p-3 text-decoration-none text-dark border-bottom"
-                        onClick={() => setShowMobileMenu(false)}
-                      >
-                        <i
-                          className="fas fa-user me-3"
-                          style={{ width: "20px", color: "#666" }}
-                        ></i>
-                        <span>My Profile</span>
-                      </NavLink>
+                      {localStorage.getItem("isGuestLogin") !== "true" && (
+                        <>
+                          <NavLink
+                            to="/profile"
+                            className="d-flex align-items-center p-3 text-decoration-none text-dark border-bottom"
+                            onClick={() => setShowMobileMenu(false)}
+                          >
+                            <i
+                              className="fas fa-user me-3"
+                              style={{ width: "20px", color: "#666" }}
+                            ></i>
+                            <span>My Profile</span>
+                          </NavLink>
 
-                      <NavLink
-                        to="/events"
-                        className="d-flex align-items-center p-3 text-decoration-none text-dark border-bottom"
-                        onClick={() => setShowMobileMenu(false)}
-                      >
-                        <i
-                          className="fas fa-calendar-alt me-3"
-                          style={{ width: "20px", color: "#666" }}
-                        ></i>
-                        <span>My Events</span>
-                      </NavLink>
+                          <NavLink
+                            to="/myevents"
+                            className="d-flex align-items-center p-3 text-decoration-none text-dark border-bottom"
+                            onClick={() => setShowMobileMenu(false)}
+                          >
+                            <i
+                              className="fas fa-calendar-alt me-3"
+                              style={{ width: "20px", color: "#666" }}
+                            ></i>
+                            <span>My Events</span>
+                          </NavLink>
 
-                      <NavLink
-                        to="/organiser"
-                        className="d-flex align-items-center p-3 text-decoration-none text-dark border-bottom"
-                        onClick={() => setShowMobileMenu(false)}
-                      >
-                        <i
-                          className="fas fa-cog me-3"
-                          style={{ width: "20px", color: "#666" }}
-                        ></i>
-                        <span>Organiser Profile</span>
-                      </NavLink>
+                          <NavLink
+                            to="/organiser-profile"
+                            className="d-flex align-items-center p-3 text-decoration-none text-dark border-bottom"
+                            onClick={() => setShowMobileMenu(false)}
+                          >
+                            <i
+                              className="fas fa-cog me-3"
+                              style={{ width: "20px", color: "#666" }}
+                            ></i>
+                            <span>Organiser Profile</span>
+                          </NavLink>
 
-                      <NavLink
-                        to="/favourites"
-                        className="d-flex align-items-center p-3 text-decoration-none text-dark border-bottom"
-                        onClick={() => setShowMobileMenu(false)}
-                      >
-                        <i
-                          className="fas fa-heart me-3"
-                          style={{ width: "20px", color: "#666" }}
-                        ></i>
-                        <span>My Favourites</span>
-                      </NavLink>
+                          <NavLink
+                            to="/favourites"
+                            className="d-flex align-items-center p-3 text-decoration-none text-dark border-bottom"
+                            onClick={() => setShowMobileMenu(false)}
+                          >
+                            <i
+                              className="fas fa-heart me-3"
+                              style={{ width: "20px", color: "#666" }}
+                            ></i>
+                            <span>My Favourites</span>
+                          </NavLink>
 
-                      <NavLink
-                        to="/tracker"
-                        className="d-flex align-items-center p-3 text-decoration-none text-dark border-bottom"
-                        onClick={() => setShowMobileMenu(false)}
-                      >
-                        <i
-                          className="fas fa-chart-line me-3"
-                          style={{ width: "20px", color: "#666" }}
-                        ></i>
-                        <span>Registration Tracker</span>
-                      </NavLink>
+                          <NavLink
+                            to="/registration-tracker"
+                            className="d-flex align-items-center p-3 text-decoration-none text-dark border-bottom"
+                            onClick={() => setShowMobileMenu(false)}
+                          >
+                            <i
+                              className="fas fa-chart-line me-3"
+                              style={{ width: "20px", color: "#666" }}
+                            ></i>
+                            <span>Registration Tracker</span>
+                          </NavLink>
+                        </>
+                      )}
 
                       <button
                         onClick={handleLogoutClick}
