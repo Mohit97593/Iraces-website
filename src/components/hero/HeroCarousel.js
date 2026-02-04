@@ -23,6 +23,7 @@ import BlogPanel from "../BlogPanel/BlogPanel";
 import FAQPanel from "../FAQPanel/FAQPanel";
 import Footer from "../Footer/Footer";
 import YouCanRunBanner from "../YouCanRun";
+import DefaultBanner from "../../assets/image/default-banner.png";
 
 export default function HeroCarousel() {
   // Local state for API banners
@@ -69,14 +70,63 @@ export default function HeroCarousel() {
   };
 
   // Fetch banners from API
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/banners`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success" && Array.isArray(data.data)) {
-          setSlides(data.data);
+  const fetchBanners = async (cityId = null) => {
+    try {
+      let url = `${API_BASE_URL}/banners`;
+      if (cityId) {
+        url += `?city=${cityId}`;
+      }
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data.status === "success" && Array.isArray(data.data) && data.data.length > 0) {
+        let bannersToShow = data.data;
+
+        // If a cityId is provided, filter the banners to show ONLY those for this city
+        if (cityId) {
+          bannersToShow = data.data.filter(
+            (banner) => banner.city == cityId
+          );
         }
-      });
+
+        if (bannersToShow.length > 0) {
+          setSlides(bannersToShow);
+        } else {
+          // Fallback to default banner if no banners match the cityId
+          setSlides([{
+            id: 'default',
+            banner_image_url: DefaultBanner,
+            title: "RUN TOGETHER, ACHIEVE MORE",
+            subtitle: "Join our vibrant running club and conquer every mile"
+          }]);
+        }
+      } else {
+        // Fallback to default banner if no banners found at all
+        setSlides([{
+          id: 'default',
+          banner_image_url: DefaultBanner,
+          title: "RUN TOGETHER, ACHIEVE MORE",
+          subtitle: "Join our vibrant running club and conquer every mile"
+        }]);
+      }
+    } catch (error) {
+      console.error("Error fetching banners:", error);
+      // Fallback on error
+      setSlides([{
+        id: 'default',
+        banner_image_url: DefaultBanner,
+        title: "RUN TOGETHER, ACHIEVE MORE",
+        subtitle: "Join our vibrant running club and conquer every mile"
+      }]);
+    }
+  };
+
+  // Initial banner fetch
+  useEffect(() => {
+    // Try to get stored city ID first
+    const storedCityId = localStorage.getItem("selectedCityId");
+    fetchBanners(storedCityId);
   }, []);
 
   // Fetch city data from city name (returns id, state_id, country_id)
@@ -380,6 +430,22 @@ export default function HeroCarousel() {
 
     // Fetch events with the city information
     fetchLocationEvents(cityIdToFetch, stateIdToFetch, cityNameFromUrl);
+
+    // Fetch banners with the city ID if available
+    if (cityIdToFetch) {
+      fetchBanners(cityIdToFetch);
+    } else if (cityNameFromUrl && cityNameFromUrl.toLowerCase() !== "india") {
+      // If no ID but name from URL, try to fetch ID first
+      fetchCityIdByName(cityNameFromUrl).then(data => {
+        if (data && data.id) {
+          fetchBanners(data.id);
+        } else {
+          fetchBanners(null);
+        }
+      });
+    } else {
+      fetchBanners(null);
+    }
   }, [citySlug]);
 
   // Listen for city selection from navbar
@@ -404,6 +470,9 @@ export default function HeroCarousel() {
       if (cityType === "city") {
         setSelectedCityId(cityId);
 
+        // Fetch banners for the selected city
+        fetchBanners(cityId);
+
         // TopNav already handles URL navigation, just fetch events
         fetchLocationEvents(cityId, null, cityName);
       } else if (cityType === "state") {
@@ -418,6 +487,19 @@ export default function HeroCarousel() {
       // Reset to detected/default location
       setCityName(cityName);
       setSelectedCityId(null);
+
+      // Fetch banners for detected location
+      if (cityName && cityName.toLowerCase() !== "india") {
+        fetchCityIdByName(cityName).then(data => {
+          if (data && data.id) {
+            fetchBanners(data.id);
+          } else {
+            fetchBanners(null);
+          }
+        });
+      } else {
+        fetchBanners(null);
+      }
 
       // Fetch events for the detected location
       fetchLocationEvents(null, null, cityName);
