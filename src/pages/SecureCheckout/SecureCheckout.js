@@ -303,6 +303,22 @@ export default function SecureCheckout() {
       }
     }
 
+    // Check Capacity (total_quantity vs TotalBookedTickets)
+    const totalQty = Number(ticket.total_quantity || 0);
+    const bookedQty = Number(ticket.TotalBookedTickets || 0);
+    const calculatedRemaining = totalQty - bookedQty;
+
+    if (totalQty > 0 && bookedQty >= totalQty) {
+      alert(`Limit exceed! This ticket category is sold out.`);
+      console.log("❌ BLOCKED: Sold out (booked >= total)");
+      return;
+    }
+
+    if (totalQty > 0 && minBooking > calculatedRemaining) {
+      alert(`Only ${calculatedRemaining} tickets remaining for this category.`);
+      return;
+    }
+
     const newTicket = {
       ...ticket,
       quantity: minBooking
@@ -334,6 +350,16 @@ export default function SecureCheckout() {
 
     setSelectedTickets(selectedTickets.map(t => {
       if (t.id === ticketId) {
+        // Check Capacity
+        const totalQty = Number(t.total_quantity || 0);
+        const bookedQty = Number(t.TotalBookedTickets || 0);
+        const calculatedRemaining = totalQty - bookedQty;
+
+        if (totalQty > 0 && t.quantity >= calculatedRemaining) {
+          alert(`Limit exceed! Only ${calculatedRemaining} tickets available for this category.`);
+          return t;
+        }
+
         const maxBooking = t.max_booking || 1;
         if (t.quantity < maxBooking) {
           return { ...t, quantity: t.quantity + 1 };
@@ -835,98 +861,88 @@ export default function SecureCheckout() {
                       )}
 
                       <div className="category-footer">
-                        <div className="category-price">
-                          {/* Early Bird Discount Display */}
-                          {ticket.early_bird === 1 && ticket.show_early_bird === 1 ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                              {/* Strikethrough Original Price */}
-                              <span style={{
-                                textDecoration: 'line-through',
-                                color: '#999',
-                                fontSize: '18px',
-                                fontWeight: '500'
-                              }}>
-                                ₹{ticket.strike_out_price || ticket.ticket_price}
-                              </span>
-
-                              {/* Discounted Price - Calculate based on discount type */}
-                              <span style={{
-                                color: '#e74c3c',
-                                fontSize: '24px',
-                                fontWeight: '700'
-                              }}>
-                                ₹{(() => {
-                                  const originalPrice = parseFloat(ticket.ticket_price);
-                                  const discountValue = parseFloat(ticket.discount_value || 0);
-                                  let discountedPrice;
-
-                                  if (ticket.discount === 1) {
-                                    // Percentage discount: discount_value is percentage
-                                    // Example: ₹500 with 10% = ₹500 - (₹500 * 10/100) = ₹450
-                                    discountedPrice = originalPrice - (originalPrice * discountValue / 100);
-                                  } else {
-                                    // Amount discount: discount_value is flat amount
-                                    // Example: ₹500 with ₹10 = ₹500 - ₹10 = ₹490
-                                    discountedPrice = originalPrice - discountValue;
-                                  }
-
-                                  return discountedPrice.toFixed(2);
-                                })()}
-                              </span>
-
-                              {/* Discount Badge */}
-                              <span style={{
-                                backgroundColor: '#ffe5e5',
-                                color: '#e74c3c',
-                                padding: '4px 12px',
-                                borderRadius: '20px',
-                                fontSize: '14px',
-                                fontWeight: '600'
-                              }}>
-                                {ticket.discount === 1
-                                  ? `${ticket.discount_value}% OFF`
-                                  : `₹${ticket.discount_value} OFF`
-                                }
-                              </span>
-                            </div>
-                          ) : (
-                            /* Regular Price Display */
-                            <span>₹{ticket.ticket_price}</span>
-                          )}
-                        </div>
                         {(() => {
+                          const totalQty = Number(ticket.total_quantity || 0);
+                          const bookedQty = Number(ticket.TotalBookedTickets || 0);
+                          const remaining = totalQty - bookedQty;
+                          const isSoldOut = totalQty > 0 && bookedQty >= totalQty;
                           const selectedTicket = selectedTickets.find(t => t.id === ticket.id);
-                          return selectedTicket ? (
-                            <div className="quantity-controls">
-                              <button
-                                className="btn-quantity"
-                                onClick={() => handleDecreaseQuantity(ticket.id)}
-                                disabled={selectedTicket.quantity <= (ticket.min_booking || 1)}
-                              >
-                                <i className="fas fa-minus"></i>
-                              </button>
-                              <span className="quantity-display">{selectedTicket.quantity}</span>
-                              <button
-                                className="btn-quantity"
-                                onClick={() => handleIncreaseQuantity(ticket.id)}
-                                disabled={selectedTicket.quantity >= (ticket.max_booking || 1)}
-                              >
-                                <i className="fas fa-plus"></i>
-                              </button>
-                              <button
-                                className="btn-remove"
-                                onClick={() => handleRemoveTicket(ticket.id)}
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              className="btn-add"
-                              onClick={() => handleAddTicket(ticket)}
-                            >
-                              <i className="fas fa-plus"></i> Add
-                            </button>
+
+                          return (
+                            <>
+                              <div className="category-price">
+                                {/* Regular/Discounted Price Display */}
+                                {ticket.early_bird === 1 && ticket.show_early_bird === 1 ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                                    <span style={{ textDecoration: 'line-through', color: '#999', fontSize: '18px', fontWeight: '500' }}>
+                                      ₹{ticket.strike_out_price || ticket.ticket_price}
+                                    </span>
+                                    <span style={{ color: '#e74c3c', fontSize: '24px', fontWeight: '700' }}>
+                                      ₹{(() => {
+                                        const originalPrice = parseFloat(ticket.ticket_price);
+                                        const discountValue = parseFloat(ticket.discount_value || 0);
+                                        let discountedPrice = ticket.discount === 1
+                                          ? originalPrice - (originalPrice * discountValue / 100)
+                                          : originalPrice - discountValue;
+                                        return discountedPrice.toFixed(2);
+                                      })()}
+                                    </span>
+                                    <span style={{ backgroundColor: '#ffe5e5', color: '#e74c3c', padding: '4px 12px', borderRadius: '20px', fontSize: '14px', fontWeight: '600' }}>
+                                      {ticket.discount === 1 ? `${ticket.discount_value}% OFF` : `₹${ticket.discount_value} OFF`}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span>₹{ticket.ticket_price}</span>
+                                )}
+
+                                {/* Remaining Tickets Indicator - Positioned on the Left */}
+                                {totalQty > 0 && remaining > 0 && remaining <= 10 && (
+                                  <div style={{
+                                    color: '#e74c3c',
+                                    fontSize: '13px',
+                                    fontWeight: '600',
+                                    marginTop: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '5px'
+                                  }}>
+                                    <i className="fas fa-exclamation-triangle" style={{ fontSize: '11px' }}></i>
+                                    {remaining} {remaining === 1 ? 'ticket' : 'tickets'} left
+                                  </div>
+                                )}
+                              </div>
+
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px' }}>
+                                {selectedTicket ? (
+                                  <div className="quantity-controls">
+                                    <button
+                                      className="btn-quantity"
+                                      onClick={() => handleDecreaseQuantity(ticket.id)}
+                                      disabled={selectedTicket.quantity <= (ticket.min_booking || 1)}
+                                    >
+                                      <i className="fas fa-minus"></i>
+                                    </button>
+                                    <span className="quantity-display">{selectedTicket.quantity}</span>
+                                    <button
+                                      className="btn-quantity"
+                                      onClick={() => handleIncreaseQuantity(ticket.id)}
+                                      disabled={selectedTicket.quantity >= (ticket.max_booking || 1)}
+                                    >
+                                      <i className="fas fa-plus"></i>
+                                    </button>
+                                    <button className="btn-remove" onClick={() => handleRemoveTicket(ticket.id)}>Remove</button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    className="btn-add"
+                                    onClick={() => handleAddTicket(ticket)}
+                                    disabled={isSoldOut}
+                                  >
+                                    <i className="fas fa-plus"></i> {isSoldOut ? "Sold Out" : "Add"}
+                                  </button>
+                                )}
+                              </div>
+                            </>
                           );
                         })()}
                       </div>
