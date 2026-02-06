@@ -400,7 +400,6 @@ const GeneralFormQuestions = ({
 
     // Initialize question description (Label field)
     cloned.question_description = question.question_description || "";
-    cloned.label_color = question.label_color || "#000000";
     cloned.description_color = question.description_color || "#888888";
 
     setSelectedQuestion(cloned);
@@ -706,7 +705,6 @@ const GeneralFormQuestions = ({
       newOptionLabel: "",  // Initialize input fields
       newOptionPrice: "",
       newOptionCount: "",
-      label_color: "#000000",
       description_color: "#888888"
     }]);
   };
@@ -742,7 +740,6 @@ const GeneralFormQuestions = ({
       newOptionPrice: "",
       newOptionCount: "",
       options: [],
-      label_color: "#000000",
       description_color: "#888888"
     });
     setSubQuestions(updated);
@@ -1093,10 +1090,6 @@ const GeneralFormQuestions = ({
         selectedQuestion.question_description || ""
       );
       formData.append(
-        "label_color",
-        selectedQuestion.label_color || "#000000"
-      );
-      formData.append(
         "description_color",
         selectedQuestion.description_color || "#888888"
       );
@@ -1204,7 +1197,6 @@ const GeneralFormQuestions = ({
             form_type: subQ.subQuestionFormType || "",
             mandatory: subQ.subQuestionMandatory === "1" ? 1 : 0,
             question_description: subQ.subQuestionDescription || "",
-            label_color: subQ.label_color || "#000000",
             description_color: subQ.description_color || "#888888"
           };
 
@@ -1273,7 +1265,6 @@ const GeneralFormQuestions = ({
                 form_type: childSubQ.subQuestionFormType || "",
                 mandatory: childSubQ.subQuestionMandatory === "1" ? 1 : 0,
                 question_description: childSubQ.subQuestionDescription || "",
-                label_color: childSubQ.label_color || "#000000",
                 description_color: childSubQ.description_color || "#888888"
               };
 

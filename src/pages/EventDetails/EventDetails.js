@@ -427,7 +427,7 @@ export default function EventDetails() {
               {/* Registration Button */}
               {!registrationClosed && !registrationNotStarted && (
                 <button
-                  className="btn-register"
+                  className="btn-register1"
                   onClick={() => {
                     // Check if user is logged in
                     const token = localStorage.getItem("token");

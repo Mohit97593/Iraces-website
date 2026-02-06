@@ -2961,6 +2961,14 @@ export default function ParticipantDetails() {
             }
           }
         });
+
+        // Check if mobile and emergency contact are the same
+        if (currentFormData.mobile && currentFormData.emergencyContactNumber &&
+          currentFormData.mobile === currentFormData.emergencyContactNumber) {
+          errors[`participant_${participantIndex}_emergencyContactNumber`] = "Emergency contact number cannot be the same as your mobile number";
+          hasErrors = true;
+          console.log(`❌ Contact mismatch: Mobile and Emergency are same for Participant ${participantIndex + 1}`);
+        }
       }
     });
 
@@ -3274,6 +3282,14 @@ export default function ParticipantDetails() {
                             }
                           }
                         });
+
+                        // Check if mobile and emergency contact are the same
+                        if (currentFormData.mobile && currentFormData.emergencyContactNumber &&
+                          currentFormData.mobile === currentFormData.emergencyContactNumber) {
+                          errors[`participant_${participantIndex}_emergencyContactNumber`] = "Emergency contact number cannot be the same as your mobile number";
+                          hasErrors = true;
+                          console.log(`❌ Contact mismatch: Mobile and Emergency are same for Participant ${participantIndex + 1}`);
+                        }
                       }
 
                       if (hasErrors) {
