@@ -7,9 +7,10 @@ import Footer from "../../components/Footer/Footer";
 import "./EventDetails.css";
 
 export default function EventDetails() {
-  const { eventId } = useParams();
+  const { eventId: urlEventId } = useParams();
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const [eventId, setEventId] = useState(null);
   const [event, setEvent] = useState(null);
   const [eventDetails, setEventDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,9 +20,31 @@ export default function EventDetails() {
   const [organiserName, setOrganiserName] = useState("");
   const [showGuestLogoutPopup, setShowGuestLogoutPopup] = useState(false);
 
+  // Handle event ID from localStorage or URL
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    fetchEventDetails();
+    // Priority: localStorage > URL param
+    let eid = localStorage.getItem('viewEventId');
+    if (!eid) {
+      eid = urlEventId;
+    }
+
+    if (eid) {
+      setEventId(eid);
+      // Clean up localStorage after reading
+      localStorage.removeItem('viewEventId');
+
+      // Clean up URL if it has event ID
+      if (window.location.pathname !== '/event') {
+        window.history.replaceState({}, document.title, '/event');
+      }
+    }
+  }, [urlEventId]);
+
+  useEffect(() => {
+    if (eventId) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      fetchEventDetails();
+    }
   }, [eventId]);
 
   const fetchEventDetails = async () => {

@@ -1394,9 +1394,12 @@ export default function HeroCarousel() {
                                               gap: "6px",
                                               boxShadow: "0 2px 8px rgba(218, 37, 28, 0.2)",
                                             }}
-                                            onClick={() =>
-                                              navigate(`/event/${event.id}`)
-                                            }
+                                            onClick={() => {
+                                              // Store event ID in localStorage
+                                              localStorage.setItem('viewEventId', event.id);
+                                              // Navigate to clean URL
+                                              navigate('/event');
+                                            }}
                                             onMouseEnter={(e) => {
                                               e.target.style.background = "#da251c";
                                               e.target.style.color = "#fff";
