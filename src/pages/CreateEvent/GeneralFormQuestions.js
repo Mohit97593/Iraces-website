@@ -1389,9 +1389,10 @@ const GeneralFormQuestions = ({
       formData.append("range_end_date", selectedQuestion.end_date || "");
 
       // Email domain / specific domain
+      // Yes (enabled) = 2, No (disabled) = 1
       formData.append(
         "specific_domain",
-        selectedQuestion.email_validation_enabled ? "1" : "0"
+        selectedQuestion.email_validation_enabled ? "2" : "1"
       );
       formData.append("domain_name", selectedQuestion.email_domain || "");
 

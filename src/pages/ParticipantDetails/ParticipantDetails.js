@@ -1745,6 +1745,26 @@ export default function ParticipantDetails() {
                 lengthError = `Maximum ${maxLength} characters allowed`;
               }
 
+              // Check for email domain validation (specific_domain === 2)
+              let domainError = "";
+              if (question.question_form_type === 'email' &&
+                question.specific_domain === 2 &&
+                question.domain_name) {
+                const emailValue = currentValue.trim();
+                if (emailValue) {
+                  // Extract domain from email (part after @)
+                  const emailParts = emailValue.split('@');
+                  if (emailParts.length === 2) {
+                    const emailDomain = emailParts[1].toLowerCase();
+                    const expectedDomain = question.domain_name.trim().toLowerCase();
+                    if (emailDomain !== expectedDomain) {
+                      domainError = `Email must be from ${question.domain_name} domain`;
+                    }
+                  }
+                }
+              }
+
+
               // For date fields, check if date_range is enabled and parse range dates
               let minDate = null;
               let maxDate = null;
@@ -1990,6 +2010,7 @@ export default function ParticipantDetails() {
                   }
 
                   {lengthError && <span style={{ color: 'red', fontSize: '12px', display: 'block', marginTop: '4px' }}>{lengthError}</span>}
+                  {domainError && <span style={{ color: 'red', fontSize: '12px', display: 'block', marginTop: '4px' }}>{domainError}</span>}
                   {
                     formErrors[`participant_${participantIndex}_${fieldName}`] && (
                       <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
@@ -2947,6 +2968,30 @@ export default function ParticipantDetails() {
               errors[errorKey] = `${q.question_label} must be exactly 10 digits for Participant ${participantIndex + 1}`;
               hasErrors = true;
               console.log(`❌ Invalid mobile number: ${q.question_label} for Participant ${participantIndex + 1}`);
+            }
+          }
+
+          // Validate email domain if specific_domain is enabled (specific_domain === 2)
+          if (q.question_form_type === 'email' &&
+            q.specific_domain === 2 &&
+            q.domain_name &&
+            fieldValue) {
+            const emailValue = String(fieldValue).trim();
+            if (emailValue) {
+              // Extract domain from email (part after @)
+              const emailParts = emailValue.split('@');
+              if (emailParts.length === 2) {
+                const emailDomain = emailParts[1].toLowerCase();
+                const expectedDomain = q.domain_name.trim().toLowerCase();
+                if (emailDomain !== expectedDomain) {
+                  const errorKey = `participant_${participantIndex}_${fieldName}_domain`;
+                  errors[errorKey] = `${q.question_label} must be from ${q.domain_name} domain for Participant ${participantIndex + 1}`;
+                  hasErrors = true;
+                  console.log(`❌ Invalid email domain: ${q.question_label} for Participant ${participantIndex + 1} (expected: ${expectedDomain}, got: ${emailDomain})`);
+                  alert(`Email for "${q.question_label}" must be from ${q.domain_name} domain`);
+                  return false;
+                }
+              }
             }
           }
 

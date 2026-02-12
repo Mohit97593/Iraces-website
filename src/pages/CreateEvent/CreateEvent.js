@@ -69,12 +69,28 @@ export default function CreateEvent() {
     try {
       const params = new URLSearchParams(window.location.search || "");
       const s = params.get("step");
-      // If event_id present in URL, store it and fetch details
-      const eid = params.get("event_id");
-      // If no event_id in URL, clear any stale per-event sessionStorage so
+
+      // Check for event_id in localStorage first (from MyEvents edit button)
+      let eid = localStorage.getItem('editEventId');
+
+      // If not in localStorage, check URL query parameter (legacy support)
+      if (!eid) {
+        eid = params.get("event_id");
+      }
+
+      // Clean up URL if it has query parameters
+      if (window.location.search) {
+        // Remove query parameters from URL without reloading page
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+
+      // If no event_id in URL or localStorage, clear any stale per-event sessionStorage so
       // a "new event" flow is not treated as editing an old event.
       if (!eid) {
         try {
+          // Clear editEventId from localStorage for new event
+          localStorage.removeItem('editEventId');
           sessionStorage.removeItem("event_id");
           sessionStorage.removeItem("eventName");
           sessionStorage.removeItem("eventSchedulingFormData");
@@ -95,6 +111,9 @@ export default function CreateEvent() {
       }
 
       if (eid) {
+        // Clear editEventId from localStorage after reading it
+        localStorage.removeItem('editEventId');
+
         // If switching to edit a different event, clear per-event sessionStorage
         try {
           const prev = sessionStorage.getItem("event_id");

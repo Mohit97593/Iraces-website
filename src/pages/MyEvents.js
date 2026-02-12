@@ -458,9 +458,11 @@ export default function MyEvents() {
                             <button
                               className="event-edit-btn"
                               aria-label="Edit event"
-                              onClick={() =>
-                                navigate(`/create-event?event_id=${event.id}`)
-                              }
+                              onClick={() => {
+                                // Store event_id in localStorage instead of URL
+                                localStorage.setItem('editEventId', event.id);
+                                navigate('/create-event');
+                              }}
                             >
                               <i className="fas fa-pen"></i>
                             </button>
