@@ -39,6 +39,7 @@ export default function HeroCarousel() {
 
   // Location-based events state
   const [trendingEvents, setTrendingEvents] = useState([]);
+  const [suggestionEvents, setSuggestionEvents] = useState([]); // Suggestions from other cities
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [cityName, setCityName] = useState("Bengaluru");
   const [selectedCityId, setSelectedCityId] = useState(null);
@@ -275,71 +276,93 @@ export default function HeroCarousel() {
               // Check if registration is still open (registration_end_time is in the future)
               const isRegistrationOpen = event.registration_end_time * 1000 > Date.now();
 
-              // Only show active events (status = 1 or "1" or "active"), exclude closed events
-              const isActive = event.status === 1 || event.status === "1" || event.status === "active";
+              // More lenient - show all events that are NOT explicitly closed AND have open registration
+              const isNotClosed = event.status !== 0 &&
+                event.status !== "0" &&
+                event.status !== "closed" &&
+                event.status !== "Closed";
 
-              return isLocalEvent && isRegistrationOpen && isActive;
+              // Only show upcoming events (start_time is in the future)
+              const isUpcoming = event.start_time * 1000 > Date.now();
+
+              // Debug logging
+              if (event.city_name && event.city_name.toLowerCase() === currentCityName.toLowerCase()) {
+                console.log(`🔍 Event: ${event.name}, City Match: ${isLocalEvent}, Reg Open: ${isRegistrationOpen}, Not Closed: ${isNotClosed}, Upcoming: ${isUpcoming}, Status: ${event.status}`);
+              }
+
+              return isLocalEvent && isRegistrationOpen && isNotClosed && isUpcoming;
             }
           );
 
-          // Sort by creation date (latest first) to show trending events
+          // Sort by start_time (nearest first) to show upcoming nearest events
           const sortedLocalEvents = localEvents.sort((a, b) => {
-            const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
-            const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
-            return dateB - dateA; // Descending order (newest first)
+            const dateA = a.start_time ? new Date(a.start_time * 1000) : new Date(0);
+            const dateB = b.start_time ? new Date(b.start_time * 1000) : new Date(0);
+            return dateA - dateB; // Ascending order (nearest first)
           });
 
-          // If no local events, show all active events from other cities as suggestions
+          // Always fetch suggestion events from all cities
+          console.log("🔍 Fetching suggestion events from all cities");
+          const allActiveEvents = data.data.eventData.filter(
+            (event) => {
+              // Check if registration is still open (registration_end_time is in the future)
+              const isRegistrationOpen = event.registration_end_time * 1000 > Date.now();
+
+              // More lenient - show all events that are NOT explicitly closed AND have open registration
+              const isNotClosed = event.status !== 0 &&
+                event.status !== "0" &&
+                event.status !== "closed" &&
+                event.status !== "Closed";
+
+              // For suggestions, show all events with open registration (don't filter by upcoming)
+              // This ensures we have suggestions even when no upcoming events exist
+              return isRegistrationOpen && isNotClosed;
+            }
+          );
+
+          console.log("✅ Suggestion events found:", allActiveEvents.length);
+
+          // Sort suggestions by start_time (nearest first)
+          const sortedSuggestions = allActiveEvents.sort((a, b) => {
+            const dateA = a.start_time ? new Date(a.start_time * 1000) : new Date(0);
+            const dateB = b.start_time ? new Date(b.start_time * 1000) : new Date(0);
+            return dateA - dateB; // Ascending order (nearest first)
+          });
+
+          // Set suggestion events (always available)
+          setSuggestionEvents(sortedSuggestions);
+          console.log("📋 Suggestion events set:", sortedSuggestions.length, "events");
+
+          // Initialize like state for suggestion events
+          const suggestionLiked = {};
+          sortedSuggestions.forEach((ev) => {
+            suggestionLiked[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
+          });
+
+          // Check if we have local events
           if (sortedLocalEvents.length === 0) {
-            console.log("🔍 No local events, showing suggestions from all cities");
-            const allActiveEvents = data.data.eventData.filter(
-              (event) => {
-                // Check if registration is still open (registration_end_time is in the future)
-                const isRegistrationOpen = event.registration_end_time * 1000 > Date.now();
-
-                // More lenient - show all events that are NOT explicitly closed AND have open registration
-                const isNotClosed = event.status !== 0 &&
-                  event.status !== "0" &&
-                  event.status !== "closed" &&
-                  event.status !== "Closed";
-
-                return isRegistrationOpen && isNotClosed;
-              }
-            );
-
-            console.log("✅ Suggestion events found:", allActiveEvents.length);
-
-            // Sort suggestions by creation date (latest first)
-            const sortedSuggestions = allActiveEvents.sort((a, b) => {
-              const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
-              const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
-              return dateB - dateA;
-            });
-
-            setTrendingEvents(sortedSuggestions);
-            setHasLocalEvents(false); // No local events, showing suggestions
-
-            // Initialize like state for suggestion events
-            const initialLiked = {};
-            sortedSuggestions.forEach((ev) => {
-              initialLiked[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
-            });
-            setLikedEvents((prev) => ({ ...prev, ...initialLiked }));
+            // No local events found
+            console.log("❌ No local events found for", currentCityName);
+            setTrendingEvents([]);
+            setHasLocalEvents(false);
+            setLikedEvents((prev) => ({ ...prev, ...suggestionLiked }));
           } else {
-            // Show local events
+            // Show local events in trending
+            console.log("✅ Local events found:", sortedLocalEvents.length);
             setTrendingEvents(sortedLocalEvents);
             setHasLocalEvents(true);
 
             // Initialize like state for trending events
-            const initialLiked = {};
+            const trendingLiked = {};
             sortedLocalEvents.forEach((ev) => {
-              initialLiked[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
+              trendingLiked[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
             });
-            setLikedEvents((prev) => ({ ...prev, ...initialLiked }));
+            setLikedEvents((prev) => ({ ...prev, ...trendingLiked, ...suggestionLiked }));
           }
         } else {
           // No events at all
           setTrendingEvents([]);
+          setSuggestionEvents([]);
           setHasLocalEvents(false);
         }
 
@@ -972,7 +995,7 @@ export default function HeroCarousel() {
                   <span className="visually-hidden">Loading...</span>
                 </div>
               </div>
-            ) : trendingEvents.length === 0 ? (
+            ) : trendingEvents.length === 0 && suggestionEvents.length === 0 ? (
               <div className="text-center py-5">
                 <div style={{ marginBottom: "20px" }}>
                   <svg
@@ -1056,7 +1079,7 @@ export default function HeroCarousel() {
             ) : (
               <>
                 {/* Show "No local events" message if selected city has no events but API returns suggestions */}
-                {!hasLocalEvents && (
+                {!hasLocalEvents && suggestionEvents.length > 0 && (
                   <div className="text-center py-3 mb-3">
                     <div style={{ marginBottom: "12px" }}>
                       <svg
@@ -1184,10 +1207,11 @@ export default function HeroCarousel() {
                 >
                   <div className="carousel-inner">
                     {Array.from(
-                      { length: Math.ceil(trendingEvents.length / 4) },
+                      { length: Math.ceil((hasLocalEvents ? trendingEvents : suggestionEvents).length / 4) },
                       (_, slideIndex) => {
+                        const eventsToDisplay = hasLocalEvents ? trendingEvents : suggestionEvents;
                         const startIdx = slideIndex * 4;
-                        const slideEvents = trendingEvents.slice(
+                        const slideEvents = eventsToDisplay.slice(
                           startIdx,
                           startIdx + 4
                         );
@@ -1195,7 +1219,6 @@ export default function HeroCarousel() {
                           <div
                             className={`carousel-item ${slideIndex === 0 ? "active" : ""
                               }`}
-                            key={slideIndex}
                           >
                             <div className="row justify-content-center">
                               {slideEvents.map((event) => {
@@ -1430,10 +1453,10 @@ export default function HeroCarousel() {
                   </div>
 
                   {/* Carousel Indicators (Dots) */}
-                  {trendingEvents.length > 4 && (
+                  {(hasLocalEvents ? trendingEvents : suggestionEvents).length > 4 && (
                     <div className="carousel-indicators">
                       {Array.from(
-                        { length: Math.ceil(trendingEvents.length / 4) },
+                        { length: Math.ceil((hasLocalEvents ? trendingEvents : suggestionEvents).length / 4) },
                         (_, index) => (
                           <button
                             key={index}
