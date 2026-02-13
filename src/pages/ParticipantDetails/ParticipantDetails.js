@@ -956,61 +956,86 @@ export default function ParticipantDetails() {
               clearNestedPrices(question.id || question.general_form_id);
             }
 
-            // Track prices from question options (ONLY for select dropdowns, not radio or checkbox)
-            if (question && question.question_form_type === 'select') {
-
+            // Track prices from question options (Supporting select, radio, and checkbox)
+            if (question && ['select', 'radio', 'checkbox'].includes(question.question_form_type)) {
               // Parse question options
-              let options = [];
+              let rawOptions = [];
               try {
                 if (typeof question.question_form_option === 'string') {
-                  options = JSON.parse(question.question_form_option);
+                  rawOptions = JSON.parse(question.question_form_option);
                 } else if (Array.isArray(question.question_form_option)) {
-                  options = question.question_form_option;
+                  rawOptions = question.question_form_option;
                 }
               } catch (e) {
                 console.error('Error parsing question options:', e);
               }
 
-              console.log('🔍 Select dropdown changed:', {
-                participantIndex,
-                questionId: question.id,
-                questionLabel: question.question_label,
+              // Flatten options with comma-separated labels and prices
+              const flattenedOptions = [];
+              rawOptions.forEach(opt => {
+                const labelStr = opt.label || opt.name || "";
+                const priceStr = String(opt.price || "0");
+
+                const labels = labelStr.split(',').map(l => l.trim()).filter(l => l);
+                const prices = priceStr.split(',').map(p => p.trim()).filter(p => p);
+
+                labels.forEach((lbl, idx) => {
+                  flattenedOptions.push({
+                    ...opt,
+                    label: lbl,
+                    price: parseFloat(prices[idx] || prices[0] || 0) // Fallback to first price if fewer prices than labels
+                  });
+                });
+              });
+
+              console.log('🔍 Price tracking for:', {
+                type: question.question_form_type,
+                name,
                 value,
-                options
+                flattenedOptions
               });
 
               // Update question prices based on selection
               setQuestionPrices(prevPrices => {
                 const newPrices = { ...prevPrices };
 
-                // Remove all previous prices for this question
+                // Remove all previous prices for this question/participant index
                 Object.keys(newPrices).forEach(key => {
                   if (key.startsWith(`${participantIndex}_${question.id}_`)) {
                     delete newPrices[key];
                   }
                 });
 
-                // Add new price if selected option has price
-                if (value) {
-                  const selectedOption = options.find(opt =>
-                    opt.label === value || opt.id == value
-                  );
-
-                  console.log('🔍 Selected option:', selectedOption);
-
-                  if (selectedOption && selectedOption.price) {
-                    const priceKey = `${participantIndex}_${question.id}_${selectedOption.id || selectedOption.label}`;
-                    newPrices[priceKey] = {
-                      label: selectedOption.label,
-                      price: parseFloat(selectedOption.price),
-                      questionLabel: question.question_label
-                    };
-
-                    console.log('✅ Price added:', newPrices[priceKey]);
+                // Add new prices based on current selection(s)
+                if (question.question_form_type === 'checkbox') {
+                  const values = Array.isArray(value) ? value : [];
+                  values.forEach(v => {
+                    const matchedOpt = flattenedOptions.find(opt => opt.label === v);
+                    if (matchedOpt && matchedOpt.price > 0) {
+                      const priceKey = `${participantIndex}_${question.id}_${matchedOpt.label}`;
+                      newPrices[priceKey] = {
+                        label: matchedOpt.label,
+                        price: matchedOpt.price,
+                        questionLabel: question.question_label
+                      };
+                    }
+                  });
+                } else {
+                  // select or radio
+                  if (value) {
+                    const matchedOpt = flattenedOptions.find(opt => opt.label === value || opt.id == value);
+                    if (matchedOpt && matchedOpt.price > 0) {
+                      const priceKey = `${participantIndex}_${question.id}_${matchedOpt.label || matchedOpt.id}`;
+                      newPrices[priceKey] = {
+                        label: matchedOpt.label,
+                        price: matchedOpt.price,
+                        questionLabel: question.question_label
+                      };
+                    }
                   }
                 }
 
-                console.log('📊 Updated questionPrices:', newPrices);
+                console.log('📊 Updated item prices in state:', newPrices);
                 return newPrices;
               });
             }
@@ -2124,18 +2149,22 @@ export default function ParticipantDetails() {
               );
             }
             else if (question.question_form_type === 'radio') {
-              // Process options to split comma-separated labels
+              // Process options to split comma-separated labels and prices
               const processedOptions = [];
               options.forEach(opt => {
                 const label = opt.label || opt.name || opt;
+                const priceStr = String(opt.price || "0");
+
                 // Split by comma and trim whitespace
                 const labels = label.split(',').map(l => l.trim()).filter(l => l);
+                const prices = priceStr.split(',').map(p => p.trim()).filter(p => p);
 
                 // Create separate option for each label
-                labels.forEach(individualLabel => {
+                labels.forEach((individualLabel, idx) => {
                   processedOptions.push({
                     ...opt,
                     label: individualLabel,
+                    price: prices[idx] || prices[0] || "0", // Map index-based price or fallback to first
                     originalLabel: label,
                     child_question_id: opt.child_question_id || question.child_question_ids
                   });
@@ -2193,18 +2222,22 @@ export default function ParticipantDetails() {
               );
             }
             else if (question.question_form_type === 'checkbox') {
-              // Process options to split comma-separated labels
+              // Process options to split comma-separated labels and prices
               const processedOptions = [];
               options.forEach(opt => {
                 const label = opt.label || opt.name || opt;
+                const priceStr = String(opt.price || "0");
+
                 // Split by comma and trim whitespace
                 const labels = label.split(',').map(l => l.trim()).filter(l => l);
+                const prices = priceStr.split(',').map(p => p.trim()).filter(p => p);
 
                 // Create separate option for each label
-                labels.forEach(individualLabel => {
+                labels.forEach((individualLabel, idx) => {
                   processedOptions.push({
                     ...opt,
                     label: individualLabel,
+                    price: prices[idx] || prices[0] || "0",
                     originalLabel: label,
                     // For checkbox, child_question_id comes from question level, not option level
                     child_question_id: opt.child_question_id || question.child_question_ids
@@ -2290,19 +2323,23 @@ export default function ParticipantDetails() {
                 }));
               }
 
-              // Process options to split comma-separated labels (for regular select, not for countries/states/cities)
+              // Process options to split comma-separated labels and prices (for regular select)
               if (question.question_form_type === 'select') {
                 const processedOptions = [];
                 displayOptions.forEach(opt => {
                   const label = opt.label || opt.name || opt;
+                  const priceStr = String(opt.price || "0");
+
                   // Split by comma and trim whitespace
                   const labels = label.split(',').map(l => l.trim()).filter(l => l);
+                  const prices = priceStr.split(',').map(p => p.trim()).filter(p => p);
 
                   // Create separate option for each label
-                  labels.forEach(individualLabel => {
+                  labels.forEach((individualLabel, idx) => {
                     processedOptions.push({
                       ...opt,
                       label: individualLabel,
+                      price: prices[idx] || prices[0] || "0",
                       originalLabel: label,
                       child_question_id: opt.child_question_id || question.child_question_ids
                     });
