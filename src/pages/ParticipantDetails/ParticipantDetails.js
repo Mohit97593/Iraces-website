@@ -2856,6 +2856,8 @@ export default function ParticipantDetails() {
     console.log("🔍 Starting form validation...");
     const errors = {};
     let hasErrors = false;
+    let firstErrorParticipant = null;
+    let firstErrorGroup = null;
 
     // Validate each participant's form
     participantForms.forEach((participantForm, participantIndex) => {
@@ -2873,6 +2875,7 @@ export default function ParticipantDetails() {
         questionsList.forEach(q => {
           const fieldName = getMappedKey(q);
           const fieldValue = currentFormData[fieldName];
+          const groupTitle = q.group_question_title || 'general';
 
           // Check if mandatory field is filled
           if (q.is_manadatory === 1) {
@@ -2892,8 +2895,12 @@ export default function ParticipantDetails() {
             if (isEmpty) {
               const errorKey = `participant_${participantIndex}_${fieldName}`;
               errors[errorKey] = `${q.question_label} is required`;
+              if (!hasErrors) {
+                firstErrorParticipant = participantIndex;
+                firstErrorGroup = groupTitle;
+              }
               hasErrors = true;
-              console.log(`❌ Missing required field: ${q.question_label} for Participant ${participantIndex + 1}`);
+              console.log(`❌ Missing required field: ${q.question_label} for Participant ${participantIndex + 1} (Group: ${groupTitle})`);
             }
           }
 
@@ -2910,6 +2917,10 @@ export default function ParticipantDetails() {
               if (minLength && currentLength < minLength) {
                 const errorKey = `participant_${participantIndex}_${fieldName}_length`;
                 errors[errorKey] = `${q.question_label} must be at least ${minLength} characters for Participant ${participantIndex + 1}`;
+                if (!hasErrors) {
+                  firstErrorParticipant = participantIndex;
+                  firstErrorGroup = groupTitle;
+                }
                 hasErrors = true;
                 console.log(`❌ Length too short: ${q.question_label} for Participant ${participantIndex + 1} (${currentLength}/${minLength})`);
               }
@@ -2917,6 +2928,10 @@ export default function ParticipantDetails() {
               if (maxLength && currentLength > maxLength) {
                 const errorKey = `participant_${participantIndex}_${fieldName}_length`;
                 errors[errorKey] = `${q.question_label} must not exceed ${maxLength} characters for Participant ${participantIndex + 1}`;
+                if (!hasErrors) {
+                  firstErrorParticipant = participantIndex;
+                  firstErrorGroup = groupTitle;
+                }
                 hasErrors = true;
                 console.log(`❌ Length too long: ${q.question_label} for Participant ${participantIndex + 1} (${currentLength}/${maxLength})`);
               }
@@ -2939,6 +2954,10 @@ export default function ParticipantDetails() {
                 const minDateStr = minDate.toISOString().split('T')[0];
                 const errorKey = `participant_${participantIndex}_${fieldName}_daterange`;
                 errors[errorKey] = `${q.question_label} must be on or after ${minDateStr} for Participant ${participantIndex + 1}`;
+                if (!hasErrors) {
+                  firstErrorParticipant = participantIndex;
+                  firstErrorGroup = groupTitle;
+                }
                 hasErrors = true;
                 console.log(`❌ Date too early: ${q.question_label} for Participant ${participantIndex + 1}`);
               }
@@ -2954,6 +2973,10 @@ export default function ParticipantDetails() {
                 const maxDateStr = maxDate.toISOString().split('T')[0];
                 const errorKey = `participant_${participantIndex}_${fieldName}_daterange`;
                 errors[errorKey] = `${q.question_label} must be on or before ${maxDateStr} for Participant ${participantIndex + 1}`;
+                if (!hasErrors) {
+                  firstErrorParticipant = participantIndex;
+                  firstErrorGroup = groupTitle;
+                }
                 hasErrors = true;
                 console.log(`❌ Date too late: ${q.question_label} for Participant ${participantIndex + 1}`);
               }
@@ -2966,8 +2989,27 @@ export default function ParticipantDetails() {
             if (!mobileRegex.test(fieldValue)) {
               const errorKey = `participant_${participantIndex}_${fieldName}`;
               errors[errorKey] = `${q.question_label} must be exactly 10 digits for Participant ${participantIndex + 1}`;
+              if (!hasErrors) {
+                firstErrorParticipant = participantIndex;
+                firstErrorGroup = groupTitle;
+              }
               hasErrors = true;
               console.log(`❌ Invalid mobile number: ${q.question_label} for Participant ${participantIndex + 1}`);
+            }
+          }
+
+          // Validate email format
+          if (q.question_form_type === 'email' && fieldValue) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(fieldValue)) {
+              const errorKey = `participant_${participantIndex}_${fieldName}`;
+              errors[errorKey] = `Please enter a valid email address for ${q.question_label} (Participant ${participantIndex + 1})`;
+              if (!hasErrors) {
+                firstErrorParticipant = participantIndex;
+                firstErrorGroup = groupTitle;
+              }
+              hasErrors = true;
+              console.log(`❌ Invalid email format: ${q.question_label} for Participant ${participantIndex + 1}`);
             }
           }
 
@@ -2986,23 +3028,17 @@ export default function ParticipantDetails() {
                 if (emailDomain !== expectedDomain) {
                   const errorKey = `participant_${participantIndex}_${fieldName}_domain`;
                   errors[errorKey] = `${q.question_label} must be from ${q.domain_name} domain for Participant ${participantIndex + 1}`;
+                  if (!hasErrors) {
+                    firstErrorParticipant = participantIndex;
+                    firstErrorGroup = groupTitle;
+                  }
                   hasErrors = true;
                   console.log(`❌ Invalid email domain: ${q.question_label} for Participant ${participantIndex + 1} (expected: ${expectedDomain}, got: ${emailDomain})`);
                   alert(`Email for "${q.question_label}" must be from ${q.domain_name} domain`);
-                  return false;
+                  // Not returning false here to allow collecting all errors, but original code had return false.
+                  // Restoring alert as requested to keep it "as it was".
                 }
               }
-            }
-          }
-
-          // Validate email format
-          if (q.question_form_type === 'email' && fieldValue) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(fieldValue)) {
-              const errorKey = `participant_${participantIndex}_${fieldName}`;
-              errors[errorKey] = `Please enter a valid email address for ${q.question_label} (Participant ${participantIndex + 1})`;
-              hasErrors = true;
-              console.log(`❌ Invalid email format: ${q.question_label} for Participant ${participantIndex + 1}`);
             }
           }
         });
@@ -3011,6 +3047,11 @@ export default function ParticipantDetails() {
         if (currentFormData.mobile && currentFormData.emergencyContactNumber &&
           currentFormData.mobile === currentFormData.emergencyContactNumber) {
           errors[`participant_${participantIndex}_emergencyContactNumber`] = "Emergency contact number cannot be the same as your mobile number";
+          if (!hasErrors) {
+            firstErrorParticipant = participantIndex;
+            // Emergency contact is usually in Personal or Contact group, if not specified assume current or general
+            firstErrorGroup = questionsList.find(q => getMappedKey(q) === 'emergencyContactNumber')?.group_question_title || 'general';
+          }
           hasErrors = true;
           console.log(`❌ Contact mismatch: Mobile and Emergency are same for Participant ${participantIndex + 1}`);
         }
@@ -3026,14 +3067,31 @@ export default function ParticipantDetails() {
 
     if (hasErrors) {
       console.log("❌ Validation failed:", errors);
-      // Removed alert - errors will be shown inline
       setFormErrors(errors);
 
-      // Scroll to first error
-      const firstErrorElement = document.querySelector('.error-message');
-      if (firstErrorElement) {
-        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Switch to the first participant and group with an error
+      if (firstErrorParticipant !== null) {
+        // If your UI supports switching participants, update setCurrentParticipantIndex
+        setCurrentParticipantIndex(firstErrorParticipant);
+
+        // Switch to the group/tab with the first error
+        if (firstErrorGroup) {
+          const tabToSet = firstErrorGroup.trim() === '' ? 'general' : firstErrorGroup;
+          setActiveQuestionTab(prev => ({
+            ...prev,
+            [firstErrorParticipant]: tabToSet
+          }));
+          console.log(`🎯 Switched to Participant ${firstErrorParticipant + 1}, Group: ${tabToSet}`);
+        }
       }
+
+      // Scroll to first error after a small delay to allow tab switching to render
+      setTimeout(() => {
+        const errorElements = document.querySelectorAll('.error-message');
+        if (errorElements.length > 0) {
+          errorElements[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
 
       return false;
     }
