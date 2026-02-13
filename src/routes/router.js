@@ -192,6 +192,15 @@ const AppRouter = createBrowserRouter([
     errorElement: <NotFound />,
   },
   {
+    path: "/event",
+    element: (
+      <ErrorBoundary>
+        <EventDetails />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
     path: "/event/:eventId",
     element: (
       <ErrorBoundary>

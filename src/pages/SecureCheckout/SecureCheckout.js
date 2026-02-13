@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
 import { useAuth } from "../../contexts/AuthContext";
 import { authAPI } from "../../services/authAPI";
+import RegistrationImg from "../../assets/image/registraction.png";
 import "./SecureCheckout.css";
 
 export default function SecureCheckout() {
@@ -1273,7 +1274,7 @@ export default function SecureCheckout() {
                 <>
                   <div className="summary-header">
                     <img
-                      src={require("../../assets/image/registraction.png")}
+                      src={RegistrationImg}
                       alt="No Registration"
                       className="summary-icon"
                     />

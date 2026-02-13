@@ -2,6 +2,7 @@
   "name": "raceswebsite",
   "version": "0.1.0",
   "private": true,
+  "homepage": "/",
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^36.0.1",
     "@ckeditor/ckeditor5-react": "^5.1.0",

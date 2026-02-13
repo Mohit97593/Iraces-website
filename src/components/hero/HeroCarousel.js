@@ -12,6 +12,10 @@ import Avatar2 from "../../assets/image/avatar2.jpg";
 import Avatar3 from "../../assets/image/avatar3.jpg";
 import Avatar4 from "../../assets/image/avatar4.jpg";
 import logo from "../../assets/image/09cbb1e84b3bf91549ba83bb53aceeb0.jpg";
+import Run1 from "../../assets/image/run1.jpg";
+import Run2 from "../../assets/image/run2.jpg";
+import defaultBanner from "../../assets/image/09cbb1e84b3bf91549ba83bb53aceeb0.jpg";
+import youCanRunBanner from "../../assets/image/youcanrun-banner.png";
 import EventsPanel from "../EventsPanel/EventsPanel";
 import TrainingPanel from "../TrainingPanel/TrainingPanel";
 import WhyRunmatePanel from "../RunmatePanel/WhyRunmatePanel";
@@ -924,7 +928,7 @@ export default function HeroCarousel() {
             <div className="col-lg-3 col-md-6 mb-4">
               <div className="feature-image-wrap">
                 <img
-                  src={require("../../assets/image/run1.jpg")}
+                  src={Run1}
                   alt="run1"
                   className="feature-image rounded-xl"
                 />
@@ -937,7 +941,7 @@ export default function HeroCarousel() {
             <div className="col-lg-4 col-md-6 mb-4 d-flex justify-content-center">
               <div className="feature-image-wrap center-card">
                 <img
-                  src={require("../../assets/image/run2.jpg")}
+                  src={Run2}
                   alt="run2"
                   className="feature-image tall rounded-xl"
                 />
@@ -1256,7 +1260,7 @@ export default function HeroCarousel() {
                                         <img
                                           src={
                                             event.banner_image ||
-                                            require("../../assets/image/09cbb1e84b3bf91549ba83bb53aceeb0.jpg")
+                                            defaultBanner
                                           }
                                           alt={event.name}
                                           className="event-card-img"
@@ -1497,7 +1501,7 @@ export default function HeroCarousel() {
                   onClick={() => handleDistanceClick("5 Km")}
                 >
                   <img
-                    src={require("../../assets/image/run1.jpg")}
+                    src={Run1}
                     alt="5 Km"
                     className="distance-card-img"
                   />
@@ -1512,7 +1516,7 @@ export default function HeroCarousel() {
                   onClick={() => handleDistanceClick("10K Run")}
                 >
                   <img
-                    src={require("../../assets/image/run2.jpg")}
+                    src={Run2}
                     alt="10K Run"
                     className="distance-card-img"
                   />
@@ -1527,7 +1531,7 @@ export default function HeroCarousel() {
                   onClick={() => handleDistanceClick("Half Marathon")}
                 >
                   <img
-                    src={require("../../assets/image/run1.jpg")}
+                    src={Run1}
                     alt="Half Marathon"
                     className="distance-card-img"
                   />
@@ -1542,7 +1546,7 @@ export default function HeroCarousel() {
                   onClick={() => handleDistanceClick("Marathon")}
                 >
                   <img
-                    src={require("../../assets/image/run2.jpg")}
+                    src={Run2}
                     alt="Marathon"
                     className="distance-card-img"
                   />
@@ -1557,7 +1561,7 @@ export default function HeroCarousel() {
                   onClick={() => handleDistanceClick("Ultra Run")}
                 >
                   <img
-                    src={require("../../assets/image/run1.jpg")}
+                    src={Run1}
                     alt="Ultra Run"
                     className="distance-card-img"
                   />
@@ -1636,7 +1640,7 @@ export default function HeroCarousel() {
         {/* <FAQPanel /> */}
 
         <YouCanRunBanner
-          logoSrc={require("../../assets/image/youcanrun-banner.png")}
+          logoSrc={youCanRunBanner}
         />
       </section>
 

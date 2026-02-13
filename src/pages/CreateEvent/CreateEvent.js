@@ -15,6 +15,7 @@ import DiscountCoupons from "./DiscountCoupons";
 import CommunicationsStep from "./CommunicationsStep";
 import FAQsStep from "./FAQsStep";
 import Integrations from "./Integrations";
+import eventViewImg from "../../assets/image/event-view.jpg";
 
 export default function CreateEvent() {
   const navigate = useNavigate();
@@ -2092,7 +2093,7 @@ export default function CreateEvent() {
                   <img
                     src={
                       bannerImageUrl ||
-                      require("../../assets/image/event-view.jpg")
+                      eventViewImg
                     }
                     alt="Event Banner"
                     style={{

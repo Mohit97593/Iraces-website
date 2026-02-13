@@ -5,6 +5,7 @@ import Footer from "../../components/Footer/Footer";
 import { authAPI } from "../../services/authAPI";
 import "./OrganiserPublicProfile.css";
 import "../../components/hero/Hero.css";
+import defaultBanner from "../../assets/image/09cbb1e84b3bf91549ba83bb53aceeb0.jpg";
 
 export default function OrganiserPublicProfile() {
     const { organiserId, organiserName: organiserNameParam } = useParams();
@@ -353,7 +354,7 @@ export default function OrganiserPublicProfile() {
                                                 <img
                                                     src={
                                                         event.banner_image ||
-                                                        require("../../assets/image/09cbb1e84b3bf91549ba83bb53aceeb0.jpg")
+                                                        defaultBanner
                                                     }
                                                     alt={event.name}
                                                     className="event-card-img1"
@@ -458,7 +459,7 @@ export default function OrganiserPublicProfile() {
                                                 <img
                                                     src={
                                                         event.banner_image ||
-                                                        require("../../assets/image/09cbb1e84b3bf91549ba83bb53aceeb0.jpg")
+                                                        defaultBanner
                                                     }
                                                     alt={event.name}
                                                     className="event-card-img1"
