@@ -1175,6 +1175,69 @@ export default function ParticipantDetails() {
     return 0;
   };
 
+  // Unified calculation function - UI aur Payment Gateway dono ke liye same amount
+  const calculateFinalAmount = () => {
+    // Step 1: Calculate subtotal with all fees and taxes
+    const subtotal = selectedTickets.reduce((sum, ticket) => {
+      // Early bird discount apply karo
+      let effectivePrice = parseFloat(ticket.ticket_price);
+
+      if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
+        const discountValue = parseFloat(ticket.discount_value || 0);
+        if (ticket.discount === 1) {
+          // Percentage discount
+          effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+        } else {
+          // Amount discount
+          effectivePrice = effectivePrice - discountValue;
+        }
+      }
+
+      const baseAmount = effectivePrice * parseInt(ticket.quantity);
+      const calcDetails = ticket.ticket_calculation_details || {};
+
+      // Check if GST enabled hai
+      const isGSTEnabled = calcDetails.collect_gst === "1" || calcDetails.collect_gst === 1;
+
+      // Platform fees (GST handling ke saath)
+      const convenienceFeeWithGST = parseFloat(calcDetails.convenience_fee_amount) || 0;
+      const convenienceFeeBase = !isGSTEnabled && convenienceFeeWithGST > 0
+        ? Math.round((convenienceFeeWithGST / 1.18) * 100) / 100
+        : convenienceFeeWithGST;
+
+      const platformFeeBase = parseFloat(calcDetails.platform_fees_5_each) || 0;
+
+      const paymentGatewayWithGST = parseFloat(calcDetails['payment_gateway_1.85_buyer'] || calcDetails.payment_gateway_1_85_buyer) || 0;
+      const paymentGatewayChargesBase = !isGSTEnabled && paymentGatewayWithGST > 0
+        ? Math.round((paymentGatewayWithGST / 1.18) * 100) / 100
+        : paymentGatewayWithGST;
+
+      const totalPlatformFee = (convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase) * parseInt(ticket.quantity);
+
+      // GST components
+      const registrationGST = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
+      const convenienceFeeGST = parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0);
+      const platformFeeGST = parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0);
+      const paymentGatewayGST = parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0);
+
+      const totalTaxes = (registrationGST + convenienceFeeGST + platformFeeGST + paymentGatewayGST) * parseInt(ticket.quantity);
+
+      return sum + baseAmount + totalPlatformFee + totalTaxes;
+    }, 0);
+
+    // Step 2: Coupon discount calculate karo
+    const totalDiscountAmount = appliedCoupon ? selectedTickets.reduce((sum, t) => {
+      return sum + getTicketDiscount(t, appliedCoupon);
+    }, 0) : 0;
+
+    // Step 3: Question prices add karo
+    const questionTotal = Object.values(questionPrices).reduce((sum, p) => sum + p.price, 0);
+
+    // Final amount
+    const finalPrice = Math.max(0, subtotal - totalDiscountAmount + questionTotal);
+    return finalPrice.toFixed(2);
+  };
+
   // Handle Apply Coupon
   const handleApplyCoupon = async (couponCode, participantIndex, questionId) => {
     if (!couponCode || couponCode.trim() === '') {
@@ -2814,92 +2877,10 @@ export default function ParticipantDetails() {
     console.log("💳 Initiating payment with gateway:", targetGateway);
     setIsProceeding(true);
 
-    // Calculate subTotal
-    const subTotal = selectedTickets.reduce((sum, ticket) => {
-      // Calculate effective price based on early bird discount
-      let effectivePrice = parseFloat(ticket.ticket_price);
+    // Unified amount calculation - calculateFinalAmount() use karo
+    const finalAmount = parseFloat(calculateFinalAmount());
 
-      if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
-        const discountValue = parseFloat(ticket.discount_value || 0);
-        if (ticket.discount === 1) {
-          // Percentage discount
-          effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
-        } else {
-          // Amount discount
-          effectivePrice = effectivePrice - discountValue;
-        }
-      }
-
-      const baseAmount = effectivePrice * parseInt(ticket.quantity);
-      const calcDetails = ticket.ticket_calculation_details || {};
-
-      // Individual fee components - these are PER TICKET from backend
-      // We need to multiply by quantity to get total
-      const convenienceFeePerTicket = parseFloat(calcDetails.total_convenience_fees || (effectivePrice * 0.02)) || 0;
-      const platformFeePerTicket = parseFloat(calcDetails.platform_fees_5_each || 5) || 5;
-      const paymentGatewayPerTicket = parseFloat(calcDetails.payment_gateway_1_85_buyer || (effectivePrice * 0.0185)) || 0;
-
-      // Platform Fee total = (per ticket fees) * quantity
-      const totalPlatformFee = (convenienceFeePerTicket + platformFeePerTicket + paymentGatewayPerTicket) * parseInt(ticket.quantity);
-
-      // Extract individual GST components from ticket_calculation_details - these are PER TICKET
-      const registrationGSTPerTicket = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
-      const convenienceFeeGSTPerTicket = parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0);
-      const platformFeeGSTPerTicket = parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0);
-      const paymentGatewayGSTPerTicket = parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0);
-
-      // Calculate total taxes = (per ticket taxes) * quantity
-      const totalTaxes = (registrationGSTPerTicket + convenienceFeeGSTPerTicket + platformFeeGSTPerTicket + paymentGatewayGSTPerTicket) * parseInt(ticket.quantity);
-
-      // Sub Total = Base + Platform Fee + Total Taxes
-      return sum + baseAmount + totalPlatformFee + totalTaxes;
-    }, 0);
-
-    // Calculate coupon discount from appliedCoupon state (same logic as UI)
-    let couponDiscountAmount = 0;
-    if (appliedCoupon) {
-      // Calculate base price (without fees and taxes)
-      const basePrice = selectedTickets.reduce((sum, ticket) => {
-        let effectivePrice = parseFloat(ticket.ticket_price);
-
-        if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
-          const discountValue = parseFloat(ticket.discount_value || 0);
-          if (ticket.discount === 1) {
-            effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
-          } else {
-            effectivePrice = effectivePrice - discountValue;
-          }
-        }
-
-        const baseAmount = effectivePrice * parseInt(ticket.quantity);
-        return sum + baseAmount;
-      }, 0);
-
-      // discount_type: 1 = fixed amount, 2 = percentage
-      if (appliedCoupon.discount_type === 2) {
-        // Percentage discount on base price
-        const discountPercent = parseFloat(appliedCoupon.discount_value || 0);
-        couponDiscountAmount = (basePrice * discountPercent) / 100;
-      } else if (appliedCoupon.discount_type === 1) {
-        // Fixed amount discount
-        couponDiscountAmount = parseFloat(appliedCoupon.discount_value || 0);
-      }
-      // Ensure discount doesn't exceed base price
-      couponDiscountAmount = Math.min(couponDiscountAmount, basePrice);
-    }
-
-    // Calculate total from question prices (attendee selections)
-    const questionPricesTotal = Object.values(questionPrices).reduce((sum, priceData) => {
-      return sum + parseFloat(priceData.price || 0);
-    }, 0);
-
-    // Final amount after discount + question prices
-    const finalAmount = subTotal - couponDiscountAmount + questionPricesTotal;
-
-    console.log("💰 Subtotal (before discount):", subTotal.toFixed(2));
-    console.log("🎟️ Coupon discount:", couponDiscountAmount.toFixed(2));
-    console.log("🎯 Question prices total:", questionPricesTotal.toFixed(2));
-    console.log("💵 Final payment amount:", finalAmount.toFixed(2));
+    console.log("💵 Final payment amount (unified):", finalAmount.toFixed(2));
 
     // Show payment modal immediately
     setShowPaymentModal(true);
@@ -3731,71 +3712,7 @@ export default function ParticipantDetails() {
               <div className="summary-item total">
                 <span>Total Amount</span>
                 <span className="total-amount">
-                  ₹{(() => {
-                    const subtotal = selectedTickets.reduce((sum, ticket) => {
-                      // Calculate effective price based on early bird discount
-                      let effectivePrice = parseFloat(ticket.ticket_price);
-
-                      if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
-                        const discountValue = parseFloat(ticket.discount_value || 0);
-                        if (ticket.discount === 1) {
-                          // Percentage discount
-                          effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
-                        } else {
-                          // Amount discount
-                          effectivePrice = effectivePrice - discountValue;
-                        }
-                      }
-
-                      const baseAmount = effectivePrice * parseInt(ticket.quantity);
-                      const calcDetails = ticket.ticket_calculation_details || {};
-
-                      // Individual fee components (base amounts only, without GST)
-                      // Check if GST is enabled
-                      const isGSTEnabled = calcDetails.collect_gst === "1" || calcDetails.collect_gst === 1;
-
-                      // IMPORTANT: When GST is ON, convenience_fee_amount and payment_gateway_1.85_buyer INCLUDE GST
-                      // When GST is OFF, they are already base amounts
-                      const convenienceFeeWithGST = parseFloat(calcDetails.convenience_fee_amount) || 0;
-                      const convenienceFeeBase = !isGSTEnabled && convenienceFeeWithGST > 0
-                        ? Math.round((convenienceFeeWithGST / 1.18) * 100) / 100
-                        : convenienceFeeWithGST;
-
-                      const platformFeeBase = parseFloat(calcDetails.platform_fees_5_each) || 0;
-
-                      const paymentGatewayWithGST = parseFloat(calcDetails['payment_gateway_1.85_buyer'] || calcDetails.payment_gateway_1_85_buyer) || 0;
-                      const paymentGatewayChargesBase = !isGSTEnabled && paymentGatewayWithGST > 0
-                        ? Math.round((paymentGatewayWithGST / 1.18) * 100) / 100
-                        : paymentGatewayWithGST;
-
-                      // Platform Fee = Convenience + Platform + Payment Gateway (base amounts only)
-                      // Multiply by quantity to get total for all tickets
-                      const totalPlatformFee = (convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase) * parseInt(ticket.quantity);
-
-                      // Extract individual GST components from ticket_calculation_details
-                      const registrationGST = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
-                      const convenienceFeeGST = parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0);
-                      const platformFeeGST = parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0);
-                      const paymentGatewayGST = parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0);
-
-                      // Calculate total taxes from individual components
-                      // Multiply by quantity to get total for all tickets
-                      const totalTaxes = (registrationGST + convenienceFeeGST + platformFeeGST + paymentGatewayGST) * parseInt(ticket.quantity);
-
-                      // Sub Total = Base + Platform Fee + Total Taxes
-                      return sum + baseAmount + totalPlatformFee + totalTaxes;
-                    }, 0);
-
-                    // Calculate final price: subtotal - total per-ticket discounts + question prices
-                    const totalDiscountAmount = appliedCoupon ? selectedTickets.reduce((sum, t) => {
-                      return sum + getTicketDiscount(t, appliedCoupon);
-                    }, 0) : 0;
-
-                    const questionTotal = Object.values(questionPrices).reduce((sum, p) => sum + p.price, 0);
-
-                    const finalPrice = Math.max(0, subtotal - totalDiscountAmount + questionTotal);
-                    return finalPrice.toFixed(2);
-                  })()}
+                  ₹{calculateFinalAmount()}
                 </span>
               </div>
 
