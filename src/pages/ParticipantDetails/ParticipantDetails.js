@@ -1598,8 +1598,13 @@ export default function ParticipantDetails() {
       }
     });
 
-    // Get all group names
-    const groupNames = Object.keys(groupedQuestions);
+    // Get all group names and sort them by group_question_order_index
+    const groupNames = Object.keys(groupedQuestions).sort((a, b) => {
+      // Get the order index from the first question in each group
+      const orderA = groupedQuestions[a][0]?.group_question_order_index || 0;
+      const orderB = groupedQuestions[b][0]?.group_question_order_index || 0;
+      return orderA - orderB;
+    });
     const hasGroups = groupNames.length > 0;
 
     // Set default active tab for this participant if not set
