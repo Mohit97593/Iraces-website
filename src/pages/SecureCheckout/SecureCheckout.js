@@ -59,6 +59,101 @@ export default function SecureCheckout() {
     window.scrollTo(0, 0);
   }, []);
 
+  // Recalculate discount whenever tickets or coupon changes
+  useEffect(() => {
+    if (appliedCoupon && selectedTickets.length > 0) {
+      const totalDiscount = selectedTickets.reduce((sum, t) => {
+        return sum + getTicketDiscount(t, appliedCoupon);
+      }, 0);
+      setDiscount(totalDiscount);
+    } else {
+      setDiscount(0);
+    }
+  }, [selectedTickets, appliedCoupon]);
+
+  // Helper to check if a ticket is eligible for the coupon
+
+  // Helper to check if a ticket is eligible for the coupon
+  const isTicketEligible = (ticketId, coupon) => {
+    if (!ticketId || !coupon) return false;
+
+    // apply_ticket: "1" = all tickets, "2" = selected tickets
+    const applyType = parseInt(coupon.apply_ticket);
+
+    if (applyType === 2) {
+      // 1. Check ticket_selected_data (JSON array of checked tickets)
+      if (coupon.ticket_selected_data) {
+        try {
+          const selectedData = typeof coupon.ticket_selected_data === 'string'
+            ? JSON.parse(coupon.ticket_selected_data)
+            : coupon.ticket_selected_data;
+
+          if (Array.isArray(selectedData)) {
+            const isSelected = selectedData.some(t =>
+              String(t.id) === String(ticketId) &&
+              (t.checked === true || t.checked === "true" || t.checked === 1 || t.checked === "1")
+            );
+            if (isSelected) return true;
+          }
+        } catch (e) {
+          console.error("Error parsing ticket_selected_data:", e);
+        }
+      }
+
+      // 2. Check ticket_details (Comma-separated string of eligible ticket IDs)
+      if (coupon.ticket_details) {
+        const eligibleIds = String(coupon.ticket_details).split(',').map(id => id.trim());
+        if (eligibleIds.includes(String(ticketId))) {
+          return true;
+        }
+      }
+
+      // If applyType is 2 and no matches found, it's not eligible
+      return false;
+    }
+
+    // Default to true for all other cases (including applyType 1 or undefined)
+    return true;
+  };
+
+  // Helper to calculate discount for a specific ticket
+  const getTicketDiscount = (ticket, coupon) => {
+    if (!isTicketEligible(ticket.id, coupon)) {
+      console.log(`🚫 getTicketDiscount: Ticket ${ticket.id} NOT eligible`);
+      return 0;
+    }
+
+    let ticketPrice = parseFloat(ticket.ticket_price);
+    // Apply early bird if active
+    if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
+      const ebDiscount = parseFloat(ticket.discount_value || 0);
+      if (ticket.discount === 1) { // percentage
+        ticketPrice = ticketPrice - (ticketPrice * ebDiscount / 100);
+      } else { // amount
+        ticketPrice = ticketPrice - ebDiscount;
+      }
+    }
+
+    const amtPerType = parseInt(coupon.discount_amt_per_type);
+    const totalTicketAmount = ticketPrice * ticket.quantity;
+
+    console.log(`💰 getTicketDiscount: Ticket Price: ${ticketPrice}, Total: ${totalTicketAmount}, Coupon Type: ${amtPerType}`);
+
+    if (amtPerType === 1) { // Fixed Amount
+      const discAmt = parseFloat(coupon.discount_amount || 0);
+      console.log(`✅ getTicketDiscount: Fixed Discount: ${discAmt}`);
+      return discAmt;
+    } else if (amtPerType === 2) { // Percentage
+      const percentage = parseFloat(coupon.discount_percentage || 0);
+      const discAmt = (totalTicketAmount * percentage) / 100;
+      console.log(`✅ getTicketDiscount: Percentage Discount: ${percentage}% -> ${discAmt}`);
+      return discAmt;
+    }
+
+    console.log("❌ getTicketDiscount: Unrecognized amtPerType", amtPerType);
+    return 0;
+  };
+
   // Fetch coupons when user applies a coupon code
   // This is now handled in handleApplyCoupon function
 
@@ -421,63 +516,26 @@ export default function SecureCheckout() {
       console.log("📥 getCoupons API response:", response);
 
       // Check if response contains valid coupon data
-      if (!response || !response.data || !response.data.Coupons || response.data.Coupons.length === 0) {
-        setCouponError("Invalid coupon code");
-        return;
-      }
-
       // Find matching coupon from response
       const matchingCoupon = response.data.Coupons.find(
-        coupon => coupon.discount_code?.toLowerCase() === couponCode.trim().toLowerCase()
+        coupon => (coupon.discount_code || coupon.coupon_code)?.toLowerCase() === couponCode.trim().toLowerCase()
       );
 
       if (!matchingCoupon) {
+        console.log("❌ handleApplyCoupon: No matching coupon found in response list");
         setCouponError("Invalid coupon code");
         return;
       }
 
-      // Calculate discount based on discount_amt_per_type
-      // Use discounted price if early bird is active
-      const totalPrice = selectedTickets.reduce((sum, t) => {
-        let effectivePrice = parseFloat(t.ticket_price);
+      console.log("🎟️ handleApplyCoupon: Found matching coupon:", matchingCoupon);
 
-        if (t.early_bird === 1 && t.show_early_bird === 1) {
-          const discountValue = parseFloat(t.discount_value || 0);
-          if (t.discount === 1) {
-            // Percentage discount
-            effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
-          } else {
-            // Amount discount
-            effectivePrice = effectivePrice - discountValue;
-          }
-        }
-
-        return sum + (effectivePrice * t.quantity);
+      // Calculate total discount across all eligible tickets using the global helper
+      const totalDiscount = selectedTickets.reduce((sum, t) => {
+        const tDisc = getTicketDiscount(t, matchingCoupon);
+        return sum + tDisc;
       }, 0);
-      let calculatedDiscount = 0;
 
-      console.log("🎟️ Coupon details:", matchingCoupon);
-      console.log("💵 Total price:", totalPrice);
-      console.log("🔢 discount_amt_per_type:", matchingCoupon.discount_amt_per_type, "(1=amount, 2=percentage)");
-
-      // discount_amt_per_type: "1" = fixed amount, "2" = percentage
-      const amtPerType = parseInt(matchingCoupon.discount_amt_per_type);
-
-      if (amtPerType === 1) {
-        // Fixed amount discount - use discount_amount field
-        calculatedDiscount = parseFloat(matchingCoupon.discount_amount || 0);
-        console.log("💰 Using fixed amount:", calculatedDiscount);
-      } else if (amtPerType === 2) {
-        // Percentage discount - use discount_percentage field
-        const percentage = parseFloat(matchingCoupon.discount_percentage || 0);
-        calculatedDiscount = (totalPrice * percentage) / 100;
-        console.log("📊 Using percentage:", percentage, "% → Discount:", calculatedDiscount);
-      }
-
-      // Ensure discount doesn't exceed total price
-      calculatedDiscount = Math.min(calculatedDiscount, totalPrice);
-
-      // Standardize coupon data for ParticipantDetails
+      // Standardize coupon data
       const standardizedCoupon = {
         ...matchingCoupon,
         coupon_code: matchingCoupon.discount_code || matchingCoupon.coupon_code,
@@ -488,18 +546,18 @@ export default function SecureCheckout() {
       };
 
       setAppliedCoupon(standardizedCoupon);
-      setDiscount(calculatedDiscount);
+      setDiscount(totalDiscount);
       setAvailableCoupons(response.data.Coupons); // Update available coupons from response
 
       // Store in localStorage for cross-page synchronization
       localStorage.setItem('couponCode', couponCode.trim());
       localStorage.setItem('appliedCoupon', JSON.stringify(standardizedCoupon));
-      localStorage.setItem('couponDiscount', calculatedDiscount.toString());
+      localStorage.setItem('couponDiscount', totalDiscount.toFixed(2));
 
-      console.log("✅ Coupon applied successfully", standardizedCoupon);
-      console.log("💰 Final discount amount:", calculatedDiscount);
+      console.log("✅ handleApplyCoupon: Coupon applied successfully", standardizedCoupon);
+      console.log("💰 handleApplyCoupon: Final discount amount:", totalDiscount);
     } catch (error) {
-      console.error("❌ Error applying coupon:", error);
+      console.error("❌ handleApplyCoupon: Error applying coupon:", error);
       setCouponError("Failed to apply coupon. Please try again.");
     } finally {
       setCouponLoading(false);
@@ -516,50 +574,12 @@ export default function SecureCheckout() {
   const handleApplyCouponFromCard = (coupon) => {
     setCouponError("");
 
-    // Calculate discount based on discount_amt_per_type
-    // Use discounted price if early bird is active
-    const totalPrice = selectedTickets.reduce((sum, t) => {
-      let effectivePrice = parseFloat(t.ticket_price);
-
-      if (t.early_bird === 1 && t.show_early_bird === 1) {
-        const discountValue = parseFloat(t.discount_value || 0);
-        if (t.discount === 1) {
-          // Percentage discount
-          effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
-        } else {
-          // Amount discount
-          effectivePrice = effectivePrice - discountValue;
-        }
-      }
-
-      return sum + (effectivePrice * t.quantity);
+    // Calculate total discount across all eligible tickets
+    const totalDiscount = selectedTickets.reduce((sum, t) => {
+      return sum + getTicketDiscount(t, coupon);
     }, 0);
-    let calculatedDiscount = 0;
 
-    console.log("🎟️ Coupon details:", coupon);
-    console.log("💵 Total price:", totalPrice);
-    console.log("🔢 discount_amt_per_type:", coupon.discount_amt_per_type, "(1=amount, 2=percentage)");
-    console.log("💰 discount_amount field:", coupon.discount_amount);
-    console.log("📊 discount_percentage field:", coupon.discount_percentage);
-
-    // discount_amt_per_type: "1" = fixed amount, "2" = percentage
-    const amtPerType = parseInt(coupon.discount_amt_per_type);
-
-    if (amtPerType === 1) {
-      // Fixed amount discount - use discount_amount field
-      calculatedDiscount = parseFloat(coupon.discount_amount || 0);
-      console.log("💰 Using fixed amount:", calculatedDiscount);
-    } else if (amtPerType === 2) {
-      // Percentage discount - use discount_percentage field
-      const percentage = parseFloat(coupon.discount_percentage || 0);
-      calculatedDiscount = (totalPrice * percentage) / 100;
-      console.log("📊 Using percentage:", percentage, "% → Discount:", calculatedDiscount);
-    }
-
-    // Ensure discount doesn't exceed total price
-    calculatedDiscount = Math.min(calculatedDiscount, totalPrice);
-
-    // Standardize coupon data for ParticipantDetails
+    // Standardize coupon data
     const standardizedCoupon = {
       ...coupon,
       coupon_code: coupon.discount_code || coupon.coupon_code,
@@ -570,16 +590,16 @@ export default function SecureCheckout() {
     };
 
     setAppliedCoupon(standardizedCoupon);
-    setDiscount(calculatedDiscount);
+    setDiscount(totalDiscount);
     setCouponCode(standardizedCoupon.coupon_code);
 
     // Store in localStorage for cross-page synchronization
     localStorage.setItem('couponCode', standardizedCoupon.coupon_code);
     localStorage.setItem('appliedCoupon', JSON.stringify(standardizedCoupon));
-    localStorage.setItem('couponDiscount', calculatedDiscount.toString());
+    localStorage.setItem('couponDiscount', totalDiscount.toFixed(2));
 
-    console.log("✅ Coupon applied successfully", standardizedCoupon);
-    console.log("💰 Final discount amount:", calculatedDiscount);
+    console.log("✅ Coupon applied from card successfully", standardizedCoupon);
+    console.log("💰 Final discount amount:", totalDiscount);
   };
 
   if (loading) {
@@ -981,13 +1001,23 @@ export default function SecureCheckout() {
                           }
                         }
 
+                        const ticketDiscount = appliedCoupon ? getTicketDiscount(ticket, appliedCoupon) : 0;
+
                         return (
-                          <div key={ticket.id} className="summary-row">
-                            <span>{ticket.ticket_name || ticket.display_ticket_name} ({ticket.quantity}x)</span>
-                            <span>
-                              ₹{(effectivePrice * ticket.quantity).toFixed(2)}
-                            </span>
-                          </div>
+                          <React.Fragment key={ticket.id}>
+                            <div className="summary-row">
+                              <span>{ticket.ticket_name || ticket.display_ticket_name} ({ticket.quantity}x)</span>
+                              <span>
+                                ₹{(effectivePrice * ticket.quantity).toFixed(2)}
+                              </span>
+                            </div>
+                            {ticketDiscount > 0 && (
+                              <div className="summary-row" style={{ color: '#28a745', fontSize: '0.9em', marginTop: '-8px', marginBottom: '8px', paddingLeft: '10px' }}>
+                                <span>↳ Discount ({appliedCoupon.discount_code})</span>
+                                <span>- ₹{ticketDiscount.toFixed(2)}</span>
+                              </div>
+                            )}
+                          </React.Fragment>
                         );
                       })}
 
@@ -1017,26 +1047,25 @@ export default function SecureCheckout() {
                         </span>
                       </div>
 
-                      {/* Discount row - only show if coupon applied */}
-                      {appliedCoupon && discount > 0 && (
-                        <div className="summary-row" style={{ color: '#28a745' }}>
-                          <span>
-                            Discount ({appliedCoupon.discount_code})
-                            <button
-                              onClick={handleRemoveCoupon}
-                              style={{
-                                marginLeft: '8px',
-                                background: 'none',
-                                border: 'none',
-                                color: '#dc3545',
-                                cursor: 'pointer',
-                                fontSize: '12px'
-                              }}
-                            >
-                              ✕ Remove
-                            </button>
-                          </span>
-                          <span>- ₹{discount.toFixed(2)}</span>
+                      {/* Remove global discount row as it's now per-ticket */}
+                      {appliedCoupon && (
+                        <div className="summary-row" style={{ justifyContent: 'flex-start' }}>
+                          <button
+                            onClick={handleRemoveCoupon}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#dc3545',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              padding: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <i className="fas fa-times"></i> Remove Coupon ({appliedCoupon.discount_code})
+                          </button>
                         </div>
                       )}
 
@@ -1063,7 +1092,13 @@ export default function SecureCheckout() {
 
                               return sum + (effectivePrice * t.quantity);
                             }, 0);
-                            const finalPrice = totalPrice - discount;
+
+                            // Calculate discount dynamically for total
+                            const currentDiscount = appliedCoupon ? selectedTickets.reduce((sum, t) => {
+                              return sum + getTicketDiscount(t, appliedCoupon);
+                            }, 0) : 0;
+
+                            const finalPrice = Math.max(0, totalPrice - currentDiscount);
                             const formattedPrice = finalPrice.toFixed(2);
                             const totalQuantity = selectedTickets.reduce((sum, t) => sum + t.quantity, 0);
                             localStorage.setItem("summaryTotalAmount", formattedPrice);

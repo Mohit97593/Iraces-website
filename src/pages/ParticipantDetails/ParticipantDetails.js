@@ -1069,20 +1069,85 @@ export default function ParticipantDetails() {
 
   // Helper function to calculate age from date of birth
   const calculateAge = (dob) => {
-    if (!dob) return '';
-
+    if (!dob) return null;
     const birthDate = new Date(dob);
     const today = new Date();
-
     let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-
-    // Adjust age if birthday hasn't occurred this year
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
+    return age;
+  };
 
-    return age.toString();
+  // Helper to check if a ticket is eligible for the coupon
+  const isTicketEligible = (ticketId, coupon) => {
+    if (!ticketId || !coupon) return false;
+
+    // apply_ticket: "1" = all tickets, "2" = selected tickets
+    const applyType = parseInt(coupon.apply_ticket);
+
+    if (applyType === 2) {
+      // 1. Check ticket_selected_data (JSON array of checked tickets)
+      if (coupon.ticket_selected_data) {
+        try {
+          const selectedData = typeof coupon.ticket_selected_data === 'string'
+            ? JSON.parse(coupon.ticket_selected_data)
+            : coupon.ticket_selected_data;
+
+          if (Array.isArray(selectedData)) {
+            const isSelected = selectedData.some(t =>
+              String(t.id) === String(ticketId) &&
+              (t.checked === true || t.checked === "true" || t.checked === 1 || t.checked === "1")
+            );
+            if (isSelected) return true;
+          }
+        } catch (e) {
+          console.error("Error parsing ticket_selected_data:", e);
+        }
+      }
+
+      // 2. Check ticket_details (Comma-separated string of eligible ticket IDs)
+      if (coupon.ticket_details) {
+        const eligibleIds = String(coupon.ticket_details).split(',').map(id => id.trim());
+        if (eligibleIds.includes(String(ticketId))) {
+          return true;
+        }
+      }
+
+      // If applyType is 2 and no matches found, it's not eligible
+      return false;
+    }
+
+    // Default to true for all other cases (including applyType 1 or undefined)
+    return true;
+  };
+
+  // Helper to calculate discount for a specific ticket
+  const getTicketDiscount = (ticket, coupon) => {
+    if (!isTicketEligible(ticket.id, coupon)) return 0;
+
+    let ticketPrice = parseFloat(ticket.ticket_price);
+    // Apply early bird if active
+    if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
+      const ebDiscount = parseFloat(ticket.discount_value || 0);
+      if (ticket.discount === 1) { // percentage
+        ticketPrice = ticketPrice - (ticketPrice * ebDiscount / 100);
+      } else { // amount
+        ticketPrice = ticketPrice - ebDiscount;
+      }
+    }
+
+    const amtPerType = parseInt(coupon.discount_amt_per_type);
+    const totalTicketAmount = ticketPrice * ticket.quantity;
+
+    if (amtPerType === 1) { // Fixed Amount
+      return parseFloat(coupon.discount_amount || 0);
+    } else if (amtPerType === 2) { // Percentage
+      const percentage = parseFloat(coupon.discount_percentage || 0);
+      return (totalTicketAmount * percentage) / 100;
+    }
+    return 0;
   };
 
   // Handle Apply Coupon
@@ -1110,17 +1175,29 @@ export default function ParticipantDetails() {
 
       // Check if API call was successful
       if (response && response.data && response.data.Coupons && response.data.Coupons.length > 0) {
-        const couponData = response.data.Coupons[0];
+        const matchingCoupon = response.data.Coupons.find(
+          c => (c.discount_code || c.coupon_code)?.toLowerCase() === couponCode.trim().toLowerCase()
+        );
+
+        if (!matchingCoupon) {
+          setCouponError('Invalid coupon code');
+          setAppliedCoupon(null);
+          return;
+        }
+
+        // Calculate total discount across all eligible tickets
+        const totalDiscount = selectedTickets.reduce((sum, t) => {
+          return sum + getTicketDiscount(t, matchingCoupon);
+        }, 0);
 
         // Transform coupon data
-        // discount_amt_per_type: 1 = fixed amount, 2 = percentage
         const transformedCoupon = {
-          ...couponData,
-          coupon_code: couponData.discount_code || couponData.coupon_code,
-          discount_type: parseInt(couponData.discount_amt_per_type),
-          discount_value: parseInt(couponData.discount_amt_per_type) === 2
-            ? parseFloat(couponData.discount_percentage || 0)
-            : parseFloat(couponData.discount_amount || 0)
+          ...matchingCoupon,
+          coupon_code: matchingCoupon.discount_code || matchingCoupon.coupon_code,
+          discount_type: parseInt(matchingCoupon.discount_amt_per_type),
+          discount_value: parseInt(matchingCoupon.discount_amt_per_type) === 2
+            ? parseFloat(matchingCoupon.discount_percentage || 0)
+            : parseFloat(matchingCoupon.discount_amount || 0)
         };
 
         // Store applied coupon details
@@ -1130,9 +1207,10 @@ export default function ParticipantDetails() {
         // Store in localStorage for cross-page synchronization
         localStorage.setItem('couponCode', couponCode.trim());
         localStorage.setItem('appliedCoupon', JSON.stringify(transformedCoupon));
-        localStorage.setItem('couponDiscount', transformedCoupon.discount_value || '0');
+        localStorage.setItem('couponDiscount', totalDiscount.toFixed(2));
 
         console.log('✅ Coupon applied successfully:', transformedCoupon);
+        console.log('💰 Total Discount calculated:', totalDiscount);
       } else {
         // Invalid coupon
         let errorMessage = 'Invalid or expired coupon code';
@@ -1141,6 +1219,9 @@ export default function ParticipantDetails() {
         }
         setCouponError(errorMessage);
         setAppliedCoupon(null);
+        localStorage.removeItem('couponCode');
+        localStorage.removeItem('appliedCoupon');
+        localStorage.removeItem('couponDiscount');
       }
     } catch (error) {
       console.error('❌ Coupon API Error:', error);
@@ -1241,8 +1322,10 @@ export default function ParticipantDetails() {
       return sum + totalBuyer;
     }, 0).toFixed(2);
 
-    // Get discount from localStorage
-    const TotalDiscount = parseFloat(localStorage.getItem("couponDiscount")) || 0;
+    // Calculate total discount from selected tickets and applied coupon
+    const TotalDiscount = appliedCoupon
+      ? selectedTickets.reduce((sum, t) => sum + getTicketDiscount(t, appliedCoupon), 0).toFixed(2)
+      : "0.00";
 
     // Build AllTickets array with all ticket details
     const AllTickets = selectedTickets.map(ticket => ({
@@ -3521,6 +3604,7 @@ export default function ParticipantDetails() {
 
                 // Sub Total = Base + Platform Fee + Total Taxes
                 const ticketSubTotal = baseAmount + totalPlatformFee + totalTaxes;
+                const ticketDiscount = appliedCoupon ? getTicketDiscount(ticket, appliedCoupon) : 0;
 
                 return (
                   <div key={index} style={{ marginBottom: index < selectedTickets.length - 1 ? '20px' : '0' }}>
@@ -3529,6 +3613,14 @@ export default function ParticipantDetails() {
                       <span>{ticket.ticket_name || ticket.display_ticket_name} (x{ticket.quantity})</span>
                       <span>₹{baseAmount.toFixed(2)}</span>
                     </div>
+
+                    {/* Per-ticket Discount */}
+                    {ticketDiscount > 0 && (
+                      <div className="summary-item" style={{ color: '#28a745', fontSize: '14px', marginTop: '-5px', marginBottom: '5px', paddingLeft: '10px' }}>
+                        <span>↳ Discount ({appliedCoupon.coupon_code})</span>
+                        <span>- ₹{ticketDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
 
                     {/* Platform Fee (Combined) - Multiplied by quantity */}
                     <div className="summary-item">
@@ -3545,7 +3637,7 @@ export default function ParticipantDetails() {
                     {/* Sub Total for this ticket */}
                     <div className="summary-item" style={{ fontWeight: '600', marginTop: '8px' }}>
                       <span>Sub Total</span>
-                      <span>₹{ticketSubTotal.toFixed(2)}</span>
+                      <span>₹{(ticketSubTotal - ticketDiscount).toFixed(2)}</span>
                     </div>
 
                     {/* Divider between tickets */}
@@ -3596,47 +3688,7 @@ export default function ParticipantDetails() {
               {/* Add divider if there are question prices */}
               {Object.keys(questionPrices).length > 0 && <div className="divider"></div>}
 
-              {/* Coupon Discount - only show if applied */}
-              {appliedCoupon && (() => {
-                // Calculate base price only (without fees and taxes)
-                const basePrice = selectedTickets.reduce((sum, ticket) => {
-                  let effectivePrice = parseFloat(ticket.ticket_price);
-
-                  if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
-                    const discountValue = parseFloat(ticket.discount_value || 0);
-                    if (ticket.discount === 1) {
-                      effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
-                    } else {
-                      effectivePrice = effectivePrice - discountValue;
-                    }
-                  }
-
-                  const baseAmount = effectivePrice * parseInt(ticket.quantity);
-                  return sum + baseAmount;
-                }, 0);
-
-                // Calculate discount based on coupon type (apply on base price only)
-                // discount_amt_per_type: 1 = fixed amount, 2 = percentage
-                let discountAmount = 0;
-                if (appliedCoupon.discount_type === 2) {
-                  // Percentage discount on base price
-                  const discountPercent = parseFloat(appliedCoupon.discount_value || 0);
-                  discountAmount = (basePrice * discountPercent) / 100;
-                } else if (appliedCoupon.discount_type === 1) {
-                  // Fixed amount discount
-                  discountAmount = parseFloat(appliedCoupon.discount_value || 0);
-                }
-
-                // Ensure discount doesn't exceed base price
-                discountAmount = Math.min(discountAmount, basePrice);
-
-                return (
-                  <div className="summary-item" style={{ color: '#28a745', fontWeight: '600' }}>
-                    <span>Discount ({appliedCoupon.coupon_code})</span>
-                    <span>- ₹{discountAmount.toFixed(2)}</span>
-                  </div>
-                );
-              })()}
+              {/* Per-ticket discounts are now shown under each ticket for clarity */}
 
               {/* Total Amount */}
               <div className="summary-item total">
@@ -3697,47 +3749,15 @@ export default function ParticipantDetails() {
                       return sum + baseAmount + totalPlatformFee + totalTaxes;
                     }, 0);
 
-                    // Calculate coupon discount on base price only
-                    let couponDiscountAmount = 0;
-                    if (appliedCoupon) {
-                      // Calculate base price (without fees and taxes)
-                      const basePrice = selectedTickets.reduce((sum, ticket) => {
-                        let effectivePrice = parseFloat(ticket.ticket_price);
+                    // Calculate final price: subtotal - total per-ticket discounts + question prices
+                    const totalDiscountAmount = appliedCoupon ? selectedTickets.reduce((sum, t) => {
+                      return sum + getTicketDiscount(t, appliedCoupon);
+                    }, 0) : 0;
 
-                        if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
-                          const discountValue = parseFloat(ticket.discount_value || 0);
-                          if (ticket.discount === 1) {
-                            effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
-                          } else {
-                            effectivePrice = effectivePrice - discountValue;
-                          }
-                        }
+                    const questionTotal = Object.values(questionPrices).reduce((sum, p) => sum + p.price, 0);
 
-                        const baseAmount = effectivePrice * parseInt(ticket.quantity);
-                        return sum + baseAmount;
-                      }, 0);
-
-                      // discount_amt_per_type: 1 = fixed amount, 2 = percentage
-                      if (appliedCoupon.discount_type === 2) {
-                        // Percentage discount on base price
-                        const discountPercent = parseFloat(appliedCoupon.discount_value || 0);
-                        couponDiscountAmount = (basePrice * discountPercent) / 100;
-                      } else if (appliedCoupon.discount_type === 1) {
-                        // Fixed amount discount
-                        couponDiscountAmount = parseFloat(appliedCoupon.discount_value || 0);
-                      }
-                      // Ensure discount doesn't exceed base price
-                      couponDiscountAmount = Math.min(couponDiscountAmount, basePrice);
-                    }
-
-                    // Calculate total from question prices
-                    const questionPricesTotal = Object.values(questionPrices).reduce((sum, priceData) => {
-                      return sum + parseFloat(priceData.price || 0);
-                    }, 0);
-
-                    // Subtract coupon discount and add question prices to subtotal
-                    const finalTotal = subtotal - couponDiscountAmount + questionPricesTotal;
-                    return finalTotal.toFixed(2);
+                    const finalPrice = Math.max(0, subtotal - totalDiscountAmount + questionTotal);
+                    return finalPrice.toFixed(2);
                   })()}
                 </span>
               </div>
