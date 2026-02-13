@@ -137,16 +137,6 @@ const DiscountCoupons = ({ onBack, onNext }) => {
         errors.discountAvailedFromDate = "Start date cannot be before today";
       }
 
-      // Check if discount from date is before event registration start date
-      if (eventDetails?.registration_start_date || eventDetails?.diplay_registration_start_date) {
-        const eventRegStartDate = eventDetails.diplay_registration_start_date || eventDetails.registration_start_date;
-        const eventRegDate = new Date(eventRegStartDate);
-        eventRegDate.setHours(0, 0, 0, 0);
-
-        if (from < eventRegDate) {
-          errors.discountAvailedFromDate = "Discount start date cannot be before event registration start date";
-        }
-      }
     }
 
     // End date required

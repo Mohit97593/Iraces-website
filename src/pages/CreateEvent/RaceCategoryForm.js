@@ -410,21 +410,6 @@ const RaceCategoryForm = ({
       newErrors.registrationEndTime = "End time is required";
     }
 
-    // Validate that race category registration start date is not before event registration start date
-    if (formData.registrationStartDate && formData.registrationStartTime) {
-      const eventRegStartDate = eventFormData?.registrationStartDate;
-      const eventRegStartTime = eventFormData?.registrationStartTime;
-
-      if (eventRegStartDate && eventRegStartTime) {
-        // Combine date and time for comparison
-        const categoryStartDateTime = new Date(`${formData.registrationStartDate}T${formData.registrationStartTime}`);
-        const eventStartDateTime = new Date(`${eventRegStartDate}T${eventRegStartTime}`);
-
-        if (categoryStartDateTime < eventStartDateTime) {
-          newErrors.registrationStartDate = "Race category registration cannot start before event registration start date";
-        }
-      }
-    }
 
     // If there are errors, set them and stop submission
     if (Object.keys(newErrors).length > 0) {
