@@ -6,15 +6,7 @@ import { authAPI } from "../../services/authAPI";
 import "./Auth.css";
 
 export default function Login() {
-  // Show reset password modal if token is present in URL
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-    if (token) {
-      setResetToken(token);
-      setShowReset(true);
-    }
-  }, []);
+
   const navigate = useNavigate();
   const { login, sendOTP, loginWithOTP } = useAuth();
 
@@ -36,14 +28,7 @@ export default function Login() {
     { country_code: "US", phone_code: "+1", country_name: "United States" },
     { country_code: "UK", phone_code: "+44", country_name: "United Kingdom" },
   ]);
-  const [forgotEmail, setForgotEmail] = useState("");
-  const [forgotStatus, setForgotStatus] = useState("");
-  const [showForgot, setShowForgot] = useState(false);
-  const [showReset, setShowReset] = useState(false);
-  const [resetToken, setResetToken] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const [resetStatus, setResetStatus] = useState("");
+
   const [otpTimer, setOtpTimer] = useState(30);
   const [hasGuestInfo, setHasGuestInfo] = useState(false);
   const otpIntervalRef = useRef(null);
@@ -434,69 +419,7 @@ export default function Login() {
     }
   };
 
-  // Step 1: Request password reset link
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    setForgotStatus("");
-    if (!forgotEmail.trim()) {
-      setForgotStatus("Please enter your email address.");
-      return;
-    }
-    try {
-      const baseUrl = window.location.origin + "/reset-password";
-      const payload = {
-        email: forgotEmail.trim(),
-        base_url: baseUrl,
-      };
-      if (authAPI.sendResetPasswordLink) {
-        const res = await authAPI.sendResetPasswordLink(payload);
-        console.log("Forgot password API response:", res);
-        // Treat any response (no error thrown) as success if status 200 or no error
-        if ((res && res.status === 200) || (res && !res.error)) {
-          setForgotStatus("Password reset link sent! Please check your email.");
-        } else {
-          setForgotStatus(res.message || "Failed to send reset link.");
-        }
-      } else {
-        alert("sendResetPasswordLink API not implemented in authAPI.js");
-      }
-    } catch (err) {
-      setForgotStatus("Error sending reset link. Try again later.");
-      console.error("Forgot password error:", err);
-    }
-  };
 
-  // Step 2: Reset password using token
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    setResetStatus("");
-    if (!resetToken.trim()) {
-      setResetStatus("Reset token is required.");
-      return;
-    }
-    if (!newPassword.trim() || !confirmNewPassword.trim()) {
-      setResetStatus("Please enter and confirm your new password.");
-      return;
-    }
-    if (newPassword !== confirmNewPassword) {
-      setResetStatus("Passwords do not match.");
-      return;
-    }
-    try {
-      const res = await authAPI.resetPassword({
-        token: resetToken.trim(),
-        new_password: newPassword,
-        confirm_new_password: confirmNewPassword,
-      });
-      if (res.success || res.status === 200) {
-        setResetStatus("Password reset successful! You can now log in.");
-      } else {
-        setResetStatus(res.message || "Failed to reset password.");
-      }
-    } catch (err) {
-      setResetStatus("Error resetting password. Try again later.");
-    }
-  };
 
   const handleGuestLogin = async () => {
     const guestEmail = localStorage.getItem("guestEmail");
@@ -1056,128 +979,12 @@ export default function Login() {
                     </NavLink>
                   </p>
                   <p className="auth-link-text">
-                    <button
-                      type="button"
-                      className="btn btn-link p-0"
-                      style={{ fontSize: "1rem" }}
-                      onClick={() => setShowForgot(true)}
-                    >
+                    <NavLink to="/forgot-password" className="auth-link">
                       Forgot Password?
-                    </button>
+                    </NavLink>
                   </p>
                 </div>
-                {/* Forgot Password Modal */}
-                {showForgot && (
-                  <div className="forgot-password-modal">
-                    <form
-                      onSubmit={handleForgotPassword}
-                      style={{
-                        maxWidth: 400,
-                        margin: "24px auto",
-                        background: "#fff",
-                        padding: 24,
-                        borderRadius: 12,
-                        boxShadow: "0 2px 8px #eee",
-                      }}
-                    >
-                      <h4>Forgot Password</h4>
-                      <input
-                        type="email"
-                        className="form-control mb-2"
-                        placeholder="Enter your email address"
-                        value={forgotEmail}
-                        onChange={(e) => setForgotEmail(e.target.value)}
-                        required
-                      />
-                      <button type="submit" className="btn btn-primary w-100">
-                        Send Reset Link
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-link w-100 mt-2"
-                        onClick={() => setShowForgot(false)}
-                      >
-                        Cancel
-                      </button>
-                      {forgotStatus && (
-                        <div
-                          className="mt-2 text-center"
-                          style={{
-                            color: forgotStatus.includes("sent")
-                              ? "green"
-                              : "red",
-                          }}
-                        >
-                          {forgotStatus}
-                        </div>
-                      )}
-                    </form>
-                  </div>
-                )}
-                {/* Reset Password Modal */}
-                {showReset && (
-                  <div className="reset-password-modal">
-                    <form
-                      onSubmit={handleResetPassword}
-                      style={{
-                        maxWidth: 400,
-                        margin: "24px auto",
-                        background: "#fff",
-                        padding: 24,
-                        borderRadius: 12,
-                        boxShadow: "0 2px 8px #eee",
-                      }}
-                    >
-                      <h4>Reset Password</h4>
-                      <input
-                        type="text"
-                        className="form-control mb-2"
-                        placeholder="Enter reset token from email"
-                        value={resetToken}
-                        onChange={(e) => setResetToken(e.target.value)}
-                        required
-                      />
-                      <input
-                        type="password"
-                        className="form-control mb-2"
-                        placeholder="New Password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        required
-                      />
-                      <input
-                        type="password"
-                        className="form-control mb-2"
-                        placeholder="Confirm New Password"
-                        value={confirmNewPassword}
-                        onChange={(e) => setConfirmNewPassword(e.target.value)}
-                        required
-                      />
-                      <button type="submit" className="btn btn-primary w-100">
-                        Reset Password
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-link w-100 mt-2"
-                        onClick={() => setShowReset(false)}
-                      >
-                        Cancel
-                      </button>
-                      {resetStatus && (
-                        <div
-                          className="mt-2 text-center"
-                          style={{
-                            color: resetStatus.includes("successful")
-                              ? "green"
-                              : "red",
-                          }}
-                        >
-                          {resetStatus}
-                        </div>
-                      )}
-                    </form>
-                  </div>
-                )}
+
               </div>
             </div>
           </div>

@@ -13,6 +13,7 @@ import CancellationPolicy from "../pages/CancellationPolicy/CancellationPolicy";
 import WhyChooseRaces from "../pages/WhyChooseRaces/WhyChooseRaces";
 import Login from "../pages/Auth/Login";
 import Signup from "../pages/Auth/Signup";
+import ForgotPassword from "../pages/Auth/ForgotPassword";
 import NotFound from "../pages/NotFound";
 import ErrorBoundary from "../components/ErrorBoundary";
 import Profile from "../pages/Profile/Profile";
@@ -142,6 +143,15 @@ const AppRouter = createBrowserRouter([
     element: (
       <ErrorBoundary>
         <Signup />
+      </ErrorBoundary>
+    ),
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/forgot-password",
+    element: (
+      <ErrorBoundary>
+        <ForgotPassword />
       </ErrorBoundary>
     ),
     errorElement: <NotFound />,
