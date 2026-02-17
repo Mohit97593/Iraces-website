@@ -868,9 +868,32 @@ export default function Login() {
                       <div className="form-group text-center">
                         <button
                           type="button"
-                          className="btn btn-link text-primary"
+                          className="btn"
+                          style={{
+                            background: "#da251c",
+                            border: "none",
+                            borderRadius: "8px",
+                            color: "white",
+                            fontSize: "14px",
+                            fontWeight: "600",
+                            padding: "10px 24px",
+                            transition: "all 0.3s ease",
+                            boxShadow: "0 2px 8px rgba(218, 37, 28, 0.2)",
+                            display: "inline-block",
+                            minWidth: "150px",
+                          }}
                           onClick={handleSendOTP}
                           disabled={isSendingOTP || isLoading || !formData.identifier.trim()}
+                          onMouseEnter={(e) => {
+                            if (!isSendingOTP && !isLoading && formData.identifier.trim()) {
+                              e.target.style.background = "#b81f16";
+                              e.target.style.boxShadow = "0 4px 12px rgba(218, 37, 28, 0.3)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = "#da251c";
+                            e.target.style.boxShadow = "0 2px 8px rgba(218, 37, 28, 0.2)";
+                          }}
                         >
                           {isSendingOTP ? (
                             <>

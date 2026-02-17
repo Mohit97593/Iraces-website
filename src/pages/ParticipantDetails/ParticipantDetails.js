@@ -1968,7 +1968,7 @@ export default function ParticipantDetails() {
                   <label>
                     {question.question_label}
                     {question.question_description && (
-                      <span style={{ fontSize: '12px', color: '#888', marginLeft: '5px', fontWeight: 'normal' }}>
+                      <span style={{ fontSize: '12px', color: question.description_color || '#888', marginLeft: '5px', fontWeight: 'normal' }}>
                         ({question.question_description})
                       </span>
                     )}
@@ -2239,7 +2239,7 @@ export default function ParticipantDetails() {
                   <label>
                     {question.question_label}
                     {question.question_description && (
-                      <span style={{ fontSize: '12px', color: '#888', marginLeft: '5px', fontWeight: 'normal' }}>
+                      <span style={{ fontSize: '12px', color: question.description_color || '#888', marginLeft: '5px', fontWeight: 'normal' }}>
                         ({question.question_description})
                       </span>
                     )}
@@ -2416,7 +2416,7 @@ export default function ParticipantDetails() {
                   <label>
                     {question.question_label}
                     {question.question_description && (
-                      <span style={{ fontSize: '12px', color: '#888', marginLeft: '5px', fontWeight: 'normal' }}>
+                      <span style={{ fontSize: '12px', color: question.description_color || '#888', marginLeft: '5px', fontWeight: 'normal' }}>
                         ({question.question_description})
                       </span>
                     )}
@@ -2537,7 +2537,7 @@ export default function ParticipantDetails() {
                   <label>
                     {question.question_label}
                     {question.question_description && (
-                      <span style={{ fontSize: '12px', color: '#888', marginLeft: '5px', fontWeight: 'normal' }}>
+                      <span style={{ fontSize: '12px', color: question.description_color || '#888', marginLeft: '5px', fontWeight: 'normal' }}>
                         ({question.question_description})
                       </span>
                     )}
