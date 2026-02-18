@@ -193,8 +193,8 @@
 /* Category Grid */
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 15px;
   margin-top: 15px;
 }
 
@@ -202,16 +202,18 @@
   background: #fff;
   border: 2px solid #e0e0e0;
   border-radius: 12px;
-  padding: 18px 18px;
+  padding: 15px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  font-size: 1.1rem;
+  gap: 12px;
+  font-size: 1rem;
   font-weight: 600;
   color: #333;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.2s ease;
+  overflow: hidden;
+  max-width: 100%;
 }
 
 .category-card:hover {
@@ -232,11 +234,14 @@
   text-align: center;
 }
 
-.category-card span {
+.category-card span.category-name-text {
   flex: 1;
-  font-size: 1.08rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .category-card input[type="checkbox"] {

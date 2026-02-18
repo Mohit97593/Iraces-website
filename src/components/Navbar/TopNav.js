@@ -1177,7 +1177,7 @@ export default function TopNav() {
           {/* desktop login/signup buttons or profile dropdown */}
           <div className="d-none d-lg-flex align-items-center gap-3">
             {/* Design Your Event Button */}
-            <button
+            {/* <button
               onClick={() => setShowEventTypeModal(true)}
               style={{
                 backgroundColor: "#da251c",
@@ -1204,7 +1204,7 @@ export default function TopNav() {
             >
               <i className="fas fa-calendar-plus"></i>
               Design Your Event
-            </button>
+            </button> */}
 
             {isAuthenticated ? (
               <div className="position-relative" ref={dropdownRef}>

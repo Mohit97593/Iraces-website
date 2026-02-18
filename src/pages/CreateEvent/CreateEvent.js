@@ -52,6 +52,12 @@ export default function CreateEvent() {
   // Format for 'Register By' (e.g., November 12, 2025)
   const registerBy = `${monthLong} ${day}, ${year}`;
 
+  const stripHtml = (html) => {
+    if (!html) return "";
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return doc.body.textContent || "";
+  };
+
   const categoryList = [
     { label: "Running", icon: "fas fa-person-running" },
     { label: "Walking", icon: "fas fa-person-walking" },
@@ -1485,11 +1491,12 @@ export default function CreateEvent() {
                                 : ""
                                 }`}
                               onClick={() => handleCategoryToggle(cat.name)}
+                              title={stripHtml(cat.name)}
                             >
                               {isLogoImage ? (
                                 <img
                                   src={`https://iraces.in/uploads/category_logo/${cat.logo}`}
-                                  alt={cat.name}
+                                  alt={stripHtml(cat.name)}
                                   style={{
                                     width: "38px",
                                     height: "38px",
@@ -1501,7 +1508,7 @@ export default function CreateEvent() {
                                   }}
                                 />
                               ) : null}
-                              <span>{cat.name}</span>
+                              <span className="category-name-text">{stripHtml(cat.name)}</span>
                               <input
                                 type="checkbox"
                                 checked={selectedCategories.includes(cat.name)}
