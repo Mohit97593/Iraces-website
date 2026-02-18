@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 
-const Integrations = ({ onBack, onNext }) => {
+const Integrations = ({ onBack, onNext, showToast }) => {
   const [eventDetails, setEventDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -60,7 +60,7 @@ const Integrations = ({ onBack, onNext }) => {
 
   const handleTCSConfirm = async () => {
     if (!tcsAccepted) {
-      alert("Please acknowledge the terms of services related to TCS.");
+      showToast && showToast("Please acknowledge the terms of services related to TCS.", 'error');
       return;
     }
 
@@ -69,7 +69,7 @@ const Integrations = ({ onBack, onNext }) => {
     try {
       const eventId = sessionStorage.getItem("event_id");
       if (!eventId) {
-        alert("Event ID not found. Please save the event first.");
+        showToast && showToast("Event ID not found. Please save the event first.", 'error');
         return;
       }
       const res = await authAPI.eventIntegration(eventId, 1);
@@ -82,11 +82,11 @@ const Integrations = ({ onBack, onNext }) => {
         // Show modal here and let user navigate using modal button
         setShowSuccessModal(true);
       } else {
-        alert((res && res.message) || "Failed to save integration settings");
+        showToast && showToast((res && res.message) || "Failed to save integration settings", 'error');
       }
     } catch (err) {
       console.error("Failed calling eventIntegration:", err);
-      alert("Failed to save integration settings.");
+      showToast && showToast("Failed to save integration settings.", 'error');
     }
   };
 
@@ -440,10 +440,10 @@ const Integrations = ({ onBack, onNext }) => {
                         savedEventUrl || `${window.location.origin}/event/new`;
                       try {
                         navigator.clipboard.writeText(text);
-                        alert("Link copied");
+                        showToast && showToast("Link copied!");
                       } catch (e) {
                         console.error("clipboard error", e);
-                        alert("Failed to copy link");
+                        showToast && showToast("Failed to copy link", 'error');
                       }
                     }}
                     style={{

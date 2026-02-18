@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
 import AddAgeCategoryForm from "./AddAgeCategoryForm";
 import "./CreateEvent.css";
+import Toast from "../../components/Toast/Toast";
 
 const AgeCategory = ({ onBack, onNext }) => {
   const [hovered, setHovered] = useState(null);
@@ -14,6 +15,11 @@ const AgeCategory = ({ onBack, onNext }) => {
   const [initialFormData, setInitialFormData] = useState(null);
   const [loadingEditId, setLoadingEditId] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const triggerToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
 
   useEffect(() => {
     const eventId = sessionStorage.getItem("event_id");
@@ -61,7 +67,7 @@ const AgeCategory = ({ onBack, onNext }) => {
       const response = await authAPI.deleteEventCommFqa(formData);
 
       if (response && response.message) {
-        alert(response.message || "Age category deleted successfully");
+        triggerToast(response.message || "Age category deleted successfully");
         // Refresh the age categories list
         const res = await authAPI.getEventDetails(eventId);
         if (res && res.data) {
@@ -74,7 +80,7 @@ const AgeCategory = ({ onBack, onNext }) => {
       }
     } catch (error) {
       console.error("Error deleting age category:", error);
-      alert(error.message || "Failed to delete age category");
+      triggerToast(error.message || "Failed to delete age category", 'error');
     } finally {
       setDeletingId(null);
     }
@@ -106,12 +112,12 @@ const AgeCategory = ({ onBack, onNext }) => {
           setShowForm(true);
           setEditingId(ageCategoryId);
         } else {
-          alert(res.message || "Failed to load edit details");
+          triggerToast(res.message || "Failed to load edit details", 'error');
         }
       }
     } catch (err) {
       console.error("edit fetch error:", err);
-      alert(err.message || "Failed to fetch edit details");
+      triggerToast(err.message || "Failed to fetch edit details", 'error');
     } finally {
       setLoadingEditId(null);
     }
@@ -151,7 +157,7 @@ const AgeCategory = ({ onBack, onNext }) => {
       }
     } catch (err) {
       console.error("status toggle error:", err);
-      alert(err.message || "Failed to change status");
+      triggerToast(err.message || "Failed to change status", 'error');
     } finally {
       setTogglingId(null);
     }
@@ -162,6 +168,13 @@ const AgeCategory = ({ onBack, onNext }) => {
       className="age-category-section"
       style={{ maxWidth: 1200, margin: "0 auto" }}
     >
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 32 }}>
         <div style={{ flex: 2 }}>
           {!showForm ? (

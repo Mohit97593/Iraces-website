@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
+import Toast from "../../components/Toast/Toast";
 
-export default function EventScheduling({ onBack, onNext, initialFormData }) {
+export default function EventScheduling({ onBack, onNext, initialFormData, showToast }) {
   const defaultFormData = {
     timeZone: "",
     country: "",
@@ -55,6 +56,11 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
   const [formData, setFormData] = useState(getInitialFormData());
   const [errors, setErrors] = useState({});
   const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [localToast, setLocalToast] = useState(null);
+
+  const triggerToast = (message, type = 'success') => {
+    setLocalToast({ message, type });
+  };
   const getTodayString = () => {
     const d = new Date();
     const yyyy = d.getFullYear();
@@ -641,6 +647,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      triggerToast("Please fill all required fields correctly", 'error');
       // scroll to first error field (optional)
       const firstKey = Object.keys(newErrors)[0];
       const el = document.getElementsByName(firstKey)[0];
@@ -689,8 +696,9 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
     authAPI
       .addEventDuration(payload)
       .then((res) => {
-        if (res.success === 200) {
-          alert(res.message || "Event duration updated successfully");
+        const isSuccess = res.success === 200 || res.success === "200" || res.status === 200;
+        if (isSuccess) {
+          triggerToast(res.message || "Event Scheduling saved successfully!");
           // Save registration end date to sessionStorage
           sessionStorage.setItem(
             "registerEndDate",
@@ -704,13 +712,14 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
             "registerEndDateDisplay",
             `${formData.registrationEndDate} ${formData.registrationEndTime}`
           );
-          onNext(formData);
+          // Delay navigation so toast is visible
+          setTimeout(() => onNext(formData), 1500);
         } else {
-          alert(res.message || "Failed to update event duration");
+          triggerToast(res.message || "Failed to update event duration", 'error');
         }
       })
       .catch((err) => {
-        alert("Failed to update event duration");
+        triggerToast("Failed to update event duration", 'error');
       });
   };
 
@@ -1165,6 +1174,15 @@ export default function EventScheduling({ onBack, onNext, initialFormData }) {
           </button>
         </div>
       </form>
+
+      {/* Local Toast Notification */}
+      {localToast && (
+        <Toast
+          message={localToast.message}
+          type={localToast.type}
+          onClose={() => setLocalToast(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
+import Toast from "../../components/Toast/Toast";
 
 const Grouping = ({ onBack, onNext }) => {
     const [groups, setGroups] = useState([]);
@@ -27,6 +28,11 @@ const Grouping = ({ onBack, onNext }) => {
     // Drag and drop state for group reordering
     const [draggedGroupIndex, setDraggedGroupIndex] = useState(null);
     const [draggedOverIndex, setDraggedOverIndex] = useState(null);
+    const [toast, setToast] = useState(null);
+
+    const triggerToast = (message, type = 'success') => {
+        setToast({ message, type });
+    };
 
     const handleSave = () => {
         // Save logic will be implemented later
@@ -75,7 +81,7 @@ const Grouping = ({ onBack, onNext }) => {
                 setShowModal(false);
             } catch (error) {
                 console.error(isEditMode ? "Error updating group:" : "Error creating group:", error);
-                alert(isEditMode ? "Failed to update group. Please try again." : "Failed to create group. Please try again.");
+                triggerToast(isEditMode ? "Failed to update group. Please try again." : "Failed to create group. Please try again.", 'error');
             } finally {
                 setLoading(false);
             }
@@ -135,7 +141,7 @@ const Grouping = ({ onBack, onNext }) => {
 
             if (!eventId) {
                 console.error("Event ID not found");
-                alert("Event ID not found. Please try again.");
+                triggerToast("Event ID not found. Please try again.", 'error');
                 return;
             }
 
@@ -172,7 +178,7 @@ const Grouping = ({ onBack, onNext }) => {
 
         } catch (error) {
             console.error("Error fetching questions:", error);
-            alert("Failed to fetch questions. Please try again.");
+            triggerToast("Failed to fetch questions. Please try again.", 'error');
         } finally {
             setLoadingQuestions(false);
         }
@@ -250,7 +256,7 @@ const Grouping = ({ onBack, onNext }) => {
     // Handle add selected questions to group
     const handleAddQuestionsToGroup = async () => {
         if (!eventId) {
-            alert("Event ID not found. Please try again.");
+            triggerToast("Event ID not found. Please try again.", 'error');
             return;
         }
 
@@ -343,7 +349,7 @@ const Grouping = ({ onBack, onNext }) => {
             } else {
                 message = "No changes made.";
             }
-            alert(message);
+            triggerToast(message);
 
             // Close modal and reset state
             setShowQuestionsModal(false);
@@ -351,7 +357,7 @@ const Grouping = ({ onBack, onNext }) => {
             setSelectedGroupId(null);
         } catch (error) {
             console.error("Error updating questions in group:", error);
-            alert("Failed to update questions. Please try again.");
+            triggerToast("Failed to update questions. Please try again.", 'error');
         } finally {
             setAddingQuestions(false);
         }
@@ -371,7 +377,7 @@ const Grouping = ({ onBack, onNext }) => {
         // Validate group ID
         if (!groupId || groupId === 0 || groupId === "0") {
             console.error("Invalid group ID:", groupId);
-            alert("Cannot delete group: Invalid group ID. Please refresh the page and try again.");
+            triggerToast("Cannot delete group: Invalid group ID. Please refresh the page and try again.", 'error');
             return;
         }
 
@@ -390,7 +396,7 @@ const Grouping = ({ onBack, onNext }) => {
             // alert("Group deleted successfully!");
         } catch (error) {
             console.error("Error deleting group:", error);
-            alert("Failed to delete group. Please try again.");
+            triggerToast("Failed to delete group. Please try again.", 'error');
         }
     };
 
@@ -495,7 +501,7 @@ const Grouping = ({ onBack, onNext }) => {
             await fetchGroupQuestions();
         } catch (error) {
             console.error('Error syncing group order:', error);
-            alert('Failed to update group order on server. Reverting to previous state.');
+            triggerToast('Failed to update group order on server. Reverting to previous state.', 'error');
             // Revert to server state on error
             await fetchGroupQuestions();
         }
@@ -508,6 +514,13 @@ const Grouping = ({ onBack, onNext }) => {
 
     return (
         <div className="event-form-section">
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
             <div
                 style={{
                     display: "flex",

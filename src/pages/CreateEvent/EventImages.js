@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { authAPI } from "../../services/authAPI";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+import Toast from "../../components/Toast/Toast";
 
 export default function EventImages({ onBack, onNext }) {
   const [bannerBg, setBannerBg] = useState(false);
@@ -19,6 +20,11 @@ export default function EventImages({ onBack, onNext }) {
   const [creativesPreviews, setCreativesPreviews] = useState([]);
   const [hoveredCreativeIndex, setHoveredCreativeIndex] = useState(null);
   const prevObjectUrl = useRef(null);
+  const [toast, setToast] = useState(null);
+
+  const triggerToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
 
   const stripHtml = (html) => {
     if (!html) return "";
@@ -199,7 +205,7 @@ export default function EventImages({ onBack, onNext }) {
     try {
       const res = await authAPI.addEventDescription(formData);
       if (res.data && res.data.status === 200) {
-        alert("Event description saved!");
+        triggerToast("Event description saved!");
         // Call event details API after saving description
         let bannerImage = null;
         if (eventDetails && eventDetails.id) {
@@ -234,6 +240,13 @@ export default function EventImages({ onBack, onNext }) {
 
   return (
     <div className="event-form-section">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <h3>Event Description</h3>
       <form>
         <div className="form-group">

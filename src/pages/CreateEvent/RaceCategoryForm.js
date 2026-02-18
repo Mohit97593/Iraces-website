@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { authAPI } from "../../services/authAPI";
+import Toast from "../../components/Toast/Toast";
 
 // Get today's date in yyyy-mm-dd format
 const todayDate = new Date().toISOString().split("T")[0];
@@ -19,6 +20,11 @@ const RaceCategoryForm = ({
   taxType,
 }) => {
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const triggerToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
   const [eventCategories, setEventCategories] = useState([]);
 
   // Read initial categories from sessionStorage
@@ -428,7 +434,7 @@ const RaceCategoryForm = ({
         localStorage.getItem("user_id") || sessionStorage.getItem("user_id");
 
       if (!eventId) {
-        alert("Event ID not found. Please save event essentials first.");
+        triggerToast("Event ID not found. Please save event essentials first.", 'error');
         setLoading(false);
         return;
       }
@@ -523,7 +529,7 @@ const RaceCategoryForm = ({
       const response = await authAPI.addEditEventTicket(payload);
 
       if (response && response.message) {
-        alert(response.message);
+        triggerToast(response.message);
 
         // Fetch updated event details
         const eventDetailsResponse = await authAPI.getEventDetails(eventId);
@@ -534,866 +540,596 @@ const RaceCategoryForm = ({
       }
     } catch (error) {
       console.error("Error saving race category:", error);
-      alert(error.message || "Failed to save race category. Please try again.");
+      triggerToast(error.message || "Failed to save race category. Please try again.", 'error');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ display: "flex", gap: "32px", width: "100%" }}>
-      {/* Left Form Section */}
-      <form onSubmit={handleSubmit} style={{ flex: 1 }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 24,
-          }}
-        >
-          <h2 style={{ fontWeight: 700, fontSize: "1.6rem", margin: 0 }}>
-            New Race Category
-          </h2>
-          <div style={{ display: "flex", gap: 12 }}>
-            <button
-              type="button"
-              style={{
-                background: paidType === "Paid" ? "#da251c" : "#fff",
-                color: paidType === "Paid" ? "#fff" : "#da251c",
-                border: "2px solid #da251c",
-                borderRadius: 20,
-                padding: "6px 20px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-              onClick={() => setPaidType("Paid")}
-            >
-              ₹ Paid
-            </button>
-            <button
-              type="button"
-              style={{
-                background: paidType === "Free" ? "#da251c" : "#fff",
-                color: paidType === "Free" ? "#fff" : "#da251c",
-                border: "2px solid #da251c",
-                borderRadius: 20,
-                padding: "6px 20px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-              onClick={() => setPaidType("Free")}
-            >
-              % Free
-            </button>
+    <>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      <div style={{ display: "flex", gap: "32px", width: "100%" }}>
+        {/* Left Form Section */}
+        <form onSubmit={handleSubmit} style={{ flex: 1 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 24,
+            }}
+          >
+            <h2 style={{ fontWeight: 700, fontSize: "1.6rem", margin: 0 }}>
+              New Race Category
+            </h2>
+            <div style={{ display: "flex", gap: 12 }}>
+              <button
+                type="button"
+                style={{
+                  background: paidType === "Paid" ? "#da251c" : "#fff",
+                  color: paidType === "Paid" ? "#fff" : "#da251c",
+                  border: "2px solid #da251c",
+                  borderRadius: 20,
+                  padding: "6px 20px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+                onClick={() => setPaidType("Paid")}
+              >
+                ₹ Paid
+              </button>
+              <button
+                type="button"
+                style={{
+                  background: paidType === "Free" ? "#da251c" : "#fff",
+                  color: paidType === "Free" ? "#fff" : "#da251c",
+                  border: "2px solid #da251c",
+                  borderRadius: 20,
+                  padding: "6px 20px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+                onClick={() => setPaidType("Free")}
+              >
+                % Free
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
-          <div style={{ flex: 1 }}>
-            <label
-              style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-            >
-              Race Category Name <span className="required">*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="Race Category Name *"
-              value={formData.ticketName}
-              onChange={(e) => handleChange("ticketName", e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 8,
-                border: errors.ticketName ? "1px solid #d63031" : "1px solid #ddd",
-              }}
-            />
-            {errors.ticketName && (
-              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
-                {errors.ticketName}
-              </div>
-            )}
+          <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
+            <div style={{ flex: 1 }}>
+              <label
+                style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+              >
+                Race Category Name <span className="required">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Race Category Name *"
+                value={formData.ticketName}
+                onChange={(e) => handleChange("ticketName", e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: 8,
+                  border: errors.ticketName ? "1px solid #d63031" : "1px solid #ddd",
+                }}
+              />
+              {errors.ticketName && (
+                <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                  {errors.ticketName}
+                </div>
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <label
+                style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+              >
+                Category <span className="required">*</span>
+              </label>
+              <select
+                value={formData.category}
+                onChange={(e) => handleChange("category", Number(e.target.value))}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: 8,
+                  border: errors.category ? "1px solid #d63031" : "1px solid #ddd",
+                }}
+              >
+                <option value="">-- Select Category --</option>
+                {eventCategories.length > 0
+                  ? eventCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))
+                  : null}
+              </select>
+              {errors.category && (
+                <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                  {errors.category}
+                </div>
+              )}
+            </div>
           </div>
-          <div style={{ flex: 1 }}>
-            <label
-              style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-            >
-              Category <span className="required">*</span>
-            </label>
-            <select
-              value={formData.category}
-              onChange={(e) => handleChange("category", Number(e.target.value))}
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 8,
-                border: errors.category ? "1px solid #d63031" : "1px solid #ddd",
-              }}
-            >
-              <option value="">-- Select Category --</option>
-              {eventCategories.length > 0
-                ? eventCategories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))
-                : null}
-            </select>
-            {errors.category && (
-              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
-                {errors.category}
-              </div>
-            )}
-          </div>
-        </div>
 
-        <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
-          <div style={{ flex: 1 }}>
-            <label
-              style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-            >
-              Maximum Registration <span className="required">*</span>
-            </label>
-            <input
-              type="number"
-              placeholder="Maximum Registration *"
-              min="1"
-              value={formData.maxRegistration}
-              onChange={(e) => {
-                const value = e.target.value;
-                handleChange("maxRegistration", value);
+          <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
+            <div style={{ flex: 1 }}>
+              <label
+                style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+              >
+                Maximum Registration <span className="required">*</span>
+              </label>
+              <input
+                type="number"
+                placeholder="Maximum Registration *"
+                min="1"
+                value={formData.maxRegistration}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  handleChange("maxRegistration", value);
 
-                // Re-validate minBooking and maxBooking when maxRegistration changes
-                const newErrors = { ...errors };
+                  // Re-validate minBooking and maxBooking when maxRegistration changes
+                  const newErrors = { ...errors };
 
-                // Clear maxRegistration error if value is valid
-                if (value && value > 0) {
-                  delete newErrors.maxRegistration;
-                }
-
-                // Re-validate minBooking
-                if (formData.minBooking && Number(formData.minBooking) > Number(value)) {
-                  newErrors.minBooking = "Cannot exceed Maximum Registration";
-                } else if (formData.minBooking && formData.minBooking > 0) {
-                  delete newErrors.minBooking;
-                }
-
-                // Re-validate maxBooking
-                if (formData.maxBooking && Number(formData.maxBooking) > Number(value)) {
-                  newErrors.maxBooking = "Cannot exceed Maximum Registration";
-                } else if (formData.maxBooking && formData.maxBooking > 0) {
-                  delete newErrors.maxBooking;
-                }
-
-                setErrors(newErrors);
-              }}
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 8,
-                border: errors.maxRegistration ? "1px solid #d63031" : "1px solid #ddd",
-              }}
-            />
-            {errors.maxRegistration && (
-              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
-                {errors.maxRegistration}
-              </div>
-            )}
-          </div>
-          <div style={{ flex: 1 }}>
-            {/* Hide Race Category Price input if Free */}
-            {!isFree && (
-              <>
-                <label
-                  style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-                >
-                  Race Category Price <span className="required">*</span>
-                </label>
-                <input
-                  type="number"
-                  placeholder="Race Category Price *"
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: 8,
-                    border: errors.raceCategoryPrice ? "1px solid #d63031" : "1px solid #ddd",
-                  }}
-                  value={
-                    formData.raceCategoryPrice ||
-                    eventFormData.raceCategoryPrice ||
-                    ""
+                  // Clear maxRegistration error if value is valid
+                  if (value && value > 0) {
+                    delete newErrors.maxRegistration;
                   }
-                  onChange={(e) => {
-                    const price = Number(e.target.value) || 0;
-                    handleChange("raceCategoryPrice", e.target.value);
 
-                    // Clear error if valid price is entered
-                    if (price > 0 && errors.raceCategoryPrice) {
-                      setErrors((prev) => {
-                        const newErrors = { ...prev };
-                        delete newErrors.raceCategoryPrice;
-                        return newErrors;
+                  // Re-validate minBooking
+                  if (formData.minBooking && Number(formData.minBooking) > Number(value)) {
+                    newErrors.minBooking = "Cannot exceed Maximum Registration";
+                  } else if (formData.minBooking && formData.minBooking > 0) {
+                    delete newErrors.minBooking;
+                  }
+
+                  // Re-validate maxBooking
+                  if (formData.maxBooking && Number(formData.maxBooking) > Number(value)) {
+                    newErrors.maxBooking = "Cannot exceed Maximum Registration";
+                  } else if (formData.maxBooking && formData.maxBooking > 0) {
+                    delete newErrors.maxBooking;
+                  }
+
+                  setErrors(newErrors);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: 8,
+                  border: errors.maxRegistration ? "1px solid #d63031" : "1px solid #ddd",
+                }}
+              />
+              {errors.maxRegistration && (
+                <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                  {errors.maxRegistration}
+                </div>
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              {/* Hide Race Category Price input if Free */}
+              {!isFree && (
+                <>
+                  <label
+                    style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+                  >
+                    Race Category Price <span className="required">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Race Category Price *"
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: 8,
+                      border: errors.raceCategoryPrice ? "1px solid #d63031" : "1px solid #ddd",
+                    }}
+                    value={
+                      formData.raceCategoryPrice ||
+                      eventFormData.raceCategoryPrice ||
+                      ""
+                    }
+                    onChange={(e) => {
+                      const price = Number(e.target.value) || 0;
+                      handleChange("raceCategoryPrice", e.target.value);
+
+                      // Clear error if valid price is entered
+                      if (price > 0 && errors.raceCategoryPrice) {
+                        setErrors((prev) => {
+                          const newErrors = { ...prev };
+                          delete newErrors.raceCategoryPrice;
+                          return newErrors;
+                        });
+                      }
+
+                      // Calculate all fees and update eventFormData
+                      // Calculate amount for convenience fee calculation
+                      // Add GST only if: collectGST=true AND taxType='exclusive'
+                      const amountForConvenienceFee = (collectGST && taxType === 'exclusive')
+                        ? price + (price * 0.18)
+                        : price;
+
+                      // Tiered convenience fee: 0-1000 = 2%, 1001-1400 = ₹30, 1401+ = ₹40
+                      let convenienceFee = 0;
+                      if (amountForConvenienceFee > 0) {
+                        if (amountForConvenienceFee <= 1000) {
+                          convenienceFee = 0.02 * amountForConvenienceFee;
+                        } else if (amountForConvenienceFee <= 1400) {
+                          convenienceFee = 30;
+                        } else {
+                          convenienceFee = 40;
+                        }
+                      }
+                      const platformFee = price > 0 ? 5 : 0;
+                      const convenienceFeeGST =
+                        price > 0
+                          ? Math.round(convenienceFee * 0.18 * 100) / 100
+                          : 0;
+                      const platformFeeGST =
+                        price > 0
+                          ? Math.round(platformFee * 0.18 * 100) / 100
+                          : 0;
+                      // Registration GST: Calculate if collectGST=Yes AND taxType=Exclusive
+                      const registrationGST = (collectGST && taxType === 'exclusive' && price > 0)
+                        ? Math.round(price * 0.18 * 100) / 100
+                        : 0;
+
+                      // Registration amount includes GST if exclusive
+                      const registrationAmount = price + registrationGST;
+
+                      // Payment gateway fee basis: Only include what the Participant actually pays
+                      let gatewayBasis = registrationAmount;
+                      if (formData.convenienceFeePlayer === "Participant") {
+                        gatewayBasis += (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
+                      }
+
+                      const paymentGatewayFeeRaw = gatewayBasis > 0 ? 0.0185 * gatewayBasis : 0;
+                      const paymentGatewayFee = gatewayBasis > 0 ? Math.round(paymentGatewayFeeRaw * 100) / 100 : 0;
+                      const paymentGatewayGST =
+                        price > 0
+                          ? Math.round(paymentGatewayFee * 0.18 * 100) / 100
+                          : 0;
+
+                      // Start with all fees included
+                      let totalPayable =
+                        price +
+                        convenienceFee +
+                        platformFee +
+                        paymentGatewayFee +
+                        convenienceFeeGST +
+                        platformFeeGST +
+                        paymentGatewayGST +
+                        registrationGST;
+
+                      // Subtract convenience fees if Organiser pays them
+                      if (formData.convenienceFeePlayer === "Organiser") {
+                        totalPayable -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
+                      }
+
+                      // Subtract gateway fees if Organiser pays them
+                      if (formData.gatewayFeePlayer === "Organiser") {
+                        totalPayable -= (paymentGatewayFee + paymentGatewayGST);
+                      }
+
+                      // Calculate receivable amount - start with registration amount (includes GST)
+                      let receivableAmount = registrationAmount;
+
+                      // Deduct convenience fee + platform fee if organiser pays convenience fee
+                      // For ₹100: ₹100 - ₹2 - ₹0.36 - ₹5 - ₹0.90 = ₹91.74
+                      if (formData.convenienceFeePlayer === "Organiser") {
+                        receivableAmount -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
+                      }
+
+                      // Deduct gateway fee if organiser pays gateway fee
+                      // Additional deduction: ₹1.85 + ₹0.33 = ₹2.18
+                      // Total: ₹91.74 - ₹2.18 = ₹89.56
+                      if (formData.gatewayFeePlayer === "Organiser") {
+                        receivableAmount -= (paymentGatewayFee + paymentGatewayGST);
+                      }
+
+                      setEventFormData({
+                        ...eventFormData,
+                        raceCategoryPrice: e.target.value,
+                        ticketCalculation: {
+                          baseAmount: price,
+                          // Store the base rate/amount, not the calculated fee
+                          convenienceFeeBase: amountForConvenienceFee <= 1000 ? 2 : (amountForConvenienceFee <= 1400 ? 30 : 40),
+                          convenienceFee: convenienceFee,
+                          convenienceFeeGST: convenienceFeeGST,
+                          totalConvenienceFees:
+                            convenienceFee + convenienceFeeGST,
+                          platformFee: platformFee,
+                          platformFeeGST: platformFeeGST,
+                          totalPlatformFees: platformFee + platformFeeGST,
+                          paymentGatewayFee: 1.85,
+                          paymentGatewayBuyer: paymentGatewayFee,
+                          paymentGatewayGST: paymentGatewayGST,
+                          registrationAmount: registrationAmount,  // price + registrationGST
+                          registrationGST: registrationGST,
+                          netRegistrationAmount:
+                            registrationAmount + convenienceFee + convenienceFeeGST + platformFee + platformFeeGST,
+                          totalPayable: totalPayable,
+                          receivableAmount: receivableAmount,
+                          totalPG: totalPayable,  // Real website stores total_buyer here
+                          convenienceFeePlayer: formData.convenienceFeePlayer,
+                          gatewayFeePlayer: formData.gatewayFeePlayer,
+                          collectGST: collectGST,
+                          taxType: taxType,
+                        },
                       });
+                    }}
+                  />
+                  {errors.raceCategoryPrice && (
+                    <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                      {errors.raceCategoryPrice}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
+            <div style={{ flex: 1 }}>
+              <label
+                style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+              >
+                Minimum per booking count <span className="required">*</span>
+              </label>
+              <input
+                type="number"
+                placeholder="Minimum per booking count *"
+                min="1"
+                value={formData.minBooking}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  handleChange("minBooking", value);
+
+                  // Real-time validation
+                  const newErrors = { ...errors };
+                  if (!value || value <= 0) {
+                    newErrors.minBooking = "Minimum per booking count must be greater than 0";
+                  } else if (Number(value) > Number(formData.maxRegistration)) {
+                    newErrors.minBooking = "Cannot exceed Maximum Registration";
+                  } else {
+                    delete newErrors.minBooking;
+                  }
+                  setErrors(newErrors);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: 8,
+                  border: errors.minBooking ? "1px solid #d63031" : "1px solid #ddd",
+                }}
+              />
+              {errors.minBooking && (
+                <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                  {errors.minBooking}
+                </div>
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <label
+                style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+              >
+                Allow registrations upto <span className="required">*</span>
+              </label>
+              <input
+                type="number"
+                placeholder="Allow registrations upto *"
+                min="1"
+                value={formData.maxBooking}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  handleChange("maxBooking", value);
+
+                  // Real-time validation
+                  const newErrors = { ...errors };
+                  if (!value || value <= 0) {
+                    newErrors.maxBooking = "Allow registrations upto must be greater than 0";
+                  } else if (Number(value) > Number(formData.maxRegistration)) {
+                    newErrors.maxBooking = "Cannot exceed Maximum Registration";
+                  } else {
+                    delete newErrors.maxBooking;
+                  }
+                  setErrors(newErrors);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: 8,
+                  border: errors.maxBooking ? "1px solid #d63031" : "1px solid #ddd",
+                }}
+              />
+              {errors.maxBooking && (
+                <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                  {errors.maxBooking}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
+            <div style={{ flex: 1 }}>
+              <label
+                style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+              >
+                Registration Starts From <span className="required">*</span>
+              </label>
+              <input
+                type="date"
+                placeholder="dd-mm-yyyy"
+                min={todayDate}
+                value={formData.registrationStartDate}
+                onChange={(e) => {
+                  handleChange("registrationStartDate", e.target.value);
+
+                  // Real-time validation for past dates
+                  const newErrors = { ...errors };
+                  if (e.target.value) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const selectedDate = new Date(e.target.value);
+
+                    if (selectedDate < today) {
+                      newErrors.registrationStartDate = "Start date cannot be in the past";
+                    } else {
+                      delete newErrors.registrationStartDate;
                     }
 
-                    // Calculate all fees and update eventFormData
-                    // Calculate amount for convenience fee calculation
-                    // Add GST only if: collectGST=true AND taxType='exclusive'
-                    const amountForConvenienceFee = (collectGST && taxType === 'exclusive')
-                      ? price + (price * 0.18)
-                      : price;
-
-                    // Tiered convenience fee: 0-1000 = 2%, 1001-1400 = ₹30, 1401+ = ₹40
-                    let convenienceFee = 0;
-                    if (amountForConvenienceFee > 0) {
-                      if (amountForConvenienceFee <= 1000) {
-                        convenienceFee = 0.02 * amountForConvenienceFee;
-                      } else if (amountForConvenienceFee <= 1400) {
-                        convenienceFee = 30;
+                    // Also check if end date needs to be revalidated
+                    if (formData.registrationEndDate) {
+                      const endDate = new Date(formData.registrationEndDate);
+                      if (endDate < selectedDate) {
+                        newErrors.registrationEndDate = "End date cannot be before start date";
                       } else {
-                        convenienceFee = 40;
+                        delete newErrors.registrationEndDate;
                       }
                     }
-                    const platformFee = price > 0 ? 5 : 0;
-                    const convenienceFeeGST =
-                      price > 0
-                        ? Math.round(convenienceFee * 0.18 * 100) / 100
-                        : 0;
-                    const platformFeeGST =
-                      price > 0
-                        ? Math.round(platformFee * 0.18 * 100) / 100
-                        : 0;
-                    // Registration GST: Calculate if collectGST=Yes AND taxType=Exclusive
-                    const registrationGST = (collectGST && taxType === 'exclusive' && price > 0)
-                      ? Math.round(price * 0.18 * 100) / 100
-                      : 0;
-
-                    // Registration amount includes GST if exclusive
-                    const registrationAmount = price + registrationGST;
-
-                    // Payment gateway fee basis: Only include what the Participant actually pays
-                    let gatewayBasis = registrationAmount;
-                    if (formData.convenienceFeePlayer === "Participant") {
-                      gatewayBasis += (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
-                    }
-
-                    const paymentGatewayFeeRaw = gatewayBasis > 0 ? 0.0185 * gatewayBasis : 0;
-                    const paymentGatewayFee = gatewayBasis > 0 ? Math.round(paymentGatewayFeeRaw * 100) / 100 : 0;
-                    const paymentGatewayGST =
-                      price > 0
-                        ? Math.round(paymentGatewayFee * 0.18 * 100) / 100
-                        : 0;
-
-                    // Start with all fees included
-                    let totalPayable =
-                      price +
-                      convenienceFee +
-                      platformFee +
-                      paymentGatewayFee +
-                      convenienceFeeGST +
-                      platformFeeGST +
-                      paymentGatewayGST +
-                      registrationGST;
-
-                    // Subtract convenience fees if Organiser pays them
-                    if (formData.convenienceFeePlayer === "Organiser") {
-                      totalPayable -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
-                    }
-
-                    // Subtract gateway fees if Organiser pays them
-                    if (formData.gatewayFeePlayer === "Organiser") {
-                      totalPayable -= (paymentGatewayFee + paymentGatewayGST);
-                    }
-
-                    // Calculate receivable amount - start with registration amount (includes GST)
-                    let receivableAmount = registrationAmount;
-
-                    // Deduct convenience fee + platform fee if organiser pays convenience fee
-                    // For ₹100: ₹100 - ₹2 - ₹0.36 - ₹5 - ₹0.90 = ₹91.74
-                    if (formData.convenienceFeePlayer === "Organiser") {
-                      receivableAmount -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
-                    }
-
-                    // Deduct gateway fee if organiser pays gateway fee
-                    // Additional deduction: ₹1.85 + ₹0.33 = ₹2.18
-                    // Total: ₹91.74 - ₹2.18 = ₹89.56
-                    if (formData.gatewayFeePlayer === "Organiser") {
-                      receivableAmount -= (paymentGatewayFee + paymentGatewayGST);
-                    }
-
-                    setEventFormData({
-                      ...eventFormData,
-                      raceCategoryPrice: e.target.value,
-                      ticketCalculation: {
-                        baseAmount: price,
-                        // Store the base rate/amount, not the calculated fee
-                        convenienceFeeBase: amountForConvenienceFee <= 1000 ? 2 : (amountForConvenienceFee <= 1400 ? 30 : 40),
-                        convenienceFee: convenienceFee,
-                        convenienceFeeGST: convenienceFeeGST,
-                        totalConvenienceFees:
-                          convenienceFee + convenienceFeeGST,
-                        platformFee: platformFee,
-                        platformFeeGST: platformFeeGST,
-                        totalPlatformFees: platformFee + platformFeeGST,
-                        paymentGatewayFee: 1.85,
-                        paymentGatewayBuyer: paymentGatewayFee,
-                        paymentGatewayGST: paymentGatewayGST,
-                        registrationAmount: registrationAmount,  // price + registrationGST
-                        registrationGST: registrationGST,
-                        netRegistrationAmount:
-                          registrationAmount + convenienceFee + convenienceFeeGST + platformFee + platformFeeGST,
-                        totalPayable: totalPayable,
-                        receivableAmount: receivableAmount,
-                        totalPG: totalPayable,  // Real website stores total_buyer here
-                        convenienceFeePlayer: formData.convenienceFeePlayer,
-                        gatewayFeePlayer: formData.gatewayFeePlayer,
-                        collectGST: collectGST,
-                        taxType: taxType,
-                      },
-                    });
-                  }}
-                />
-                {errors.raceCategoryPrice && (
-                  <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
-                    {errors.raceCategoryPrice}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
-          <div style={{ flex: 1 }}>
-            <label
-              style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-            >
-              Minimum per booking count <span className="required">*</span>
-            </label>
-            <input
-              type="number"
-              placeholder="Minimum per booking count *"
-              min="1"
-              value={formData.minBooking}
-              onChange={(e) => {
-                const value = e.target.value;
-                handleChange("minBooking", value);
-
-                // Real-time validation
-                const newErrors = { ...errors };
-                if (!value || value <= 0) {
-                  newErrors.minBooking = "Minimum per booking count must be greater than 0";
-                } else if (Number(value) > Number(formData.maxRegistration)) {
-                  newErrors.minBooking = "Cannot exceed Maximum Registration";
-                } else {
-                  delete newErrors.minBooking;
-                }
-                setErrors(newErrors);
-              }}
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 8,
-                border: errors.minBooking ? "1px solid #d63031" : "1px solid #ddd",
-              }}
-            />
-            {errors.minBooking && (
-              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
-                {errors.minBooking}
-              </div>
-            )}
-          </div>
-          <div style={{ flex: 1 }}>
-            <label
-              style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-            >
-              Allow registrations upto <span className="required">*</span>
-            </label>
-            <input
-              type="number"
-              placeholder="Allow registrations upto *"
-              min="1"
-              value={formData.maxBooking}
-              onChange={(e) => {
-                const value = e.target.value;
-                handleChange("maxBooking", value);
-
-                // Real-time validation
-                const newErrors = { ...errors };
-                if (!value || value <= 0) {
-                  newErrors.maxBooking = "Allow registrations upto must be greater than 0";
-                } else if (Number(value) > Number(formData.maxRegistration)) {
-                  newErrors.maxBooking = "Cannot exceed Maximum Registration";
-                } else {
-                  delete newErrors.maxBooking;
-                }
-                setErrors(newErrors);
-              }}
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 8,
-                border: errors.maxBooking ? "1px solid #d63031" : "1px solid #ddd",
-              }}
-            />
-            {errors.maxBooking && (
-              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
-                {errors.maxBooking}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
-          <div style={{ flex: 1 }}>
-            <label
-              style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-            >
-              Registration Starts From <span className="required">*</span>
-            </label>
-            <input
-              type="date"
-              placeholder="dd-mm-yyyy"
-              min={todayDate}
-              value={formData.registrationStartDate}
-              onChange={(e) => {
-                handleChange("registrationStartDate", e.target.value);
-
-                // Real-time validation for past dates
-                const newErrors = { ...errors };
-                if (e.target.value) {
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  const selectedDate = new Date(e.target.value);
-
-                  if (selectedDate < today) {
-                    newErrors.registrationStartDate = "Start date cannot be in the past";
                   } else {
                     delete newErrors.registrationStartDate;
                   }
+                  setErrors(newErrors);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: 8,
+                  border: errors.registrationStartDate ? "1px solid #d63031" : "1px solid #ddd",
+                }}
+              />
+              {errors.registrationStartDate && (
+                <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                  {errors.registrationStartDate}
+                </div>
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <label
+                style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+              >
+                Start Time <span className="required">*</span>
+              </label>
+              <input
+                type="time"
+                placeholder="--:--"
+                value={formData.registrationStartTime}
+                onChange={(e) =>
+                  handleChange("registrationStartTime", e.target.value)
+                }
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: 8,
+                  border: errors.registrationStartTime ? "1px solid #d63031" : "1px solid #ddd",
+                }}
+              />
+              {errors.registrationStartTime && (
+                <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                  {errors.registrationStartTime}
+                </div>
+              )}
+            </div>
+          </div>
 
-                  // Also check if end date needs to be revalidated
-                  if (formData.registrationEndDate) {
-                    const endDate = new Date(formData.registrationEndDate);
-                    if (endDate < selectedDate) {
+          <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
+            <div style={{ flex: 1 }}>
+              <label
+                style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+              >
+                Registration Ends on <span className="required">*</span>
+              </label>
+              <input
+                type="date"
+                placeholder="dd-mm-yyyy"
+                min={formData.registrationStartDate || todayDate}
+                value={formData.registrationEndDate}
+                onChange={(e) => {
+                  handleChange("registrationEndDate", e.target.value);
+
+                  // Real-time validation for end date
+                  const newErrors = { ...errors };
+                  if (e.target.value && formData.registrationStartDate) {
+                    const startDate = new Date(formData.registrationStartDate);
+                    const selectedEndDate = new Date(e.target.value);
+
+                    if (selectedEndDate < startDate) {
                       newErrors.registrationEndDate = "End date cannot be before start date";
                     } else {
                       delete newErrors.registrationEndDate;
                     }
-                  }
-                } else {
-                  delete newErrors.registrationStartDate;
-                }
-                setErrors(newErrors);
-              }}
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 8,
-                border: errors.registrationStartDate ? "1px solid #d63031" : "1px solid #ddd",
-              }}
-            />
-            {errors.registrationStartDate && (
-              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
-                {errors.registrationStartDate}
-              </div>
-            )}
-          </div>
-          <div style={{ flex: 1 }}>
-            <label
-              style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-            >
-              Start Time <span className="required">*</span>
-            </label>
-            <input
-              type="time"
-              placeholder="--:--"
-              value={formData.registrationStartTime}
-              onChange={(e) =>
-                handleChange("registrationStartTime", e.target.value)
-              }
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 8,
-                border: errors.registrationStartTime ? "1px solid #d63031" : "1px solid #ddd",
-              }}
-            />
-            {errors.registrationStartTime && (
-              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
-                {errors.registrationStartTime}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
-          <div style={{ flex: 1 }}>
-            <label
-              style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-            >
-              Registration Ends on <span className="required">*</span>
-            </label>
-            <input
-              type="date"
-              placeholder="dd-mm-yyyy"
-              min={formData.registrationStartDate || todayDate}
-              value={formData.registrationEndDate}
-              onChange={(e) => {
-                handleChange("registrationEndDate", e.target.value);
-
-                // Real-time validation for end date
-                const newErrors = { ...errors };
-                if (e.target.value && formData.registrationStartDate) {
-                  const startDate = new Date(formData.registrationStartDate);
-                  const selectedEndDate = new Date(e.target.value);
-
-                  if (selectedEndDate < startDate) {
-                    newErrors.registrationEndDate = "End date cannot be before start date";
                   } else {
                     delete newErrors.registrationEndDate;
                   }
-                } else {
-                  delete newErrors.registrationEndDate;
-                }
-                setErrors(newErrors);
-              }}
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 8,
-                border: errors.registrationEndDate ? "1px solid #d63031" : "1px solid #ddd",
-              }}
-            />
-            {errors.registrationEndDate && (
-              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
-                {errors.registrationEndDate}
-              </div>
-            )}
-          </div>
-          <div style={{ flex: 1 }}>
-            <label
-              style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-            >
-              End Time <span className="required">*</span>
-            </label>
-            <input
-              type="time"
-              placeholder="--:--"
-              value={formData.registrationEndTime}
-              min={
-                formData.registrationEndDate === formData.registrationStartDate
-                  ? formData.registrationStartTime || undefined
-                  : undefined
-              }
-              onChange={(e) =>
-                handleChange("registrationEndTime", e.target.value)
-              }
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 8,
-                border: errors.registrationEndTime ? "1px solid #d63031" : "1px solid #ddd",
-              }}
-            />
-            {errors.registrationEndTime && (
-              <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
-                {errors.registrationEndTime}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div
-          style={{
-            marginTop: 24,
-            marginBottom: 16,
-            display: isFree ? "none" : "flex",
-            alignItems: "center",
-          }}
-        >
-          <button
-            type="button"
-            aria-label="Show advanced settings"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            style={{
-              background: "none",
-              border: "none",
-              padding: 0,
-              marginRight: 10,
-              cursor: "pointer",
-              outline: "none",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <span
-              style={{
-                display: "inline-block",
-                width: 32,
-                height: 20,
-                borderRadius: 12,
-                background: showAdvanced ? "#da251c" : "#eee",
-                position: "relative",
-                transition: "background 0.2s",
-                marginRight: 8,
-              }}
-            >
-              <span
+                  setErrors(newErrors);
+                }}
                 style={{
-                  position: "absolute",
-                  top: 2,
-                  left: showAdvanced ? 16 : 2,
-                  width: 16,
-                  height: 16,
-                  borderRadius: "50%",
-                  background: "#fff",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-                  transition: "left 0.2s",
-                  border: "1px solid #ccc",
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: 8,
+                  border: errors.registrationEndDate ? "1px solid #d63031" : "1px solid #ddd",
                 }}
               />
-            </span>
-          </button>
-          <span style={{ fontWeight: 600, color: "#222", fontSize: "1.08rem" }}>
-            Show advanced settings
-          </span>
-        </div>
-
-        {/* Hide advanced settings if Free */}
-        {showAdvanced && !isFree && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
-              <div style={{ flex: 1 }}>
-                <label
-                  style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-                >
-                  Who will pay Convenience Fee{" "}
-                  <span className="required">*</span>
-                </label>
-                <select
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: 8,
-                    border: "1px solid #ddd",
-                  }}
-                  value={formData.convenienceFeePlayer}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    handleChange("convenienceFeePlayer", newValue);
-                    const updatedFormData = {
-                      ...formData,
-                      convenienceFeePlayer: newValue,
-                      gatewayFeePlayer: formData.gatewayFeePlayer
-                    };
-                    recalculateFees(updatedFormData);
-                  }}
-                >
-                  <option value="Organiser">Organiser</option>
-                  <option value="Participant">Participant</option>
-                </select>
-              </div>
-              <div style={{ flex: 1 }}>
-                <label
-                  style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-                >
-                  Who will pay Payment Gateway fee{" "}
-                  <span className="required">*</span>
-                </label>
-                <select
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: 8,
-                    border: "1px solid #ddd",
-                  }}
-                  value={formData.gatewayFeePlayer}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    handleChange("gatewayFeePlayer", newValue);
-                    const updatedFormData = {
-                      ...formData,
-                      convenienceFeePlayer: formData.convenienceFeePlayer,
-                      gatewayFeePlayer: newValue
-                    };
-                    recalculateFees(updatedFormData);
-                  }}
-                >
-                  <option value="Organiser">Organiser</option>
-                  <option value="Participant">Participant</option>
-                </select>
-              </div>
+              {errors.registrationEndDate && (
+                <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                  {errors.registrationEndDate}
+                </div>
+              )}
             </div>
-            <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
-              <div style={{ flex: 1 }}>
-                <label
-                  style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-                >
-                  Description <span className="required">*</span>
-                </label>
-                <textarea
-                  placeholder="Description *"
-                  required
-                  value={formData.description}
-                  onChange={(e) => handleChange("description", e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: 8,
-                    border: "1px solid #ddd",
-                    minHeight: 100,
-                  }}
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label
-                  style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-                >
-                  Message Attendee
-                </label>
-                <textarea
-                  placeholder="Message Attendee"
-                  value={formData.messageAttendee}
-                  onChange={(e) =>
-                    handleChange("messageAttendee", e.target.value)
-                  }
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: 8,
-                    border: "1px solid #ddd",
-                    minHeight: 100,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <button
-              type="button"
-              aria-label="Apply Age Limit"
-              onClick={() => setApplyAgeLimit(!applyAgeLimit)}
-              style={{
-                background: "none",
-                border: "none",
-                padding: 0,
-                marginRight: 10,
-                cursor: "pointer",
-                outline: "none",
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              <span
-                style={{
-                  display: "inline-block",
-                  width: 32,
-                  height: 20,
-                  borderRadius: 12,
-                  background: applyAgeLimit ? "#da251c" : "#eee",
-                  position: "relative",
-                  transition: "background 0.2s",
-                  marginRight: 8,
-                }}
+            <div style={{ flex: 1 }}>
+              <label
+                style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
               >
-                <span
-                  style={{
-                    position: "absolute",
-                    top: 2,
-                    left: applyAgeLimit ? 16 : 2,
-                    width: 16,
-                    height: 16,
-                    borderRadius: "50%",
-                    background: "#fff",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-                    transition: "left 0.2s",
-                    border: "1px solid #ccc",
-                  }}
-                />
-              </span>
-            </button>
-            <span
-              style={{ fontWeight: 600, color: "#222", fontSize: "1.08rem" }}
-            >
-              Apply Age Limit{" "}
-              <span style={{ color: "#888", fontSize: "0.95rem" }}>
-                (Age calculated as on Event date)
-              </span>
-            </span>
-          </div>
-          {applyAgeLimit && (
-            <div style={{ display: "flex", gap: "16px", marginTop: 16 }}>
-              <div style={{ flex: 1 }}>
-                <label
-                  style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-                >
-                  Age Start <span className="required">*</span>
-                </label>
-                <select
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: 8,
-                    border: "1px solid #ddd",
-                  }}
-                  value={formData.ageStart || ""}
-                  onChange={(e) => handleChange("ageStart", e.target.value)}
-                >
-                  <option value="">-- Select --</option>
-                  {[...Array(110)].map((_, i) => (
-                    <option key={i + 1} value={i + 1}>
-                      {i + 1}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div style={{ flex: 1 }}>
-                <label
-                  style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-                >
-                  Age End <span className="required">*</span>
-                </label>
-                <select
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: 8,
-                    border: "1px solid #ddd",
-                  }}
-                  value={formData.ageEnd || ""}
-                  onChange={(e) => handleChange("ageEnd", e.target.value)}
-                >
-                  <option value="">-- Select --</option>
-                  {[...Array(110)].map((_, i) =>
-                    !formData.ageStart || i + 1 >= formData.ageStart ? (
-                      <option key={i + 1} value={i + 1}>
-                        {i + 1}
-                      </option>
-                    ) : null
-                  )}
-                </select>
-              </div>
+                End Time <span className="required">*</span>
+              </label>
+              <input
+                type="time"
+                placeholder="--:--"
+                value={formData.registrationEndTime}
+                min={
+                  formData.registrationEndDate === formData.registrationStartDate
+                    ? formData.registrationStartTime || undefined
+                    : undefined
+                }
+                onChange={(e) =>
+                  handleChange("registrationEndTime", e.target.value)
+                }
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: 8,
+                  border: errors.registrationEndTime ? "1px solid #d63031" : "1px solid #ddd",
+                }}
+              />
+              {errors.registrationEndTime && (
+                <div style={{ color: "#d63031", fontSize: "0.85rem", marginTop: 4 }}>
+                  {errors.registrationEndTime}
+                </div>
+              )}
             </div>
-          )}
+          </div>
+
           <div
             style={{
+              marginTop: 24,
+              marginBottom: 16,
               display: isFree ? "none" : "flex",
               alignItems: "center",
-              marginTop: 24,
             }}
           >
             <button
               type="button"
-              aria-label="Early bird settings"
-              onClick={() => setEarlyBird(!earlyBird)}
+              aria-label="Show advanced settings"
+              onClick={() => setShowAdvanced(!showAdvanced)}
               style={{
                 background: "none",
                 border: "none",
@@ -1411,7 +1147,7 @@ const RaceCategoryForm = ({
                   width: 32,
                   height: 20,
                   borderRadius: 12,
-                  background: earlyBird ? "#da251c" : "#eee",
+                  background: showAdvanced ? "#da251c" : "#eee",
                   position: "relative",
                   transition: "background 0.2s",
                   marginRight: 8,
@@ -1421,7 +1157,7 @@ const RaceCategoryForm = ({
                   style={{
                     position: "absolute",
                     top: 2,
-                    left: earlyBird ? 16 : 2,
+                    left: showAdvanced ? 16 : 2,
                     width: 16,
                     height: 16,
                     borderRadius: "50%",
@@ -1433,258 +1169,537 @@ const RaceCategoryForm = ({
                 />
               </span>
             </button>
-            <span
-              style={{ fontWeight: 600, color: "#222", fontSize: "1.08rem" }}
-            >
-              Early bird settings
+            <span style={{ fontWeight: 600, color: "#222", fontSize: "1.08rem" }}>
+              Show advanced settings
             </span>
           </div>
-          {/* Hide Early bird settings if Free */}
-          {earlyBird && !isFree && (
-            <div style={{ marginTop: 16 }}>
+
+          {/* Hide advanced settings if Free */}
+          {showAdvanced && !isFree && (
+            <div style={{ marginBottom: 16 }}>
               <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
                 <div style={{ flex: 1 }}>
                   <label
-                    style={{
-                      display: "block",
-                      marginBottom: 8,
-                      fontWeight: 500,
-                    }}
+                    style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
                   >
-                    No of Registrations Limit{" "}
+                    Who will pay Convenience Fee{" "}
                     <span className="required">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="No of Registrations Limit *"
-                    required
-                    value={formData.noOfTickets}
-                    onChange={(e) =>
-                      handleChange("noOfTickets", e.target.value)
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      borderRadius: 8,
-                      border: "1px solid #ddd",
-                    }}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: 8,
-                      fontWeight: 500,
-                    }}
-                  >
-                    Discount
                   </label>
                   <select
                     required
-                    value={formData.discountType}
-                    onChange={(e) =>
-                      handleChange("discountType", e.target.value)
-                    }
                     style={{
                       width: "100%",
                       padding: "10px",
                       borderRadius: 8,
                       border: "1px solid #ddd",
                     }}
+                    value={formData.convenienceFeePlayer}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      handleChange("convenienceFeePlayer", newValue);
+                      const updatedFormData = {
+                        ...formData,
+                        convenienceFeePlayer: newValue,
+                        gatewayFeePlayer: formData.gatewayFeePlayer
+                      };
+                      recalculateFees(updatedFormData);
+                    }}
                   >
-                    <option value="Percentage">Percentage</option>
-                    <option value="Amount">Amount</option>
+                    <option value="Organiser">Organiser</option>
+                    <option value="Participant">Participant</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label
+                    style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+                  >
+                    Who will pay Payment Gateway fee{" "}
+                    <span className="required">*</span>
+                  </label>
+                  <select
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: 8,
+                      border: "1px solid #ddd",
+                    }}
+                    value={formData.gatewayFeePlayer}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      handleChange("gatewayFeePlayer", newValue);
+                      const updatedFormData = {
+                        ...formData,
+                        convenienceFeePlayer: formData.convenienceFeePlayer,
+                        gatewayFeePlayer: newValue
+                      };
+                      recalculateFees(updatedFormData);
+                    }}
+                  >
+                    <option value="Organiser">Organiser</option>
+                    <option value="Participant">Participant</option>
                   </select>
                 </div>
               </div>
               <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
                 <div style={{ flex: 1 }}>
                   <label
-                    style={{
-                      display: "block",
-                      marginBottom: 8,
-                      fontWeight: 500,
-                    }}
+                    style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
                   >
-                    Discount Value <span className="required">*</span>
+                    Description <span className="required">*</span>
                   </label>
-                  <input
-                    type="number"
-                    placeholder="Discount Value *"
+                  <textarea
+                    placeholder="Description *"
                     required
-                    value={formData.discountValue}
+                    value={formData.description}
+                    onChange={(e) => handleChange("description", e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: 8,
+                      border: "1px solid #ddd",
+                      minHeight: 100,
+                    }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label
+                    style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+                  >
+                    Message Attendee
+                  </label>
+                  <textarea
+                    placeholder="Message Attendee"
+                    value={formData.messageAttendee}
                     onChange={(e) =>
-                      handleChange("discountValue", e.target.value)
+                      handleChange("messageAttendee", e.target.value)
                     }
                     style={{
                       width: "100%",
                       padding: "10px",
                       borderRadius: 8,
                       border: "1px solid #ddd",
-                    }}
-                  />
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
-                <div style={{ flex: 1 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: 8,
-                      fontWeight: 500,
-                    }}
-                  >
-                    Start Date <span className="required">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    placeholder="dd-mm-yyyy"
-                    required
-                    min={todayDate}
-                    value={formData.ebStartDate}
-                    onChange={(e) =>
-                      handleChange("ebStartDate", e.target.value)
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      borderRadius: 8,
-                      border: "1px solid #ddd",
-                    }}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: 8,
-                      fontWeight: 500,
-                    }}
-                  >
-                    Start Time <span className="required">*</span>
-                  </label>
-                  <input
-                    type="time"
-                    placeholder="--:--"
-                    required
-                    value={formData.ebStartTime}
-                    onChange={(e) =>
-                      handleChange("ebStartTime", e.target.value)
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      borderRadius: 8,
-                      border: "1px solid #ddd",
-                    }}
-                  />
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
-                <div style={{ flex: 1 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: 8,
-                      fontWeight: 500,
-                    }}
-                  >
-                    End Date <span className="required">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    placeholder="dd-mm-yyyy"
-                    required
-                    min={formData.ebStartDate || todayDate}
-                    value={formData.ebEndDate}
-                    onChange={(e) => handleChange("ebEndDate", e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      borderRadius: 8,
-                      border: "1px solid #ddd",
-                    }}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: 8,
-                      fontWeight: 500,
-                    }}
-                  >
-                    End Time <span className="required">*</span>
-                  </label>
-                  <input
-                    type="time"
-                    placeholder="--:--"
-                    required
-                    value={formData.ebEndTime}
-                    min={
-                      formData.ebEndDate === formData.ebStartDate
-                        ? formData.ebStartTime || undefined
-                        : undefined
-                    }
-                    onChange={(e) => handleChange("ebEndTime", e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      borderRadius: 8,
-                      border: "1px solid #ddd",
+                      minHeight: 100,
                     }}
                   />
                 </div>
               </div>
             </div>
           )}
-        </div>
 
-        <div
-          style={{
-            marginTop: 32,
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: "16px",
-          }}
-        >
-          <button
-            type="button"
-            onClick={onCancel}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <button
+                type="button"
+                aria-label="Apply Age Limit"
+                onClick={() => setApplyAgeLimit(!applyAgeLimit)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  marginRight: 10,
+                  cursor: "pointer",
+                  outline: "none",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: 32,
+                    height: 20,
+                    borderRadius: 12,
+                    background: applyAgeLimit ? "#da251c" : "#eee",
+                    position: "relative",
+                    transition: "background 0.2s",
+                    marginRight: 8,
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 2,
+                      left: applyAgeLimit ? 16 : 2,
+                      width: 16,
+                      height: 16,
+                      borderRadius: "50%",
+                      background: "#fff",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+                      transition: "left 0.2s",
+                      border: "1px solid #ccc",
+                    }}
+                  />
+                </span>
+              </button>
+              <span
+                style={{ fontWeight: 600, color: "#222", fontSize: "1.08rem" }}
+              >
+                Apply Age Limit{" "}
+                <span style={{ color: "#888", fontSize: "0.95rem" }}>
+                  (Age calculated as on Event date)
+                </span>
+              </span>
+            </div>
+            {applyAgeLimit && (
+              <div style={{ display: "flex", gap: "16px", marginTop: 16 }}>
+                <div style={{ flex: 1 }}>
+                  <label
+                    style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+                  >
+                    Age Start <span className="required">*</span>
+                  </label>
+                  <select
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: 8,
+                      border: "1px solid #ddd",
+                    }}
+                    value={formData.ageStart || ""}
+                    onChange={(e) => handleChange("ageStart", e.target.value)}
+                  >
+                    <option value="">-- Select --</option>
+                    {[...Array(110)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {i + 1}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label
+                    style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
+                  >
+                    Age End <span className="required">*</span>
+                  </label>
+                  <select
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: 8,
+                      border: "1px solid #ddd",
+                    }}
+                    value={formData.ageEnd || ""}
+                    onChange={(e) => handleChange("ageEnd", e.target.value)}
+                  >
+                    <option value="">-- Select --</option>
+                    {[...Array(110)].map((_, i) =>
+                      !formData.ageStart || i + 1 >= formData.ageStart ? (
+                        <option key={i + 1} value={i + 1}>
+                          {i + 1}
+                        </option>
+                      ) : null
+                    )}
+                  </select>
+                </div>
+              </div>
+            )}
+            <div
+              style={{
+                display: isFree ? "none" : "flex",
+                alignItems: "center",
+                marginTop: 24,
+              }}
+            >
+              <button
+                type="button"
+                aria-label="Early bird settings"
+                onClick={() => setEarlyBird(!earlyBird)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  marginRight: 10,
+                  cursor: "pointer",
+                  outline: "none",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: 32,
+                    height: 20,
+                    borderRadius: 12,
+                    background: earlyBird ? "#da251c" : "#eee",
+                    position: "relative",
+                    transition: "background 0.2s",
+                    marginRight: 8,
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 2,
+                      left: earlyBird ? 16 : 2,
+                      width: 16,
+                      height: 16,
+                      borderRadius: "50%",
+                      background: "#fff",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+                      transition: "left 0.2s",
+                      border: "1px solid #ccc",
+                    }}
+                  />
+                </span>
+              </button>
+              <span
+                style={{ fontWeight: 600, color: "#222", fontSize: "1.08rem" }}
+              >
+                Early bird settings
+              </span>
+            </div>
+            {/* Hide Early bird settings if Free */}
+            {earlyBird && !isFree && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: 8,
+                        fontWeight: 500,
+                      }}
+                    >
+                      No of Registrations Limit{" "}
+                      <span className="required">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="No of Registrations Limit *"
+                      required
+                      value={formData.noOfTickets}
+                      onChange={(e) =>
+                        handleChange("noOfTickets", e.target.value)
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: 8,
+                        border: "1px solid #ddd",
+                      }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: 8,
+                        fontWeight: 500,
+                      }}
+                    >
+                      Discount
+                    </label>
+                    <select
+                      required
+                      value={formData.discountType}
+                      onChange={(e) =>
+                        handleChange("discountType", e.target.value)
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: 8,
+                        border: "1px solid #ddd",
+                      }}
+                    >
+                      <option value="Percentage">Percentage</option>
+                      <option value="Amount">Amount</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: 8,
+                        fontWeight: 500,
+                      }}
+                    >
+                      Discount Value <span className="required">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="Discount Value *"
+                      required
+                      value={formData.discountValue}
+                      onChange={(e) =>
+                        handleChange("discountValue", e.target.value)
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: 8,
+                        border: "1px solid #ddd",
+                      }}
+                    />
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: 8,
+                        fontWeight: 500,
+                      }}
+                    >
+                      Start Date <span className="required">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      placeholder="dd-mm-yyyy"
+                      required
+                      min={todayDate}
+                      value={formData.ebStartDate}
+                      onChange={(e) =>
+                        handleChange("ebStartDate", e.target.value)
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: 8,
+                        border: "1px solid #ddd",
+                      }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: 8,
+                        fontWeight: 500,
+                      }}
+                    >
+                      Start Time <span className="required">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      placeholder="--:--"
+                      required
+                      value={formData.ebStartTime}
+                      onChange={(e) =>
+                        handleChange("ebStartTime", e.target.value)
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: 8,
+                        border: "1px solid #ddd",
+                      }}
+                    />
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: "16px", marginBottom: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: 8,
+                        fontWeight: 500,
+                      }}
+                    >
+                      End Date <span className="required">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      placeholder="dd-mm-yyyy"
+                      required
+                      min={formData.ebStartDate || todayDate}
+                      value={formData.ebEndDate}
+                      onChange={(e) => handleChange("ebEndDate", e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: 8,
+                        border: "1px solid #ddd",
+                      }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: 8,
+                        fontWeight: 500,
+                      }}
+                    >
+                      End Time <span className="required">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      placeholder="--:--"
+                      required
+                      value={formData.ebEndTime}
+                      min={
+                        formData.ebEndDate === formData.ebStartDate
+                          ? formData.ebStartTime || undefined
+                          : undefined
+                      }
+                      onChange={(e) => handleChange("ebEndTime", e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: 8,
+                        border: "1px solid #ddd",
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div
             style={{
-              background: "#fff",
-              border: "2px solid #da251c",
-              color: "#da251c",
-              padding: "10px 32px",
-              borderRadius: 8,
-              fontWeight: 600,
-              fontSize: "1.1rem",
-              cursor: "pointer",
+              marginTop: 32,
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "16px",
             }}
           >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              background: loading ? "#ccc" : "#da251c",
-              color: "#fff",
-              border: "none",
-              padding: "10px 32px",
-              borderRadius: 8,
-              fontWeight: 600,
-              fontSize: "1.1rem",
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading ? "Saving..." : "Save"}
-          </button>
-        </div>
-      </form>
-    </div>
+            <button
+              type="button"
+              onClick={onCancel}
+              style={{
+                background: "#fff",
+                border: "2px solid #da251c",
+                color: "#da251c",
+                padding: "10px 32px",
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: "1.1rem",
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                background: loading ? "#ccc" : "#da251c",
+                color: "#fff",
+                border: "none",
+                padding: "10px 32px",
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: "1.1rem",
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.7 : 1,
+              }}
+            >
+              {loading ? "Saving..." : "Save"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </>
   );
 };
 

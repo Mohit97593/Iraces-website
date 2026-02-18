@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./CreateEvent.css";
 import GeneralFormQuestions from "./GeneralFormQuestions";
 import { authAPI } from "../../services/authAPI";
+import Toast from "../../components/Toast/Toast";
 
 const FormQuestions = ({ onBack, onNext }) => {
   const [showGeneralForm, setShowGeneralForm] = useState(false);
@@ -16,6 +17,11 @@ const FormQuestions = ({ onBack, onNext }) => {
   const [draggedItem, setDraggedItem] = useState(null);
   const [draggedOverIndex, setDraggedOverIndex] = useState(null);
   const [draggedGroup, setDraggedGroup] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const triggerToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
 
   useEffect(() => {
     // load questions initially; fetchQuestions defined below so other handlers can reuse it
@@ -162,9 +168,9 @@ const FormQuestions = ({ onBack, onNext }) => {
           res.data ||
           res.message)
       ) {
-        alert(res.message || "Question removed successfully");
+        triggerToast(res.message || "Question removed successfully");
       } else {
-        alert(res?.message || "Failed to remove question");
+        triggerToast(res?.message || "Failed to remove question", 'error');
       }
 
       // Refresh questions regardless of the response structure so UI stays in sync
@@ -190,7 +196,7 @@ const FormQuestions = ({ onBack, onNext }) => {
       }
     } catch (err) {
       console.error("deleteEventFormQuestions failed:", err);
-      alert("Failed to delete question. See console for details.");
+      triggerToast("Failed to delete question. See console for details.", 'error');
     }
   };
 
@@ -433,12 +439,12 @@ const FormQuestions = ({ onBack, onNext }) => {
       } else {
         // revert optimistic
         setLocalToggleMap((s) => ({ ...s, [id]: !newVisualState }));
-        alert(res?.message || "Failed to update status");
+        triggerToast(res?.message || "Failed to update status", 'error');
       }
     } catch (err) {
       setLocalToggleMap((s) => ({ ...s, [id]: !newVisualState }));
       console.error("Failed to toggle event form status:", err);
-      alert("Failed to update status. See console.");
+      triggerToast("Failed to update status. See console.", 'error');
     }
   };
 
@@ -508,7 +514,7 @@ const FormQuestions = ({ onBack, onNext }) => {
       await fetchQuestions();
     } catch (err) {
       console.error("Failed to update ticket pdf flag:", err);
-      alert("Failed to update ticket pdf flag. See console.");
+      triggerToast("Failed to update ticket pdf flag. See console.", 'error');
       // revert UI
       await fetchQuestions();
     }
@@ -603,7 +609,7 @@ const FormQuestions = ({ onBack, onNext }) => {
 
       if (!eventId) {
         console.error("No event_id found");
-        alert("Event ID not found. Cannot save sort order.");
+        triggerToast("Event ID not found. Cannot save sort order.", 'error');
         return;
       }
 
@@ -646,11 +652,11 @@ const FormQuestions = ({ onBack, onNext }) => {
         await fetchQuestions();
       } else {
         console.error("Failed to update sort order:", response);
-        alert(response?.message || "Failed to update sort order");
+        triggerToast(response?.message || "Failed to update sort order", 'error');
       }
     } catch (error) {
       console.error("Error calling sorting API:", error);
-      alert("Failed to update sort order. See console for details.");
+      triggerToast("Failed to update sort order. See console for details.", 'error');
     }
   };
 
@@ -666,6 +672,13 @@ const FormQuestions = ({ onBack, onNext }) => {
       className="form-questions-section"
       style={{ maxWidth: 900, margin: "0 auto" }}
     >
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       {!showGeneralForm && (
         <>
           <div

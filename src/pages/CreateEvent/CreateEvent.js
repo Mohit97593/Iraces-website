@@ -16,6 +16,7 @@ import CommunicationsStep from "./CommunicationsStep";
 import FAQsStep from "./FAQsStep";
 import Integrations from "./Integrations";
 import eventViewImg from "../../assets/image/event-view.jpg";
+import Toast from "../../components/Toast/Toast";
 
 export default function CreateEvent() {
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ export default function CreateEvent() {
   const [bannerImageUrl, setBannerImageUrl] = useState(null);
   const [organizerGST, setOrganizerGST] = useState(false); // Track organizer's GST setting
   const [isEditingCommunication, setIsEditingCommunication] = useState(false); // Track if editing communication
+  const [toast, setToast] = useState(null); // Toast notification state
   // Today's date and year
   const today = new Date();
   const day = today.getDate();
@@ -64,6 +66,11 @@ export default function CreateEvent() {
     { label: "Duathlon", icon: "fas fa-person-running" },
     { label: "Olympic Distance Triathlon", icon: "fas fa-medal" },
   ];
+
+  // Helper function to show toast notifications
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
 
   useEffect(() => {
     // If URL contains ?step=N, use it to open that step (useful when navigating back after save)
@@ -1125,14 +1132,15 @@ export default function CreateEvent() {
           } catch (e) { }
           return updated;
         });
-        setCurrentStep(2);
-        alert(response?.message || "Event basic info saved successfully");
+        showToast(response?.message || "Event Essentials saved successfully!");
+        // Delay step navigation so toast is visible
+        setTimeout(() => setCurrentStep(2), 1500);
       } else {
-        alert(response?.message || "Failed to save event basic info");
+        showToast(response?.message || "Failed to save event basic info", 'error');
       }
     } catch (error) {
       console.error("Error saving event essentials:", error);
-      alert("Failed to save event basic info. Please try again.");
+      showToast("Failed to save event basic info. Please try again.", 'error');
     } finally {
       setLoading(false);
     }
@@ -1513,9 +1521,11 @@ export default function CreateEvent() {
                     )}
                   </div>
 
-                  <button type="submit" className="btn-save-continue">
-                    Save & Continue
-                  </button>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+                    <button type="submit" className="btn-save-continue">
+                      Save & Continue
+                    </button>
+                  </div>
                 </form>
               </div>
             )}
@@ -1525,18 +1535,21 @@ export default function CreateEvent() {
                 onBack={() => setCurrentStep(1)}
                 onNext={handleSchedulingNext}
                 initialFormData={eventFormData}
+                showToast={showToast}
               />
             )}
             {currentStep === 3 && (
               <EventImages
                 onBack={() => setCurrentStep(2)}
                 onNext={handleImagesSave}
+                showToast={showToast}
               />
             )}
             {currentStep === 4 && (
               <EventSettings
                 onBack={() => setCurrentStep(3)}
                 onNext={handleSettingsSave}
+                showToast={showToast}
               />
             )}
             {currentStep === 5 && (
@@ -1549,6 +1562,7 @@ export default function CreateEvent() {
                 eventFormData={eventFormData}
                 setEventFormData={setEventFormData}
                 organizerGST={organizerGST}
+                showToast={showToast}
               />
             )}
             {currentStep === 6 && (
@@ -1563,24 +1577,28 @@ export default function CreateEvent() {
                   });
                   setCurrentStep(7);
                 }}
+                showToast={showToast}
               />
             )}
             {currentStep === 7 && (
               <Grouping
                 onBack={() => setCurrentStep(6)}
                 onNext={handleGroupingSave}
+                showToast={showToast}
               />
             )}
             {currentStep === 8 && (
               <AgeCategory
                 onBack={() => setCurrentStep(7)}
                 onNext={() => markCurrentSavedAndGo(9)}
+                showToast={showToast}
               />
             )}
             {currentStep === 9 && (
               <DiscountCoupons
                 onBack={() => setCurrentStep(8)}
                 onNext={() => markCurrentSavedAndGo(10)}
+                showToast={showToast}
               />
             )}
             {currentStep === 10 && (
@@ -1588,18 +1606,21 @@ export default function CreateEvent() {
                 onBack={() => setCurrentStep(9)}
                 onNext={() => markCurrentSavedAndGo(11)}
                 onEditingChange={setIsEditingCommunication}
+                showToast={showToast}
               />
             )}
             {currentStep === 11 && (
               <FAQsStep
                 onBack={() => setCurrentStep(10)}
                 onNext={() => markCurrentSavedAndGo(12)}
+                showToast={showToast}
               />
             )}
             {currentStep === 12 && (
               <Integrations
                 onBack={() => setCurrentStep(11)}
                 onNext={() => markCurrentSavedAndGo(13)}
+                showToast={showToast}
               />
             )}
           </div>
@@ -2309,6 +2330,15 @@ export default function CreateEvent() {
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       {/* <Footer /> */}
     </div>

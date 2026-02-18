@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
+import Toast from "../../components/Toast/Toast";
 
 const DiscountCoupons = ({ onBack, onNext }) => {
+  const [toast, setToast] = useState(null);
+
+  const triggerToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
   const [showForm, setShowForm] = useState(false);
   const [useType, setUseType] = useState("oneTime");
   const [showPublic, setShowPublic] = useState(true);
@@ -61,7 +67,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
           c.id === coupon.id ? { ...c, coupon_status: current } : c
         )
       );
-      alert("Failed to update coupon status. Please try again.");
+      triggerToast("Failed to update coupon status. Please try again.", 'error');
     }
   };
   const [formData, setFormData] = useState(initialFormState);
@@ -277,7 +283,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
 
       // Check if deletion was successful - API returns {message: "Record removed successfully"}
       if (res && res.message) {
-        alert(res.message || "Coupon removed");
+        triggerToast(res.message || "Coupon removed");
 
         // Refresh the coupons list - same pattern as AgeCategory
         const detailsRes = await authAPI.getEventDetails(eventId);
@@ -289,11 +295,11 @@ const DiscountCoupons = ({ onBack, onNext }) => {
           }
         }
       } else {
-        alert("Failed to delete coupon");
+        triggerToast("Failed to delete coupon", 'error');
       }
     } catch (err) {
       console.error("Error deleting coupon:", err);
-      alert(err.message || "Failed to delete coupon");
+      triggerToast(err.message || "Failed to delete coupon", 'error');
     }
   };
 
@@ -425,11 +431,11 @@ const DiscountCoupons = ({ onBack, onNext }) => {
         setAttemptedSave(false);
         setShowForm(true);
       } else {
-        alert("No coupon details returned for edit.");
+        triggerToast("No coupon details returned for edit.", 'error');
       }
     } catch (err) {
       console.error("editEventCommFqa error:", err);
-      alert(err.message || "Failed to load coupon for editing");
+      triggerToast(err.message || "Failed to load coupon for editing", 'error');
     }
   };
 
@@ -443,6 +449,13 @@ const DiscountCoupons = ({ onBack, onNext }) => {
 
   return (
     <div className="discount-coupons-section">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <div className="section-header">
         {!showForm && <h3>Discount Coupons</h3>}
       </div>
@@ -1449,7 +1462,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                           (eventDetails.data && eventDetails.data.event_id))) ||
                       "";
                     if (!eventIdForSave) {
-                      alert("Event ID missing. Please save the event first.");
+                      triggerToast("Event ID missing. Please save the event first.", 'error');
                       return;
                     }
 
@@ -1471,7 +1484,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                     try {
                       const res = await authAPI.addEditCoupon(fd);
                       if (res && res.success) {
-                        alert(res.message || "Coupon saved");
+                        triggerToast(res.message || "Coupon saved");
                         // close form
                         setShowForm(false);
                         setFormData(initialFormState);
@@ -1532,11 +1545,11 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                           }
                         }
                       } else {
-                        alert(res.message || "Failed to save coupon");
+                        triggerToast(res.message || "Failed to save coupon", 'error');
                       }
                     } catch (err) {
                       console.error("addEditCoupon error:", err);
-                      alert(err.message || "Failed to save coupon");
+                      triggerToast(err.message || "Failed to save coupon", 'error');
                     }
                   }}
                 >

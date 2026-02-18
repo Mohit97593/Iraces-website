@@ -2,9 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./GeneralFormQuestions.css";
 import { authAPI } from "../../services/authAPI";
+import Toast from "../../components/Toast/Toast";
 
 const AddCustomForm = ({ onCancel }) => {
   const navigate = useNavigate();
+  const [toast, setToast] = useState(null);
+
+  const triggerToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
   const [formCommon, setFormCommon] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [selectedFormId, setSelectedFormId] = useState("");
@@ -20,7 +26,7 @@ const AddCustomForm = ({ onCancel }) => {
   const [editingFormId, setEditingFormId] = useState(null);
 
   const addNewForm = async () => {
-    if (!newFormName.trim()) return alert("Please enter form name");
+    if (!newFormName.trim()) { triggerToast("Please enter form name", 'error'); return; }
     try {
       const fd = new FormData();
       fd.append("form_name", newFormName.trim());
@@ -32,7 +38,7 @@ const AddCustomForm = ({ onCancel }) => {
       // Use formCommonDetails API to add the new form (per updated requirement)
       const res = await authAPI.formCommonDetails(fd);
       console.log("formCommonDetails (add new form) response:", res);
-      alert(res?.message || "Form saved");
+      triggerToast(res?.message || "Form saved");
 
       // After adding, refresh formCommon list
       try {
@@ -51,18 +57,18 @@ const AddCustomForm = ({ onCancel }) => {
       setNewFormName("");
     } catch (err) {
       console.error("Failed to add form via formCommonDetails:", err);
-      alert("Failed to save form. See console.");
+      triggerToast("Failed to save form. See console.", 'error');
     }
   };
 
   const handleSave = async () => {
     // basic validation
-    if (!questionType) return alert("Please select question type");
+    if (!questionType) { triggerToast("Please select question type", 'error'); return; }
     const questionLabelEl = document.querySelector(
       ".form-group input.form-input"
     );
     const question_label = questionLabelEl ? questionLabelEl.value.trim() : "";
-    if (!question_label) return alert("Please enter question title");
+    if (!question_label) { triggerToast("Please enter question title", 'error'); return; }
 
 
     // Handle options - if it's a string (comma-separated), split it
@@ -98,7 +104,7 @@ const AddCustomForm = ({ onCancel }) => {
       setSaving(true);
       const res = await authAPI.addCustomFormQuestions(fd);
       console.log("addCustomFormQuestions response:", res);
-      alert(res?.message || "Saved");
+      triggerToast(res?.message || "Saved");
       // refresh general form questions after successful save
       try {
         const fd2 = new FormData();
@@ -127,7 +133,7 @@ const AddCustomForm = ({ onCancel }) => {
       if (typeof onCancel === "function") onCancel();
     } catch (err) {
       console.error("Failed to save custom question:", err);
-      alert("Failed to save question. See console.");
+      triggerToast("Failed to save question. See console.", 'error');
       setSaving(false);
     }
   };
@@ -193,6 +199,13 @@ const AddCustomForm = ({ onCancel }) => {
 
   return (
     <div style={{ maxWidth: 800, margin: "24px auto", padding: 24 }}>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <div
         style={{
           display: "flex",

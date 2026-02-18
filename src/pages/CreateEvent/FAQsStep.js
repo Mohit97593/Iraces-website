@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 
-const FAQsStep = ({ onBack, onNext }) => {
+const FAQsStep = ({ onBack, onNext, showToast }) => {
   const [items, setItems] = useState([]);
   const [hovered, setHovered] = useState(null);
   const [adding, setAdding] = useState(false);
@@ -64,14 +64,14 @@ const FAQsStep = ({ onBack, onNext }) => {
           it.id === item.id ? { ...it, active: item.active } : it
         )
       );
-      alert("Failed to update status. Try again.");
+      showToast && showToast("Failed to update status. Try again.", 'error');
     }
   };
 
   const handleEdit = async (item) => {
     // call edit API to fetch details and open add form pre-filled
     const eventId = sessionStorage.getItem("event_id");
-    if (!eventId) return alert("Missing event_id");
+    if (!eventId) return showToast && showToast("Missing event_id", 'error');
     try {
       const fd = new FormData();
       fd.append("event_id", String(eventId));
@@ -90,7 +90,7 @@ const FAQsStep = ({ onBack, onNext }) => {
       setAdding(true);
     } catch (err) {
       console.error("Failed to load edit details:", err);
-      alert("Failed to load edit details");
+      showToast && showToast("Failed to load edit details", 'error');
     }
   };
 
@@ -111,11 +111,11 @@ const FAQsStep = ({ onBack, onNext }) => {
 
   const handleSaveAdd = async () => {
     if (!newQuestion.trim()) {
-      alert("Question is required");
+      showToast && showToast("Question is required", 'error');
       return false;
     }
     if (!newAnswer.trim()) {
-      alert("Answer is required");
+      showToast && showToast("Answer is required", 'error');
       return false;
     }
 
@@ -123,7 +123,7 @@ const FAQsStep = ({ onBack, onNext }) => {
     const eventId = sessionStorage.getItem("event_id");
 
     if (!eventId) {
-      alert("Event ID not found. Please try again.");
+      showToast && showToast("Event ID not found. Please try again.", 'error');
       return false;
     }
 
@@ -149,7 +149,7 @@ const FAQsStep = ({ onBack, onNext }) => {
       userId = localStorage.getItem("user_id") || "";
     }
     if (!userId) {
-      alert("Unable to determine user_id. Please login again.");
+      showToast && showToast("Unable to determine user_id. Please login again.", 'error');
       return false;
     }
 
@@ -188,7 +188,7 @@ const FAQsStep = ({ onBack, onNext }) => {
         err.response?.data ||
         err.response?.statusText ||
         err.message;
-      alert("Failed to save FAQ: " + (typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg)));
+      showToast && showToast("Failed to save FAQ: " + (typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg)), 'error');
       return false;
     }
   };
@@ -204,14 +204,14 @@ const FAQsStep = ({ onBack, onNext }) => {
     authAPI
       .deleteEventCommFqa(fd)
       .then((res) => {
-        alert((res && res.message) || "Deleted");
+        showToast && showToast((res && res.message) || "FAQ deleted successfully!");
         setItems((prev) =>
           prev.filter((it) => String(it.id) !== String(item.id))
         );
       })
       .catch((err) => {
         console.error("Failed to delete FAQ:", err);
-        alert("Failed to delete.");
+        showToast && showToast("Failed to delete.", 'error');
       });
   };
 

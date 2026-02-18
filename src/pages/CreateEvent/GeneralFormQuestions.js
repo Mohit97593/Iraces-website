@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import AddCustomForm from "./AddCustomForm";
 import "./GeneralFormQuestions.css";
 import { authAPI } from "../../services/authAPI";
+import Toast from "../../components/Toast/Toast";
 
 const GeneralFormQuestions = ({
   onSave,
@@ -27,6 +28,11 @@ const GeneralFormQuestions = ({
   const [showSubQuestionModal, setShowSubQuestionModal] = useState(false);
   const [selectedQuestionForSubDetails, setSelectedQuestionForSubDetails] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [toast, setToast] = useState(null);
+
+  const triggerToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
 
   // Main question price/count toggle states
   const [mainQuestionPriceEnabled, setMainQuestionPriceEnabled] = useState(false);
@@ -663,7 +669,7 @@ const GeneralFormQuestions = ({
           });
         }
 
-        alert(res.message || "Question deleted successfully");
+        triggerToast(res.message || "Question deleted successfully");
 
         // 2. Force full API refresh to ensure UI is in sync with server
         console.log("🔄 Triggering fetchGeneral() for full sync...");
@@ -674,13 +680,13 @@ const GeneralFormQuestions = ({
 
       } else {
         console.warn("🔴 Delete API returned failure:", res);
-        alert(res?.message || "Failed to delete question. Please check if it's already removed.");
+        triggerToast(res?.message || "Failed to delete question. Please check if it's already removed.", 'error');
         // Even if API reports failure, sometimes it actually deleted. Let's refresh anyway.
         await fetchGeneral();
       }
     } catch (err) {
       console.error("❌ Delete question error:", err);
-      alert("An error occurred while deleting the question. Please try refreshing the page.");
+      triggerToast("An error occurred while deleting the question. Please try refreshing the page.", 'error');
     }
   };
 
@@ -1113,11 +1119,11 @@ const GeneralFormQuestions = ({
 
         // Validate that counts match number of existing options
         if (mainQuestionPriceEnabled && prices.length > 0 && prices.length !== labels.length) {
-          alert(`Number of prices (${prices.length}) must match number of options (${labels.length})`);
+          triggerToast(`Number of prices (${prices.length}) must match number of options (${labels.length})`, 'error');
           return;
         }
         if (mainQuestionCountEnabled && counts.length > 0 && counts.length !== labels.length) {
-          alert(`Number of counts (${counts.length}) must match number of options (${labels.length})`);
+          triggerToast(`Number of counts (${counts.length}) must match number of options (${labels.length})`, 'error');
           return;
         }
 
@@ -1506,16 +1512,16 @@ const GeneralFormQuestions = ({
 
       // Inform user about final status
       if (res && (res.success === 200 || String(res.success) === "1")) {
-        alert(res.message || "Question saved successfully");
+        triggerToast(res.message || "Question saved successfully");
       } else if (res && res.message) {
-        alert(res.message);
+        triggerToast(res.message);
       } else {
-        alert("Question operation completed; refreshed questions.");
+        triggerToast("Question operation completed; refreshed questions.");
       }
     } catch (err) {
       console.error("Failed to refresh eventFormQuestions:", err);
       // Show message even if refresh failed
-      alert(res?.message || "Question saved but failed to refresh questions.");
+      triggerToast(res?.message || "Question saved but failed to refresh questions.", 'error');
     } finally {
       setShowModal(false);
       setSelectedQuestion(null);
@@ -1524,6 +1530,13 @@ const GeneralFormQuestions = ({
 
   return (
     <div className="general-form-questions-inline">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       {/* Question Details Modal */}
       {showModal && selectedQuestion && (
         <div className="modal-overlay" onClick={handleCloseModal}>
@@ -4293,11 +4306,11 @@ const GeneralFormQuestions = ({
                                             setShowSubQuestionModal(true);
                                           } else {
                                             console.error("No data returned from API");
-                                            alert("Failed to load subquestion details");
+                                            triggerToast("Failed to load subquestion details", 'error');
                                           }
                                         } catch (error) {
                                           console.error("Error fetching subquestion tree:", error);
-                                          alert("Failed to load subquestion details");
+                                          triggerToast("Failed to load subquestion details", 'error');
                                         }
                                       }}
                                       style={{
@@ -4317,7 +4330,7 @@ const GeneralFormQuestions = ({
                                   title={tooltipMessage}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    alert(tooltipMessage);
+                                    triggerToast(tooltipMessage, 'error');
                                   }}
                                   style={{
                                     background: '#ffc107',

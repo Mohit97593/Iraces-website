@@ -447,6 +447,7 @@ export default function MyEvents() {
                             <button
                               className="event-copy-btn"
                               aria-label="Copy event"
+                              title="Copy Event"
                               onClick={() => {
                                 setSelectedEventToCopy(event);
                                 setNewName(`${event.name || event.event_name || "Event"} Copy`);
@@ -458,6 +459,7 @@ export default function MyEvents() {
                             <button
                               className="event-edit-btn"
                               aria-label="Edit event"
+                              title="Edit Event"
                               onClick={() => {
                                 // Store event_id in localStorage instead of URL
                                 localStorage.setItem('editEventId', event.id);
@@ -472,6 +474,7 @@ export default function MyEvents() {
                                 deleteEventById(event.id, event.active || 0)
                               }
                               aria-label="Delete event"
+                              title="Delete Event"
                             >
                               <i className="fas fa-trash-alt"></i>
                             </button>

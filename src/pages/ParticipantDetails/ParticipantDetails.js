@@ -1781,17 +1781,17 @@ export default function ParticipantDetails() {
     // Set default active tab for this participant if not set
     const currentActiveTab = activeQuestionTab[participantIndex];
     if (!currentActiveTab) {
-      if (ungroupedQuestions.length > 0) {
-        // Prioritize General tab if there are ungrouped questions
-        setActiveQuestionTab(prev => ({
-          ...prev,
-          [participantIndex]: 'general'
-        }));
-      } else if (hasGroups) {
-        // Otherwise use first group
+      if (hasGroups) {
+        // Prioritize first group if there are groups
         setActiveQuestionTab(prev => ({
           ...prev,
           [participantIndex]: groupNames[0]
+        }));
+      } else if (ungroupedQuestions.length > 0) {
+        // Otherwise use General tab
+        setActiveQuestionTab(prev => ({
+          ...prev,
+          [participantIndex]: 'general'
         }));
       }
     }
@@ -1813,31 +1813,7 @@ export default function ParticipantDetails() {
         {hasGroups && (
           <div style={{ marginBottom: '20px', borderBottom: '2px solid #e0e0e0' }}>
             <div style={{ display: 'flex', gap: '0', overflowX: 'auto' }}>
-              {/* General tab first if there are ungrouped questions */}
-              {ungroupedQuestions.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setActiveQuestionTab(prev => ({
-                    ...prev,
-                    [participantIndex]: 'general'
-                  }))}
-                  style={{
-                    padding: '12px 24px',
-                    border: 'none',
-                    borderBottom: currentActiveTab === 'general' ? '3px solid #e74c3c' : '3px solid transparent',
-                    background: currentActiveTab === 'general' ? '#fff' : '#f5f5f5',
-                    color: currentActiveTab === 'general' ? '#e74c3c' : '#666',
-                    fontWeight: currentActiveTab === 'general' ? '600' : '500',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    transition: 'all 0.3s ease',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  📝 General
-                </button>
-              )}
-              {/* Group tabs after General */}
+              {/* Group tabs first */}
               {groupNames.map((groupName, idx) => {
                 const isActive = currentActiveTab === groupName;
                 return (
@@ -1865,6 +1841,30 @@ export default function ParticipantDetails() {
                   </button>
                 );
               })}
+              {/* General tab last if there are ungrouped questions */}
+              {ungroupedQuestions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveQuestionTab(prev => ({
+                    ...prev,
+                    [participantIndex]: 'general'
+                  }))}
+                  style={{
+                    padding: '12px 24px',
+                    border: 'none',
+                    borderBottom: currentActiveTab === 'general' ? '3px solid #e74c3c' : '3px solid transparent',
+                    background: currentActiveTab === 'general' ? '#fff' : '#f5f5f5',
+                    color: currentActiveTab === 'general' ? '#e74c3c' : '#666',
+                    fontWeight: currentActiveTab === 'general' ? '600' : '500',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    transition: 'all 0.3s ease',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  📝 General
+                </button>
+              )}
             </div>
           </div>
         )}

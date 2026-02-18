@@ -11,6 +11,7 @@ export default function RaceCategories({
   eventFormData,
   setEventFormData,
   organizerGST,
+  showToast,
 }) {
   const [gst, setGst] = useState(false);
   const [taxType, setTaxType] = useState("inclusive");
@@ -597,10 +598,10 @@ export default function RaceCategories({
                             setShowForm(true);
                             if (setShowPreview) setShowPreview(false);
                           } else {
-                            alert("No ticket data found");
+                            showToast && showToast("No ticket data found", 'error');
                           }
                         } catch (err) {
-                          alert("Failed to fetch ticket details");
+                          showToast && showToast("Failed to fetch ticket details", 'error');
                         }
                       }}
                     >
@@ -631,7 +632,7 @@ export default function RaceCategories({
                             );
                             fetchEventDetails(); // Sync with backend
                           } catch (err) {
-                            alert("Failed to delete ticket");
+                            showToast && showToast("Failed to delete ticket", 'error');
                           }
                         }
                       }}

@@ -3,6 +3,7 @@ import { authAPI } from "../../services/authAPI";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import "./CreateEvent.css";
+import Toast from "../../components/Toast/Toast";
 
 const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
   const [items, setItems] = useState([]);
@@ -10,6 +11,11 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
   const [hovered, setHovered] = useState(null);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const triggerToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -88,7 +94,7 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
         const res = await authAPI.deleteEventCommFqa(formData);
         const msg =
           (res && (res.message || (res.data && res.data.message))) || "Deleted";
-        alert(msg);
+        triggerToast(msg);
         // remove from UI
         setItems((prev) =>
           prev.filter((i) => String(i.id) !== String(item.id))
@@ -98,7 +104,7 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
           setTermsItem(null);
       } catch (err) {
         console.error("deleteEventCommFqa error:", err);
-        alert("Failed to delete. Please try again.");
+        triggerToast("Failed to delete. Please try again.", 'error');
       }
     })();
   };
@@ -241,7 +247,7 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
         const res = await authAPI.addEditTermsConditions(fd);
         const message =
           (res && (res.message || (res.data && res.data.message))) || "Saved";
-        alert(message);
+        triggerToast(message);
       } else {
         const fd = new FormData();
         fd.append("event_id", String(eventId));
@@ -257,7 +263,7 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
         const res = await authAPI.editEventCommFqa(fd);
         const message =
           (res && (res.message || (res.data && res.data.message))) || "Saved";
-        alert(message);
+        triggerToast(message, 'error');
       }
       // refresh event details to reflect saved changes
       const reloadId = sessionStorage.getItem("event_id");
@@ -293,7 +299,7 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
       closeEditModal();
     } catch (err) {
       console.error("editEventCommFqa error (save):", err);
-      alert((err && err.message) || "Failed to save. Please try again.");
+      triggerToast((err && err.message) || "Failed to save. Please try again.", 'error');
     }
   };
 
@@ -332,7 +338,7 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
       const message =
         (res && (res.message || (res.data && res.data.message))) ||
         "Status updated";
-      alert(message);
+      triggerToast(message);
 
       // Refresh event details to get updated Terms status from server
       const eventId = sessionStorage.getItem("event_id");
@@ -359,7 +365,7 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
       console.error("statusCoupon error:", err);
       // revert on failure
       setTermsItem((t) => ({ ...(t || {}), status: !newStatus }));
-      alert("Failed to update status. Please try again.");
+      triggerToast("Failed to update status. Please try again.", 'error');
     }
   };
 
@@ -390,7 +396,7 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
       const message =
         (res && (res.message || (res.data && res.data.message))) ||
         "Status updated";
-      alert(message);
+      triggerToast(message);
 
       // Refresh event details to get updated communication status from server
       if (eventId) {
@@ -417,7 +423,7 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
           String(it.id) === String(item.id) ? { ...it, active: !newStatus } : it
         )
       );
-      alert("Failed to update status. Please try again.");
+      triggerToast("Failed to update status. Please try again.", 'error');
     }
   };
 
@@ -425,6 +431,13 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
   if (editingId) {
     return (
       <div className="event-form-section">
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
         <div style={{ maxWidth: 900, margin: "20px auto" }}>
           <div className="ce-inline-editor">
             <h3 style={{ marginTop: 0 }}>
@@ -522,6 +535,13 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
 
   return (
     <div className="event-form-section">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <div className="section-header">
         <h3>Communications</h3>
       </div>

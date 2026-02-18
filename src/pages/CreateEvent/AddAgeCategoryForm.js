@@ -1,9 +1,15 @@
 import React, { useState } from "react";
 import { authAPI } from "../../services/authAPI";
+import Toast from "../../components/Toast/Toast";
 
 const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
   // tickets: array of ticket objects from eventDetails
   const safeTickets = Array.isArray(tickets) ? tickets : [];
+  const [toast, setToast] = useState(null);
+
+  const triggerToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
   const [formData, setFormData] = useState({
     event_id:
       localStorage.getItem("event_id") ||
@@ -121,7 +127,7 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
     try {
       // Build FormData payload with gender as array list
       const fd = new FormData();
-      
+
       // Add all fields except gender
       fd.append("event_id", formData.event_id);
       fd.append("user_id", formData.user_id || "");
@@ -129,7 +135,7 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
       fd.append("age_category", formData.age_category);
       fd.append("age_start", formData.age_start);
       fd.append("age_end", formData.age_end);
-      
+
       // Add gender as array list (gender[])
       if (Array.isArray(formData.gender) && formData.gender.length > 0) {
         console.log("Gender array:", formData.gender);
@@ -138,7 +144,7 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
         });
         console.log("Gender sent as array list (gender[])");
       }
-      
+
       // If editing existing age criteria, include the edit flag
       if (formData.event_comm_id) {
         fd.append("event_comm_id", formData.event_comm_id);
@@ -152,14 +158,14 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
 
       const res = await authAPI.addEditAgeCriteria(fd);
       if (res.success === 200) {
-        alert(res.message || "Age Criteria added/updated successfully");
+        triggerToast(res.message || "Age Criteria added/updated successfully");
         if (typeof onCancel === "function") onCancel();
       } else {
-        alert(res.message || "Failed to save age criteria");
+        triggerToast(res.message || "Failed to save age criteria", 'error');
         console.error("API response:", res);
       }
     } catch (err) {
-      alert("Error saving age criteria");
+      triggerToast("Error saving age criteria", 'error');
       console.error("API error:", err);
     }
   };
@@ -175,6 +181,13 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
         padding: "32px 24px",
       }}
     >
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <h2 style={{ fontWeight: 700, fontSize: "2rem", marginBottom: 24 }}>
         Add Age Category
       </h2>

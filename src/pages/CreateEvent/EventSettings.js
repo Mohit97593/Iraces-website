@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
+import Toast from "../../components/Toast/Toast";
 
-export default function EventSettings({ onBack, onNext }) {
+export default function EventSettings({ onBack, onNext, showToast }) {
+  const [toast, setToast] = useState(null);
+
+  const triggerToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
   // Clear localStorage for eventSettingsFormData if event id changes (new event)
   useEffect(() => {
     const eventId = sessionStorage.getItem("event_id");
@@ -59,7 +65,9 @@ export default function EventSettings({ onBack, onNext }) {
     try {
       const res = await authAPI.addEventSetting(formData);
       if (res.success === 200) {
-        alert(res.message || "Event settings updated successfully");
+        // Use parent showToast so the toast persists after step navigation
+        if (showToast) showToast(res.message || "Event settings updated successfully", 'success');
+        else triggerToast(res.message || "Event settings updated successfully");
         // Save form data to localStorage on save
         localStorage.setItem(
           "eventSettingsFormData",
@@ -71,15 +79,22 @@ export default function EventSettings({ onBack, onNext }) {
         );
         if (typeof onNext === "function") onNext();
       } else {
-        alert(res.message || "Failed to update event settings");
+        triggerToast(res.message || "Failed to update event settings", 'error');
       }
     } catch (err) {
-      alert("Error updating event settings");
+      triggerToast("Error updating event settings", 'error');
     }
   };
 
   return (
     <div className="event-form-section">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <h3 style={{ fontWeight: 700, fontSize: "1.6rem", marginBottom: 32 }}>
         Event Settings
       </h3>
