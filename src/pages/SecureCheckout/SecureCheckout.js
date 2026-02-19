@@ -214,11 +214,21 @@ export default function SecureCheckout() {
       }
 
       const summaryElement = document.querySelector('.registration-summary');
-      if (!summaryElement) return;
+      const leftColumn = document.querySelector('.col-lg-8');
+      if (!summaryElement || !leftColumn) return;
 
+      const summaryHeight = summaryElement.offsetHeight;
+      const leftHeight = leftColumn.offsetHeight;
+
+      // If summary is taller than or equal to tickets, don't make it sticky
+      // This allows the summary to scroll naturally so all content is visible
+      if (summaryHeight >= leftHeight) {
+        summaryElement.classList.remove('is-sticky');
+        summaryElement.style.width = '';
+        return;
+      }
 
       const summaryParent = summaryElement.parentElement;
-      const parentRect = summaryParent.getBoundingClientRect();
       const scrollThreshold = 450; // Adjust based on hero section height
 
       if (window.scrollY > scrollThreshold) {

@@ -1139,8 +1139,7 @@ export default function CreateEvent() {
           return updated;
         });
         showToast(response?.message || "Event Essentials saved successfully!");
-        // Delay step navigation so toast is visible
-        setTimeout(() => setCurrentStep(2), 1500);
+        setCurrentStep(2);
       } else {
         showToast(response?.message || "Failed to save event basic info", 'error');
       }
