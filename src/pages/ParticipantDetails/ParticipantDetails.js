@@ -63,6 +63,7 @@ export default function ParticipantDetails() {
   const [couponLoading, setCouponLoading] = useState(false); // Loading state for coupon API call
   const [couponError, setCouponError] = useState(''); // Coupon validation error message
   const [isProceeding, setIsProceeding] = useState(false); // Loading state for payment initiation
+  const [showSuccessModal, setShowSuccessModal] = useState(false); // Success modal for free registration
 
   // Active payment gateway state
   const [activePaymentGateway, setActivePaymentGateway] = useState(null); // Active payment gateway from admin (phonepe or payu)
@@ -1193,32 +1194,42 @@ export default function ParticipantDetails() {
         }
       }
 
+      // Check if ticket is free (status 2)
+      if (ticket.ticket_status === 2 || ticket.ticket_status === "2") {
+        return sum;
+      }
+
       const baseAmount = effectivePrice * parseInt(ticket.quantity);
       const calcDetails = ticket.ticket_calculation_details || {};
+
+      // Check if participant is paying fees/gateway
+      // 2 = Participant, 1 = Organiser (from RaceCategoryForm.js)
+      const isParticipantPayingFees = ticket.player_of_fee === 2 || ticket.player_of_fee === "2";
+      const isParticipantPayingGateway = ticket.player_of_gateway_fee === 2 || ticket.player_of_gateway_fee === "2";
 
       // Check if GST enabled hai
       const isGSTEnabled = calcDetails.collect_gst === "1" || calcDetails.collect_gst === 1;
 
-      // Platform fees (GST handling ke saath)
-      const convenienceFeeWithGST = parseFloat(calcDetails.convenience_fee_amount) || 0;
+      // Platform fees (GST handling ke saath) - Only add if Participant pays
+      const convenienceFeeWithGST = isParticipantPayingFees ? (parseFloat(calcDetails.convenience_fee_amount) || 0) : 0;
       const convenienceFeeBase = !isGSTEnabled && convenienceFeeWithGST > 0
         ? Math.round((convenienceFeeWithGST / 1.18) * 100) / 100
         : convenienceFeeWithGST;
 
-      const platformFeeBase = parseFloat(calcDetails.platform_fees_5_each) || 0;
+      const platformFeeBase = isParticipantPayingFees ? (parseFloat(calcDetails.platform_fees_5_each) || 0) : 0;
 
-      const paymentGatewayWithGST = parseFloat(calcDetails['payment_gateway_1.85_buyer'] || calcDetails.payment_gateway_1_85_buyer) || 0;
+      const paymentGatewayWithGST = isParticipantPayingGateway ? (parseFloat(calcDetails['payment_gateway_1.85_buyer'] || calcDetails.payment_gateway_1_85_buyer) || 0) : 0;
       const paymentGatewayChargesBase = !isGSTEnabled && paymentGatewayWithGST > 0
         ? Math.round((paymentGatewayWithGST / 1.18) * 100) / 100
         : paymentGatewayWithGST;
 
       const totalPlatformFee = (convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase) * parseInt(ticket.quantity);
 
-      // GST components
+      // GST components - only add fee GST if Participant pays those fees
       const registrationGST = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
-      const convenienceFeeGST = parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0);
-      const platformFeeGST = parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0);
-      const paymentGatewayGST = parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0);
+      const convenienceFeeGST = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0) : 0;
+      const platformFeeGST = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0) : 0;
+      const paymentGatewayGST = isParticipantPayingGateway ? parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0) : 0;
 
       const totalTaxes = (registrationGST + convenienceFeeGST + platformFeeGST + paymentGatewayGST) * parseInt(ticket.quantity);
 
@@ -1403,11 +1414,61 @@ export default function ParticipantDetails() {
       }
     });
 
-    // Calculate total price
-    const TotalPrice = selectedTickets.reduce((sum, t) => {
-      const calcDetails = t.ticket_calculation_details || {};
-      const totalBuyer = parseFloat(calcDetails.total_buyer || t.ticket_price * t.quantity);
-      return sum + totalBuyer;
+    // Calculate total price using consistent logic that respects payer settings
+    const TotalPrice = selectedTickets.reduce((sum, ticket) => {
+      // Early bird discount apply karo
+      let effectivePrice = parseFloat(ticket.ticket_price);
+
+      if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
+        const discountValue = parseFloat(ticket.discount_value || 0);
+        if (ticket.discount === 1) {
+          // Percentage discount
+          effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+        } else {
+          // Amount discount
+          effectivePrice = effectivePrice - discountValue;
+        }
+      }
+
+      // Check if ticket is free (status 2)
+      if (ticket.ticket_status === 2 || ticket.ticket_status === "2") {
+        return sum;
+      }
+
+      const baseAmount = effectivePrice * parseInt(ticket.quantity);
+      const calcDetails = ticket.ticket_calculation_details || {};
+
+      // Check if participant is paying fees/gateway
+      const isParticipantPayingFees = ticket.player_of_fee === 2 || ticket.player_of_fee === "2";
+      const isParticipantPayingGateway = ticket.player_of_gateway_fee === 2 || ticket.player_of_gateway_fee === "2";
+
+      // Check if GST enabled hai
+      const isGSTEnabled = calcDetails.collect_gst === "1" || calcDetails.collect_gst === 1;
+
+      // Platform fees (GST handling ke saath) - Only add if Participant pays
+      const convenienceFeeWithGST = isParticipantPayingFees ? (parseFloat(calcDetails.convenience_fee_amount) || 0) : 0;
+      const convenienceFeeBase = !isGSTEnabled && convenienceFeeWithGST > 0
+        ? Math.round((convenienceFeeWithGST / 1.18) * 100) / 100
+        : convenienceFeeWithGST;
+
+      const platformFeeBase = isParticipantPayingFees ? (parseFloat(calcDetails.platform_fees_5_each) || 0) : 0;
+
+      const paymentGatewayWithGST = isParticipantPayingGateway ? (parseFloat(calcDetails['payment_gateway_1.85_buyer'] || calcDetails.payment_gateway_1_85_buyer) || 0) : 0;
+      const paymentGatewayChargesBase = !isGSTEnabled && paymentGatewayWithGST > 0
+        ? Math.round((paymentGatewayWithGST / 1.18) * 100) / 100
+        : paymentGatewayWithGST;
+
+      const totalPlatformFee = (convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase) * parseInt(ticket.quantity);
+
+      // GST components - only add fee GST if Participant pays those fees
+      const registrationGST = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
+      const convenienceFeeGST = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0) : 0;
+      const platformFeeGST = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0) : 0;
+      const paymentGatewayGST = isParticipantPayingGateway ? parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0) : 0;
+
+      const totalTaxes = (registrationGST + convenienceFeeGST + platformFeeGST + paymentGatewayGST) * parseInt(ticket.quantity);
+
+      return sum + baseAmount + totalPlatformFee + totalTaxes;
     }, 0).toFixed(2);
 
     // Calculate total discount from selected tickets and applied coupon
@@ -2862,7 +2923,14 @@ export default function ParticipantDetails() {
       return;
     }
 
+    // For free registrations (0 amount), skip payment gateway
+    if (parseFloat(calculateFinalAmount()) === 0) {
+      handleFreeRegistration();
+      return;
+    }
+
     if (availableGateways.length > 1) {
+      // Modal logic for multiple gateways
       console.log("Multiple gateways available, showing selection modal");
       setShowGatewayModal(true);
     } else {
@@ -2953,6 +3021,77 @@ export default function ParticipantDetails() {
       console.error("❌ Payment Error:", error);
       alert(`Payment initiation failed: ${error.response?.data?.message || error.message || 'Please try again'}`);
       setShowPaymentModal(false);
+    } finally {
+      setIsProceeding(false);
+    }
+  };
+
+  // Handle Free Registration (Skip Payment)
+  const handleFreeRegistration = async () => {
+    setIsProceeding(true);
+    try {
+      const bookingPayload = buildBookingPayload();
+      const finalAmount = parseFloat(calculateFinalAmount());
+      const ticketType = finalAmount > 0 ? 'paid' : 'free';
+
+      const apiPayload = {
+        event_id: eventId,
+        amount: finalAmount.toFixed(2),
+        ticket_type: ticketType,
+        booking_tickets_array: JSON.stringify(bookingPayload)
+      };
+
+      console.log("📤 Submitting Free Registration Payload:", apiPayload);
+
+      const targetGateway = activePaymentGateway || (availableGateways[0]?.toLowerCase().includes('phone') ? 'phonepe' : 'payu');
+
+      let result;
+      if (targetGateway === 'payu') {
+        result = await authAPI.bookingPaymentProcess(apiPayload);
+      } else {
+        result = await authAPI.phonepeInitiatePayment(apiPayload);
+      }
+
+      console.log("✅ Free Registration Response:", result);
+
+      if (result && (
+        result.status === 'success' ||
+        result.status === 1 ||
+        result.success ||
+        result.message === 'Request processed successfully'
+      )) {
+        setShowSuccessModal(true);
+
+        // Call Email API
+        try {
+          const booking_id = result.booking_pay_id || result.booking_id || (result.data && (result.data.booking_pay_id || result.data.booking_id));
+          if (booking_id) {
+            const emailPayload = {
+              booking_pay_id: booking_id,
+              event_id: eventId,
+              event_url: window.location.origin + `/event/${eventId}`
+            };
+            console.log("📧 Sending success email for free registration:", emailPayload);
+            authAPI.sendEmailPaymentSuccess(emailPayload)
+              .then(res => console.log("✅ Confirmation email sent:", res))
+              .catch(err => console.error("❌ Failed to send confirmation email:", err));
+          } else {
+            console.warn("⚠️ No booking_id found in response, skipping email.");
+          }
+        } catch (emailErr) {
+          console.error("❌ Error initiating email send:", emailErr);
+        }
+
+        // Clean up localStorage
+        localStorage.removeItem('couponCode');
+        localStorage.removeItem('appliedCoupon');
+        localStorage.removeItem('couponDiscount');
+      } else {
+        throw new Error(result.message || "Registration failed");
+      }
+    } catch (error) {
+      console.error("❌ Free Registration Error:", error);
+      alert(`Registration failed: ${error.response?.data?.message || error.message || 'Please try again'}`);
     } finally {
       setIsProceeding(false);
     }
@@ -3291,19 +3430,25 @@ export default function ParticipantDetails() {
         const baseAmount = effectivePrice * parseInt(ticket.quantity);
         const calcDetails = ticket.ticket_calculation_details || {};
 
+        // Check if participant is paying fees/gateway
+        const isParticipantPayingFees = ticket.player_of_fee === 2 || ticket.player_of_fee === "2";
+        const isParticipantPayingGateway = ticket.player_of_gateway_fee === 2 || ticket.player_of_gateway_fee === "2";
+
         // Individual fee components - these are PER TICKET from backend
-        const convenienceFeePerTicket = parseFloat(calcDetails.total_convenience_fees || (effectivePrice * 0.02)) || 0;
-        const platformFeePerTicket = parseFloat(calcDetails.platform_fees_5_each || 5) || 5;
-        const paymentGatewayPerTicket = parseFloat(calcDetails.payment_gateway_1_85_buyer || (effectivePrice * 0.0185)) || 0;
+        // Only include if Participant is the payer
+        const convenienceFeePerTicket = isParticipantPayingFees ? (parseFloat(calcDetails.total_convenience_fees || (effectivePrice * 0.02)) || 0) : 0;
+        const platformFeePerTicket = isParticipantPayingFees ? (parseFloat(calcDetails.platform_fees_5_each || 5) || 5) : 0;
+        const paymentGatewayPerTicket = isParticipantPayingGateway ? (parseFloat(calcDetails.payment_gateway_1_85_buyer || (effectivePrice * 0.0185)) || 0) : 0;
 
         // Platform Fee total = (per ticket fees) * quantity
         const totalPlatformFee = (convenienceFeePerTicket + platformFeePerTicket + paymentGatewayPerTicket) * parseInt(ticket.quantity);
 
         // Extract individual GST components - these are PER TICKET
+        // Only include fee GST if Participant pays those fees
         const registrationGSTPerTicket = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
-        const convenienceFeeGSTPerTicket = parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0);
-        const platformFeeGSTPerTicket = parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0);
-        const paymentGatewayGSTPerTicket = parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0);
+        const convenienceFeeGSTPerTicket = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0) : 0;
+        const platformFeeGSTPerTicket = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0) : 0;
+        const paymentGatewayGSTPerTicket = isParticipantPayingGateway ? parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0) : 0;
 
         // Calculate total taxes = (per ticket taxes) * quantity
         const totalTaxes = (registrationGSTPerTicket + convenienceFeeGSTPerTicket + platformFeeGSTPerTicket + paymentGatewayGSTPerTicket) * parseInt(ticket.quantity);
@@ -3559,6 +3704,7 @@ export default function ParticipantDetails() {
               {selectedTickets.map((ticket, index) => {
                 // Calculate effective price based on early bird discount
                 let effectivePrice = parseFloat(ticket.ticket_price);
+                const isFreeTicket = ticket.ticket_status === 2 || ticket.ticket_status === "2";
 
                 if (ticket.early_bird === 1 && ticket.show_early_bird === 1) {
                   const discountValue = parseFloat(ticket.discount_value || 0);
@@ -3571,7 +3717,7 @@ export default function ParticipantDetails() {
                   }
                 }
 
-                const baseAmount = effectivePrice * parseInt(ticket.quantity);
+                const baseAmount = isFreeTicket ? 0 : (effectivePrice * parseInt(ticket.quantity));
 
                 // Calculate fees from ticket_calculation_details if available
                 const calcDetails = ticket.ticket_calculation_details || {};
@@ -3582,16 +3728,20 @@ export default function ParticipantDetails() {
                 // Check if GST is enabled
                 const isGSTEnabled = calcDetails.collect_gst === "1" || calcDetails.collect_gst === 1;
 
+                // Check if participant is paying fees/gateway
+                const isParticipantPayingFees = ticket.player_of_fee === 2 || ticket.player_of_fee === "2";
+                const isParticipantPayingGateway = ticket.player_of_gateway_fee === 2 || ticket.player_of_gateway_fee === "2";
+
                 // IMPORTANT: When GST is ON, convenience_fee_amount and payment_gateway_1.85_buyer INCLUDE GST
                 // When GST is OFF, they are already base amounts
-                const convenienceFeeWithGST = parseFloat(calcDetails.convenience_fee_amount) || 0;
+                const convenienceFeeWithGST = isFreeTicket ? 0 : (isParticipantPayingFees ? (parseFloat(calcDetails.convenience_fee_amount) || 0) : 0);
                 const convenienceFeeBase = !isGSTEnabled && convenienceFeeWithGST > 0
                   ? Math.round((convenienceFeeWithGST / 1.18) * 100) / 100
                   : convenienceFeeWithGST;
 
-                const platformFeeBase = parseFloat(calcDetails.platform_fees_5_each) || 0;
+                const platformFeeBase = isFreeTicket ? 0 : (isParticipantPayingFees ? (parseFloat(calcDetails.platform_fees_5_each) || 0) : 0);
 
-                const paymentGatewayWithGST = parseFloat(calcDetails['payment_gateway_1.85_buyer'] || calcDetails.payment_gateway_1_85_buyer) || 0;
+                const paymentGatewayWithGST = isFreeTicket ? 0 : (isParticipantPayingGateway ? (parseFloat(calcDetails['payment_gateway_1.85_buyer'] || calcDetails.payment_gateway_1_85_buyer) || 0) : 0);
                 const paymentGatewayChargesBase = !isGSTEnabled && paymentGatewayWithGST > 0
                   ? Math.round((paymentGatewayWithGST / 1.18) * 100) / 100
                   : paymentGatewayWithGST;
@@ -3611,10 +3761,10 @@ export default function ParticipantDetails() {
                 const totalPlatformFee = (convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase) * parseInt(ticket.quantity);
 
                 // Extract individual GST components from ticket_calculation_details
-                const registrationGST = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
-                const convenienceFeeGST = parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0);
-                const platformFeeGST = parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0);
-                const paymentGatewayGST = parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0);
+                const registrationGST = isFreeTicket ? 0 : parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
+                const convenienceFeeGST = (isFreeTicket || !isParticipantPayingFees) ? 0 : parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0);
+                const platformFeeGST = (isFreeTicket || !isParticipantPayingFees) ? 0 : parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0);
+                const paymentGatewayGST = (isFreeTicket || !isParticipantPayingGateway) ? 0 : parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0);
 
                 // Calculate total taxes from individual components
                 // Multiply by quantity to get total for all tickets
@@ -3959,6 +4109,44 @@ export default function ParticipantDetails() {
               }}
             >
               {paymentData ? "Pay Now" : "Processing..."}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal for Free Registration */}
+      {showSuccessModal && (
+        <div className="registration-success-overlay">
+          <div className="registration-success-modal">
+            <button
+              className="modal-close-btn"
+              onClick={() => {
+                setShowSuccessModal(false);
+                window.location.href = '/my-tickets';
+              }}
+            >
+              <i className="fas fa-times"></i>
+            </button>
+
+            <div className="success-icon-container">
+              <img
+                src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png"
+                alt="Success"
+                className="success-party-popper"
+              />
+            </div>
+
+            <h2 className="success-title">YAY!</h2>
+
+            <p className="success-message">
+              Your registration is successful..!
+            </p>
+
+            <button
+              className="view-tickets-btn"
+              onClick={() => window.location.href = '/registration-tracker'}
+            >
+              View My Tickets
             </button>
           </div>
         </div>

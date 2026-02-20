@@ -21,6 +21,12 @@ import Toast from "../../components/Toast/Toast";
 export default function CreateEvent() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
+
+  // Scroll to top whenever the step changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentStep]);
+
   const [eventName, setEventName] = useState("");
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [status, setStatus] = useState("draft");
