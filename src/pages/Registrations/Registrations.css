@@ -171,7 +171,13 @@
     color: #155724;
 }
 
-.status-3 {
+.status-3,
+.status-102 {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-101 {
     background-color: #fff3cd;
     color: #856404;
 }

@@ -262,8 +262,10 @@ export default function Registrations() {
                                         <td>
                                             <span className={`status-badge status-${user.transaction_status}`}>
                                                 {user.transaction_status === 1 ? 'Success' :
-                                                    user.transaction_status === 3 ? 'In Progress' :
-                                                        'Pending'}
+                                                    user.transaction_status === 3 ? 'Success' :
+                                                        user.transaction_status === 102 ? 'Success' :
+                                                            user.transaction_status === 101 ? 'In Progress' :
+                                                                'Pending'}
                                             </span>
                                         </td>
                                     </tr>

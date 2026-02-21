@@ -4353,22 +4353,24 @@ const GeneralFormQuestions = ({
                                 </button>
                               )}
                               {/* Delete button only for custom questions */}
-                              {(q.is_custom_form == 1 || q.is_custom == 1 || q.is_custom_form == '1' || q.is_custom == '1' || (q.created_by && q.created_by != 0) || q.user_id || q.question_id || q.id > 50) && (
-                                <button
-                                  className="btn-toggle delete-btn"
-                                  title="Delete question"
-                                  onClick={(e) => handleDeleteQuestion(e, q)}
-                                  style={{
-                                    marginLeft: 8,
-                                    background: "#dc3545",
-                                    color: "#fff",
-                                    fontSize: "1rem",
-                                    padding: "4px 8px"
-                                  }}
-                                >
-                                  🗑
-                                </button>
-                              )}
+                              {((q.is_custom_form == 1 || q.is_custom == 1 || q.is_custom_form == '1' || q.is_custom == '1' || (q.created_by && q.created_by != 0) || q.user_id || q.question_id || q.id > 50) &&
+                                !(formName || "").toLowerCase().includes("address") &&
+                                !["country", "state", "nationality", "city", "pincode"].includes((q.question_label || "").toLowerCase().trim())) && (
+                                  <button
+                                    className="btn-toggle delete-btn"
+                                    title="Delete question"
+                                    onClick={(e) => handleDeleteQuestion(e, q)}
+                                    style={{
+                                      marginLeft: 8,
+                                      background: "#dc3545",
+                                      color: "#fff",
+                                      fontSize: "1rem",
+                                      padding: "4px 8px"
+                                    }}
+                                  >
+                                    🗑
+                                  </button>
+                                )}
                             </div>
                           </div>
                           {idx < apiQuestions[formName].length - 1 && (
