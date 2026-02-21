@@ -774,8 +774,8 @@ export default function Participants() {
                                         <td>
                                             <span className={`status-badge status-${participant.transaction_status}`}>
                                                 {participant.transaction_status === 1 ? 'Success' :
-                                                    participant.transaction_status === 3 ? 'Success' :
-                                                        participant.transaction_status === 102 ? 'Success' :
+                                                    participant.transaction_status === 3 ? 'Free' :
+                                                        participant.transaction_status === 102 ? 'Free' :
                                                             participant.transaction_status === 101 ? 'In Progress' :
                                                                 'Pending'}
                                             </span>

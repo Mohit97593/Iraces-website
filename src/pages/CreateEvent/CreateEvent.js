@@ -49,12 +49,24 @@ export default function CreateEvent() {
   const [organizerGST, setOrganizerGST] = useState(false); // Track organizer's GST setting
   const [isEditingCommunication, setIsEditingCommunication] = useState(false); // Track if editing communication
   const [toast, setToast] = useState(null); // Toast notification state
-  // Today's date and year
   const today = new Date();
-  const day = today.getDate();
-  const monthShort = today.toLocaleString("default", { month: "short" });
-  const monthLong = today.toLocaleString("default", { month: "long" });
   const year = today.getFullYear();
+
+  // DERIVE PREVIEW DATE FROM eventFormData.eventStartDate IF AVAILABLE
+  let previewDate = today;
+  if (eventFormData.eventStartDate) {
+    try {
+      const parsed = new Date(`${eventFormData.eventStartDate}T00:00`);
+      if (!isNaN(parsed.getTime())) {
+        previewDate = parsed;
+      }
+    } catch (e) { }
+  }
+
+  const day = previewDate.getDate();
+  const monthShort = previewDate.toLocaleString("default", { month: "short" });
+  const monthLong = previewDate.toLocaleString("default", { month: "long" });
+
   // Format for 'Register By' (e.g., November 12, 2025)
   const registerBy = `${monthLong} ${day}, ${year}`;
 
@@ -1548,6 +1560,9 @@ export default function CreateEvent() {
                 onNext={handleSchedulingNext}
                 initialFormData={eventFormData}
                 showToast={showToast}
+                onChange={(updatedData) => {
+                  setEventFormData(prev => ({ ...prev, ...updatedData }));
+                }}
               />
             )}
             {currentStep === 3 && (

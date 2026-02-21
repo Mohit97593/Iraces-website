@@ -424,9 +424,10 @@ const DiscountCoupons = ({ onBack, onNext }) => {
           setShowPublic(c.show_public === 1 || c.show_public === "1");
         }
         // Set useType state from API response
-        // use_type: 1 = one time, 2 = multiple
-        if (c.use_type !== undefined && c.use_type !== null) {
-          setUseType(c.use_type === 1 || c.use_type === "1" ? "oneTime" : "multiple");
+        // use_type/discount_type: 1 = one time, 2 = multiple
+        const effectiveUseType = c.use_type !== undefined && c.use_type !== null ? c.use_type : c.discount_type;
+        if (effectiveUseType !== undefined && effectiveUseType !== null) {
+          setUseType(effectiveUseType === 1 || effectiveUseType === "1" ? "oneTime" : "multiple");
         }
         setAttemptedSave(false);
         setShowForm(true);
@@ -1378,10 +1379,11 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                       derivedUserId || localStorage.getItem("user_id") || "0";
                     fd.append("created_by", String(createdBy));
 
-                    // discount_type based on One Time Use vs Multiple Time Use
+                    // discount_type / use_type based on One Time Use vs Multiple Time Use
                     // '1' = One Time Use, '2' = Multiple Time Use
                     const discountTypeValue = useType === "oneTime" ? "1" : "2";
                     fd.append("discount_type", discountTypeValue);
+                    fd.append("use_type", discountTypeValue);
                     fd.append("discount_name", formData.discountName || "");
 
                     // discount_amt_per_type: '1' = amount, '2' = percentage

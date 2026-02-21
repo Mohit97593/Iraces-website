@@ -3,7 +3,7 @@ import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 import Toast from "../../components/Toast/Toast";
 
-export default function EventScheduling({ onBack, onNext, initialFormData, showToast }) {
+export default function EventScheduling({ onBack, onNext, initialFormData, showToast, onChange }) {
   const defaultFormData = {
     timeZone: "",
     country: "",
@@ -138,6 +138,10 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
         e.target.blur();
       }
 
+      if (onChange) {
+        onChange(updated);
+      }
+
       return updated;
     });
   };
@@ -211,6 +215,9 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
               "eventSchedulingFormData",
               JSON.stringify(updated)
             );
+            if (onChange) {
+              onChange(updated);
+            }
             return updated;
           });
         }

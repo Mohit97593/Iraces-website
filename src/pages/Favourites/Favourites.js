@@ -134,11 +134,6 @@ export default function Favourites() {
             </div>
           ) : favouriteEvents.length === 0 ? (
             <div className="no-favourites">
-              <img
-                src="https://cdn-icons-png.flaticon.com/512/2589/2589175.png"
-                alt="No favourites"
-                className="no-favourites-img"
-              />
               <h2 className="no-favourites-title">No Favourite Events Yet</h2>
               <p className="no-favourites-desc">
                 Start adding events to your favourites to see them here!

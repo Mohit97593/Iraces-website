@@ -957,6 +957,28 @@ export default function ParticipantDetails() {
               clearNestedPrices(question.id || question.general_form_id);
             }
 
+            // Track prices for 'amount' type questions (custom donations)
+            if (question && question.question_form_type === 'amount') {
+              const amountValue = parseFloat(value) || 0;
+              setQuestionPrices(prevPrices => {
+                const newPrices = { ...prevPrices };
+                const priceKey = `${participantIndex}_${question.id}_amount`;
+
+                if (amountValue > 0) {
+                  newPrices[priceKey] = {
+                    label: question.question_label,
+                    price: amountValue,
+                    questionLabel: question.question_label
+                  };
+                } else {
+                  delete newPrices[priceKey];
+                }
+
+                console.log('📊 Updated custom amount price in state:', newPrices);
+                return newPrices;
+              });
+            }
+
             // Track prices from question options (Supporting select, radio, and checkbox)
             if (question && ['select', 'radio', 'checkbox'].includes(question.question_form_type)) {
               // Parse question options
@@ -1415,7 +1437,7 @@ export default function ParticipantDetails() {
     });
 
     // Calculate total price using consistent logic that respects payer settings
-    const TotalPrice = selectedTickets.reduce((sum, ticket) => {
+    const subtotal = selectedTickets.reduce((sum, ticket) => {
       // Early bird discount apply karo
       let effectivePrice = parseFloat(ticket.ticket_price);
 
@@ -1469,12 +1491,18 @@ export default function ParticipantDetails() {
       const totalTaxes = (registrationGST + convenienceFeeGST + platformFeeGST + paymentGatewayGST) * parseInt(ticket.quantity);
 
       return sum + baseAmount + totalPlatformFee + totalTaxes;
-    }, 0).toFixed(2);
+    }, 0);
 
     // Calculate total discount from selected tickets and applied coupon
-    const TotalDiscount = appliedCoupon
-      ? selectedTickets.reduce((sum, t) => sum + getTicketDiscount(t, appliedCoupon), 0).toFixed(2)
-      : "0.00";
+    const totalDiscountAmount = appliedCoupon
+      ? selectedTickets.reduce((sum, t) => sum + getTicketDiscount(t, appliedCoupon), 0)
+      : 0;
+
+    // Add Question prices
+    const questionTotal = Object.values(questionPrices).reduce((sum, p) => sum + p.price, 0);
+
+    const TotalPrice = Math.max(0, subtotal - totalDiscountAmount + questionTotal).toFixed(2);
+    const TotalDiscount = totalDiscountAmount.toFixed(2);
 
     // Build AllTickets array with all ticket details
     const AllTickets = selectedTickets.map(ticket => ({
@@ -1954,7 +1982,7 @@ export default function ParticipantDetails() {
             let questionElement = null;
 
             // Render based on type
-            if (question.question_form_type === 'text' || question.question_form_type === 'email' || question.question_form_type === 'mobile' || question.question_form_type === 'date') {
+            if (question.question_form_type === 'text' || question.question_form_type === 'email' || question.question_form_type === 'mobile' || question.question_form_type === 'date' || question.question_form_type === 'amount') {
               // Parse limit_length if available
               let minLength = null;
               let maxLength = null;
@@ -2005,17 +2033,32 @@ export default function ParticipantDetails() {
               // For date fields, check if date_range is enabled and parse range dates
               let minDate = null;
               let maxDate = null;
-              if (question.question_form_type === 'date' && question.date_range === 1) {
-                // Convert Unix timestamps to YYYY-MM-DD format
-                if (question.range_start_date) {
-                  const startTimestamp = parseInt(question.range_start_date);
-                  const startDate = new Date(startTimestamp * 1000);
-                  minDate = startDate.toISOString().split('T')[0];
+
+              // Force max date to today if it's a DOB field
+              const label = (question.question_label || "").toLowerCase();
+              const isDOBField = label === 'date of birth' || label === 'dob' || fieldName.toLowerCase() === 'dob';
+
+              if (question.question_form_type === 'date') {
+                if (question.date_range === 1) {
+                  // Convert Unix timestamps to YYYY-MM-DD format
+                  if (question.range_start_date) {
+                    const startTimestamp = parseInt(question.range_start_date);
+                    const startDate = new Date(startTimestamp * 1000);
+                    minDate = startDate.toISOString().split('T')[0];
+                  }
+                  if (question.range_end_date) {
+                    const endTimestamp = parseInt(question.range_end_date);
+                    const endDate = new Date(endTimestamp * 1000);
+                    maxDate = endDate.toISOString().split('T')[0];
+                  }
                 }
-                if (question.range_end_date) {
-                  const endTimestamp = parseInt(question.range_end_date);
-                  const endDate = new Date(endTimestamp * 1000);
-                  maxDate = endDate.toISOString().split('T')[0];
+
+                // If it's a DOB field, ensure max date is not in the future
+                if (isDOBField) {
+                  const todayStr = new Date().toISOString().split('T')[0];
+                  if (!maxDate || maxDate > todayStr) {
+                    maxDate = todayStr;
+                  }
                 }
               }
 
@@ -2123,7 +2166,17 @@ export default function ParticipantDetails() {
                     )}
                   </label>
                   <input
-                    type={question.question_form_type === 'mobile' ? 'tel' : question.question_form_type}
+                    type={
+                      question.question_form_type === 'date'
+                        ? "date"
+                        : question.question_form_type === 'amount'
+                          ? "number"
+                          : question.question_form_type === 'mobile'
+                            ? "tel"
+                            : question.question_form_type === 'email'
+                              ? "email"
+                              : "text"
+                    }
                     name={fieldName}
                     className="form-control3"
                     value={currentValue}
@@ -3186,44 +3239,64 @@ export default function ParticipantDetails() {
           }
 
           // Check date range validation for date fields
-          if (q.question_form_type === 'date' && q.date_range === 1 && fieldValue) {
+          if (q.question_form_type === 'date' && fieldValue) {
             const enteredDate = new Date(fieldValue);
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
 
-            // Check minimum date
-            if (q.range_start_date) {
-              const startTimestamp = parseInt(q.range_start_date);
-              const minDate = new Date(startTimestamp * 1000);
-              minDate.setHours(0, 0, 0, 0);
+            const label = (q.question_label || "").toLowerCase();
+            const fieldName = (getMappedKey(q) || "").toLowerCase();
+            const isDOBField = label === 'date of birth' || label === 'dob' || fieldName === 'dob';
 
-              if (enteredDate < minDate) {
-                const minDateStr = minDate.toISOString().split('T')[0];
-                const errorKey = `participant_${participantIndex}_${fieldName}_daterange`;
-                errors[errorKey] = `${q.question_label} must be on or after ${minDateStr} for Participant ${participantIndex + 1}`;
-                if (!hasErrors) {
-                  firstErrorParticipant = participantIndex;
-                  firstErrorGroup = groupTitle;
-                }
-                hasErrors = true;
-                console.log(`❌ Date too early: ${q.question_label} for Participant ${participantIndex + 1}`);
+            // Special check for DOB: Cannot be in the future
+            if (isDOBField && enteredDate > today) {
+              const errorKey = `participant_${participantIndex}_${fieldName}_daterange`;
+              errors[errorKey] = `${q.question_label} cannot be a future date for Participant ${participantIndex + 1}`;
+              if (!hasErrors) {
+                firstErrorParticipant = participantIndex;
+                firstErrorGroup = groupTitle;
               }
+              hasErrors = true;
+              console.log(`❌ Future Date error: ${q.question_label} for Participant ${participantIndex + 1}`);
             }
 
-            // Check maximum date
-            if (q.range_end_date) {
-              const endTimestamp = parseInt(q.range_end_date);
-              const maxDate = new Date(endTimestamp * 1000);
-              maxDate.setHours(23, 59, 59, 999);
+            if (q.date_range === 1) {
+              // Check minimum date
+              if (q.range_start_date) {
+                const startTimestamp = parseInt(q.range_start_date);
+                const minDate = new Date(startTimestamp * 1000);
+                minDate.setHours(0, 0, 0, 0);
 
-              if (enteredDate > maxDate) {
-                const maxDateStr = maxDate.toISOString().split('T')[0];
-                const errorKey = `participant_${participantIndex}_${fieldName}_daterange`;
-                errors[errorKey] = `${q.question_label} must be on or before ${maxDateStr} for Participant ${participantIndex + 1}`;
-                if (!hasErrors) {
-                  firstErrorParticipant = participantIndex;
-                  firstErrorGroup = groupTitle;
+                if (enteredDate < minDate) {
+                  const minDateStr = minDate.toISOString().split('T')[0];
+                  const errorKey = `participant_${participantIndex}_${fieldName}_daterange`;
+                  errors[errorKey] = `${q.question_label} must be on or after ${minDateStr} for Participant ${participantIndex + 1}`;
+                  if (!hasErrors) {
+                    firstErrorParticipant = participantIndex;
+                    firstErrorGroup = groupTitle;
+                  }
+                  hasErrors = true;
+                  console.log(`❌ Date too early: ${q.question_label} for Participant ${participantIndex + 1}`);
                 }
-                hasErrors = true;
-                console.log(`❌ Date too late: ${q.question_label} for Participant ${participantIndex + 1}`);
+              }
+
+              // Check maximum date
+              if (q.range_end_date) {
+                const endTimestamp = parseInt(q.range_end_date);
+                const maxDate = new Date(endTimestamp * 1000);
+                maxDate.setHours(23, 59, 59, 999);
+
+                if (enteredDate > maxDate) {
+                  const maxDateStr = maxDate.toISOString().split('T')[0];
+                  const errorKey = `participant_${participantIndex}_${fieldName}_daterange`;
+                  errors[errorKey] = `${q.question_label} must be on or before ${maxDateStr} for Participant ${participantIndex + 1}`;
+                  if (!hasErrors) {
+                    firstErrorParticipant = participantIndex;
+                    firstErrorGroup = groupTitle;
+                  }
+                  hasErrors = true;
+                  console.log(`❌ Date too late: ${q.question_label} for Participant ${participantIndex + 1}`);
+                }
               }
             }
           }
@@ -3791,16 +3864,20 @@ export default function ParticipantDetails() {
                     )}
 
                     {/* Platform Fee (Combined) - Multiplied by quantity */}
-                    <div className="summary-item">
-                      <span>Platform Fee</span>
-                      <span>₹{totalPlatformFee.toFixed(2)}</span>
-                    </div>
+                    {totalPlatformFee > 0 && (
+                      <div className="summary-item">
+                        <span>Platform Fee</span>
+                        <span>₹{totalPlatformFee.toFixed(2)}</span>
+                      </div>
+                    )}
 
                     {/* Tax - Sum of all GST components - Multiplied by quantity */}
-                    <div className="summary-item">
-                      <span>Tax</span>
-                      <span>₹{totalTaxes.toFixed(2)}</span>
-                    </div>
+                    {totalTaxes > 0 && (
+                      <div className="summary-item">
+                        <span>Tax</span>
+                        <span>₹{totalTaxes.toFixed(2)}</span>
+                      </div>
+                    )}
 
                     {/* Sub Total for this ticket */}
                     <div className="summary-item" style={{ fontWeight: '600', marginTop: '8px' }}>

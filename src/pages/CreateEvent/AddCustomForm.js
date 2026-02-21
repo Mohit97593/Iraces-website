@@ -216,12 +216,12 @@ const AddCustomForm = ({ onCancel }) => {
         <h2 style={{ margin: 0, fontWeight: 700, fontSize: "1.5rem" }}>
           Add Custom Form Questions
         </h2>
-        <button
+        {/* <button
           className="btn-add-custom"
           onClick={() => setShowAddFormModal(true)}
         >
           + Add New Form
-        </button>
+        </button> */}
       </div>
       {showAddFormModal && (
         <div className="modal-overlay">
