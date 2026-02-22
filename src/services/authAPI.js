@@ -63,6 +63,16 @@ api.interceptors.response.use(
 
 // Auth API Functions
 export const authAPI = {
+  // Get Maintenance Mode Status
+  getMaintenanceMode: async () => {
+    try {
+      const response = await api.get("/get_maintancemode");
+      return response.data;
+    } catch (error) {
+      console.error("getMaintenanceMode API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
   // Helper to get full image URL
   getImageUrl: (path) => {
     if (!path || path.trim() === "")

@@ -345,39 +345,41 @@ export default function EventDetails() {
             </div>
 
             {/* Organiser Section */}
-            <div className="event-section">
-              <h3 className="section-title">
-                <i className="fas fa-user-tie"></i> Organiser
-              </h3>
-              <div className="section-content">
-                <div className="organiser-info">
-                  <h5
-                    onClick={() => {
-                      // Navigate to organiser public profile
-                      const organiserId = event.organiser_id || event.user_id || event.created_by || "1";
-                      const organiserNameValue = organiserName || event.organiser_name || eventDetails?.OrganiserName || "Organiser";
-                      // Replace spaces with underscores for URL
-                      const organiserNameForUrl = organiserNameValue.replace(/ /g, "_");
-                      navigate(`/organiser/${organiserId}/${organiserNameForUrl}`);
-                    }}
-                    style={{
-                      cursor: "pointer",
-                      color: "#da251c",
-                      transition: "color 0.3s ease",
-                    }}
-                    onMouseEnter={(e) => (e.target.style.color = "#b91e16")}
-                    onMouseLeave={(e) => (e.target.style.color = "#da251c")}
-                  >
-                    {organiserName ||
-                      event.organiser_name ||
-                      eventDetails?.OrganiserName}
-                  </h5>
-                  {event.organiser_description && (
-                    <p>{event.organiser_description}</p>
-                  )}
+            {(organiserName || event.organiser_name || eventDetails?.OrganiserName) && (
+              <div className="event-section">
+                <h3 className="section-title">
+                  <i className="fas fa-user-tie"></i> Organiser
+                </h3>
+                <div className="section-content">
+                  <div className="organiser-info">
+                    <h5
+                      onClick={() => {
+                        // Navigate to organiser public profile
+                        const organiserId = event.organiser_id || event.user_id || event.created_by || "1";
+                        const organiserNameValue = organiserName || event.organiser_name || eventDetails?.OrganiserName || "Organiser";
+                        // Replace spaces with underscores for URL
+                        const organiserNameForUrl = organiserNameValue.replace(/ /g, "_");
+                        navigate(`/organiser/${organiserId}/${organiserNameForUrl}`);
+                      }}
+                      style={{
+                        cursor: "pointer",
+                        color: "#da251c",
+                        transition: "color 0.3s ease",
+                      }}
+                      onMouseEnter={(e) => (e.target.style.color = "#b91e16")}
+                      onMouseLeave={(e) => (e.target.style.color = "#da251c")}
+                    >
+                      {organiserName ||
+                        event.organiser_name ||
+                        eventDetails?.OrganiserName}
+                    </h5>
+                    {event.organiser_description && (
+                      <p>{event.organiser_description}</p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Gallery Section */}
             {event.event_images && Array.isArray(event.event_images) && event.event_images.length > 0 && (
@@ -432,15 +434,26 @@ export default function EventDetails() {
                 (() => {
                   const prices = event.TicketDetails.map((t) =>
                     Number(t.ticket_price)
-                  ).filter(Boolean);
+                  ).filter((p) => !isNaN(p));
+
+                  if (prices.length === 0) return null;
+
                   const minPrice = Math.min(...prices);
                   const maxPrice = Math.max(...prices);
+
+                  const formatPrice = (price) => {
+                    return price === 0 ? "FREE" : `₹${price}`;
+                  };
+
                   return (
                     <div className="registration-fee-box">
                       <span className="fee-label">Registration Fee</span>
                       <span className="fee-amount">
-                        ₹{minPrice}
-                        {minPrice !== maxPrice ? ` - ₹${maxPrice}` : ""}
+                        {minPrice === maxPrice ? (
+                          formatPrice(minPrice)
+                        ) : (
+                          `${formatPrice(minPrice)} - ${formatPrice(maxPrice)}`
+                        )}
                       </span>
                     </div>
                   );
