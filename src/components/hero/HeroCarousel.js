@@ -255,160 +255,81 @@ export default function HeroCarousel() {
       console.log("🚀 Final API Payload:", params);
 
       const data = await authAPI.getDataLocationWise(params);
-
       if (data.status === "success" && data.data) {
-        // Update city name from API if available, otherwise keep the one we set
         if (data.data.CityName) {
           setCityName(data.data.CityName);
         }
 
-        // Set trending events (eventData from API) - show only ACTIVE events from selected city
-        if (data.data.eventData && data.data.eventData.length > 0) {
-          console.log("📊 Total events from API:", data.data.eventData.length);
-          console.log("📝 Sample event:", data.data.eventData[0]);
+        // Combine all available events for filtering
+        const allEvents = [
+          ...(data.data.eventData || []),
+          ...(data.data.UpcomingEventData || []),
+        ];
 
-          const currentCityName =
-            data.data.CityName || cityNameFromSlug || cityName;
+        // Remove duplicates if any (by id)
+        const uniqueEvents = Array.from(
+          new Map(allEvents.map((item) => [item.id, item])).values()
+        );
 
-          // Filter events for the current city and only show ACTIVE events with OPEN registration
-          const localEvents = data.data.eventData.filter(
-            (event) => {
-              // Check if event is in the current city
-              const isLocalEvent = event.city_name &&
-                event.city_name.toLowerCase() === currentCityName.toLowerCase();
+        const currentCityName =
+          data.data.CityName || cityNameFromSlug || cityName;
+        const now = Date.now();
+        const fiveDaysFromNow = now + 5 * 24 * 60 * 60 * 1000;
 
-              // Check if registration is still open (registration_end_time is in the future)
-              const isRegistrationOpen = event.registration_end_time * 1000 > Date.now();
+        // 1. Filter ACTIVE events (Registration Open, Not Closed, Upcoming Start)
+        const activeEvents = uniqueEvents.filter((event) => {
+          const isRegistrationOpen = event.registration_end_time * 1000 > now;
+          const isNotClosed =
+            event.status !== 0 &&
+            event.status !== "0" &&
+            event.status !== "closed" &&
+            event.status !== "Closed";
+          const isUpcomingStr = event.start_time * 1000 > now;
+          return isRegistrationOpen && isNotClosed && isUpcomingStr;
+        });
 
-              // More lenient - show all events that are NOT explicitly closed AND have open registration
-              const isNotClosed = event.status !== 0 &&
-                event.status !== "0" &&
-                event.status !== "closed" &&
-                event.status !== "Closed";
+        // 2. Partition Local Events (Selected City)
+        const localEvents = activeEvents.filter(
+          (event) =>
+            event.city_name &&
+            event.city_name.toLowerCase() === currentCityName.toLowerCase()
+        );
 
-              // Only show upcoming events (start_time is in the future)
-              const isUpcoming = event.start_time * 1000 > Date.now();
+        // Trending: Local events starting within 5 days
+        const localTrending = localEvents.filter(
+          (event) => event.start_time * 1000 <= fiveDaysFromNow
+        );
+        // Upcoming: Local events starting after 5 days
+        const localUpcoming = localEvents.filter(
+          (event) => event.start_time * 1000 > fiveDaysFromNow
+        );
 
-              // Debug logging
-              if (event.city_name && event.city_name.toLowerCase() === currentCityName.toLowerCase()) {
-                console.log(`🔍 Event: ${event.name}, City Match: ${isLocalEvent}, Reg Open: ${isRegistrationOpen}, Not Closed: ${isNotClosed}, Upcoming: ${isUpcoming}, Status: ${event.status}`);
-              }
+        // 3. Suggestions (All active events from all cities)
+        const suggestions = activeEvents
+          .sort((a, b) => a.start_time - b.start_time)
+          .slice(0, 12); // Limit suggestions to top 12 nearest
 
-              return isLocalEvent && isRegistrationOpen && isNotClosed && isUpcoming;
-            }
-          );
+        // 4. Update state logic
+        setSuggestionEvents(suggestions);
 
-          // Sort by start_time (nearest first) to show upcoming nearest events
-          const sortedLocalEvents = localEvents.sort((a, b) => {
-            const dateA = a.start_time ? new Date(a.start_time * 1000) : new Date(0);
-            const dateB = b.start_time ? new Date(b.start_time * 1000) : new Date(0);
-            return dateA - dateB; // Ascending order (nearest first)
-          });
-
-          // Always fetch suggestion events from all cities
-          console.log("🔍 Fetching suggestion events from all cities");
-          const allActiveEvents = data.data.eventData.filter(
-            (event) => {
-              // Check if registration is still open (registration_end_time is in the future)
-              const isRegistrationOpen = event.registration_end_time * 1000 > Date.now();
-
-              // More lenient - show all events that are NOT explicitly closed AND have open registration
-              const isNotClosed = event.status !== 0 &&
-                event.status !== "0" &&
-                event.status !== "closed" &&
-                event.status !== "Closed";
-
-              // For suggestions, show all events with open registration (don't filter by upcoming)
-              // This ensures we have suggestions even when no upcoming events exist
-              return isRegistrationOpen && isNotClosed;
-            }
-          );
-
-          console.log("✅ Suggestion events found:", allActiveEvents.length);
-
-          // Sort suggestions by start_time (nearest first)
-          const sortedSuggestions = allActiveEvents.sort((a, b) => {
-            const dateA = a.start_time ? new Date(a.start_time * 1000) : new Date(0);
-            const dateB = b.start_time ? new Date(b.start_time * 1000) : new Date(0);
-            return dateA - dateB; // Ascending order (nearest first)
-          });
-
-          // Set suggestion events (always available)
-          setSuggestionEvents(sortedSuggestions);
-          console.log("📋 Suggestion events set:", sortedSuggestions.length, "events");
-
-          // Initialize like state for suggestion events
-          const suggestionLiked = {};
-          sortedSuggestions.forEach((ev) => {
-            suggestionLiked[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
-          });
-
-          // Check if we have local events
-          if (sortedLocalEvents.length === 0) {
-            // No local events found
-            console.log("❌ No local events found for", currentCityName);
-            setTrendingEvents([]);
-            setHasLocalEvents(false);
-            setLikedEvents((prev) => ({ ...prev, ...suggestionLiked }));
-          } else {
-            // Show local events in trending
-            console.log("✅ Local events found:", sortedLocalEvents.length);
-            setTrendingEvents(sortedLocalEvents);
-            setHasLocalEvents(true);
-
-            // Initialize like state for trending events
-            const trendingLiked = {};
-            sortedLocalEvents.forEach((ev) => {
-              trendingLiked[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
-            });
-            setLikedEvents((prev) => ({ ...prev, ...trendingLiked, ...suggestionLiked }));
-          }
-        } else {
-          // No events at all
-          setTrendingEvents([]);
-          setSuggestionEvents([]);
+        if (localEvents.length === 0) {
+          setTrendingEvents([]); // Carousel will show suggestionEvents because hasLocalEvents is false
+          setUpcomingEvents(suggestions); // Also show suggestions in the Upcoming panel
           setHasLocalEvents(false);
-        }
-
-        // Set upcoming events (UpcomingEventData from API) - show only ACTIVE events sorted by date
-        if (
-          data.data.UpcomingEventData &&
-          data.data.UpcomingEventData.length > 0
-        ) {
-          // Filter to exclude closed events and events with closed registration
-          const activeUpcomingEvents = data.data.UpcomingEventData.filter(
-            (event) => {
-              // Check if registration is still open (registration_end_time is in the future)
-              const isRegistrationOpen = event.registration_end_time * 1000 > Date.now();
-
-              // Exclude closed events and events with closed registration
-              const isNotClosed = event.status !== 0 &&
-                event.status !== "0" &&
-                event.status !== "closed" &&
-                event.status !== "Closed";
-
-              return isRegistrationOpen && isNotClosed;
-            }
-          );
-
-          // Sort upcoming events by start_time (earliest first)
-          const sortedUpcomingEvents = activeUpcomingEvents.sort((a, b) => {
-            const dateA = a.start_time ? new Date(a.start_time * 1000) : new Date(0);
-            const dateB = b.start_time ? new Date(b.start_time * 1000) : new Date(0);
-            return dateA - dateB; // Ascending order (earliest first)
-          });
-
-          setUpcomingEvents(sortedUpcomingEvents);
-
-          // Initialize like state for upcoming events
-          const initialLiked = {};
-          sortedUpcomingEvents.forEach((ev) => {
-            initialLiked[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
-          });
-          setLikedEvents((prev) => ({ ...prev, ...initialLiked }));
+          console.log("❌ No local events found. Showing suggestions.");
         } else {
-          setUpcomingEvents([]);
+          setTrendingEvents(localTrending);
+          setUpcomingEvents(localUpcoming);
+          setHasLocalEvents(true);
+          console.log(`✅ Local events: ${localTrending.length} Trending, ${localUpcoming.length} Upcoming`);
         }
+
+        // Initialize liked state for all events found
+        const initialLikes = {};
+        activeEvents.forEach((ev) => {
+          initialLikes[ev.id] = ev.is_follow === 1 || ev.is_follow === "1";
+        });
+        setLikedEvents((prev) => ({ ...prev, ...initialLikes }));
       } else {
         // If API doesn't return success, still keep the city name from slug
         if (cityNameFromSlug) {
@@ -1488,6 +1409,7 @@ export default function HeroCarousel() {
           isLoading={isLoadingEvents}
           likedEvents={likedEvents}
           onToggleLike={handleToggleLike}
+          hasLocalEvents={hasLocalEvents}
         />
 
         {/* --- Choose By Distance Section --- */}

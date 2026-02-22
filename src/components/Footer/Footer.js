@@ -143,8 +143,8 @@ export default function Footer() {
         <div className="footer-bottom">
           <div className="footer-copyright">
             <p>
-              Copyright © 2024 <strong>YouTooCanRun</strong>. All Rights
-              Reserved. Design By <strong>Testriq QA LAB LLP.</strong>
+              Copyright © 2024 <strong>YouTooCanRun</strong>. All Rights Reserved.
+              {/* Reserved. Design By <strong>Testriq QA LAB LLP.</strong> */}
             </p>
           </div>
         </div>

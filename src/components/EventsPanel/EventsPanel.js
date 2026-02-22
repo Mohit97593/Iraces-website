@@ -9,6 +9,7 @@ const EventsPanel = ({
   isLoading = false,
   likedEvents = {},
   onToggleLike = () => { },
+  hasLocalEvents = true,
 }) => {
   const navigate = useNavigate();
 
@@ -16,7 +17,9 @@ const EventsPanel = ({
     <section className="events-panel py-5">
       <div className="container">
         <div className="section-head mb-4 text-start">
-          <div className="upcoming-pill text-start">- UPCOMING EVENTS -</div>
+          <div className="upcoming-pill text-start">
+            {hasLocalEvents ? "- UPCOMING EVENTS -" : "- SUGGESTED EVENTS -"}
+          </div>
           {/* <h2 className="events-heading">Upcoming Events</h2> */}
         </div>
 

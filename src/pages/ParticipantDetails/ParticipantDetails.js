@@ -740,6 +740,33 @@ export default function ParticipantDetails() {
               const calculatedAge = calculateAge(value);
               updatedFormData[ageFieldName] = calculatedAge;
               console.log(`🎂 Auto-calculated age: ${calculatedAge} from DOB: ${value}`);
+
+              // NEW: Validate auto-calculated age against ticket limits
+              const currentTicket = form.ticketInfo;
+              if (currentTicket) {
+                const ageStart = parseInt(currentTicket.age_start);
+                const ageEnd = parseInt(currentTicket.age_end);
+
+                let ageError = "";
+                if (!isNaN(ageStart) && ageStart > 0 && calculatedAge < ageStart) {
+                  ageError = `Age must be at least ${ageStart} for this category`;
+                } else if (!isNaN(ageEnd) && ageEnd > 0 && calculatedAge > ageEnd) {
+                  ageError = `Age must be at most ${ageEnd} for this category`;
+                }
+
+                if (ageError) {
+                  setFormErrors(prev => ({
+                    ...prev,
+                    [`participant_${participantIndex}_${ageFieldName}`]: ageError
+                  }));
+                } else {
+                  setFormErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors[`participant_${participantIndex}_${ageFieldName}`];
+                    return newErrors;
+                  });
+                }
+              }
             }
           }
 
@@ -800,13 +827,13 @@ export default function ParticipantDetails() {
               if (!isValid) {
                 setFormErrors(prevErrors => ({
                   ...prevErrors,
-                  [`${participantIndex}_${name}`]: errorMessage
+                  [`participant_${participantIndex}_${name}`]: errorMessage
                 }));
               } else {
                 // Clear error if date is valid
                 setFormErrors(prevErrors => {
                   const newErrors = { ...prevErrors };
-                  delete newErrors[`${participantIndex}_${name}`];
+                  delete newErrors[`participant_${participantIndex}_${name}`];
                   return newErrors;
                 });
               }
@@ -821,13 +848,13 @@ export default function ParticipantDetails() {
                 if (!isValid) {
                   setFormErrors(prevErrors => ({
                     ...prevErrors,
-                    [`${participantIndex}_${name}`]: 'Mobile number must be exactly 10 digits'
+                    [`participant_${participantIndex}_${name}`]: 'Mobile number must be exactly 10 digits'
                   }));
                 } else {
                   // Clear error if mobile is valid
                   setFormErrors(prevErrors => {
                     const newErrors = { ...prevErrors };
-                    delete newErrors[`${participantIndex}_${name}`];
+                    delete newErrors[`participant_${participantIndex}_${name}`];
                     return newErrors;
                   });
                 }
@@ -835,7 +862,7 @@ export default function ParticipantDetails() {
                 // Clear error if field is empty
                 setFormErrors(prevErrors => {
                   const newErrors = { ...prevErrors };
-                  delete newErrors[`${participantIndex}_${name}`];
+                  delete newErrors[`participant_${participantIndex}_${name}`];
                   return newErrors;
                 });
               }
@@ -850,13 +877,13 @@ export default function ParticipantDetails() {
                 if (!isValid) {
                   setFormErrors(prevErrors => ({
                     ...prevErrors,
-                    [`${participantIndex}_${name}`]: 'Please enter a valid email address'
+                    [`participant_${participantIndex}_${name}`]: 'Please enter a valid email address'
                   }));
                 } else {
                   // Clear error if email is valid
                   setFormErrors(prevErrors => {
                     const newErrors = { ...prevErrors };
-                    delete newErrors[`${participantIndex}_${name}`];
+                    delete newErrors[`participant_${participantIndex}_${name}`];
                     return newErrors;
                   });
                 }
@@ -864,7 +891,39 @@ export default function ParticipantDetails() {
                 // Clear error if field is empty
                 setFormErrors(prevErrors => {
                   const newErrors = { ...prevErrors };
-                  delete newErrors[`${participantIndex}_${name}`];
+                  delete newErrors[`participant_${participantIndex}_${name}`];
+                  return newErrors;
+                });
+              }
+            }
+            // NEW: Validate Age field against ticket limits
+            else if (question && (question.question_label?.toLowerCase() === 'age' || getMappedKey(question) === 'age')) {
+              const ageValue = parseInt(value);
+              const ageStart = parseInt(currentTicket.age_start);
+              const ageEnd = parseInt(currentTicket.age_end);
+
+              let isValid = true;
+              let errorMessage = "";
+
+              if (!isNaN(ageValue)) {
+                if (!isNaN(ageStart) && ageStart > 0 && ageValue < ageStart) {
+                  isValid = false;
+                  errorMessage = `Age must be at least ${ageStart} for this category`;
+                } else if (!isNaN(ageEnd) && ageEnd > 0 && ageValue > ageEnd) {
+                  isValid = false;
+                  errorMessage = `Age must be at most ${ageEnd} for this category`;
+                }
+              }
+
+              if (!isValid) {
+                setFormErrors(prevErrors => ({
+                  ...prevErrors,
+                  [`participant_${participantIndex}_${name}`]: errorMessage
+                }));
+              } else {
+                setFormErrors(prevErrors => {
+                  const newErrors = { ...prevErrors };
+                  delete newErrors[`participant_${participantIndex}_${name}`];
                   return newErrors;
                 });
               }
@@ -873,7 +932,7 @@ export default function ParticipantDetails() {
               // Clear error for non-date fields or when value is empty
               setFormErrors(prevErrors => {
                 const newErrors = { ...prevErrors };
-                delete newErrors[`${participantIndex}_${name}`];
+                delete newErrors[`participant_${participantIndex}_${name}`];
                 return newErrors;
               });
             }
@@ -3357,6 +3416,38 @@ export default function ParticipantDetails() {
                   // Restoring alert as requested to keep it "as it was".
                 }
               }
+            }
+          }
+
+          // NEW: Validate Age range against ticket limits
+          const isAgeField = (q.question_label || "").toLowerCase() === 'age' || (getMappedKey(q) || "").toLowerCase() === 'age';
+          if (isAgeField && fieldValue) {
+            const ageValue = parseInt(fieldValue);
+            const ageStart = parseInt(currentTicket.age_start);
+            const ageEnd = parseInt(currentTicket.age_end);
+
+            let ageValid = true;
+            let ageErrorMessage = "";
+
+            if (!isNaN(ageValue)) {
+              if (!isNaN(ageStart) && ageStart > 0 && ageValue < ageStart) {
+                ageValid = false;
+                ageErrorMessage = `${q.question_label} must be at least ${ageStart} for Participant ${participantIndex + 1}`;
+              } else if (!isNaN(ageEnd) && ageEnd > 0 && ageValue > ageEnd) {
+                ageValid = false;
+                ageErrorMessage = `${q.question_label} must be at most ${ageEnd} for Participant ${participantIndex + 1}`;
+              }
+            }
+
+            if (!ageValid) {
+              const errorKey = `participant_${participantIndex}_${fieldName}`;
+              errors[errorKey] = ageErrorMessage;
+              if (!hasErrors) {
+                firstErrorParticipant = participantIndex;
+                firstErrorGroup = groupTitle;
+              }
+              hasErrors = true;
+              console.log(`❌ Age out of range: ${q.question_label} for Participant ${participantIndex + 1} (${ageValue} not in ${ageStart}-${ageEnd})`);
             }
           }
         });

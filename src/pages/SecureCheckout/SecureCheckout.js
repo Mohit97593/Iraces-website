@@ -17,6 +17,7 @@ export default function SecureCheckout() {
   const [selectedTickets, setSelectedTickets] = useState([]);
   const [registrationStatus, setRegistrationStatus] = useState(null);
   const [overallLimit, setOverallLimit] = useState(null);
+  const [totalExistingBooked, setTotalExistingBooked] = useState(0);
   const [registrations, setRegistrations] = useState([]);
 
   // Coupon states
@@ -338,8 +339,16 @@ export default function SecureCheckout() {
         setRegistrationStatus(regStatus);
         setOverallLimit(eventOverallLimit);
         setPricesTaxesStatus(taxesStatus);
+
+        // NEW: Calculate total existing booked tickets
+        const totalBooked = eventTickets.reduce((sum, t) => {
+          return sum + (parseInt(t.TotalBookedTickets) || 0);
+        }, 0);
+        setTotalExistingBooked(totalBooked);
+
         console.log("✅ event_registration_status:", regStatus);
         console.log("✅ overall_limit:", eventOverallLimit);
+        console.log("✅ total_existing_booked:", totalBooked);
         console.log("✅ prices_taxes_status:", taxesStatus);
 
         // If events API did not return event data, try to use EventData from ticket response
@@ -398,12 +407,17 @@ export default function SecureCheckout() {
 
     // Check overall_limit if it exists
     if (overallLimit && overallLimit > 0) {
-      const newTotalQuantity = Number(registrationStatus) === 1
+      const newTotalInCart = Number(registrationStatus) === 1
         ? minBooking  // Single selection replaces, so just minBooking
         : currentTotalQuantity + minBooking;  // Multiple selection adds
 
-      if (newTotalQuantity > overallLimit) {
-        alert(`Cannot add ticket. Overall limit is ${overallLimit} tickets. You have ${currentTotalQuantity} tickets selected.`);
+      if ((totalExistingBooked + newTotalInCart) > overallLimit) {
+        const remaining = overallLimit - totalExistingBooked;
+        if (remaining <= 0) {
+          alert(`Registration Closed! Total limit of ${overallLimit} reached.`);
+        } else {
+          alert(`Cannot add ticket. Only ${remaining} spots remaining for this event.`);
+        }
         console.log("❌ BLOCKED: Would exceed overall_limit");
         return;
       }
@@ -447,8 +461,8 @@ export default function SecureCheckout() {
 
     // Check overall_limit before increasing
     if (overallLimit && overallLimit > 0) {
-      if (currentTotalQuantity >= overallLimit) {
-        alert(`Cannot increase quantity. Overall limit is ${overallLimit} tickets.`);
+      if ((totalExistingBooked + currentTotalQuantity) >= overallLimit) {
+        alert(`Cannot increase quantity. Overall event limit of ${overallLimit} reached.`);
         console.log("❌ BLOCKED: Already at overall_limit");
         return;
       }
@@ -977,6 +991,46 @@ export default function SecureCheckout() {
                           );
                         })()}
                       </div>
+
+                      {/* NEW: Inline Mobile Summary & Proceed Button */}
+                      {selectedTickets.find(t => t.id === ticket.id) && (
+                        <div className="mobile-only-summary">
+                          <div className="mobile-summary-row">
+                            <span className="mobile-summary-label">Total Amount:</span>
+                            <span className="mobile-summary-value">
+                              ₹{(() => {
+                                const totalPrice = selectedTickets.reduce((sum, t) => {
+                                  let effectivePrice = parseFloat(t.ticket_price);
+                                  if (t.early_bird === 1 && t.show_early_bird === 1) {
+                                    const discountValue = parseFloat(t.discount_value || 0);
+                                    if (t.discount === 1) {
+                                      effectivePrice = effectivePrice - (effectivePrice * discountValue / 100);
+                                    } else {
+                                      effectivePrice = effectivePrice - discountValue;
+                                    }
+                                  }
+                                  return sum + (effectivePrice * t.quantity);
+                                }, 0);
+                                const currentDiscount = appliedCoupon ? selectedTickets.reduce((sum, t) => {
+                                  return sum + getTicketDiscount(t, appliedCoupon);
+                                }, 0) : 0;
+                                return Math.max(0, totalPrice - currentDiscount).toFixed(2);
+                              })()}
+                            </span>
+                          </div>
+                          <button
+                            className="btn-mobile-proceed"
+                            onClick={() => {
+                              localStorage.setItem("selectedTickets", JSON.stringify(selectedTickets));
+                              navigate(`/participant-details/${eventId}`);
+                            }}
+                          >
+                            <span style={{ fontSize: '1.1rem' }}>{selectedTickets.reduce((sum, t) => sum + t.quantity, 0)}</span>
+                            <span>PROCEED</span>
+                            <i className="fas fa-arrow-right"></i>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))

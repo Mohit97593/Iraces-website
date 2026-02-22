@@ -13,6 +13,7 @@ export default function EventDetails() {
   const [eventId, setEventId] = useState(null);
   const [event, setEvent] = useState(null);
   const [eventDetails, setEventDetails] = useState(null);
+  const [isRegistrationClosedByLimit, setIsRegistrationClosedByLimit] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [faq, setFaq] = useState([]);
@@ -22,23 +23,25 @@ export default function EventDetails() {
 
   // Handle event ID from localStorage or URL
   useEffect(() => {
-    // Priority: localStorage > URL param
-    let eid = localStorage.getItem('viewEventId');
-    if (!eid) {
-      eid = urlEventId;
-    }
+    // Check if we have an ID in the URL or localStorage
+    const storedEid = localStorage.getItem('viewEventId');
+    let eid = urlEventId || storedEid;
 
     if (eid) {
       setEventId(eid);
-      // Clean up localStorage after reading
-      localStorage.removeItem('viewEventId');
 
-      // Clean up URL if it has event ID
-      if (window.location.pathname !== '/event') {
-        window.history.replaceState({}, document.title, '/event');
+      // If we got it from storage, clean up
+      if (storedEid) {
+        localStorage.removeItem('viewEventId');
+      }
+
+      // If the URL doesn't have the ID but we have one (e.g. from storage),
+      // update the URL to /event/:eid to match user's request
+      if (urlEventId !== eid) {
+        navigate(`/event/${eid}`, { replace: true });
       }
     }
-  }, [urlEventId]);
+  }, [urlEventId, navigate]);
 
   useEffect(() => {
     if (eventId) {
@@ -86,6 +89,22 @@ export default function EventDetails() {
             detailedEventData.is_follow === 1 ||
             detailedEventData.is_follow === "1"
           );
+
+          // Calculate total booked tickets across all ticket types
+          const ticketDetails = detailedEventData.TicketDetails || [];
+          const totalBooked = ticketDetails.reduce((sum, ticket) => {
+            return sum + (parseInt(ticket.TotalBookedTickets) || 0);
+          }, 0);
+
+          const overallLimit = parseInt(detailedEventData.overall_limit) || 0;
+          console.log(`📊 Total Booked: ${totalBooked}, Overall Limit: ${overallLimit}`);
+
+          if (overallLimit > 0 && totalBooked >= overallLimit) {
+            setIsRegistrationClosedByLimit(true);
+            console.log("🛑 Event registration is CLOSED based on overall limit");
+          } else {
+            setIsRegistrationClosedByLimit(false);
+          }
         }
       }
     } catch (error) {
@@ -463,8 +482,11 @@ export default function EventDetails() {
               {!registrationClosed && !registrationNotStarted && (
                 <div className="mobile-sticky-register">
                   <button
-                    className="btn-register1"
+                    className={`btn-register1 ${isRegistrationClosedByLimit ? "disabled-btn" : ""}`}
+                    disabled={isRegistrationClosedByLimit}
+                    style={isRegistrationClosedByLimit ? { backgroundColor: '#da251c', cursor: 'not-allowed', opacity: 0.8 } : {}}
                     onClick={() => {
+                      if (isRegistrationClosedByLimit) return;
                       // Check if user is logged in
                       const token = localStorage.getItem("token");
                       if (!token) {
@@ -506,7 +528,7 @@ export default function EventDetails() {
                       }
                     }}
                   >
-                    Register Now
+                    {isRegistrationClosedByLimit ? "Registration Closed" : "Register Now"}
                   </button>
                 </div>
               )}
@@ -520,6 +542,8 @@ export default function EventDetails() {
                   <div className="status-badge soon" style={{ backgroundColor: '#ffc107', color: '#000' }}>
                     <i className="fas fa-clock"></i> Registration Soon
                   </div>
+                ) : isRegistrationClosedByLimit ? (
+                  null
                 ) : (
                   <div className="status-badge open">
                     <i className="fas fa-check-circle"></i> Registration Open
