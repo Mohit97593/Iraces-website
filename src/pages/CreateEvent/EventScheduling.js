@@ -49,9 +49,22 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
   const [tzSearch, setTzSearch] = useState("");
   const [showTzDropdown, setShowTzDropdown] = useState(false);
   const [filteredTimezones, setFilteredTimezones] = useState([]);
+
   const [countries, setCountries] = useState([]);
+  const [countrySearch, setCountrySearch] = useState("");
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [filteredCountries, setFilteredCountries] = useState([]);
+
   const [states, setStates] = useState([]);
+  const [stateSearch, setStateSearch] = useState("");
+  const [showStateDropdown, setShowStateDropdown] = useState(false);
+  const [filteredStates, setFilteredStates] = useState([]);
+
   const [cities, setCities] = useState([]);
+  const [citySearch, setCitySearch] = useState("");
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [filteredCities, setFilteredCities] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState(getInitialFormData());
   const [errors, setErrors] = useState({});
@@ -146,6 +159,28 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
     });
   };
 
+  const dropdownListStyle = {
+    position: "absolute",
+    zIndex: 100,
+    left: 0,
+    right: 0,
+    background: "#fff",
+    border: "1px solid #ddd",
+    maxHeight: 200,
+    overflowY: "auto",
+    borderRadius: 8,
+    boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+    marginTop: 4,
+  };
+
+  const dropdownItemStyle = {
+    padding: "10px 14px",
+    cursor: "pointer",
+    borderBottom: "1px solid #f2f2f2",
+    fontSize: "0.95rem",
+    transition: "background 0.2s",
+  };
+
   const handlePincodeChange = async (e) => {
     const { value } = e.target;
     // Update pincode in formData
@@ -211,6 +246,12 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
               state: stateName,
               city: cityName,
             };
+
+            // Sync search inputs
+            setCountrySearch(updated.country);
+            setStateSearch(updated.state);
+            setCitySearch(updated.city);
+
             sessionStorage.setItem(
               "eventSchedulingFormData",
               JSON.stringify(updated)
@@ -238,8 +279,8 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
     );
   };
 
+  // Timezone search effect
   useEffect(() => {
-    // update filtered list when timezones or search term changes
     if (!tzSearch || !Array.isArray(timezones) || timezones.length === 0) {
       setFilteredTimezones(timezones || []);
     } else {
@@ -255,13 +296,81 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
     }
   }, [tzSearch, timezones]);
 
-  // initialize tzSearch from formData.timeZone when available (but don't override user typing)
+  // Country search effect
+  useEffect(() => {
+    if (!countrySearch || !Array.isArray(countries) || countries.length === 0) {
+      setFilteredCountries(countries || []);
+    } else {
+      const q = String(countrySearch).toLowerCase();
+      setFilteredCountries(
+        (countries || []).filter(
+          (c) =>
+            String(c.name || "")
+              .toLowerCase()
+              .includes(q)
+        )
+      );
+    }
+  }, [countrySearch, countries]);
+
+  // State search effect
+  useEffect(() => {
+    if (!stateSearch || !Array.isArray(states) || states.length === 0) {
+      setFilteredStates(states || []);
+    } else {
+      const q = String(stateSearch).toLowerCase();
+      setFilteredStates(
+        (states || []).filter(
+          (s) =>
+            String(s.name || "")
+              .toLowerCase()
+              .includes(q)
+        )
+      );
+    }
+  }, [stateSearch, states]);
+
+  // City search effect
+  useEffect(() => {
+    if (!citySearch || !Array.isArray(cities) || cities.length === 0) {
+      setFilteredCities(cities || []);
+    } else {
+      const q = String(citySearch).toLowerCase();
+      setFilteredCities(
+        (cities || []).filter(
+          (c) =>
+            String(c.name || "")
+              .toLowerCase()
+              .includes(q)
+        )
+      );
+    }
+  }, [citySearch, cities]);
+
+  // initialize search terms from formData when available
   useEffect(() => {
     if ((!tzSearch || tzSearch === "") && formData.timeZone) {
       setTzSearch(formData.timeZone);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.timeZone]);
+
+  useEffect(() => {
+    if ((!countrySearch || countrySearch === "") && formData.country) {
+      setCountrySearch(formData.country);
+    }
+  }, [formData.country]);
+
+  useEffect(() => {
+    if ((!stateSearch || stateSearch === "") && formData.state) {
+      setStateSearch(formData.state);
+    }
+  }, [formData.state]);
+
+  useEffect(() => {
+    if ((!citySearch || citySearch === "") && formData.city) {
+      setCitySearch(formData.city);
+    }
+  }, [formData.city]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -841,28 +950,52 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
         {/* Country and Pincode */}
         <div className="row">
           <div className="col-md-6">
-            <div className="form-group">
+            <div className="form-group" style={{ position: "relative" }}>
               <label>
                 Country <span className="required">*</span>
               </label>
-              <select
+              <input
+                type="text"
                 className="form-controll"
-                name="country"
-                value={formData.country}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select Country</option>
-                {countries.length > 0 ? (
-                  countries.map((country) => (
-                    <option key={country.id} value={country.name}>
-                      {country.name}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>Loading countries...</option>
-                )}
-              </select>
+                placeholder="Search country"
+                value={countrySearch}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setCountrySearch(v);
+                  setShowCountryDropdown(true);
+                  if (v === "") {
+                    setFormData(prev => ({ ...prev, country: "", state: "", city: "" }));
+                  }
+                }}
+                onFocus={() => setShowCountryDropdown(true)}
+                onBlur={() => setTimeout(() => setShowCountryDropdown(false), 200)}
+              />
+              {showCountryDropdown && (
+                <div style={dropdownListStyle}>
+                  {filteredCountries.length > 0 ? (
+                    filteredCountries.map((c) => (
+                      <div
+                        key={c.id}
+                        role="button"
+                        className="dropdown-item-search"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, country: c.name, state: "", city: "" }));
+                          setCountrySearch(c.name);
+                          setShowCountryDropdown(false);
+                          setErrors(prev => ({ ...prev, country: "" }));
+                        }}
+                        style={dropdownItemStyle}
+                      >
+                        {c.name}
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ padding: 12, color: "#999" }}>No countries found</div>
+                  )
+                  }
+                </div>
+              )}
               {renderError("country")}
             </div>
           </div>
@@ -894,52 +1027,106 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
         {/* State and City */}
         <div className="row">
           <div className="col-md-6">
-            <div className="form-group">
+            <div className="form-group" style={{ position: "relative" }}>
               <label>
                 State <span className="required">*</span>
                 <span style={{ fontSize: "0.85rem", color: "#666", fontWeight: "normal" }}>
                   {" "}(Auto-filled from Pincode)
                 </span>
               </label>
-              <select
+              <input
+                type="text"
                 className="form-controll"
-                name="state"
-                value={formData.state}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select State</option>
-                {states.map((state) => (
-                  <option key={state.id} value={state.name}>
-                    {state.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Search state"
+                value={stateSearch}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setStateSearch(v);
+                  setShowStateDropdown(true);
+                  if (v === "") {
+                    setFormData(prev => ({ ...prev, state: "", city: "" }));
+                  }
+                }}
+                onFocus={() => setShowStateDropdown(true)}
+                onBlur={() => setTimeout(() => setShowStateDropdown(false), 200)}
+                disabled={!formData.country}
+              />
+              {showStateDropdown && (
+                <div style={dropdownListStyle}>
+                  {filteredStates.length > 0 ? (
+                    filteredStates.map((s) => (
+                      <div
+                        key={s.id}
+                        className="dropdown-item-search"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, state: s.name, city: "" }));
+                          setStateSearch(s.name);
+                          setShowStateDropdown(false);
+                          setErrors(prev => ({ ...prev, state: "" }));
+                        }}
+                        style={dropdownItemStyle}
+                      >
+                        {s.name}
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ padding: 12, color: "#999" }}>{formData.country ? "No states found" : "Select country first"}</div>
+                  )}
+                </div>
+              )}
               {renderError("state")}
             </div>
           </div>
           <div className="col-md-6">
-            <div className="form-group">
+            <div className="form-group" style={{ position: "relative" }}>
               <label>
                 City <span className="required">*</span>
                 <span style={{ fontSize: "0.85rem", color: "#666", fontWeight: "normal" }}>
                   {" "}(Auto-filled from Pincode)
                 </span>
               </label>
-              <select
+              <input
+                type="text"
                 className="form-controll"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select City</option>
-                {cities.map((city) => (
-                  <option key={city.id} value={city.name}>
-                    {city.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Search city"
+                value={citySearch}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setCitySearch(v);
+                  setShowCityDropdown(true);
+                  if (v === "") {
+                    setFormData(prev => ({ ...prev, city: "" }));
+                  }
+                }}
+                onFocus={() => setShowCityDropdown(true)}
+                onBlur={() => setTimeout(() => setShowCityDropdown(false), 200)}
+                disabled={!formData.state}
+              />
+              {showCityDropdown && (
+                <div style={dropdownListStyle}>
+                  {filteredCities.length > 0 ? (
+                    filteredCities.map((c) => (
+                      <div
+                        key={c.id}
+                        className="dropdown-item-search"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, city: c.name }));
+                          setCitySearch(c.name);
+                          setShowCityDropdown(false);
+                          setErrors(prev => ({ ...prev, city: "" }));
+                        }}
+                        style={dropdownItemStyle}
+                      >
+                        {c.name}
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ padding: 12, color: "#999" }}>{formData.state ? "No cities found" : "Select state first"}</div>
+                  )}
+                </div>
+              )}
               {renderError("city")}
             </div>
           </div>

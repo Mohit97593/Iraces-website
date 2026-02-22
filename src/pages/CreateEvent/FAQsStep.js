@@ -169,6 +169,9 @@ const FAQsStep = ({ onBack, onNext, showToast }) => {
       const res = await authAPI.addEventFaq(fd);
       console.log("FAQ API Response:", res);
 
+      // Show success message
+      showToast && showToast((res && res.message) || (isEdit ? "FAQ updated successfully!" : "FAQ added successfully!"), 'success');
+
       // Close the add form
       setAdding(false);
       setNewQuestion("");

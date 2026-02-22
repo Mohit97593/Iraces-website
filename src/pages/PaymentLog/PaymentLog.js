@@ -22,8 +22,8 @@ export default function PaymentLog() {
         email: "",
         TransactionID: "",
         TransactionStatus: "",
-        from_date: "",
-        to_date: ""
+        from_date: location.state?.filterData?.dateFrom || "",
+        to_date: location.state?.filterData?.dateTo || ""
     });
 
     // Fetch payment log data

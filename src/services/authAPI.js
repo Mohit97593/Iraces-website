@@ -1534,7 +1534,7 @@ export const authAPI = {
       formData.append("event_id", payload.event_id);
 
       if (payload.filter) {
-        formData.append("filter", payload.filter); cx
+        formData.append("filter", payload.filter);
       }
       if (payload.from_date) {
         formData.append("from_date", payload.from_date);
@@ -2034,10 +2034,14 @@ export const authAPI = {
   },
 
   // Get Remittance By Event API
-  getRemittanceByEvent: async (event_id) => {
+  getRemittanceByEvent: async (payload) => {
     try {
       const formData = new FormData();
+      const event_id = typeof payload === 'object' ? payload.event_id : payload;
       formData.append("event_id", event_id);
+
+      if (payload.from_date) formData.append("from_date", payload.from_date);
+      if (payload.to_date) formData.append("to_date", payload.to_date);
 
       const response = await api.post("/get_remittance_by_event", formData, {
         headers: { "Content-Type": "multipart/form-data" },

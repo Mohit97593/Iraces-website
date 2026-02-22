@@ -4199,7 +4199,7 @@ export default function ParticipantDetails() {
               className="modal-close-btn"
               onClick={() => {
                 setShowSuccessModal(false);
-                window.location.href = '/my-tickets';
+                window.location.href = '/registration-tracker';
               }}
             >
               <i className="fas fa-times"></i>

@@ -37,9 +37,9 @@ export default function Participants() {
         registrationID: "",
         mobileNumber: "",
         email: "",
-        category: "",
-        dateFrom: "",
-        dateTo: "",
+        category: location.state?.filterData?.category || "",
+        dateFrom: location.state?.filterData?.dateFrom || "",
+        dateTo: location.state?.filterData?.dateTo || "",
         transactionID: ""
     });
 

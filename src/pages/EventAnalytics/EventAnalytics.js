@@ -271,7 +271,41 @@ export default function EventAnalytics() {
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
-        setFilterData(prev => ({ ...prev, [name]: value }));
+
+        if (name === "filter") {
+            const today = new Date();
+            const formatDate = (date) => {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            };
+
+            let dateFrom = "";
+            let dateTo = formatDate(today);
+
+            if (value === "today") {
+                dateFrom = formatDate(today);
+            } else if (value === "week") {
+                // Get Monday of current week
+                const day = today.getDay();
+                const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+                const monday = new Date(new Date().setDate(diff));
+                dateFrom = formatDate(monday);
+            } else if (value === "month") {
+                const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                dateFrom = formatDate(firstDay);
+            }
+
+            setFilterData(prev => ({
+                ...prev,
+                filter: value,
+                dateFrom: dateFrom,
+                dateTo: dateTo
+            }));
+        } else {
+            setFilterData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleClearFilters = async () => {
@@ -615,7 +649,7 @@ export default function EventAnalytics() {
                             <div className="stat-info">
                                 <h3>Registrations</h3>
                                 <div className="stat-value">{stats.registrations}</div>
-                                <Link to={`/registrations/${eventId}`} state={{ eventName }} className="view-details">View Details</Link>
+                                <Link to={`/registrations/${eventId}`} state={{ eventName, filterData }} className="view-details">View Details</Link>
                             </div>
                             <div className="stat-icon">
                                 <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Registrations" />
@@ -630,7 +664,7 @@ export default function EventAnalytics() {
                             <div className="stat-info">
                                 <h3>Participants</h3>
                                 <div className="stat-value">{stats.participants}</div>
-                                <Link to={`/participants/${eventId}`} state={{ eventName }} className="view-details">View Details</Link>
+                                <Link to={`/participants/${eventId}`} state={{ eventName, filterData }} className="view-details">View Details</Link>
                             </div>
                             <div className="stat-icon">
                                 <img src="https://cdn-icons-png.flaticon.com/512/681/681494.png" alt="Participants" />
@@ -701,7 +735,7 @@ export default function EventAnalytics() {
                             <div className="stat-info">
                                 <h3>Payment History</h3>
                                 {/* <div className="stat-value">{stats.pageViews}</div> */}
-                                <Link to={`/payment-log/${eventId}`} state={{ eventName }} className="view-details">View Details</Link>
+                                <Link to={`/payment-log/${eventId}`} state={{ eventName, filterData }} className="view-details">View Details</Link>
                             </div>
                             <div className="stat-icon">
                                 <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png" alt="Page Views" />
@@ -771,7 +805,7 @@ export default function EventAnalytics() {
                         <div className="stat-content">
                             <div className="stat-info">
                                 <h3>Remittance Details</h3>
-                                <Link to={`/remittance-details/${eventId}`} state={{ eventName }} className="view-details">View Details</Link>
+                                <Link to={`/remittance-details/${eventId}`} state={{ eventName, filterData }} className="view-details">View Details</Link>
                             </div>
                             <div className="stat-icon">
                                 <img src="https://cdn-icons-png.flaticon.com/512/2331/2331978.png" alt="Remittance" />

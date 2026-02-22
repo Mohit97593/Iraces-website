@@ -17,8 +17,8 @@ export default function Registrations() {
     const [filters, setFilters] = useState({
         userName: "",
         transactionStatus: "",
-        dateFrom: "",
-        dateTo: "",
+        dateFrom: location.state?.filterData?.dateFrom || "",
+        dateTo: location.state?.filterData?.dateTo || "",
         transactionID: ""
     });
 

@@ -242,28 +242,41 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
         fd.append("user_id", String(derivedUserId));
         fd.append("title", editModalData.title || "");
         fd.append("terms_conditions", editModalData.content || "");
-        fd.append("event_comm_id", String(editModalData.id || ""));
+
+        // Only append event_comm_id if it's a real numeric ID
+        const commId = String(editModalData.id || "");
+        if (commId && commId !== "terms") {
+          fd.append("event_comm_id", commId);
+        }
 
         const res = await authAPI.addEditTermsConditions(fd);
         const message =
           (res && (res.message || (res.data && res.data.message))) || "Saved";
-        triggerToast(message);
+        triggerToast(message, 'success');
       } else {
         const fd = new FormData();
         fd.append("event_id", String(eventId));
+
+        const derivedUserId =
+          localStorage.getItem("user_id") ||
+          sessionStorage.getItem("user_id") ||
+          "";
+        fd.append("user_id", String(derivedUserId));
+
         // use event_comm_id as id when editing communications
         fd.append("event_comm_id", String(editModalData.id));
         // action flag depends on type
         const flag = "comm_edit";
         fd.append("event_edit_flag", flag);
-        // include fields that backend may expect
-        fd.append("title", editModalData.title || "");
+        // include fields that backend expects (e.g., subject_name)
+        fd.append("subject_name", editModalData.title || "");
         fd.append("message_content", editModalData.content || "");
 
-        const res = await authAPI.editEventCommFqa(fd);
+        // Use addEventFaq for saving communications as it's the standard generic save endpoint
+        const res = await authAPI.addEventFaq(fd);
         const message =
           (res && (res.message || (res.data && res.data.message))) || "Saved";
-        triggerToast(message, 'error');
+        triggerToast(message, 'success');
       }
       // refresh event details to reflect saved changes
       const reloadId = sessionStorage.getItem("event_id");

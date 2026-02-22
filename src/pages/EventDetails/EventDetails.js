@@ -370,8 +370,7 @@ export default function EventDetails() {
                   >
                     {organiserName ||
                       event.organiser_name ||
-                      eventDetails?.OrganiserName ||
-                      "Sai Dwarkamai Foundation"}
+                      eventDetails?.OrganiserName}
                   </h5>
                   {event.organiser_description && (
                     <p>{event.organiser_description}</p>
@@ -449,52 +448,54 @@ export default function EventDetails() {
 
               {/* Registration Button */}
               {!registrationClosed && !registrationNotStarted && (
-                <button
-                  className="btn-register1"
-                  onClick={() => {
-                    // Check if user is logged in
-                    const token = localStorage.getItem("token");
-                    if (!token) {
-                      // Save current URL for redirect after login
-                      const currentPath = window.location.pathname + window.location.search;
-                      localStorage.setItem("redirectAfterLogin", currentPath);
-                      console.log("💾 Saved redirect URL before login:", currentPath);
+                <div className="mobile-sticky-register">
+                  <button
+                    className="btn-register1"
+                    onClick={() => {
+                      // Check if user is logged in
+                      const token = localStorage.getItem("token");
+                      if (!token) {
+                        // Save current URL for redirect after login
+                        const currentPath = window.location.pathname + window.location.search;
+                        localStorage.setItem("redirectAfterLogin", currentPath);
+                        console.log("💾 Saved redirect URL before login:", currentPath);
 
-                      // Check for guest login availability
-                      const allowGuest = eventDetails?.EventData?.[0]?.allow_guest_login;
-                      const guestEmail = eventDetails?.UserEmail;
+                        // Check for guest login availability
+                        const allowGuest = eventDetails?.EventData?.[0]?.allow_guest_login;
+                        const guestEmail = eventDetails?.UserEmail;
 
-                      if (allowGuest === 1 || allowGuest === "1") {
-                        localStorage.setItem("guestEmail", guestEmail || "");
-                        localStorage.setItem("guestAllowedEventId", eventId);
-                        localStorage.setItem("guestAllowedEventName", event?.name || "");
-                        console.log("🎟️ Guest login info saved:", { guestEmail, eventId });
+                        if (allowGuest === 1 || allowGuest === "1") {
+                          localStorage.setItem("guestEmail", guestEmail || "");
+                          localStorage.setItem("guestAllowedEventId", eventId);
+                          localStorage.setItem("guestAllowedEventName", event?.name || "");
+                          console.log("🎟️ Guest login info saved:", { guestEmail, eventId });
+                        } else {
+                          // Clear any old guest info
+                          localStorage.removeItem("guestEmail");
+                          localStorage.removeItem("guestAllowedEventId");
+                          localStorage.removeItem("guestAllowedEventName");
+                        }
+
+                        // Redirect to login
+                        navigate("/login");
                       } else {
-                        // Clear any old guest info
-                        localStorage.removeItem("guestEmail");
-                        localStorage.removeItem("guestAllowedEventId");
-                        localStorage.removeItem("guestAllowedEventName");
+                        // User is logged in, proceed to checkout
+                        // Guest Login Restriction Check
+                        const isGuest = localStorage.getItem("isGuestLogin") === "true";
+                        const allowedEventId = localStorage.getItem("guestAllowedEventId");
+
+                        if (isGuest && allowedEventId && String(eventId) !== String(allowedEventId)) {
+                          setShowGuestLogoutPopup(true);
+                          return;
+                        }
+
+                        navigate(`/checkout/${eventId}`);
                       }
-
-                      // Redirect to login
-                      navigate("/login");
-                    } else {
-                      // User is logged in, proceed to checkout
-                      // Guest Login Restriction Check
-                      const isGuest = localStorage.getItem("isGuestLogin") === "true";
-                      const allowedEventId = localStorage.getItem("guestAllowedEventId");
-
-                      if (isGuest && allowedEventId && String(eventId) !== String(allowedEventId)) {
-                        setShowGuestLogoutPopup(true);
-                        return;
-                      }
-
-                      navigate(`/checkout/${eventId}`);
-                    }
-                  }}
-                >
-                  Register Now
-                </button>
+                    }}
+                  >
+                    Register Now
+                  </button>
+                </div>
               )}
 
               <div className="registration-status-section">
