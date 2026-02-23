@@ -688,6 +688,8 @@ export const authAPI = {
       const response = await api.post(`/reset_password/${token}`, {
         new_password,
         confirm_new_password,
+        password: new_password,
+        password_confirmation: confirm_new_password,
       });
       return response.data;
     } catch (error) {
@@ -768,6 +770,9 @@ export const authAPI = {
       formData.append("LoginType", loginData.loginType || 1);
       formData.append("Email", loginData.email || loginData.identifier || "");
       formData.append("Password", loginData.password || "");
+      if (loginData.otp) {
+        formData.append("ValidOpt", loginData.otp);
+      }
       const response = await api.post("/login", formData, {
         headers: {
           "Content-Type": "multipart/form-data",

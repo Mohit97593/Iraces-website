@@ -64,13 +64,18 @@ const SetNewPassword = () => {
     }
     try {
       // Call API to reset password
-      await authAPI.resetPassword({
+      const res = await authAPI.resetPassword({
         token,
         new_password: password,
         confirm_new_password: confirmPassword,
       });
-      setSuccess("Password reset successful!");
-      setTimeout(() => navigate("/login"), 2000);
+
+      if (res && (res.status === 200 || res.validate === 0 || res.success)) {
+        setSuccess("Password reset successful!");
+        setTimeout(() => navigate("/login"), 2000);
+      } else {
+        setError(res?.message || res?.Message || "Failed to reset password.");
+      }
     } catch (err) {
       setError(err?.message || "Failed to reset password.");
     }

@@ -10,6 +10,35 @@ export default function Login() {
   const navigate = useNavigate();
   const { login, sendOTP, loginWithOTP } = useAuth();
 
+  // Helper to handle redirect after login
+  const handleLoginRedirect = () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const redirectUrl = localStorage.getItem("redirectAfterLogin");
+      if (redirectUrl) {
+        localStorage.removeItem("redirectAfterLogin");
+        navigate(redirectUrl);
+      } else {
+        navigate("/");
+      }
+    } else {
+      setErrors({
+        general: "Login successful but authentication data missing. Please contact support.",
+      });
+    }
+  };
+
+  // Helper to handle login errors
+  const handleLoginError = (result) => {
+    let errorMessage = result.message || "Login failed. Please check your credentials and try again.";
+    if (errorMessage.toLowerCase().includes("user not found") || errorMessage.toLowerCase().includes("invalid credentials")) {
+      errorMessage = "Invalid email/mobile or password. Please check your credentials.";
+    } else if (errorMessage.toLowerCase().includes("account not verified")) {
+      errorMessage = "Your account is not verified. Please check your email/SMS for verification.";
+    }
+    setErrors({ general: errorMessage });
+  };
+
   const [loginType, setLoginType] = useState("userId");
   const [formData, setFormData] = useState({
     identifier: "",
@@ -218,41 +247,54 @@ export default function Login() {
         return;
       }
 
-      // If OTP field is shown and OTP is provided, login with OTP
+      // If OTP field is shown and OTP is provided, handle login
       if (showOTPField && formData.otp) {
-        const cleanMobile =
-          loginType === "mobile" ? formData.identifier.replace(/^0+/, "") : "";
-        const otpData = {
-          email:
-            loginType === "email"
-              ? formData.identifier.toLowerCase().trim()
-              : "",
-          mobile: cleanMobile,
-          otp: formData.otp,
-          loginType: loginType === "mobile" ? 2 : 3, // 2=Mobile+OTP, 3=Email+OTP
-          phoneCode: loginType === "mobile" ? formData.phoneCode : "",
-        };
-        const result = await loginWithOTP(otpData);
-        if (result.success) {
-          console.log("OTP Login successful:", result.data);
-          // Check if there's a redirect URL saved before login
-          const redirectUrl = localStorage.getItem("redirectAfterLogin");
-          console.log("🔍 Checking redirect URL:", redirectUrl);
-          if (redirectUrl) {
-            localStorage.removeItem("redirectAfterLogin");
-            console.log("✅ Redirecting to:", redirectUrl);
-            navigate(redirectUrl);
+        if (loginType === "userId") {
+          // Password login with OTP
+          const loginData = {
+            email: formData.identifier.toLowerCase().trim(),
+            password: formData.password,
+            otp: formData.otp,
+            loginType: 1,
+            phoneCode: "",
+          };
+          const result = await login(loginData);
+          if (result.success) {
+            handleLoginRedirect();
           } else {
-            console.log("🏠 No redirect URL, going to home");
-            navigate("/"); // Redirect to home page
+            setErrors({
+              general: result.message || "Login failed. Please check OTP and Password.",
+            });
           }
         } else {
-          setErrors({
-            general: result.message || "OTP login failed. Please try again.",
-          });
+          // Mobile/Email OTP login (existing flow)
+          const cleanMobile =
+            loginType === "mobile" ? formData.identifier.replace(/^0+/, "") : "";
+          const otpData = {
+            email:
+              loginType === "email"
+                ? formData.identifier.toLowerCase().trim()
+                : "",
+            mobile: cleanMobile,
+            otp: formData.otp,
+            loginType: loginType === "mobile" ? 2 : 3, // 2=Mobile+OTP, 3=Email+OTP
+            phoneCode: loginType === "mobile" ? formData.phoneCode : "",
+          };
+          const result = await loginWithOTP(otpData);
+          if (result.success) {
+            handleLoginRedirect();
+          } else {
+            setErrors({
+              general: result.message || "OTP login failed. Please try again.",
+            });
+          }
         }
+      } else if (loginType === "userId" && !showOTPField) {
+        // First step for User ID login: send OTP
+        handleSendOTP();
       } else {
-        // Regular password login
+        // Regular password login (Mobile/Email password login if ever supported, or fallback)
+        // Note: For userId, it now goes through handleSendOTP first
         const cleanMobile =
           loginType === "mobile" ? formData.identifier.replace(/^0+/, "") : "";
         const loginData = {
@@ -264,55 +306,14 @@ export default function Login() {
                 : "",
           mobile: cleanMobile,
           password: formData.password,
-          loginType: 1, // 1=Password login (both email and mobile)
+          loginType: 1, // 1=Password login
           phoneCode: loginType === "mobile" ? formData.phoneCode : "",
         };
         const result = await login(loginData);
         if (result.success) {
-          setTimeout(() => {
-            const token = localStorage.getItem("token");
-            if (token) {
-              // Check if there's a redirect URL saved before login
-              const redirectUrl = localStorage.getItem("redirectAfterLogin");
-              console.log("🔍 Checking redirect URL (password login):", redirectUrl);
-              if (redirectUrl) {
-                localStorage.removeItem("redirectAfterLogin");
-                console.log("✅ Redirecting to:", redirectUrl);
-                navigate(redirectUrl);
-              } else {
-                console.log("🏠 No redirect URL, going to home");
-                navigate("/");
-              }
-            } else {
-              setErrors({
-                general:
-                  "Login successful but authentication data missing. Please contact support.",
-              });
-            }
-          }, 500);
+          handleLoginRedirect();
         } else {
-          // More specific error messages
-          let errorMessage =
-            result.message ||
-            "Login failed. Please check your credentials and try again.";
-
-          // Handle common error cases
-          if (
-            errorMessage.toLowerCase().includes("user not found") ||
-            errorMessage.toLowerCase().includes("invalid credentials")
-          ) {
-            errorMessage =
-              "Invalid email/mobile or password. Please check your credentials.";
-          } else if (
-            errorMessage.toLowerCase().includes("account not verified")
-          ) {
-            errorMessage =
-              "Your account is not verified. Please check your email/SMS for verification.";
-          }
-
-          setErrors({
-            general: errorMessage,
-          });
+          handleLoginError(result);
         }
       }
     } catch (error) {
@@ -381,7 +382,7 @@ export default function Login() {
         loginType === "mobile" ? formData.identifier.replace(/^0+/, "") : "";
       const otpData = {
         email:
-          loginType === "email" ? formData.identifier.toLowerCase().trim() : "",
+          loginType === "email" || loginType === "userId" ? formData.identifier.toLowerCase().trim() : "",
         mobile: cleanMobile,
         loginType: loginType === "mobile" ? 2 : 3, // 2=Mobile, 3=Email
         phoneCode: loginType === "mobile" ? formData.phoneCode : "",
@@ -916,15 +917,6 @@ export default function Login() {
                     type="submit"
                     className="btn auth-submit-btn"
                     disabled={isLoading}
-                    onClick={(e) => {
-                      // Check OTP validation before form submission
-                      if ((loginType === "mobile" || loginType === "email") && !otpSent) {
-                        e.preventDefault();
-                        const errorMsg = "Please generate OTP first by clicking 'Send OTP' button";
-                        setErrors({ general: errorMsg });
-                        return false;
-                      }
-                    }}
                   >
                     {isLoading ? (
                       <>
@@ -933,12 +925,14 @@ export default function Login() {
                           role="status"
                           aria-hidden="true"
                         ></span>
-                        {showOTPField ? "Verifying OTP..." : "Logging in..."}
+                        {showOTPField ? "Verifying..." : "Logging in..."}
                       </>
                     ) : showOTPField ? (
-                      "Verify OTP & Login"
+                      "Verify & Login"
+                    ) : loginType === "userId" ? (
+                      "Log In"
                     ) : (
-                      `Login with ${getLoginTypeLabel()}`
+                      "Login"
                     )}
                   </button>
 

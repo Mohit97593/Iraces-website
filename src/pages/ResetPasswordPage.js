@@ -28,11 +28,11 @@ export default function ResetPasswordPage() {
         new_password: newPassword,
         confirm_new_password: confirmNewPassword,
       });
-      if (res.success || res.status === 200) {
+      if (res && (res.status === 200 || res.validate === 0 || res.success)) {
         setStatus("Password reset successful! You can now log in.");
         setTimeout(() => navigate("/login"), 2000);
       } else {
-        setStatus(res.message || "Failed to reset password.");
+        setStatus(res?.message || res?.Message || "Failed to reset password.");
       }
     } catch (err) {
       setStatus("Error resetting password. Try again later.");
