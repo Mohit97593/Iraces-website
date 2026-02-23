@@ -53,9 +53,9 @@ const GeneralFormQuestions = ({
     try {
       const eventId =
         sessionStorage.getItem("event_id") ||
-        localStorage.getItem("event_id") ||
+        sessionStorage.getItem("event_id") ||
         "";
-      const userId = localStorage.getItem("user_id") || "";
+      const userId = sessionStorage.getItem("user_id") || "";
       if (!eventId) return;
       // general form questions
       const fd = new FormData();
@@ -1049,7 +1049,7 @@ const GeneralFormQuestions = ({
       }
     }
     const eventId = sessionStorage.getItem("event_id") || "";
-    const userId = localStorage.getItem("user_id") || "";
+    const userId = sessionStorage.getItem("user_id") || "";
     let res = null;
     try {
       const formData = new FormData();

@@ -10,7 +10,7 @@ export default function MyEvents() {
 
   const getStoredUserId = () => {
     try {
-      const userData = JSON.parse(localStorage.getItem("userData"));
+      const userData = JSON.parse(sessionStorage.getItem("userData"));
       if (userData && (userData.user_id || userData.id))
         return userData.user_id || userData.id;
     } catch (e) {
@@ -59,7 +59,7 @@ export default function MyEvents() {
     setActiveType(type);
     try {
       setLoadingEvents(true);
-      // Example user_id, read from localStorage or authAPI
+      // Example user_id, read from sessionStorage or authAPI
       let user_id = getStoredUserId();
       const payload = {
         event_id: 0,
@@ -461,8 +461,8 @@ export default function MyEvents() {
                               aria-label="Edit event"
                               title="Edit Event"
                               onClick={() => {
-                                // Store event_id in localStorage instead of URL
-                                localStorage.setItem('editEventId', event.id);
+                                // Store event_id in sessionStorage instead of URL
+                                sessionStorage.setItem('editEventId', event.id);
                                 navigate('/create-event');
                               }}
                             >

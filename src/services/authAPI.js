@@ -18,7 +18,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Token add करें if available
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
@@ -47,14 +47,14 @@ api.interceptors.response.use(
       const fullPath = window.location.pathname + window.location.search;
       console.log("🔐 401 Error - Current path:", fullPath);
       if (fullPath !== "/login" && fullPath !== "/") {
-        localStorage.setItem("redirectAfterLogin", fullPath);
+        sessionStorage.setItem("redirectAfterLogin", fullPath);
         console.log("💾 Saved redirect URL:", fullPath);
       } else {
         console.log("⏭️ Skipping redirect save (login or home page)");
       }
 
-      localStorage.removeItem("token");
-      localStorage.removeItem("userData");
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("userData");
       window.location.href = "/login";
     }
     return Promise.reject(error);
@@ -845,8 +845,8 @@ export const authAPI = {
           gender: userData.gender || userData.Gender || "",
         };
 
-        localStorage.setItem("token", token);
-        localStorage.setItem("userData", JSON.stringify(enhancedUserData));
+        sessionStorage.setItem("token", token);
+        sessionStorage.setItem("userData", JSON.stringify(enhancedUserData));
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
         return {
@@ -939,8 +939,8 @@ export const authAPI = {
         userData = responseData.data;
       }
       if (token) {
-        localStorage.setItem("token", token);
-        localStorage.setItem("userData", JSON.stringify(userData));
+        sessionStorage.setItem("token", token);
+        sessionStorage.setItem("userData", JSON.stringify(userData));
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         return {
           status: 200,
@@ -1053,8 +1053,8 @@ export const authAPI = {
 
       // Token save करें if provided
       if (response.data.data?.token) {
-        localStorage.setItem("token", response.data.data.token);
-        localStorage.setItem(
+        sessionStorage.setItem("token", response.data.data.token);
+        sessionStorage.setItem(
           "userData",
           JSON.stringify(response.data.data.userData)
         );
@@ -1108,7 +1108,7 @@ export const authAPI = {
   // Logout
   logout: async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       if (token) {
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         await api.post("/logout");
@@ -1116,27 +1116,27 @@ export const authAPI = {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      localStorage.removeItem("token");
-      localStorage.removeItem("userData");
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("userData");
       delete api.defaults.headers.common["Authorization"];
     }
   },
 
   // Check if user is logged in
   isAuthenticated: () => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     return !!token;
   },
 
   // Get user data
   getUserData: () => {
-    const userData = localStorage.getItem("userData");
+    const userData = sessionStorage.getItem("userData");
     return userData ? JSON.parse(userData) : null;
   },
 
   // Get token
   getToken: () => {
-    return localStorage.getItem("token");
+    return sessionStorage.getItem("token");
   },
 
   // Get Profile API
@@ -2070,7 +2070,7 @@ export const authAPI = {
 };
 
 // Token को axios header में set करें app load होते समय
-const token = localStorage.getItem("token");
+const token = sessionStorage.getItem("token");
 if (token) {
   api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 }

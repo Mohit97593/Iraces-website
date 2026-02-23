@@ -85,7 +85,7 @@ const AddCustomForm = ({ onCancel }) => {
     }
 
     const fd = new FormData();
-    fd.append("user_id", localStorage.getItem("user_id") || "");
+    fd.append("user_id", sessionStorage.getItem("user_id") || "");
     // Use default form_id as "1" since Choose Form dropdown is removed
     // fd.append("form_id", selectedFormId || "1");
     fd.append("question_label", question_label);
@@ -109,7 +109,7 @@ const AddCustomForm = ({ onCancel }) => {
       try {
         const fd2 = new FormData();
         fd2.append("event_id", sessionStorage.getItem("event_id") || "");
-        fd2.append("user_id", localStorage.getItem("user_id") || "");
+        fd2.append("user_id", sessionStorage.getItem("user_id") || "");
         const gfRes = await authAPI.generalFormQuestions(fd2);
         console.log("generalFormQuestions (after save):", gfRes);
         if (gfRes && gfRes.data && gfRes.data.form_question) {
@@ -141,7 +141,7 @@ const AddCustomForm = ({ onCancel }) => {
   useEffect(() => {
     const eventId =
       sessionStorage.getItem("event_id") ||
-      localStorage.getItem("event_id") ||
+      sessionStorage.getItem("event_id") ||
       "";
     const load = async () => {
       try {
@@ -160,7 +160,7 @@ const AddCustomForm = ({ onCancel }) => {
       try {
         const fd2 = new FormData();
         fd2.append("event_id", eventId);
-        fd2.append("user_id", localStorage.getItem("user_id") || "");
+        fd2.append("user_id", sessionStorage.getItem("user_id") || "");
         const res = await authAPI.generalFormQuestions(fd2);
         console.log("generalFormQuestions (AddCustomForm):", res);
         if (res && res.data && res.data.form_question) {

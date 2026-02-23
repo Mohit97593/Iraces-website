@@ -1354,8 +1354,8 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                       "event_id",
                       sessionStorage.getItem("event_id") || ""
                     );
-                    // Determine user id robustly: try formData, then `localStorage.userData`, then simple keys
-                    const rawUserData = localStorage.getItem("userData");
+                    // Determine user id robustly: try formData, then `sessionStorage.userData`, then simple keys
+                    const rawUserData = sessionStorage.getItem("userData");
                     let derivedUserId = "";
                     try {
                       if (rawUserData) {
@@ -1369,14 +1369,14 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                     derivedUserId =
                       derivedUserId ||
                       formData.user_id ||
-                      localStorage.getItem("user_id") ||
+                      sessionStorage.getItem("user_id") ||
                       sessionStorage.getItem("user_id") ||
                       "";
                     fd.append("user_id", String(derivedUserId));
                     // also include created_by for backend which uses this value when inserting
                     // ensure created_by is always present (fallback to '0')
                     const createdBy =
-                      derivedUserId || localStorage.getItem("user_id") || "0";
+                      derivedUserId || sessionStorage.getItem("user_id") || "0";
                     fd.append("created_by", String(createdBy));
 
                     // discount_type / use_type based on One Time Use vs Multiple Time Use
@@ -1457,7 +1457,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                     // Preflight: ensure event_id exists and log FormData for debugging
                     const eventIdForSave =
                       sessionStorage.getItem("event_id") ||
-                      localStorage.getItem("event_id") ||
+                      sessionStorage.getItem("event_id") ||
                       (eventDetails &&
                         (eventDetails.id ||
                           eventDetails.event_id ||

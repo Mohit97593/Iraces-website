@@ -9,9 +9,9 @@ const MedicalProfile = ({ onUpdate }) => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Get userData from localStorage
+  // Get userData from sessionStorage
   const userData = useMemo(() => {
-    const data = localStorage.getItem("userData");
+    const data = sessionStorage.getItem("userData");
     return data ? JSON.parse(data) : {};
   }, [refreshTrigger]);
 
@@ -117,7 +117,7 @@ const MedicalProfile = ({ onUpdate }) => {
         const response = await authAPI.getProfile();
         if (response?.data?.userData) {
           const data = response.data.userData[0];
-          localStorage.setItem("userData", JSON.stringify(data));
+          sessionStorage.setItem("userData", JSON.stringify(data));
 
           // Update all states with fresh data
           setBloodGroup(data?.blood_group || "");
@@ -170,7 +170,7 @@ const MedicalProfile = ({ onUpdate }) => {
       const response = await authAPI.getProfile();
       if (response?.data?.userData) {
         const data = response.data.userData[0];
-        localStorage.setItem("userData", JSON.stringify(data));
+        sessionStorage.setItem("userData", JSON.stringify(data));
 
         // Update all states with fresh data
         setBloodGroup(data?.blood_group || "");
@@ -314,7 +314,7 @@ const MedicalProfile = ({ onUpdate }) => {
         const profileResponse = await authAPI.getProfile();
         if (profileResponse?.data?.userData) {
           const data = profileResponse.data.userData[0];
-          localStorage.setItem("userData", JSON.stringify(data));
+          sessionStorage.setItem("userData", JSON.stringify(data));
 
           // Update all states with fresh data
           setBloodGroup(data?.blood_group || "");

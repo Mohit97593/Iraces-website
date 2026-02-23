@@ -102,10 +102,10 @@ export default function CreateEvent() {
       const params = new URLSearchParams(window.location.search || "");
       const s = params.get("step");
 
-      // Check for event_id in localStorage first (from MyEvents edit button)
-      let eid = localStorage.getItem('editEventId');
+      // Check for event_id in sessionStorage first (from MyEvents edit button)
+      let eid = sessionStorage.getItem('editEventId');
 
-      // If not in localStorage, check URL query parameter (legacy support)
+      // If not in sessionStorage, check URL query parameter (legacy support)
       if (!eid) {
         eid = params.get("event_id");
       }
@@ -117,12 +117,12 @@ export default function CreateEvent() {
         window.history.replaceState({}, document.title, cleanUrl);
       }
 
-      // If no event_id in URL or localStorage, clear any stale per-event sessionStorage so
+      // If no event_id in URL or sessionStorage, clear any stale per-event sessionStorage so
       // a "new event" flow is not treated as editing an old event.
       if (!eid) {
         try {
-          // Clear editEventId from localStorage for new event
-          localStorage.removeItem('editEventId');
+          // Clear editEventId from sessionStorage for new event
+          sessionStorage.removeItem('editEventId');
           sessionStorage.removeItem("event_id");
           sessionStorage.removeItem("eventName");
           sessionStorage.removeItem("eventSchedulingFormData");
@@ -143,8 +143,8 @@ export default function CreateEvent() {
       }
 
       if (eid) {
-        // Clear editEventId from localStorage after reading it
-        localStorage.removeItem('editEventId');
+        // Clear editEventId from sessionStorage after reading it
+        sessionStorage.removeItem('editEventId');
 
         // If switching to edit a different event, clear per-event sessionStorage
         try {

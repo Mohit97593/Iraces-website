@@ -431,7 +431,7 @@ const RaceCategoryForm = ({
     try {
       const eventId = sessionStorage.getItem("event_id");
       const createdBy =
-        localStorage.getItem("user_id") || sessionStorage.getItem("user_id");
+        sessionStorage.getItem("user_id") || sessionStorage.getItem("user_id");
 
       if (!eventId) {
         triggerToast("Event ID not found. Please save event essentials first.", 'error');

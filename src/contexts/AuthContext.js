@@ -41,15 +41,15 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         setIsAuthenticated(false);
         // Clear any invalid data
-        localStorage.removeItem("token");
-        localStorage.removeItem("userData");
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("userData");
       }
     } catch (error) {
       console.error("Auth check error:", error);
       setUser(null);
       setIsAuthenticated(false);
-      localStorage.removeItem("token");
-      localStorage.removeItem("userData");
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("userData");
     } finally {
       setIsLoading(false);
     }
@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }) => {
         return { success: true, data: response };
       } else {
         // Check if token was still set despite non-200 status
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         if (token) {
           const storedUserData = authAPI.getUserData();
           setUser(storedUserData);
@@ -117,7 +117,7 @@ export const AuthProvider = ({ children }) => {
       console.error("AuthContext: Login error:", error);
 
       // Check if token was still set despite error
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       if (token) {
         console.log(
           "AuthContext: Found token despite error, considering login successful"

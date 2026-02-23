@@ -40,7 +40,7 @@ const Profile = () => {
           profileResponse.data.userData
         ) {
           const userData = profileResponse.data.userData[0];
-          localStorage.setItem("userData", JSON.stringify(userData));
+          sessionStorage.setItem("userData", JSON.stringify(userData));
           checkAuthStatus();
           setRefreshTrigger((prev) => prev + 1);
 
@@ -192,7 +192,7 @@ const Profile = () => {
             profileResponse.data &&
             profileResponse.data.userData
           ) {
-            localStorage.setItem(
+            sessionStorage.setItem(
               "userData",
               JSON.stringify(profileResponse.data.userData[0])
             );
@@ -262,9 +262,9 @@ const Profile = () => {
   const [addressErrors, setAddressErrors] = useState({});
 
 
-  // Get userData from localStorage, updates when refreshTrigger changes
+  // Get userData from sessionStorage, updates when refreshTrigger changes
   const userData = useMemo(() => {
-    const data = localStorage.getItem("userData");
+    const data = sessionStorage.getItem("userData");
     return data ? JSON.parse(data) : {};
   }, [refreshTrigger]);
 
@@ -346,7 +346,7 @@ const Profile = () => {
             profileResponse.data &&
             profileResponse.data.userData
           ) {
-            localStorage.setItem(
+            sessionStorage.setItem(
               "userData",
               JSON.stringify(profileResponse.data.userData[0])
             );
@@ -358,8 +358,8 @@ const Profile = () => {
         // Now fetch org user details with user_id
         setLoadingOrgUsers(true);
         try {
-          // Get user_id from localStorage
-          const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+          // Get user_id from sessionStorage
+          const userData = JSON.parse(sessionStorage.getItem("userData") || "{}");
           const userId = userData.id || 0;
 
           const orgResponse = await authAPI.orgUserDetails(userId);
@@ -534,8 +534,8 @@ const Profile = () => {
         // Success, now fetch org user details
         setLoadingOrgUsers(true);
         try {
-          // Get user_id from localStorage
-          const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+          // Get user_id from sessionStorage
+          const userData = JSON.parse(sessionStorage.getItem("userData") || "{}");
           const userId = userData.id || user?.id || 0;
 
           const orgRes = await authAPI.orgUserDetails(userId);
@@ -687,7 +687,7 @@ const Profile = () => {
         // Refresh org user list
         setLoadingOrgUsers(true);
         try {
-          const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+          const userData = JSON.parse(sessionStorage.getItem("userData") || "{}");
           const userId = userData.id || user?.id || 0;
 
           const orgRes = await authAPI.orgUserDetails(userId);
@@ -731,7 +731,7 @@ const Profile = () => {
   // Athlete Card Download Handler
   const handleAthleteCardDownload = async () => {
     try {
-      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+      const userData = JSON.parse(sessionStorage.getItem("userData") || "{}");
       const userId = userData.id || userData.ID || 0;
 
       if (!userId) {
@@ -833,13 +833,13 @@ const Profile = () => {
       const profileResponse = await import("../../services/authAPI").then(
         ({ authAPI }) => authAPI.getProfile()
       );
-      // Save new user data to localStorage
+      // Save new user data to sessionStorage
       if (
         profileResponse &&
         profileResponse.data &&
         profileResponse.data.userData
       ) {
-        localStorage.setItem(
+        sessionStorage.setItem(
           "userData",
           JSON.stringify(profileResponse.data.userData[0])
         );
@@ -937,13 +937,13 @@ const Profile = () => {
       await authAPI.generalDetails(details);
       // Fetch updated profile
       const profileResponse = await authAPI.getProfile();
-      // Save new user data to localStorage
+      // Save new user data to sessionStorage
       if (
         profileResponse &&
         profileResponse.data &&
         profileResponse.data.userData
       ) {
-        localStorage.setItem(
+        sessionStorage.setItem(
           "userData",
           JSON.stringify(profileResponse.data.userData[0])
         );
@@ -1408,7 +1408,7 @@ const Profile = () => {
         const profileResponse = await authAPI.getProfile();
         if (profileResponse?.data?.userData) {
           const updatedUserData = profileResponse.data.userData[0];
-          localStorage.setItem("userData", JSON.stringify(updatedUserData));
+          sessionStorage.setItem("userData", JSON.stringify(updatedUserData));
 
           // Update all states with fresh data
           setPermHouseNo(updatedUserData.address1 || "");
@@ -1566,9 +1566,9 @@ const Profile = () => {
   // Load countries, states, and cities on page load for proper display
   useEffect(() => {
     const loadAddressData = async () => {
-      const userData = JSON.parse(localStorage.getItem("userData"));
+      const userData = JSON.parse(sessionStorage.getItem("userData"));
       if (!userData) {
-        console.log("No userData found in localStorage");
+        console.log("No userData found in sessionStorage");
         return;
       }
       console.log("Loading address data for user:", userData);
@@ -1717,14 +1717,14 @@ const Profile = () => {
   // When editBasic is set to true, initialize editDesignation from user data
   React.useEffect(() => {
     if (editBasic) {
-      const userData = JSON.parse(localStorage.getItem("userData"));
+      const userData = JSON.parse(sessionStorage.getItem("userData"));
       setEditDesignation(userData?.designation || "");
     }
   }, [editBasic]);
   // Fix: Ensure Designation field is set from user data when editBasic is enabled
   React.useEffect(() => {
     if (editBasic) {
-      const userData = JSON.parse(localStorage.getItem("userData"));
+      const userData = JSON.parse(sessionStorage.getItem("userData"));
       if (userData && userData.designation !== undefined) {
         setEditDesignation(userData.designation);
       }
@@ -2181,7 +2181,7 @@ const Profile = () => {
                                         // Refresh profile data
                                         const profileResponse = await authAPI.getProfile();
                                         if (profileResponse?.data?.userData) {
-                                          localStorage.setItem('userData', JSON.stringify(profileResponse.data.userData[0]));
+                                          sessionStorage.setItem('userData', JSON.stringify(profileResponse.data.userData[0]));
                                           checkAuthStatus();
                                           setRefreshTrigger(prev => prev + 1);
                                           showSuccessMessage(response.message || 'Profile picture deleted successfully!');
@@ -2225,7 +2225,7 @@ const Profile = () => {
                                       // Refresh profile data
                                       const profileResponse = await authAPI.getProfile();
                                       if (profileResponse?.data?.userData) {
-                                        localStorage.setItem('userData', JSON.stringify(profileResponse.data.userData[0]));
+                                        sessionStorage.setItem('userData', JSON.stringify(profileResponse.data.userData[0]));
                                         checkAuthStatus();
                                         setRefreshTrigger(prev => prev + 1);
                                         showSuccessMessage(response.message || 'Profile picture updated successfully!');

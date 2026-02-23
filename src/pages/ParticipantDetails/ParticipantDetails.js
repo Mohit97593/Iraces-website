@@ -5,11 +5,11 @@ import { authAPI } from "../../services/authAPI";
 import "./ParticipantDetails.css";
 
 export default function ParticipantDetails() {
-  // Get price and coupon info from localStorage
-  const couponDiscount = parseFloat(localStorage.getItem("couponDiscount")) || 0;
+  // Get price and coupon info from sessionStorage
+  const couponDiscount = parseFloat(sessionStorage.getItem("couponDiscount")) || 0;
   const { eventId } = useParams();
   const navigate = useNavigate();
-  const isGuestLogin = localStorage.getItem("isGuestLogin") === "true";
+  const isGuestLogin = sessionStorage.getItem("isGuestLogin") === "true";
 
   const [formData, setFormData] = useState({
     participantType: "",
@@ -50,7 +50,7 @@ export default function ParticipantDetails() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
   const [participantForms, setParticipantForms] = useState([]); // Array of participant form data
-  const [selectedTickets, setSelectedTickets] = useState([]); // Tickets from localStorage
+  const [selectedTickets, setSelectedTickets] = useState([]); // Tickets from sessionStorage
   const [currentParticipantIndex, setCurrentParticipantIndex] = useState(0); // For Save & Next
   const [activeQuestionTab, setActiveQuestionTab] = useState({}); // Track active tab for each participant {participantIndex: groupName}
   const [parentSelections, setParentSelections] = useState({}); // Track parent question selections for conditional subquestions {participantIndex_questionId: selectedValue}
@@ -78,17 +78,17 @@ export default function ParticipantDetails() {
   // Coupon display location state
   const [couponDisplayLocation, setCouponDisplayLocation] = useState("both"); // Default to 'both'
 
-  // Load existing coupon from localStorage on mount
+  // Load existing coupon from sessionStorage on mount
   useEffect(() => {
-    const storedCouponCode = localStorage.getItem('couponCode');
-    const storedCouponData = localStorage.getItem('appliedCoupon');
+    const storedCouponCode = sessionStorage.getItem('couponCode');
+    const storedCouponData = sessionStorage.getItem('appliedCoupon');
 
     if (storedCouponCode && storedCouponData) {
       try {
         const couponData = JSON.parse(storedCouponData);
         setCouponCode(storedCouponCode);
         setAppliedCoupon(couponData);
-        console.log('✅ Loaded existing coupon from localStorage:', storedCouponCode);
+        console.log('✅ Loaded existing coupon from sessionStorage:', storedCouponCode);
       } catch (error) {
         console.error('Error parsing stored coupon data:', error);
       }
@@ -118,8 +118,8 @@ export default function ParticipantDetails() {
 
   // Initialize participant forms based on ticket quantity
   useEffect(() => {
-    const ticketQuantity = parseInt(localStorage.getItem("ticketQuantity")) || 1;
-    const ticketsData = localStorage.getItem("selectedTickets");
+    const ticketQuantity = parseInt(sessionStorage.getItem("ticketQuantity")) || 1;
+    const ticketsData = sessionStorage.getItem("selectedTickets");
     let tickets = [];
 
     try {
@@ -194,7 +194,7 @@ export default function ParticipantDetails() {
         }
 
         // 3. Call check last login API
-        const userData = localStorage.getItem("userData");
+        const userData = sessionStorage.getItem("userData");
         let user_id = null;
         if (userData) {
           try {
@@ -290,7 +290,7 @@ export default function ParticipantDetails() {
         const ticketRes = await authAPI.getEventTicket(eventId);
         let currentTicket = null;
         if (ticketRes && ticketRes.data && ticketRes.data.event_tickets) {
-          const title = localStorage.getItem("selectedCategoryTitle");
+          const title = sessionStorage.getItem("selectedCategoryTitle");
           if (title) {
             const found = ticketRes.data.event_tickets.find(
               (t) =>
@@ -304,9 +304,9 @@ export default function ParticipantDetails() {
         }
 
         // 2. Fetch Form Questions with dynamic ticket data
-        // Get ticket quantity and selected tickets from localStorage
-        const ticketQuantity = parseInt(localStorage.getItem("ticketQuantity")) || 1;
-        const ticketsData = localStorage.getItem("selectedTickets");
+        // Get ticket quantity and selected tickets from sessionStorage
+        const ticketQuantity = parseInt(sessionStorage.getItem("ticketQuantity")) || 1;
+        const ticketsData = sessionStorage.getItem("selectedTickets");
         let tickets = [];
 
         try {
@@ -320,7 +320,7 @@ export default function ParticipantDetails() {
           ? tickets.map(t => ({ ...t, count: t.quantity }))
           : currentTicket ? [{ ...currentTicket, count: ticketQuantity }] : [];
 
-        console.log("🎫 Tickets from localStorage:", tickets);
+        console.log("🎫 Tickets from sessionStorage:", tickets);
         console.log("📦 AllTickets payload:", allTicketsPayload);
 
         if (allTicketsPayload.length > 0) {
@@ -609,6 +609,13 @@ export default function ParticipantDetails() {
           const genderValue =
             user.gender === 1 ? "Male" : user.gender === 2 ? "Female" : "Other";
 
+          // Calculate age if DOB exists and Age field is present
+          const { hasAge, ageQuestion } = hasBothAgeAndDOB(participantIndex);
+          let autoCalculatedAge = "";
+          if (hasAge && user.dob) {
+            autoCalculatedAge = calculateAge(user.dob);
+          }
+
           // Update specific participant's form data
           setParticipantForms(prev => prev.map((form, idx) =>
             idx === participantIndex ? {
@@ -622,6 +629,8 @@ export default function ParticipantDetails() {
                 mobile: user.mobile ? String(user.mobile) : "",
                 gender: genderValue,
                 dob: user.dob || "",
+                // Auto-fill age if question exists
+                ...(hasAge && ageQuestion ? { [getMappedKey(ageQuestion)]: autoCalculatedAge } : {}),
                 addressLine1: user.address1 || "",
                 addressLine2: user.address2 || "",
                 country: user.country_name || "",
@@ -1384,10 +1393,10 @@ export default function ParticipantDetails() {
         setAppliedCoupon(transformedCoupon);
         setCouponError('');
 
-        // Store in localStorage for cross-page synchronization
-        localStorage.setItem('couponCode', couponCode.trim());
-        localStorage.setItem('appliedCoupon', JSON.stringify(transformedCoupon));
-        localStorage.setItem('couponDiscount', totalDiscount.toFixed(2));
+        // Store in sessionStorage for cross-page synchronization
+        sessionStorage.setItem('couponCode', couponCode.trim());
+        sessionStorage.setItem('appliedCoupon', JSON.stringify(transformedCoupon));
+        sessionStorage.setItem('couponDiscount', totalDiscount.toFixed(2));
 
         console.log('✅ Coupon applied successfully:', transformedCoupon);
         console.log('💰 Total Discount calculated:', totalDiscount);
@@ -1399,9 +1408,9 @@ export default function ParticipantDetails() {
         }
         setCouponError(errorMessage);
         setAppliedCoupon(null);
-        localStorage.removeItem('couponCode');
-        localStorage.removeItem('appliedCoupon');
-        localStorage.removeItem('couponDiscount');
+        sessionStorage.removeItem('couponCode');
+        sessionStorage.removeItem('appliedCoupon');
+        sessionStorage.removeItem('couponDiscount');
       }
     } catch (error) {
       console.error('❌ Coupon API Error:', error);
@@ -3194,10 +3203,10 @@ export default function ParticipantDetails() {
           console.error("❌ Error initiating email send:", emailErr);
         }
 
-        // Clean up localStorage
-        localStorage.removeItem('couponCode');
-        localStorage.removeItem('appliedCoupon');
-        localStorage.removeItem('couponDiscount');
+        // Clean up sessionStorage
+        sessionStorage.removeItem('couponCode');
+        sessionStorage.removeItem('appliedCoupon');
+        sessionStorage.removeItem('couponDiscount');
       } else {
         throw new Error(result.message || "Registration failed");
       }
@@ -3622,7 +3631,7 @@ export default function ParticipantDetails() {
       }, 0);
 
       // Apply coupon discount if any
-      const couponDiscount = parseFloat(localStorage.getItem("couponDiscount")) || 0;
+      const couponDiscount = parseFloat(sessionStorage.getItem("couponDiscount")) || 0;
       const finalAmount = (totalAmount - couponDiscount).toFixed(2);
 
       // Determine ticket type
@@ -3707,7 +3716,7 @@ export default function ParticipantDetails() {
                 <i className="fas fa-arrow-left"></i> Back
               </button>
               <h2 className="event-name">
-                {localStorage.getItem("eventInfo") || "Event Info"}
+                {sessionStorage.getItem("eventInfo") || "Event Info"}
               </h2>
             </div>
 

@@ -130,7 +130,7 @@ const FAQsStep = ({ onBack, onNext, showToast }) => {
     // resolve user id from stored userData
     let userId = "";
     try {
-      const stored = localStorage.getItem("userData");
+      const stored = sessionStorage.getItem("userData");
       if (stored) {
         const ud = JSON.parse(stored);
         userId =
@@ -146,7 +146,7 @@ const FAQsStep = ({ onBack, onNext, showToast }) => {
       // ignore parse errors
     }
     if (!userId) {
-      userId = localStorage.getItem("user_id") || "";
+      userId = sessionStorage.getItem("user_id") || "";
     }
     if (!userId) {
       showToast && showToast("Unable to determine user_id. Please login again.", 'error');

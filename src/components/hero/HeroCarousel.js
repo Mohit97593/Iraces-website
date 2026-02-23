@@ -48,7 +48,8 @@ export default function HeroCarousel() {
   const [cityName, setCityName] = useState("Bengaluru");
   const [selectedCityId, setSelectedCityId] = useState(null);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
-  const [hasLocalEvents, setHasLocalEvents] = useState(true); // Track if selected city has events
+  const [hasLocalEvents, setHasLocalEvents] = useState(true); // Track if selected city has trending events
+  const [hasLocalUpcoming, setHasLocalUpcoming] = useState(true); // Track if selected city has upcoming events
 
   // Like state for events
   const [likedEvents, setLikedEvents] = useState({});
@@ -130,7 +131,7 @@ export default function HeroCarousel() {
   // Initial banner fetch
   useEffect(() => {
     // Try to get stored city ID first
-    const storedCityId = localStorage.getItem("selectedCityId");
+    const storedCityId = sessionStorage.getItem("selectedCityId");
     fetchBanners(storedCityId);
   }, []);
 
@@ -195,11 +196,11 @@ export default function HeroCarousel() {
             .replace(/[^\w-]/g, "");
 
           // Store for future use
-          localStorage.setItem("selectedCityId", fetchedCityData.id);
-          localStorage.setItem("selectedCityName", cityNameFromSlug);
-          localStorage.setItem("selectedCitySlug", citySlug);
-          localStorage.setItem("selectedStateId", fetchedCityData.state_id);
-          localStorage.setItem("selectedCountryId", fetchedCityData.country_id);
+          sessionStorage.setItem("selectedCityId", fetchedCityData.id);
+          sessionStorage.setItem("selectedCityName", cityNameFromSlug);
+          sessionStorage.setItem("selectedCitySlug", citySlug);
+          sessionStorage.setItem("selectedStateId", fetchedCityData.state_id);
+          sessionStorage.setItem("selectedCountryId", fetchedCityData.country_id);
 
           // Always update city name from the slug, even if no events
           setCityName(cityNameFromSlug);
@@ -208,24 +209,24 @@ export default function HeroCarousel() {
         params.city = cityId;
         params.scity = cityId;
 
-        // Try to get state and country from localStorage
-        let storedStateId = localStorage.getItem("selectedStateId");
-        const storedCountryId = localStorage.getItem("selectedCountryId");
+        // Try to get state and country from sessionStorage
+        let storedStateId = sessionStorage.getItem("selectedStateId");
+        const storedCountryId = sessionStorage.getItem("selectedCountryId");
 
         console.log("📍 City ID:", cityId);
         console.log("📍 Stored State ID:", storedStateId);
         console.log("📍 Stored Country ID:", storedCountryId);
 
-        // If state is not in localStorage, try to fetch it from city name
+        // If state is not in sessionStorage, try to fetch it from city name
         if (!storedStateId) {
-          const storedCityName = localStorage.getItem("selectedCityName");
+          const storedCityName = sessionStorage.getItem("selectedCityName");
           if (storedCityName) {
             console.log("🔍 State not found, fetching city data for:", storedCityName);
             const fetchedCityData = await fetchCityIdByName(storedCityName);
             if (fetchedCityData && fetchedCityData.state_id) {
               storedStateId = fetchedCityData.state_id;
-              localStorage.setItem("selectedStateId", fetchedCityData.state_id);
-              localStorage.setItem("selectedCountryId", fetchedCityData.country_id);
+              sessionStorage.setItem("selectedStateId", fetchedCityData.state_id);
+              sessionStorage.setItem("selectedCountryId", fetchedCityData.country_id);
               console.log("✅ Fetched State ID:", fetchedCityData.state_id);
             }
           }
@@ -234,19 +235,19 @@ export default function HeroCarousel() {
         if (storedStateId) params.state = parseInt(storedStateId);
         if (storedCountryId) params.country = parseInt(storedCountryId);
 
-        // Update city name if available from localStorage
-        const storedCityName = localStorage.getItem("selectedCityName");
+        // Update city name if available from sessionStorage
+        const storedCityName = sessionStorage.getItem("selectedCityName");
         if (storedCityName) {
           setCityName(storedCityName);
         }
       } else if (stateId) {
         params.state = stateId;
-        // For state-level search, try to get country from localStorage
-        const storedCountryId = localStorage.getItem("selectedCountryId");
+        // For state-level search, try to get country from sessionStorage
+        const storedCountryId = sessionStorage.getItem("selectedCountryId");
         if (storedCountryId) params.country = parseInt(storedCountryId);
 
         // Update city name if available
-        const storedCityName = localStorage.getItem("selectedCityName");
+        const storedCityName = sessionStorage.getItem("selectedCityName");
         if (storedCityName) {
           setCityName(storedCityName);
         }
@@ -254,7 +255,21 @@ export default function HeroCarousel() {
 
       console.log("🚀 Final API Payload:", params);
 
-      const data = await authAPI.getDataLocationWise(params);
+      let data = await authAPI.getDataLocationWise(params);
+
+      // If no data found for the selected location, try fetching globally for suggestions
+      if ((!data.data || !data.data.eventData || data.data.eventData.length === 0) &&
+        (!data.data.UpcomingEventData || data.data.UpcomingEventData.length === 0)) {
+        console.log("🔍 No events for local city, fetching global suggestions...");
+        const globalParams = {
+          home_flag: 1,
+          search_flag: "HeaderInputCity",
+        };
+        const globalData = await authAPI.getDataLocationWise(globalParams);
+        if (globalData.status === "success") {
+          data = globalData;
+        }
+      }
       if (data.status === "success" && data.data) {
         if (data.data.CityName) {
           setCityName(data.data.CityName);
@@ -274,9 +289,7 @@ export default function HeroCarousel() {
         const currentCityName =
           data.data.CityName || cityNameFromSlug || cityName;
         const now = Date.now();
-        const fiveDaysFromNow = now + 5 * 24 * 60 * 60 * 1000;
-
-        // 1. Filter ACTIVE events (Registration Open, Not Closed, Upcoming Start)
+        // 1. Filter ACTIVE events (Registration Open and Status not closed)
         const activeEvents = uniqueEvents.filter((event) => {
           const isRegistrationOpen = event.registration_end_time * 1000 > now;
           const isNotClosed =
@@ -284,8 +297,7 @@ export default function HeroCarousel() {
             event.status !== "0" &&
             event.status !== "closed" &&
             event.status !== "Closed";
-          const isUpcomingStr = event.start_time * 1000 > now;
-          return isRegistrationOpen && isNotClosed && isUpcomingStr;
+          return isRegistrationOpen && isNotClosed;
         });
 
         // 2. Partition Local Events (Selected City)
@@ -295,34 +307,67 @@ export default function HeroCarousel() {
             event.city_name.toLowerCase() === currentCityName.toLowerCase()
         );
 
-        // Trending: Local events starting within 5 days
-        const localTrending = localEvents.filter(
-          (event) => event.start_time * 1000 <= fiveDaysFromNow
-        );
-        // Upcoming: Local events starting after 5 days
-        const localUpcoming = localEvents.filter(
-          (event) => event.start_time * 1000 > fiveDaysFromNow
-        );
+        // Trending: Local events where registration has started
+        const localLive = localEvents.filter((event) => {
+          const regStart = event.registration_start_time ? event.registration_start_time * 1000 : 0;
+          return regStart <= now;
+        });
 
-        // 3. Suggestions (All active events from all cities)
-        const suggestions = activeEvents
-          .sort((a, b) => a.start_time - b.start_time)
-          .slice(0, 12); // Limit suggestions to top 12 nearest
+        // Upcoming: Local events where registration hasn't started yet
+        const localUpcoming = localEvents.filter((event) => {
+          const regStart = event.registration_start_time ? event.registration_start_time * 1000 : 0;
+          return regStart > now;
+        });
 
-        // 4. Update state logic
-        setSuggestionEvents(suggestions);
+        // 3. Global Suggestions (Fallback)
+        const globalLive = activeEvents.filter((event) => {
+          const regStart = event.registration_start_time ? event.registration_start_time * 1000 : 0;
+          return regStart <= now;
+        }).slice(0, 12);
 
-        if (localEvents.length === 0) {
-          setTrendingEvents([]); // Carousel will show suggestionEvents because hasLocalEvents is false
-          setUpcomingEvents(suggestions); // Also show suggestions in the Upcoming panel
-          setHasLocalEvents(false);
-          console.log("❌ No local events found. Showing suggestions.");
-        } else {
-          setTrendingEvents(localTrending);
-          setUpcomingEvents(localUpcoming);
+        const globalUpcoming = activeEvents.filter((event) => {
+          const regStart = event.registration_start_time ? event.registration_start_time * 1000 : 0;
+          return regStart > now;
+        }).sort((a, b) => a.start_time - b.start_time).slice(0, 12);
+
+        // 4. Update state logic with fallback
+        let finalTrending = [];
+        let finalUpcoming = [];
+
+        if (localLive.length > 0) {
+          finalTrending = localLive;
           setHasLocalEvents(true);
-          console.log(`✅ Local events: ${localTrending.length} Trending, ${localUpcoming.length} Upcoming`);
+        } else if (globalLive.length > 0) {
+          // Fallback to global live events for Trending
+          finalTrending = globalLive;
+          setHasLocalEvents(false);
+          console.log("ℹ️ No local LIVE events. Showing global live suggestions.");
+        } else {
+          setHasLocalEvents(false);
         }
+
+        if (localUpcoming.length > 0) {
+          finalUpcoming = localUpcoming;
+          setHasLocalUpcoming(true);
+        } else {
+          // Fallback to global upcoming events for Upcoming
+          finalUpcoming = globalUpcoming;
+          setHasLocalUpcoming(false);
+          console.log("ℹ️ No local UPCOMING events. Showing global upcoming suggestions.");
+        }
+
+        // DE-DUPLICATION: Ensure no event appears in both sections
+        // Even though Live vs Future should be distinct, some events might have edge case timings
+        // or the API might return them in both blocks.
+        const trendingIds = new Set(finalTrending.map(ev => ev.id));
+        finalUpcoming = finalUpcoming.filter(ev => !trendingIds.has(ev.id));
+
+        setTrendingEvents(finalTrending);
+        setUpcomingEvents(finalUpcoming);
+
+        // Use all active events for suggestions state if needed elsewhere, 
+        // but carousel will now use trendingEvents
+        setSuggestionEvents(activeEvents.sort((a, b) => a.start_time - b.start_time).slice(0, 12));
 
         // Initialize liked state for all events found
         const initialLikes = {};
@@ -368,8 +413,8 @@ export default function HeroCarousel() {
       setCityName(cityNameFromUrl);
 
       // Check if we have stored city ID for this slug
-      const storedCityId = localStorage.getItem("selectedCityId");
-      const storedCitySlug = localStorage.getItem("selectedCitySlug");
+      const storedCityId = sessionStorage.getItem("selectedCityId");
+      const storedCitySlug = sessionStorage.getItem("selectedCitySlug");
 
       if (storedCitySlug === citySlug && storedCityId) {
         cityIdToFetch = storedCityId;
@@ -409,10 +454,10 @@ export default function HeroCarousel() {
 
       // Store state and country IDs if provided
       if (stateId) {
-        localStorage.setItem("selectedStateId", stateId);
+        sessionStorage.setItem("selectedStateId", stateId);
       }
       if (countryId) {
-        localStorage.setItem("selectedCountryId", countryId);
+        sessionStorage.setItem("selectedCountryId", countryId);
       }
 
       if (cityType === "city") {
@@ -1132,9 +1177,9 @@ export default function HeroCarousel() {
                 >
                   <div className="carousel-inner">
                     {Array.from(
-                      { length: Math.ceil((hasLocalEvents ? trendingEvents : suggestionEvents).length / 4) },
+                      { length: Math.ceil(trendingEvents.length / 4) },
                       (_, slideIndex) => {
-                        const eventsToDisplay = hasLocalEvents ? trendingEvents : suggestionEvents;
+                        const eventsToDisplay = trendingEvents;
                         const startIdx = slideIndex * 4;
                         const slideEvents = eventsToDisplay.slice(
                           startIdx,
@@ -1343,8 +1388,8 @@ export default function HeroCarousel() {
                                               boxShadow: "0 2px 8px rgba(218, 37, 28, 0.2)",
                                             }}
                                             onClick={() => {
-                                              // Store event ID in localStorage
-                                              localStorage.setItem('viewEventId', event.id);
+                                              // Store event ID in sessionStorage
+                                              sessionStorage.setItem('viewEventId', event.id);
                                               // Navigate to clean URL
                                               navigate('/event');
                                             }}
@@ -1378,10 +1423,10 @@ export default function HeroCarousel() {
                   </div>
 
                   {/* Carousel Indicators (Dots) */}
-                  {(hasLocalEvents ? trendingEvents : suggestionEvents).length > 4 && (
+                  {trendingEvents.length > 4 && (
                     <div className="carousel-indicators">
                       {Array.from(
-                        { length: Math.ceil((hasLocalEvents ? trendingEvents : suggestionEvents).length / 4) },
+                        { length: Math.ceil(trendingEvents.length / 4) },
                         (_, index) => (
                           <button
                             key={index}
@@ -1409,7 +1454,7 @@ export default function HeroCarousel() {
           isLoading={isLoadingEvents}
           likedEvents={likedEvents}
           onToggleLike={handleToggleLike}
-          hasLocalEvents={hasLocalEvents}
+          hasLocalEvents={hasLocalUpcoming}
         />
 
         {/* --- Choose By Distance Section --- */}

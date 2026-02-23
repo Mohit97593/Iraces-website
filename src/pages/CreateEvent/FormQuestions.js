@@ -33,7 +33,7 @@ const FormQuestions = ({ onBack, onNext }) => {
   async function fetchQuestions(updatedQuestion = null) {
     const eventId =
       sessionStorage.getItem("event_id") ||
-      localStorage.getItem("event_id") ||
+      sessionStorage.getItem("event_id") ||
       "";
     if (!eventId) return;
     try {
@@ -142,7 +142,7 @@ const FormQuestions = ({ onBack, onNext }) => {
       fd.append(
         "event_id",
         sessionStorage.getItem("event_id") ||
-        localStorage.getItem("event_id") ||
+        sessionStorage.getItem("event_id") ||
         ""
       );
       // general_form_id should be the template id or the saved question id depending on backend
@@ -479,7 +479,7 @@ const FormQuestions = ({ onBack, onNext }) => {
     fd.append(
       "event_id",
       sessionStorage.getItem("event_id") ||
-      localStorage.getItem("event_id") ||
+      sessionStorage.getItem("event_id") ||
       ""
     );
     fd.append(
@@ -605,7 +605,7 @@ const FormQuestions = ({ onBack, onNext }) => {
 
     // Call the sorting API to persist the new order
     try {
-      const eventId = sessionStorage.getItem("event_id") || localStorage.getItem("event_id") || "";
+      const eventId = sessionStorage.getItem("event_id") || sessionStorage.getItem("event_id") || "";
 
       if (!eventId) {
         console.error("No event_id found");

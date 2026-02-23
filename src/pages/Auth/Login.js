@@ -12,11 +12,11 @@ export default function Login() {
 
   // Helper to handle redirect after login
   const handleLoginRedirect = () => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     if (token) {
-      const redirectUrl = localStorage.getItem("redirectAfterLogin");
+      const redirectUrl = sessionStorage.getItem("redirectAfterLogin");
       if (redirectUrl) {
-        localStorage.removeItem("redirectAfterLogin");
+        sessionStorage.removeItem("redirectAfterLogin");
         navigate(redirectUrl);
       } else {
         navigate("/");
@@ -117,8 +117,8 @@ export default function Login() {
 
   // Check for guest login info on mount
   useEffect(() => {
-    const email = localStorage.getItem("guestEmail");
-    const eventId = localStorage.getItem("guestAllowedEventId");
+    const email = sessionStorage.getItem("guestEmail");
+    const eventId = sessionStorage.getItem("guestAllowedEventId");
     if (email && eventId) {
       setHasGuestInfo(true);
       console.log("🎟️ Guest login info detected for email:", email);
@@ -423,7 +423,7 @@ export default function Login() {
 
 
   const handleGuestLogin = async () => {
-    const guestEmail = localStorage.getItem("guestEmail");
+    const guestEmail = sessionStorage.getItem("guestEmail");
     if (!guestEmail) {
       setErrors({ general: "Guest login information not found. Please go back to the event page." });
       return;
@@ -444,13 +444,13 @@ export default function Login() {
       const result = await login(loginData);
       if (result.success) {
         console.log("🎟️ Guest Login successful");
-        localStorage.setItem("isGuestLogin", "true");
+        sessionStorage.setItem("isGuestLogin", "true");
 
         // Wait a bit for token to be saved by useAuth
         setTimeout(() => {
-          const redirectUrl = localStorage.getItem("redirectAfterLogin");
+          const redirectUrl = sessionStorage.getItem("redirectAfterLogin");
           if (redirectUrl) {
-            localStorage.removeItem("redirectAfterLogin");
+            sessionStorage.removeItem("redirectAfterLogin");
             navigate(redirectUrl);
           } else {
             navigate("/");
@@ -981,7 +981,7 @@ export default function Login() {
                         textAlign: "center",
                         marginTop: "8px"
                       }}>
-                        Continue as guest for <b>{localStorage.getItem("guestAllowedEventName")}</b>
+                        Continue as guest for <b>{sessionStorage.getItem("guestAllowedEventName")}</b>
                       </p>
                     </div>
                   )}

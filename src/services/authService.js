@@ -29,13 +29,13 @@ const authService = {
 
       // Store token if provided
       if (data.token) {
-        localStorage.setItem("auth_token", data.token);
+        sessionStorage.setItem("auth_token", data.token);
       }
       // Store user_id if provided
       if (data.user_id) {
-        localStorage.setItem("user_id", data.user_id);
+        sessionStorage.setItem("user_id", data.user_id);
       } else if (data.user && data.user.id) {
-        localStorage.setItem("user_id", data.user.id);
+        sessionStorage.setItem("user_id", data.user.id);
       }
 
       return data;
@@ -64,13 +64,13 @@ const authService = {
 
       // Store token if provided
       if (data.token) {
-        localStorage.setItem("auth_token", data.token);
+        sessionStorage.setItem("auth_token", data.token);
       }
       // Store user_id if provided
       if (data.user_id) {
-        localStorage.setItem("user_id", data.user_id);
+        sessionStorage.setItem("user_id", data.user_id);
       } else if (data.user && data.user.id) {
-        localStorage.setItem("user_id", data.user.id);
+        sessionStorage.setItem("user_id", data.user.id);
       }
 
       return data;
@@ -82,7 +82,7 @@ const authService = {
   // Logout function
   async logout() {
     try {
-      const token = localStorage.getItem("auth_token");
+      const token = sessionStorage.getItem("auth_token");
       if (token) {
         await fetch(`${API_BASE_URL}/logout`, {
           method: "POST",
@@ -94,11 +94,11 @@ const authService = {
         });
       }
 
-      localStorage.removeItem("auth_token");
+      sessionStorage.removeItem("auth_token");
       return true;
     } catch (error) {
       // Even if logout fails on server, remove token locally
-      localStorage.removeItem("auth_token");
+      sessionStorage.removeItem("auth_token");
       return true;
     }
   },
@@ -106,7 +106,7 @@ const authService = {
   // Get current user
   async getCurrentUser() {
     try {
-      const token = localStorage.getItem("auth_token");
+      const token = sessionStorage.getItem("auth_token");
       if (!token) {
         throw new Error("No token found");
       }
@@ -134,12 +134,12 @@ const authService = {
 
   // Check if user is authenticated
   isAuthenticated() {
-    return !!localStorage.getItem("auth_token");
+    return !!sessionStorage.getItem("auth_token");
   },
 
   // Get token
   getToken() {
-    return localStorage.getItem("auth_token");
+    return sessionStorage.getItem("auth_token");
   },
 };
 

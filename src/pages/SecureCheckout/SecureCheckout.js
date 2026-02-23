@@ -38,17 +38,17 @@ export default function SecureCheckout() {
     checkUserLoginAndFetch();
   }, [eventId]);
 
-  // Load existing coupon from localStorage on mount
+  // Load existing coupon from sessionStorage on mount
   useEffect(() => {
-    const storedCouponCode = localStorage.getItem('couponCode');
-    const storedCouponData = localStorage.getItem('appliedCoupon');
+    const storedCouponCode = sessionStorage.getItem('couponCode');
+    const storedCouponData = sessionStorage.getItem('appliedCoupon');
 
     if (storedCouponCode && storedCouponData) {
       try {
         const couponData = JSON.parse(storedCouponData);
         setCouponCode(storedCouponCode);
         setAppliedCoupon(couponData);
-        console.log('✅ Loaded existing coupon from localStorage:', storedCouponCode);
+        console.log('✅ Loaded existing coupon from sessionStorage:', storedCouponCode);
       } catch (error) {
         console.error('Error parsing stored coupon data:', error);
       }
@@ -248,9 +248,9 @@ export default function SecureCheckout() {
   }, []);
 
   const checkUserLoginAndFetch = async () => {
-    // Check if user has token/userData in localStorage
-    const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("userData");
+    // Check if user has token/userData in sessionStorage
+    const token = sessionStorage.getItem("token");
+    const userData = sessionStorage.getItem("userData");
 
     if (!token || !userData) {
       // No token or userData, redirect to login
@@ -259,8 +259,8 @@ export default function SecureCheckout() {
     }
 
     // Guest Login Restriction
-    const isGuest = localStorage.getItem("isGuestLogin") === "true";
-    const allowedEventId = localStorage.getItem("guestAllowedEventId");
+    const isGuest = sessionStorage.getItem("isGuestLogin") === "true";
+    const allowedEventId = sessionStorage.getItem("guestAllowedEventId");
 
     if (isGuest && allowedEventId && String(eventId) !== String(allowedEventId)) {
       console.log("🚫 Guest user attempting to access restricted event:", eventId);
@@ -270,7 +270,7 @@ export default function SecureCheckout() {
     }
 
     try {
-      // Get user_id from localStorage if available
+      // Get user_id from sessionStorage if available
       let user_id = null;
       if (userData) {
         try {
@@ -573,10 +573,10 @@ export default function SecureCheckout() {
       setDiscount(totalDiscount);
       setAvailableCoupons(response.data.Coupons); // Update available coupons from response
 
-      // Store in localStorage for cross-page synchronization
-      localStorage.setItem('couponCode', couponCode.trim());
-      localStorage.setItem('appliedCoupon', JSON.stringify(standardizedCoupon));
-      localStorage.setItem('couponDiscount', totalDiscount.toFixed(2));
+      // Store in sessionStorage for cross-page synchronization
+      sessionStorage.setItem('couponCode', couponCode.trim());
+      sessionStorage.setItem('appliedCoupon', JSON.stringify(standardizedCoupon));
+      sessionStorage.setItem('couponDiscount', totalDiscount.toFixed(2));
 
       console.log("✅ handleApplyCoupon: Coupon applied successfully", standardizedCoupon);
       console.log("💰 handleApplyCoupon: Final discount amount:", totalDiscount);
@@ -617,10 +617,10 @@ export default function SecureCheckout() {
     setDiscount(totalDiscount);
     setCouponCode(standardizedCoupon.coupon_code);
 
-    // Store in localStorage for cross-page synchronization
-    localStorage.setItem('couponCode', standardizedCoupon.coupon_code);
-    localStorage.setItem('appliedCoupon', JSON.stringify(standardizedCoupon));
-    localStorage.setItem('couponDiscount', totalDiscount.toFixed(2));
+    // Store in sessionStorage for cross-page synchronization
+    sessionStorage.setItem('couponCode', standardizedCoupon.coupon_code);
+    sessionStorage.setItem('appliedCoupon', JSON.stringify(standardizedCoupon));
+    sessionStorage.setItem('couponDiscount', totalDiscount.toFixed(2));
 
     console.log("✅ Coupon applied from card successfully", standardizedCoupon);
     console.log("💰 Final discount amount:", totalDiscount);
@@ -677,10 +677,10 @@ export default function SecureCheckout() {
               }}
               onClick={async () => {
                 await logout();
-                localStorage.removeItem("isGuestLogin");
-                localStorage.removeItem("guestEmail");
-                localStorage.removeItem("guestAllowedEventId");
-                localStorage.removeItem("guestAllowedEventName");
+                sessionStorage.removeItem("isGuestLogin");
+                sessionStorage.removeItem("guestEmail");
+                sessionStorage.removeItem("guestAllowedEventId");
+                sessionStorage.removeItem("guestAllowedEventName");
                 setShowGuestLogoutPopup(false);
                 navigate("/login");
               }}
@@ -759,10 +759,10 @@ export default function SecureCheckout() {
               <button
                 onClick={async () => {
                   await logout();
-                  localStorage.removeItem("isGuestLogin");
-                  localStorage.removeItem("guestEmail");
-                  localStorage.removeItem("guestAllowedEventId");
-                  localStorage.removeItem("guestAllowedEventName");
+                  sessionStorage.removeItem("isGuestLogin");
+                  sessionStorage.removeItem("guestEmail");
+                  sessionStorage.removeItem("guestAllowedEventId");
+                  sessionStorage.removeItem("guestAllowedEventName");
                   setShowGuestLogoutPopup(false);
                   navigate("/login");
                 }}
@@ -834,7 +834,7 @@ export default function SecureCheckout() {
                 const eventInfo = `${event.name || ""} | ${formatDate(
                   event.start_time
                 )} | ${event.city_name || "Noida"}`;
-                localStorage.setItem("eventInfo", eventInfo);
+                sessionStorage.setItem("eventInfo", eventInfo);
                 return (
                   <>
                     <h2 className="event-name">{event.name}</h2>
@@ -863,19 +863,11 @@ export default function SecureCheckout() {
                         <div className="ticket-description">
                           {ticket.ticket_description
                             .split("\n")
-                            .map((line, idx) => {
-                              const trimmed = line.trim();
-                              const showTick =
-                                trimmed.length > 0 && !line.startsWith(" ");
-                              return (
-                                <div key={idx} className="feature-item">
-                                  {showTick && (
-                                    <i className="fas fa-check-circle"></i>
-                                  )}
-                                  <span>{line}</span>
-                                </div>
-                              );
-                            })}
+                            .map((line, idx) => (
+                              <div key={idx} className="feature-item">
+                                <span>{line}</span>
+                              </div>
+                            ))}
                         </div>
                       )}
 
@@ -1021,7 +1013,7 @@ export default function SecureCheckout() {
                           <button
                             className="btn-mobile-proceed"
                             onClick={() => {
-                              localStorage.setItem("selectedTickets", JSON.stringify(selectedTickets));
+                              sessionStorage.setItem("selectedTickets", JSON.stringify(selectedTickets));
                               navigate(`/participant-details/${eventId}`);
                             }}
                           >
@@ -1165,16 +1157,16 @@ export default function SecureCheckout() {
                             const finalPrice = Math.max(0, totalPrice - currentDiscount);
                             const formattedPrice = finalPrice.toFixed(2);
                             const totalQuantity = selectedTickets.reduce((sum, t) => sum + t.quantity, 0);
-                            localStorage.setItem("summaryTotalAmount", formattedPrice);
-                            localStorage.setItem("ticketQuantity", totalQuantity);
-                            localStorage.setItem("selectedTickets", JSON.stringify(selectedTickets));
+                            sessionStorage.setItem("summaryTotalAmount", formattedPrice);
+                            sessionStorage.setItem("ticketQuantity", totalQuantity);
+                            sessionStorage.setItem("selectedTickets", JSON.stringify(selectedTickets));
                             // Save coupon discount info
                             if (discount > 0) {
-                              localStorage.setItem("couponDiscount", discount.toFixed(2));
-                              localStorage.setItem("couponCode", appliedCoupon?.discount_code || "");
+                              sessionStorage.setItem("couponDiscount", discount.toFixed(2));
+                              sessionStorage.setItem("couponCode", appliedCoupon?.discount_code || "");
                             } else {
-                              localStorage.removeItem("couponDiscount");
-                              localStorage.removeItem("couponCode");
+                              sessionStorage.removeItem("couponDiscount");
+                              sessionStorage.removeItem("couponCode");
                             }
                             return formattedPrice;
                           })()}
@@ -1185,7 +1177,7 @@ export default function SecureCheckout() {
                     <button
                       className="btn-proceed"
                       onClick={() => {
-                        localStorage.setItem("selectedTickets", JSON.stringify(selectedTickets));
+                        sessionStorage.setItem("selectedTickets", JSON.stringify(selectedTickets));
                         navigate(`/participant-details/${eventId}`);
                       }}
                     >

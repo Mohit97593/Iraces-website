@@ -65,10 +65,10 @@ export default function TopNav() {
     try {
       await logout();
       // Clear guest login info
-      localStorage.removeItem("guestEmail");
-      localStorage.removeItem("guestAllowedEventId");
-      localStorage.removeItem("guestAllowedEventName");
-      localStorage.removeItem("isGuestLogin");
+      sessionStorage.removeItem("guestEmail");
+      sessionStorage.removeItem("guestAllowedEventId");
+      sessionStorage.removeItem("guestAllowedEventName");
+      sessionStorage.removeItem("isGuestLogin");
 
       setShowLogoutConfirm(false);
       setShowLogoutSuccess(true);
@@ -95,7 +95,7 @@ export default function TopNav() {
 
   const getUserName = () => {
     // Check if logged in as guest
-    if (localStorage.getItem("isGuestLogin") === "true") {
+    if (sessionStorage.getItem("isGuestLogin") === "true") {
       return "Guest Login";
     }
 
@@ -302,14 +302,14 @@ export default function TopNav() {
         .replace(/[^\w-]/g, "")
       : "";
 
-    // Store selected city in localStorage for homepage
+    // Store selected city in sessionStorage for homepage
     if (cityType === "city") {
-      localStorage.setItem("selectedCityId", cityId);
-      localStorage.setItem("selectedCityName", cityName || "");
-      localStorage.setItem("selectedCitySlug", citySlug);
-      if (stateId) localStorage.setItem("selectedStateId", stateId);
-      if (countryId) localStorage.setItem("selectedCountryId", countryId);
-      if (!stateId) localStorage.removeItem("selectedStateId");
+      sessionStorage.setItem("selectedCityId", cityId);
+      sessionStorage.setItem("selectedCityName", cityName || "");
+      sessionStorage.setItem("selectedCitySlug", citySlug);
+      if (stateId) sessionStorage.setItem("selectedStateId", stateId);
+      if (countryId) sessionStorage.setItem("selectedCountryId", countryId);
+      if (!stateId) sessionStorage.removeItem("selectedStateId");
 
       // Dispatch custom event for homepage to listen
       window.dispatchEvent(
@@ -325,11 +325,11 @@ export default function TopNav() {
         })
       );
     } else {
-      localStorage.setItem("selectedStateId", cityId);
-      localStorage.setItem("selectedCityName", cityName || "");
-      if (countryId) localStorage.setItem("selectedCountryId", countryId);
-      localStorage.removeItem("selectedCityId");
-      localStorage.removeItem("selectedCitySlug");
+      sessionStorage.setItem("selectedStateId", cityId);
+      sessionStorage.setItem("selectedCityName", cityName || "");
+      if (countryId) sessionStorage.setItem("selectedCountryId", countryId);
+      sessionStorage.removeItem("selectedCityId");
+      sessionStorage.removeItem("selectedCitySlug");
 
       window.dispatchEvent(
         new CustomEvent("citySelected", {
@@ -406,15 +406,15 @@ export default function TopNav() {
             || "india";
 
           // Store detected city
-          localStorage.setItem("detectedCity", detectedCityName);
-          localStorage.setItem("detectedCitySlug", detectedCitySlug);
+          sessionStorage.setItem("detectedCity", detectedCityName);
+          sessionStorage.setItem("detectedCitySlug", detectedCitySlug);
 
           // Clear previous selections
-          localStorage.removeItem("selectedCityId");
-          localStorage.removeItem("selectedCityName");
-          localStorage.removeItem("selectedCitySlug");
-          localStorage.removeItem("selectedStateId");
-          localStorage.removeItem("selectedCountryId");
+          sessionStorage.removeItem("selectedCityId");
+          sessionStorage.removeItem("selectedCityName");
+          sessionStorage.removeItem("selectedCitySlug");
+          sessionStorage.removeItem("selectedStateId");
+          sessionStorage.removeItem("selectedCountryId");
 
           // Close the overlay
           setShowLocationOverlay(false);
@@ -500,15 +500,15 @@ export default function TopNav() {
         || "india";
 
       // Store detected city
-      localStorage.setItem("detectedCity", detectedCityName);
-      localStorage.setItem("detectedCitySlug", detectedCitySlug);
+      sessionStorage.setItem("detectedCity", detectedCityName);
+      sessionStorage.setItem("detectedCitySlug", detectedCitySlug);
 
       // Clear previous selections
-      localStorage.removeItem("selectedCityId");
-      localStorage.removeItem("selectedCityName");
-      localStorage.removeItem("selectedCitySlug");
-      localStorage.removeItem("selectedStateId");
-      localStorage.removeItem("selectedCountryId");
+      sessionStorage.removeItem("selectedCityId");
+      sessionStorage.removeItem("selectedCityName");
+      sessionStorage.removeItem("selectedCitySlug");
+      sessionStorage.removeItem("selectedStateId");
+      sessionStorage.removeItem("selectedCountryId");
 
       // Close the overlay
       setShowLocationOverlay(false);
@@ -528,15 +528,15 @@ export default function TopNav() {
     } catch (error) {
       console.error("Error detecting location via IP:", error);
       // Fallback to default location "India"
-      localStorage.setItem("detectedCity", "India");
-      localStorage.setItem("detectedCitySlug", "india");
+      sessionStorage.setItem("detectedCity", "India");
+      sessionStorage.setItem("detectedCitySlug", "india");
 
       // Clear previous selections
-      localStorage.removeItem("selectedCityId");
-      localStorage.removeItem("selectedCityName");
-      localStorage.removeItem("selectedCitySlug");
-      localStorage.removeItem("selectedStateId");
-      localStorage.removeItem("selectedCountryId");
+      sessionStorage.removeItem("selectedCityId");
+      sessionStorage.removeItem("selectedCityName");
+      sessionStorage.removeItem("selectedCitySlug");
+      sessionStorage.removeItem("selectedStateId");
+      sessionStorage.removeItem("selectedCountryId");
 
       // Close the overlay
       setShowLocationOverlay(false);
@@ -556,8 +556,8 @@ export default function TopNav() {
 
   // Auto-detect location on component mount (for mobile devices)
   useEffect(() => {
-    const hasDetectedLocation = localStorage.getItem("detectedCity");
-    const hasSelectedLocation = localStorage.getItem("selectedCityId") || localStorage.getItem("selectedStateId");
+    const hasDetectedLocation = sessionStorage.getItem("detectedCity");
+    const hasSelectedLocation = sessionStorage.getItem("selectedCityId") || sessionStorage.getItem("selectedStateId");
 
     // Only auto-detect if no location has been set before
     if (!hasDetectedLocation && !hasSelectedLocation) {
@@ -1071,7 +1071,7 @@ export default function TopNav() {
                 <div className="flex-grow-1 overflow-auto">
                   {isAuthenticated ? (
                     <div className="p-2">
-                      {localStorage.getItem("isGuestLogin") !== "true" && (
+                      {sessionStorage.getItem("isGuestLogin") !== "true" && (
                         <>
                           <NavLink
                             to="/profile"
@@ -1234,8 +1234,8 @@ export default function TopNav() {
                     }}
                   >
                     {(() => {
-                      const isGuest = localStorage.getItem("isGuestLogin") === "true";
-                      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+                      const isGuest = sessionStorage.getItem("isGuestLogin") === "true";
+                      const userData = JSON.parse(sessionStorage.getItem("userData") || "{}");
                       if (!isGuest && userData?.profile_pic) {
                         const profilePicUrl = authAPI.getImageUrl(userData.profile_pic);
                         return (
@@ -1306,14 +1306,14 @@ export default function TopNav() {
                       style={{ backgroundColor: "#f8f9fa" }}
                     >
                       <div className="fw-bold text-dark">{getUserName()}</div>
-                      {localStorage.getItem("isGuestLogin") !== "true" && (
+                      {sessionStorage.getItem("isGuestLogin") !== "true" && (
                         <div className="text-muted small">
                           {getUserDisplayInfo()}
                         </div>
                       )}
                     </div>
 
-                    {localStorage.getItem("isGuestLogin") !== "true" && (
+                    {sessionStorage.getItem("isGuestLogin") !== "true" && (
                       <>
                         <NavLink
                           to="/profile"

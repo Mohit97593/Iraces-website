@@ -12,10 +12,10 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
   };
   const [formData, setFormData] = useState({
     event_id:
-      localStorage.getItem("event_id") ||
+      sessionStorage.getItem("event_id") ||
       sessionStorage.getItem("event_id") ||
       "",
-    user_id: localStorage.getItem("user_id"),
+    user_id: sessionStorage.getItem("user_id"),
     distance_category: initialData.distance_category || "",
     age_category: initialData.age_category || "",
     age_start: initialData.age_start || "",

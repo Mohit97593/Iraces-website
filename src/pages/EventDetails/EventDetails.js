@@ -21,10 +21,10 @@ export default function EventDetails() {
   const [organiserName, setOrganiserName] = useState("");
   const [showGuestLogoutPopup, setShowGuestLogoutPopup] = useState(false);
 
-  // Handle event ID from localStorage or URL
+  // Handle event ID from sessionStorage or URL
   useEffect(() => {
-    // Check if we have an ID in the URL or localStorage
-    const storedEid = localStorage.getItem('viewEventId');
+    // Check if we have an ID in the URL or sessionStorage
+    const storedEid = sessionStorage.getItem('viewEventId');
     let eid = urlEventId || storedEid;
 
     if (eid) {
@@ -32,7 +32,7 @@ export default function EventDetails() {
 
       // If we got it from storage, clean up
       if (storedEid) {
-        localStorage.removeItem('viewEventId');
+        sessionStorage.removeItem('viewEventId');
       }
 
       // If the URL doesn't have the ID but we have one (e.g. from storage),
@@ -488,11 +488,11 @@ export default function EventDetails() {
                     onClick={() => {
                       if (isRegistrationClosedByLimit) return;
                       // Check if user is logged in
-                      const token = localStorage.getItem("token");
+                      const token = sessionStorage.getItem("token");
                       if (!token) {
                         // Save current URL for redirect after login
                         const currentPath = window.location.pathname + window.location.search;
-                        localStorage.setItem("redirectAfterLogin", currentPath);
+                        sessionStorage.setItem("redirectAfterLogin", currentPath);
                         console.log("💾 Saved redirect URL before login:", currentPath);
 
                         // Check for guest login availability
@@ -500,15 +500,15 @@ export default function EventDetails() {
                         const guestEmail = eventDetails?.UserEmail;
 
                         if (allowGuest === 1 || allowGuest === "1") {
-                          localStorage.setItem("guestEmail", guestEmail || "");
-                          localStorage.setItem("guestAllowedEventId", eventId);
-                          localStorage.setItem("guestAllowedEventName", event?.name || "");
+                          sessionStorage.setItem("guestEmail", guestEmail || "");
+                          sessionStorage.setItem("guestAllowedEventId", eventId);
+                          sessionStorage.setItem("guestAllowedEventName", event?.name || "");
                           console.log("🎟️ Guest login info saved:", { guestEmail, eventId });
                         } else {
                           // Clear any old guest info
-                          localStorage.removeItem("guestEmail");
-                          localStorage.removeItem("guestAllowedEventId");
-                          localStorage.removeItem("guestAllowedEventName");
+                          sessionStorage.removeItem("guestEmail");
+                          sessionStorage.removeItem("guestAllowedEventId");
+                          sessionStorage.removeItem("guestAllowedEventName");
                         }
 
                         // Redirect to login
@@ -516,8 +516,8 @@ export default function EventDetails() {
                       } else {
                         // User is logged in, proceed to checkout
                         // Guest Login Restriction Check
-                        const isGuest = localStorage.getItem("isGuestLogin") === "true";
-                        const allowedEventId = localStorage.getItem("guestAllowedEventId");
+                        const isGuest = sessionStorage.getItem("isGuestLogin") === "true";
+                        const allowedEventId = sessionStorage.getItem("guestAllowedEventId");
 
                         if (isGuest && allowedEventId && String(eventId) !== String(allowedEventId)) {
                           setShowGuestLogoutPopup(true);
@@ -671,10 +671,10 @@ export default function EventDetails() {
                 onClick={async () => {
                   try {
                     await logout();
-                    localStorage.removeItem("isGuestLogin");
-                    localStorage.removeItem("guestEmail");
-                    localStorage.removeItem("guestAllowedEventId");
-                    localStorage.removeItem("guestAllowedEventName");
+                    sessionStorage.removeItem("isGuestLogin");
+                    sessionStorage.removeItem("guestEmail");
+                    sessionStorage.removeItem("guestAllowedEventId");
+                    sessionStorage.removeItem("guestAllowedEventName");
                     setShowGuestLogoutPopup(false);
                     navigate("/login");
                   } catch (error) {

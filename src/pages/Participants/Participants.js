@@ -329,8 +329,8 @@ export default function Participants() {
             console.log("📧 Sending email with type:", selectedEmailType);
             console.log("📧 Selected participants:", selectedParticipants);
 
-            // Get user data from localStorage
-            const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+            // Get user data from sessionStorage
+            const userData = JSON.parse(sessionStorage.getItem("userData") || "{}");
             const userId = userData.ID || userData.id || 0;
 
             // Prepare payload

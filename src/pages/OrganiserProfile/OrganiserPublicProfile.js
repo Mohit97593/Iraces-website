@@ -38,7 +38,7 @@ export default function OrganiserPublicProfile() {
         setLoading(true);
         try {
             // Get logged-in user data from session storage
-            const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+            const userData = JSON.parse(sessionStorage.getItem("userData") || "{}");
             const loggedInUserId = userData.ID || userData.id || userData.user_id;
 
             // Replace underscores with spaces in organiser name

@@ -236,7 +236,7 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
         const fd = new FormData();
         fd.append("event_id", String(eventId));
         const derivedUserId =
-          localStorage.getItem("user_id") ||
+          sessionStorage.getItem("user_id") ||
           sessionStorage.getItem("user_id") ||
           "";
         fd.append("user_id", String(derivedUserId));
@@ -258,7 +258,7 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
         fd.append("event_id", String(eventId));
 
         const derivedUserId =
-          localStorage.getItem("user_id") ||
+          sessionStorage.getItem("user_id") ||
           sessionStorage.getItem("user_id") ||
           "";
         fd.append("user_id", String(derivedUserId));

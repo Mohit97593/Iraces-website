@@ -8,13 +8,13 @@ export default function EventSettings({ onBack, onNext, showToast }) {
   const triggerToast = (message, type = 'success') => {
     setToast({ message, type });
   };
-  // Clear localStorage for eventSettingsFormData if event id changes (new event)
+  // Clear sessionStorage for eventSettingsFormData if event id changes (new event)
   useEffect(() => {
     const eventId = sessionStorage.getItem("event_id");
-    const lastEventId = localStorage.getItem("eventSettingsLastEventId");
+    const lastEventId = sessionStorage.getItem("eventSettingsLastEventId");
     if (eventId && eventId !== lastEventId) {
-      localStorage.removeItem("eventSettingsFormData");
-      localStorage.setItem("eventSettingsLastEventId", eventId);
+      sessionStorage.removeItem("eventSettingsFormData");
+      sessionStorage.setItem("eventSettingsLastEventId", eventId);
     }
   }, []);
   const [limit, setLimit] = useState("");
@@ -34,8 +34,8 @@ export default function EventSettings({ onBack, onNext, showToast }) {
   }, []);
 
   useEffect(() => {
-    // Restore form data from localStorage if available
-    const saved = localStorage.getItem("eventSettingsFormData");
+    // Restore form data from sessionStorage if available
+    const saved = sessionStorage.getItem("eventSettingsFormData");
     if (saved) {
       try {
         const data = JSON.parse(saved);
@@ -68,8 +68,8 @@ export default function EventSettings({ onBack, onNext, showToast }) {
         // Use parent showToast so the toast persists after step navigation
         if (showToast) showToast(res.message || "Event settings updated successfully", 'success');
         else triggerToast(res.message || "Event settings updated successfully");
-        // Save form data to localStorage on save
-        localStorage.setItem(
+        // Save form data to sessionStorage on save
+        sessionStorage.setItem(
           "eventSettingsFormData",
           JSON.stringify({
             limit,

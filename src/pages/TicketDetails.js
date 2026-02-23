@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { authAPI } from "../services/authAPI";
 import TopNav from "../components/Navbar/TopNav";
@@ -37,7 +37,7 @@ export default function TicketDetails() {
     };
     const handleDownloadTicket = async (ticket) => {
         try {
-            console.log("📥 Starting ticket download...");
+            console.log("?? Starting ticket download...");
             console.log("Ticket ID:", ticket.unique_ticket_id);
             const payload = {
                 ticket: {
@@ -84,11 +84,11 @@ export default function TicketDetails() {
                 },
                 event_link: ticket.event_link || ""
             };
-            console.log("🔄 Calling generatePDF API...");
+            console.log("?? Calling generatePDF API...");
             const response = await authAPI.generatePDF(payload);
-            console.log("📦 API Response:", response);
+            console.log("?? API Response:", response);
             if (response && response.data && response.data.pdf_link) {
-                console.log("✅ PDF Link received:", response.data.pdf_link);
+                console.log("? PDF Link received:", response.data.pdf_link);
                 // Create a temporary link element to trigger download
                 const link = document.createElement('a');
                 link.href = response.data.pdf_link;
@@ -97,23 +97,23 @@ export default function TicketDetails() {
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                console.log("✅ Ticket PDF download initiated successfully");
+                console.log("? Ticket PDF download initiated successfully");
             } else if (response && response.message) {
-                console.warn("⚠️ API returned message:", response.message);
+                console.warn("?? API returned message:", response.message);
                 alert(response.message);
             } else {
-                console.error("❌ Invalid API response");
+                console.error("? Invalid API response");
                 alert("Failed to generate PDF");
             }
         } catch (error) {
-            console.error("❌ Error downloading ticket:", error);
+            console.error("? Error downloading ticket:", error);
             console.error("Error details:", error.response || error.message);
             alert(error?.message || "Failed to download ticket. Please try again.");
         }
     };
     const handlePrintTicket = async (ticket) => {
         try {
-            console.log("🖨️ Starting ticket print...");
+            console.log("??? Starting ticket print...");
             console.log("Ticket ID:", ticket.unique_ticket_id);
             const payload = {
                 ticket: {
@@ -160,11 +160,11 @@ export default function TicketDetails() {
                 },
                 event_link: ticket.event_link || ""
             };
-            console.log("🔄 Calling generatePDF API for printing...");
+            console.log("?? Calling generatePDF API for printing...");
             const response = await authAPI.generatePDF(payload);
-            console.log("📦 API Response:", response);
+            console.log("?? API Response:", response);
             if (response && response.data && response.data.pdf_link) {
-                console.log("✅ PDF Link received:", response.data.pdf_link);
+                console.log("? PDF Link received:", response.data.pdf_link);
                 // Open PDF in new window and trigger print dialog
                 const printWindow = window.open(response.data.pdf_link, '_blank');
                 if (printWindow) {
@@ -172,16 +172,16 @@ export default function TicketDetails() {
                         printWindow.print();
                     };
                 }
-                console.log("✅ Print dialog opened successfully");
+                console.log("? Print dialog opened successfully");
             } else if (response && response.message) {
-                console.warn("⚠️ API returned message:", response.message);
+                console.warn("?? API returned message:", response.message);
                 alert(response.message);
             } else {
-                console.error("❌ Invalid API response");
+                console.error("? Invalid API response");
                 alert("Failed to generate PDF for printing");
             }
         } catch (error) {
-            console.error("❌ Error printing ticket:", error);
+            console.error("? Error printing ticket:", error);
             console.error("Error details:", error.response || error.message);
             alert(error?.message || "Failed to print ticket. Please try again.");
         }
@@ -264,7 +264,7 @@ export default function TicketDetails() {
 
     const handleShareViaEmail = async (ticket) => {
         try {
-            console.log("📧 Starting email share for ticket:", ticket.unique_ticket_id);
+            console.log("?? Starting email share for ticket:", ticket.unique_ticket_id);
             setSharingInProgress(true);
             const payload = {
                 ticket: {
@@ -313,29 +313,29 @@ export default function TicketDetails() {
             };
 
             const response = await authAPI.generatePDF(payload);
-            console.log("📦 PDF API Response for Email:", response);
+            console.log("?? PDF API Response for Email:", response);
 
             if (response && response.data && response.data.pdf_link) {
                 const pdfLink = response.data.pdf_link;
-                console.log("✅ PDF Link received:", pdfLink);
+                console.log("? PDF Link received:", pdfLink);
 
                 const eventName = ticket.EventName || "Your Ticket";
                 const subject = encodeURIComponent(`Ticket for ${eventName}`);
                 const body = encodeURIComponent(`Hi,\n\nPlease find the ticket for ${eventName} below:\n\n${pdfLink}\n\nRegistration ID: ${ticket.unique_ticket_id}`);
                 const mailtoLink = `mailto:?subject=${subject}&body=${body}`;
 
-                console.log("🚀 Triggering mailto with window.open");
+                console.log("?? Triggering mailto with window.open");
                 window.open(mailtoLink, '_blank');
 
                 setTimeout(() => {
                     handleCloseShare();
                 }, 500);
             } else {
-                console.error("❌ PDF generation failed - no link in response");
+                console.error("? PDF generation failed - no link in response");
                 alert(response?.message || "Failed to generate PDF for sharing");
             }
         } catch (error) {
-            console.error("❌ Error sharing via Email:", error);
+            console.error("? Error sharing via Email:", error);
             alert("Failed to share via Email. Please ensure you have an email client configured.");
         } finally {
             setSharingInProgress(false);
@@ -344,7 +344,7 @@ export default function TicketDetails() {
 
     const handleCopyLink = async (ticket) => {
         try {
-            console.log("📋 Copying link for ticket:", ticket.unique_ticket_id);
+            console.log("?? Copying link for ticket:", ticket.unique_ticket_id);
             setSharingInProgress(true);
             const payload = {
                 ticket: {
@@ -417,7 +417,7 @@ export default function TicketDetails() {
         setSelectedTicketForQR(null);
     };
     const formatPrice = (price) => {
-        return `₹${parseFloat(price).toFixed(2)}`;
+        return `?${parseFloat(price).toFixed(2)}`;
     };
     return (
         <div className="ticket-details-page">
@@ -431,9 +431,9 @@ export default function TicketDetails() {
                             <h1 className="contact-hero-title">Ticket Details</h1>
                             <nav className="contact-breadcrumb">
                                 <span onClick={() => navigate("/")} style={{ cursor: "pointer" }}>Home</span>
-                                <span className="breadcrumb-separator">→</span>
+                                <span className="breadcrumb-separator">?</span>
                                 <span onClick={() => navigate("/registration-tracker")} style={{ cursor: "pointer" }}>Registration Tracker</span>
-                                <span className="breadcrumb-separator">→</span>
+                                <span className="breadcrumb-separator">?</span>
                                 <span>Ticket Details</span>
                             </nav>
                         </div>

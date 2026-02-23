@@ -11,8 +11,8 @@ export default function Home() {
     const detectAndRedirect = async () => {
       // Check if user has previously selected/detected a city
       const storedCitySlug =
-        localStorage.getItem("selectedCitySlug") ||
-        localStorage.getItem("detectedCitySlug");
+        sessionStorage.getItem("selectedCitySlug") ||
+        sessionStorage.getItem("detectedCitySlug");
 
       if (storedCitySlug) {
         navigate(`/in/${storedCitySlug}`, { replace: true });
@@ -33,8 +33,8 @@ export default function Home() {
             .toLowerCase()
             .replace(/\s+/g, "-")
             .replace(/[^\w-]/g, "");
-          localStorage.setItem("detectedCity", data.city);
-          localStorage.setItem("detectedCitySlug", citySlug);
+          sessionStorage.setItem("detectedCity", data.city);
+          sessionStorage.setItem("detectedCitySlug", citySlug);
           navigate(`/in/${citySlug}`, { replace: true });
         } else if (data.city) {
           // User outside India, still show their city
@@ -42,8 +42,8 @@ export default function Home() {
             .toLowerCase()
             .replace(/\s+/g, "-")
             .replace(/[^\w-]/g, "");
-          localStorage.setItem("detectedCity", data.city);
-          localStorage.setItem("detectedCitySlug", citySlug);
+          sessionStorage.setItem("detectedCity", data.city);
+          sessionStorage.setItem("detectedCitySlug", citySlug);
           navigate(`/in/${citySlug}`, { replace: true });
         } else {
           // Default to India if city not found
