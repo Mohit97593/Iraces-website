@@ -417,7 +417,7 @@ export default function TicketDetails() {
         setSelectedTicketForQR(null);
     };
     const formatPrice = (price) => {
-        return `?${parseFloat(price).toFixed(2)}`;
+        return `₹${parseFloat(price).toFixed(2)}`;
     };
     return (
         <div className="ticket-details-page">
@@ -431,9 +431,9 @@ export default function TicketDetails() {
                             <h1 className="contact-hero-title">Ticket Details</h1>
                             <nav className="contact-breadcrumb">
                                 <span onClick={() => navigate("/")} style={{ cursor: "pointer" }}>Home</span>
-                                <span className="breadcrumb-separator">?</span>
+                                <span className="breadcrumb-separator">→</span>
                                 <span onClick={() => navigate("/registration-tracker")} style={{ cursor: "pointer" }}>Registration Tracker</span>
-                                <span className="breadcrumb-separator">?</span>
+                                <span className="breadcrumb-separator">→</span>
                                 <span>Ticket Details</span>
                             </nav>
                         </div>
