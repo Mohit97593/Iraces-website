@@ -180,7 +180,7 @@ export default function Registrations() {
                                 <option value="2">Failure</option>
                                 <option value="3">Free</option>
                                 <option value="1">Success</option>
-                                <option value="101">In Progress</option>
+                                <option value="101">Pending</option>
                                 <option value="102">Success & Free</option>
                             </select>
                         </div>

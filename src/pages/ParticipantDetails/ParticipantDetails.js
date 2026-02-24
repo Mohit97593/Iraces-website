@@ -3328,6 +3328,44 @@ export default function ParticipantDetails() {
               console.log(`❌ Future Date error: ${q.question_label} for Participant ${participantIndex + 1}`);
             }
 
+            // NEW: Validate Age range derived from DOB against ticket limits
+            if (isDOBField && enteredDate && enteredDate <= today) {
+              const todayObj = new Date();
+              let ageValue = todayObj.getFullYear() - enteredDate.getFullYear();
+              const m = todayObj.getMonth() - enteredDate.getMonth();
+              if (m < 0 || (m === 0 && todayObj.getDate() < enteredDate.getDate())) {
+                ageValue--;
+              }
+
+              const ageStart = parseInt(currentTicket.age_start);
+              const ageEnd = parseInt(currentTicket.age_end);
+
+              let ageValid = true;
+              let ageErrorMessage = "";
+
+              if (!isNaN(ageValue)) {
+                if (!isNaN(ageStart) && ageStart > 0 && ageValue < ageStart) {
+                  ageValid = false;
+                  ageErrorMessage = `According to your Date of Birth, your age (${ageValue}) must be at least ${ageStart} for Participant ${participantIndex + 1}`;
+                } else if (!isNaN(ageEnd) && ageEnd > 0 && ageValue > ageEnd) {
+                  ageValid = false;
+                  ageErrorMessage = `According to your Date of Birth, your age (${ageValue}) must be at most ${ageEnd} for Participant ${participantIndex + 1}`;
+                }
+              }
+
+              if (!ageValid) {
+                const errorKey = `participant_${participantIndex}_${fieldName}_age`;
+                errors[errorKey] = ageErrorMessage;
+                if (!hasErrors) {
+                  firstErrorParticipant = participantIndex;
+                  firstErrorGroup = groupTitle;
+                }
+                hasErrors = true;
+                console.log(`❌ Age from DOB out of range: ${q.question_label} for Participant ${participantIndex + 1} (Age: ${ageValue}, Range: ${ageStart}-${ageEnd})`);
+                alert(ageErrorMessage);
+              }
+            }
+
             if (q.date_range === 1) {
               // Check minimum date
               if (q.range_start_date) {
@@ -3428,37 +3466,6 @@ export default function ParticipantDetails() {
             }
           }
 
-          // NEW: Validate Age range against ticket limits
-          const isAgeField = (q.question_label || "").toLowerCase() === 'age' || (getMappedKey(q) || "").toLowerCase() === 'age';
-          if (isAgeField && fieldValue) {
-            const ageValue = parseInt(fieldValue);
-            const ageStart = parseInt(currentTicket.age_start);
-            const ageEnd = parseInt(currentTicket.age_end);
-
-            let ageValid = true;
-            let ageErrorMessage = "";
-
-            if (!isNaN(ageValue)) {
-              if (!isNaN(ageStart) && ageStart > 0 && ageValue < ageStart) {
-                ageValid = false;
-                ageErrorMessage = `${q.question_label} must be at least ${ageStart} for Participant ${participantIndex + 1}`;
-              } else if (!isNaN(ageEnd) && ageEnd > 0 && ageValue > ageEnd) {
-                ageValid = false;
-                ageErrorMessage = `${q.question_label} must be at most ${ageEnd} for Participant ${participantIndex + 1}`;
-              }
-            }
-
-            if (!ageValid) {
-              const errorKey = `participant_${participantIndex}_${fieldName}`;
-              errors[errorKey] = ageErrorMessage;
-              if (!hasErrors) {
-                firstErrorParticipant = participantIndex;
-                firstErrorGroup = groupTitle;
-              }
-              hasErrors = true;
-              console.log(`❌ Age out of range: ${q.question_label} for Participant ${participantIndex + 1} (${ageValue} not in ${ageStart}-${ageEnd})`);
-            }
-          }
         });
 
         // Check if mobile and emergency contact are the same
