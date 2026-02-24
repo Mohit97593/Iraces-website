@@ -24,26 +24,46 @@ export default function EventSettings({ onBack, onNext, showToast }) {
 
   useEffect(() => {
     const eventId = sessionStorage.getItem("event_id");
-    if (eventId) {
-      authAPI.getEventDetails(eventId).then((res) => {
-        if (res && res.data && res.data.EventData && res.data.EventData[0]) {
-          setEventDetails(res.data.EventData[0]);
-        }
-      });
-    }
-  }, []);
+    if (!eventId) return;
 
-  useEffect(() => {
-    // Restore form data from sessionStorage if available
-    const saved = sessionStorage.getItem("eventSettingsFormData");
-    if (saved) {
+    const loadData = async () => {
       try {
-        const data = JSON.parse(saved);
-        setLimit(data.limit || "");
-        setRegistrationType(data.registrationType || "multiple");
-        setUniqueOnly(data.uniqueOnly || false);
-      } catch { }
-    }
+        const res = await authAPI.getEventDetails(eventId);
+        if (res && res.data && res.data.EventData && res.data.EventData[0]) {
+          const apiData = res.data.EventData[0];
+          setEventDetails(apiData);
+
+          // Restore form data from sessionStorage if available
+          const saved = sessionStorage.getItem("eventSettingsFormData");
+          let parsedSaved = null;
+          if (saved) {
+            try {
+              parsedSaved = JSON.parse(saved);
+            } catch (e) {
+              console.error("Error parsing saved settings:", e);
+            }
+          }
+
+          // Use saved data if present, otherwise fallback to API data
+          setLimit(parsedSaved?.limit || apiData.overall_limit || "");
+          setRegistrationType(
+            parsedSaved?.registrationType ||
+            (apiData.event_registration_status === 1 ? "single" : "multiple")
+          );
+          setUniqueOnly(
+            parsedSaved?.uniqueOnly !== undefined
+              ? parsedSaved.uniqueOnly
+              : apiData.allow_unique_registration === 1
+          );
+
+          console.log("Event Settings Loaded from API:", apiData);
+        }
+      } catch (err) {
+        console.error("Error fetching event details:", err);
+      }
+    };
+
+    loadData();
   }, []);
 
   const handleSaveSettings = async () => {
