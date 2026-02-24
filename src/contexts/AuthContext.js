@@ -19,9 +19,62 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Check authentication status on app load
+  // Check authentication status on app load and sync across tabs
   useEffect(() => {
+    // 1. Storage event listener for cross-tab synchronization
+    const handleStorageChange = (event) => {
+      // a. Request for session from a new tab
+      if (event.key === "request_session_sync") {
+        const token = sessionStorage.getItem("token");
+        const userData = sessionStorage.getItem("userData");
+
+        if (token && userData) {
+          // Send session data to the requesting tab
+          localStorage.setItem("session_sync_data", JSON.stringify({
+            token,
+            userData,
+            ts: Date.now() // Use timestamp to ensure event fires
+          }));
+          // Immediately remove to keep localStorage clean
+          localStorage.removeItem("session_sync_data");
+        }
+      }
+      // b. Receiving session data from an existing tab
+      else if (event.key === "session_sync_data" && event.newValue) {
+        try {
+          const syncData = JSON.parse(event.newValue);
+          if (syncData.token && syncData.userData) {
+            sessionStorage.setItem("token", syncData.token);
+            sessionStorage.setItem("userData", syncData.userData);
+            checkAuthStatus(); // Update state with synced data
+          }
+        } catch (e) {
+          console.error("Session sync parse error:", e);
+        }
+      }
+      // c. Receiving logout signal from another tab
+      else if (event.key === "logout_event") {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // 2. Initial synchronization request
+    const token = sessionStorage.getItem("token");
+    if (!token) {
+      // If no session exists in this tab, ask other tabs
+      localStorage.setItem("request_session_sync", Date.now().toString());
+      localStorage.removeItem("request_session_sync");
+    }
+
+    // 3. Normal auth check
     checkAuthStatus();
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   const checkAuthStatus = () => {
@@ -277,6 +330,9 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoading(true);
       await authAPI.logout();
+      // Signal other tabs to logout
+      localStorage.setItem("logout_event", Date.now().toString());
+      localStorage.removeItem("logout_event");
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
