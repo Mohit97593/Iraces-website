@@ -1453,6 +1453,8 @@ export default function ParticipantDetails() {
     // Get total attendees
     const total_attendees = selectedTickets.reduce((sum, t) => sum + t.quantity, 0);
 
+    const files_to_collect = [];
+
     // Build FormQuestions object - organize by ticket ID
     const FormQuestions = {};
     participantForms.forEach((participantForm, participantIndex) => {
@@ -1472,41 +1474,19 @@ export default function ParticipantDetails() {
           const fieldName = getMappedKey(q);
           const fieldValue = participantForm.formData[fieldName];
 
+          // NEW: Handle File objects for "upload id" fields
+          if (fieldValue instanceof File) {
+            files_to_collect.push(fieldValue);
+            return {
+              ...q,
+              ActualValue: fieldValue.name, // Send filename as string to avoid stdClass error
+              Error: "",
+              TicketId: ticketId.toString()
+            };
+          }
+
           return {
-            id: q.id,
-            event_id: q.event_id,
-            general_form_id: q.general_form_id,
-            question_label: q.question_label,
-            form_id: q.form_id,
-            question_form_type: q.question_form_type,
-            question_form_name: q.question_form_name,
-            hint_type: q.hint_type,
-            question_hint: q.question_hint || "",
-            question_form_option: q.question_form_option || "",
-            question_option_limit_flag: q.question_option_limit_flag || 0,
-            child_question_ids: q.child_question_ids || "",
-            sub_child_question_ids1: q.sub_child_question_ids1 || "",
-            sub_child_question_ids2: q.sub_child_question_ids2 || "",
-            user_field_mapping: q.user_field_mapping || "",
-            is_manadatory: q.is_manadatory,
-            date_range: q.date_range,
-            range_start_date: q.range_start_date || "",
-            range_end_date: q.range_end_date || "",
-            specific_domain: q.specific_domain,
-            domain_name: q.domain_name || "",
-            limit_check: q.limit_check,
-            limit_length: q.limit_length || "",
-            question_status: q.question_status,
-            is_subquestion: q.is_subquestion,
-            parent_question_id: q.parent_question_id,
-            sort_order: q.sort_order,
-            is_compulsory: q.is_compulsory,
-            created_by: q.created_by,
-            is_custom_form: q.is_custom_form,
-            apply_ticket: q.apply_ticket,
-            ticket_details: q.ticket_details,
-            show_on_ticket_pdf: q.show_on_ticket_pdf,
-            hint_image: q.hint_image || "",
+            ...q,
             ActualValue: fieldValue || "",
             Error: "",
             TicketId: ticketId.toString()
@@ -1611,7 +1591,7 @@ export default function ParticipantDetails() {
       GstArray
     };
 
-    return bookingTicketsArray;
+    return { bookingPayload: bookingTicketsArray, files: files_to_collect };
   };
 
   const renderDynamicFields = (participantIndex) => {
@@ -3091,7 +3071,7 @@ export default function ParticipantDetails() {
         console.log("📤 Calling PhonePe payment API...");
 
         // Build the booking payload (same as PayU)
-        const bookingPayload = buildBookingPayload();
+        const { bookingPayload, files } = buildBookingPayload();
 
         // Determine ticket type
         const ticketType = finalAmount > 0 ? 'paid' : 'free';
@@ -3100,7 +3080,8 @@ export default function ParticipantDetails() {
           event_id: eventId,
           amount: finalAmount.toFixed(2),
           ticket_type: ticketType,
-          booking_tickets_array: JSON.stringify(bookingPayload)
+          booking_tickets_array: JSON.stringify(bookingPayload),
+          fils_array: files // Pass collected files
         };
 
         console.log("📦 PhonePe API Payload:", apiPayload);
@@ -3120,7 +3101,7 @@ export default function ParticipantDetails() {
         console.log("📤 Calling PayU payment API...");
 
         // Build the booking payload for PayU
-        const bookingPayload = buildBookingPayload();
+        const { bookingPayload, files } = buildBookingPayload();
 
         // Determine ticket type
         const ticketType = finalAmount > 0 ? 'paid' : 'free';
@@ -3129,7 +3110,8 @@ export default function ParticipantDetails() {
           event_id: eventId,
           amount: finalAmount.toFixed(2),
           ticket_type: ticketType,
-          booking_tickets_array: JSON.stringify(bookingPayload)
+          booking_tickets_array: JSON.stringify(bookingPayload),
+          fils_array: files // Pass collected files
         };
 
         console.log("📦 PayU API Payload:", apiPayload);
@@ -3145,7 +3127,8 @@ export default function ParticipantDetails() {
         } else {
           throw new Error("Invalid response from PayU payment API");
         }
-      } else {
+      }
+      else {
         throw new Error(`Unknown payment gateway: ${targetGateway}`);
       }
     } catch (error) {
@@ -3161,7 +3144,7 @@ export default function ParticipantDetails() {
   const handleFreeRegistration = async () => {
     setIsProceeding(true);
     try {
-      const bookingPayload = buildBookingPayload();
+      const { bookingPayload, files } = buildBookingPayload();
       const finalAmount = parseFloat(calculateFinalAmount());
       const ticketType = finalAmount > 0 ? 'paid' : 'free';
 
@@ -3169,7 +3152,8 @@ export default function ParticipantDetails() {
         event_id: eventId,
         amount: finalAmount.toFixed(2),
         ticket_type: ticketType,
-        booking_tickets_array: JSON.stringify(bookingPayload)
+        booking_tickets_array: JSON.stringify(bookingPayload),
+        fils_array: files
       };
 
       console.log("📤 Submitting Free Registration Payload:", apiPayload);
