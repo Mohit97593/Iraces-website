@@ -18,7 +18,7 @@ const EventsPanel = ({
       <div className="container">
         <div className="section-head mb-4 text-start">
           <div className="upcoming-pill text-start">
-            {hasLocalEvents ? "- UPCOMING EVENTS -" : "- SUGGESTED EVENTS -"}
+            {hasLocalEvents ? "- UPCOMING EVENTS -" : "- UPCOMING EVENTS -"}
           </div>
           {/* <h2 className="events-heading">Upcoming Events</h2> */}
         </div>

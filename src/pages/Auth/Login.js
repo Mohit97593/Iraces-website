@@ -825,7 +825,7 @@ export default function Login() {
                       )}
                       {otpSent && (
                         <div className="text-success small mt-1">
-                          OTP sent successfully! Please check your {loginType === "email" ? "email" : "SMS"}.
+                          OTP sent successfully! Please check your {loginType === "email" || loginType === "userId" ? "email" : "SMS"}.
                         </div>
                       )}
                       {/* Countdown and resend OTP UI */}

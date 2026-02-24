@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
 import { authAPI } from "../../services/authAPI";
+import SearchableSelect from "../../components/SearchableSelect/SearchableSelect";
 import "./ParticipantDetails.css";
 
 export default function ParticipantDetails() {
@@ -77,6 +78,7 @@ export default function ParticipantDetails() {
 
   // Coupon display location state
   const [couponDisplayLocation, setCouponDisplayLocation] = useState("both"); // Default to 'both'
+  const [allowUniqueRegistration, setAllowUniqueRegistration] = useState(0); // Track AllowUniqueRegistration setting
 
   // Load existing coupon from sessionStorage on mount
   useEffect(() => {
@@ -359,6 +361,11 @@ export default function ParticipantDetails() {
               setFormQuestions(questionsRes.data.FormQuestions);
               console.log("✅ Form questions received:", questionsRes.data.FormQuestions);
             }
+            // Capture AllowUniqueRegistration setting
+            if (questionsRes.data.AllowUniqueRegistration !== undefined) {
+              setAllowUniqueRegistration(Number(questionsRes.data.AllowUniqueRegistration));
+              console.log("✅ AllowUniqueRegistration set to:", questionsRes.data.AllowUniqueRegistration);
+            }
             // Save TermsConditions if present
             if (questionsRes.data.TermsConditions && Array.isArray(questionsRes.data.TermsConditions)) {
               setTermsConditions(questionsRes.data.TermsConditions);
@@ -592,7 +599,13 @@ export default function ParticipantDetails() {
   };
 
   const handleInputChange = async (participantIndex, e) => {
-    const { name, value, type, checked, files } = e.target;
+    let { name, value, type, checked, files } = e.target;
+
+    // Fix for unique radio button names (name_index)
+    // Strip the _participantIndex suffix if it exists to match the state key
+    if (type === 'radio' && name.endsWith(`_${participantIndex}`)) {
+      name = name.replace(`_${participantIndex}`, '');
+    }
 
     // If participantType changed to "Myself", fetch profile and auto-fill
     if (name === "participantType" && value === "Myself") {
@@ -2439,7 +2452,7 @@ export default function ParticipantDetails() {
                       <label className="gender-option" key={idx}>
                         <input
                           type="radio"
-                          name={fieldName}
+                          name={`${fieldName}_${participantIndex}`}
                           value={opt.label}
                           checked={(currentFormData[fieldName] || "") === opt.label}
                           onChange={(e) => handleInputChange(participantIndex, e)}
@@ -2626,10 +2639,15 @@ export default function ParticipantDetails() {
                       </span>
                     )}
                   </label>
-                  <select
+                  <SearchableSelect
                     name={fieldName}
-                    className="form-select"
+                    options={displayOptions.map(opt => ({
+                      value: opt.label || opt.name || opt.code || opt.id,
+                      label: opt.label || opt.name || opt.code
+                    }))}
                     value={currentFormData[fieldName] || ""}
+                    placeholder={`Select ${question.question_label}...`}
+                    required={isRequired}
                     onChange={async (e) => {
                       const { name, value } = e.target;
 
@@ -2686,15 +2704,7 @@ export default function ParticipantDetails() {
                         handleInputChange(participantIndex, e);
                       }
                     }}
-                    required={isRequired}
-                  >
-                    <option value="">-- Select --</option>
-                    {displayOptions.map((opt, idx) => (
-                      <option key={idx} value={opt.label || opt.name || opt.code || opt.id}>
-                        {opt.label || opt.name || opt.code}
-                      </option>
-                    ))}
-                  </select>
+                  />
                   {formErrors[`participant_${participantIndex}_${fieldName}`] && (
                     <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
                       {formErrors[`participant_${participantIndex}_${fieldName}`]}
@@ -3488,6 +3498,50 @@ export default function ParticipantDetails() {
       errors['terms_conditions'] = 'You must accept the Terms and Conditions to proceed';
       hasErrors = true;
       console.log("❌ Terms and Conditions not accepted");
+    }
+
+    // NEW: Cross-participant uniqueness check if AllowUniqueRegistration is enabled
+    if (allowUniqueRegistration === 1 && participantForms.length > 1) {
+      console.log("🔍 Checking for unique mobile/email across participants...");
+      const emails = {};
+      const mobiles = {};
+
+      participantForms.forEach((form, idx) => {
+        const { email, mobile } = form.formData;
+        if (email && email.trim()) {
+          const lowerEmail = email.trim().toLowerCase();
+          if (emails[lowerEmail] !== undefined) {
+            const errorKey = `participant_${idx}_email_unique`;
+            errors[errorKey] = `Email "${email}" is already used by Participant ${emails[lowerEmail] + 1}`;
+            hasErrors = true;
+          } else {
+            emails[lowerEmail] = idx;
+          }
+        }
+        if (mobile && mobile.trim()) {
+          const cleanMobile = mobile.trim();
+          if (mobiles[cleanMobile] !== undefined) {
+            const errorKey = `participant_${idx}_mobile_unique`;
+            errors[errorKey] = `Mobile number "${mobile}" is already used by Participant ${mobiles[cleanMobile] + 1}`;
+            hasErrors = true;
+          } else {
+            mobiles[cleanMobile] = idx;
+          }
+        }
+      });
+
+      if (hasErrors) {
+        // Collect duplicate counts for alert
+        const duplicateEmails = Object.keys(emails).filter(e => participantForms.filter(f => f.formData.email?.trim().toLowerCase() === e).length > 1);
+        const duplicateMobiles = Object.keys(mobiles).filter(m => participantForms.filter(f => f.formData.mobile?.trim() === m).length > 1);
+
+        let alertMsg = "Duplicate registration details found:";
+        if (duplicateEmails.length > 0) alertMsg += `\n- Same email used multiple times.`;
+        if (duplicateMobiles.length > 0) alertMsg += `\n- Same mobile number used multiple times.`;
+        alertMsg += "\n\nPlease ensure each participant has unique details.";
+
+        alert(alertMsg);
+      }
     }
 
     if (hasErrors) {
