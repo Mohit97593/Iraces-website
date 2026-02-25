@@ -2628,6 +2628,7 @@ export default function ParticipantDetails() {
                     value={currentFormData[fieldName] || ""}
                     placeholder={`Select ${question.question_label}...`}
                     required={isRequired}
+                    searchable={['countries', 'states', 'cities'].includes(question.question_form_type)}
                     onChange={async (e) => {
                       const { name, value } = e.target;
 

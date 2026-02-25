@@ -271,7 +271,7 @@ export default function OrganiserProfile() {
                   <input
                     type="text"
                     name="organisationName"
-                    maxLength={20}
+                    // maxLength={20}
                     value={profileData.organisationName}
                     onChange={handleChange}
                     className="form-input"

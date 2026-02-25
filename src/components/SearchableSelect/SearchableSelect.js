@@ -9,7 +9,8 @@ const SearchableSelect = ({
     name,
     className = '',
     disabled = false,
-    required = false
+    required = false,
+    searchable = true
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isOpen, setIsOpen] = useState(false);
@@ -21,9 +22,9 @@ const SearchableSelect = ({
         setSearchTerm(value);
     }, [value]);
 
-    // Filter options based on search term
+    // Filter options based on search term (only if searchable)
     useEffect(() => {
-        if (!searchTerm) {
+        if (!searchable || !searchTerm) {
             setFilteredOptions(options);
         } else {
             const lowerSearch = searchTerm.toLowerCase();
@@ -33,7 +34,7 @@ const SearchableSelect = ({
             });
             setFilteredOptions(filtered);
         }
-    }, [searchTerm, options]);
+    }, [searchTerm, options, searchable]);
 
     // Handle click outside to close dropdown
     useEffect(() => {
@@ -50,6 +51,7 @@ const SearchableSelect = ({
     }, [value]);
 
     const handleInputChange = (e) => {
+        if (!searchable) return;
         const newVal = e.target.value;
         setSearchTerm(newVal);
         setIsOpen(true);
@@ -78,11 +80,14 @@ const SearchableSelect = ({
                 value={searchTerm}
                 onChange={handleInputChange}
                 onFocus={() => setIsOpen(true)}
+                onClick={() => !disabled && setIsOpen(prev => !prev)}
                 placeholder={placeholder}
                 disabled={disabled}
                 required={required}
-                className="form-control3 searchable-select-input"
+                readOnly={!searchable}
+                className={`form-control3 searchable-select-input ${!searchable ? 'non-searchable' : ''}`}
                 autoComplete="off"
+                style={{ cursor: !searchable && !disabled ? 'pointer' : 'text' }}
             />
             <div className={`searchable-select-dropdown ${isOpen ? 'show' : ''}`}>
                 {filteredOptions.length > 0 ? (
