@@ -2982,7 +2982,7 @@ const GeneralFormQuestions = ({
                         </div>
                       ))}
 
-                      {/* Add More Subquestion Button - shown as + icon */}
+                      {/* Add More Subquestion Button */}
                       <button
                         type="button"
                         onClick={addSubQuestion}
@@ -2990,20 +2990,21 @@ const GeneralFormQuestions = ({
                           background: "#fff",
                           border: "2px solid #da251c",
                           color: "#da251c",
-                          borderRadius: "50%",
-                          width: 40,
-                          height: 40,
+                          borderRadius: "20px",
+                          padding: "6px 20px",
                           cursor: "pointer",
-                          fontSize: "1.5rem",
+                          fontSize: "1rem",
                           fontWeight: 600,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          marginTop: 8
+                          gap: "8px",
+                          marginTop: 8,
+                          width: "fit-content"
                         }}
                         title="Add another subquestion"
                       >
-                        +
+                        <span style={{ fontSize: "1.4rem" }}>+</span> Add Subquestion
                       </button>
                     </div>
                   )}
@@ -3964,20 +3965,21 @@ const GeneralFormQuestions = ({
                           background: "#fff",
                           border: "2px solid #da251c",
                           color: "#da251c",
-                          borderRadius: "50%",
-                          width: 40,
-                          height: 40,
+                          borderRadius: "20px",
+                          padding: "6px 20px",
                           cursor: "pointer",
-                          fontSize: "1.5rem",
+                          fontSize: "1rem",
                           fontWeight: 600,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          marginTop: 8
+                          gap: "8px",
+                          marginTop: 8,
+                          width: "fit-content"
                         }}
                         title="Add another subquestion"
                       >
-                        +
+                        <span style={{ fontSize: "1.4rem" }}>+</span> Add Subquestion
                       </button>
                     </div>
                   )}

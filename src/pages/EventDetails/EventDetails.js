@@ -172,6 +172,16 @@ export default function EventDetails() {
     return startTime * 1000 > Date.now();
   };
 
+  const getMapUrl = (link) => {
+    if (!link) return "";
+    const trimmedLink = link.trim();
+    if (trimmedLink.startsWith("<iframe")) {
+      const match = trimmedLink.match(/src="([^"]+)"/);
+      return match ? match[1] : "";
+    }
+    return trimmedLink;
+  };
+
   if (loading) {
     return (
       <div className="event-details-page">
@@ -301,67 +311,60 @@ export default function EventDetails() {
               </div>
             </div>
 
-            {/* Location Section */}
-            <div className="event-section">
-              <h3 className="section-title">
-                <i className="fas fa-map-marker-alt"></i> Location
-              </h3>
-              <div className="section-content">
-                <div className="location-map">
-                  {event.google_map_link ? (
-                    <iframe
-                      src={event.google_map_link}
-                      width="100%"
-                      height="350"
-                      style={{ border: 0, borderRadius: "8px" }}
-                      allowFullScreen=""
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                    ></iframe>
-                  ) : event.latitude && event.longitude ? (
-                    <iframe
-                      src={`https://maps.google.com/maps?q=${event.latitude},${event.longitude}&hl=en&z=14&output=embed`}
-                      width="100%"
-                      height="350"
-                      style={{ border: 0, borderRadius: "8px" }}
-                      allowFullScreen=""
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                    ></iframe>
-                  ) : event.venue || event.address ? (
-                    <iframe
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                        event.venue || event.address
-                      )}&hl=en&z=14&output=embed`}
-                      width="100%"
-                      height="350"
-                      style={{ border: 0, borderRadius: "8px" }}
-                      allowFullScreen=""
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                    ></iframe>
-                  ) : (
-                    <div className="map-placeholder">
-                      <i
-                        className="fas fa-map"
-                        style={{ fontSize: "3rem", color: "#ccc" }}
-                      ></i>
-                      <p>Location map not available</p>
+            {/* Location & Venue Section */}
+            {(event.google_map_link || (event.latitude && event.longitude) || event.venue || event.address || event.city_name) && (
+              <div className="event-section">
+                {/* Only show "Location" header and map if explicit embeddable link or coordinates exist */}
+                {(event.google_map_link || (event.latitude && event.longitude)) && (
+                  <>
+                    <h3 className="section-title">
+                      <i className="fas fa-map-marker-alt"></i> Location
+                    </h3>
+                    <div className="section-content">
+                      <div className="location-map">
+                        {event.google_map_link ? (
+                          <iframe
+                            src={getMapUrl(event.google_map_link)}
+                            width="100%"
+                            height="350"
+                            style={{ border: 0, borderRadius: "8px" }}
+                            allowFullScreen=""
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                          ></iframe>
+                        ) : event.latitude && event.longitude ? (
+                          <iframe
+                            src={`https://maps.google.com/maps?q=${event.latitude},${event.longitude}&hl=en&z=14&output=embed`}
+                            width="100%"
+                            height="350"
+                            style={{ border: 0, borderRadius: "8px" }}
+                            allowFullScreen=""
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                          ></iframe>
+                        ) : null}
+                      </div>
                     </div>
-                  )}
-                </div>
-                <div className="location-details mt-3">
-                  <h5>
-                    <i className="fas fa-map-pin"></i> Venue
-                  </h5>
-                  <p>
-                    {event.venue ||
-                      event.address ||
-                      `${event.city_name}, ${event.state_name}, ${event.country_name}, India.`}
-                  </p>
-                </div>
+                  </>
+                )}
+
+                {/* Always show Venue section if venue info exists */}
+                {(event.venue || event.address || event.city_name) && (
+                  <div className="section-content mt-3">
+                    <div className="location-details">
+                      <h5>
+                        <i className="fas fa-map-pin"></i> Venue
+                      </h5>
+                      <p>
+                        {event.venue ||
+                          event.address ||
+                          `${event.city_name}, ${event.state_name}, ${event.country_name}, India.`}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
             {/* Organiser Section */}
             {(organiserName || event.organiser_name || eventDetails?.OrganiserName) && (
@@ -588,7 +591,7 @@ export default function EventDetails() {
                 <div className="info-item">
                   <i className="fas fa-clock"></i>
                   <div>
-                    <span className="info-label1">Registration ending on</span>
+                    <span className="info-label1">Registration ending To</span>
                     <span className="info-value">
                       {formatDate(event.registration_end_time)}{" "}
                       {formatTime(event.registration_end_time)}
