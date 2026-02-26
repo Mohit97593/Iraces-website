@@ -2892,7 +2892,7 @@ export default function ParticipantDetails() {
                     e.target.style.boxShadow = '0 2px 8px rgba(231, 76, 60, 0.3)';
                   }}
                 >
-                  Next Group →
+                  Next →
                 </button>
               </div>
             );

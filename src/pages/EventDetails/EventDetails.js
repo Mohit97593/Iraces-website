@@ -554,7 +554,7 @@ export default function EventDetails() {
                 <div className="info-item">
                   <i className="fas fa-calendar-day"></i>
                   <div>
-                    <span className="info-label1">Starts On</span>
+                    <span className="info-label1">Event Starts On</span>
                     <span className="info-value">
                       {formatDate(event.start_time)}{" "}
                       {formatTime(event.start_time)}
@@ -565,7 +565,7 @@ export default function EventDetails() {
                 <div className="info-item">
                   <i className="fas fa-calendar-times"></i>
                   <div>
-                    <span className="info-label1">Ends On</span>
+                    <span className="info-label1">Event Ends On</span>
                     <span className="info-value">
                       {formatDate(event.end_time)} {formatTime(event.end_time)}
                     </span>
@@ -576,7 +576,7 @@ export default function EventDetails() {
                   <i className="fas fa-clock"></i>
                   <div>
                     <span className="info-label1">
-                      Registration starting at
+                      Registration starting From
                     </span>
                     <span className="info-value">
                       {formatDate(event.registration_start_time)}{" "}
@@ -597,27 +597,39 @@ export default function EventDetails() {
                 </div>
 
                 <div className="info-item">
-                  <i className="fas fa-flag"></i>
-                  <div>
+                  <div style={{ paddingLeft: '0' }}>
                     <span className="info-label1">Race Category</span>
-                    <span className="info-value">
+                    <div className="info-value-list">
                       {tickets && tickets.length > 0
-                        ? tickets.map((t) => t.ticket_name).join(", ")
-                        : event.type_name || "N/A"}
-                    </span>
+                        ? tickets.map((t, idx) => (
+                          <div key={idx} className="info-value-item">
+                            <i className="fas fa-flag"></i>
+                            <span>{t.ticket_name}</span>
+                          </div>
+                        ))
+                        : <div className="info-value-item"><span>{event.type_name || "N/A"}</span></div>}
+                    </div>
                   </div>
                 </div>
 
                 <div className="info-item">
-                  <i className="fas fa-tag"></i>
-                  <div>
+                  <div style={{ paddingLeft: '0' }}>
                     <span className="info-label1">Category</span>
-                    <span className="info-value">
-                      {Array.isArray(event.category) &&
-                        event.category.length > 0
-                        ? event.category.map((cat) => cat.name).join(", ")
-                        : event.category?.name || ""}
-                    </span>
+                    <div className="info-value-list">
+                      {Array.isArray(event.category) && event.category.length > 0
+                        ? event.category.map((cat, idx) => (
+                          <div key={idx} className="info-value-item">
+                            <i className="fas fa-tag"></i>
+                            <span>{cat.name}</span>
+                          </div>
+                        ))
+                        : event.category?.name ? (
+                          <div className="info-value-item">
+                            <i className="fas fa-tag"></i>
+                            <span>{event.category.name}</span>
+                          </div>
+                        ) : null}
+                    </div>
                   </div>
                 </div>
               </div>

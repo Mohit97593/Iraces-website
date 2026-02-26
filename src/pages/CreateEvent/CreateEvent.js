@@ -76,6 +76,55 @@ export default function CreateEvent() {
     return doc.body.textContent || "";
   };
 
+  const renderCategoryIcon = (cat) => {
+    if (!cat.logo) return <i className="fas fa-person-running" style={{ marginRight: '8px', fontSize: '1.5rem', color: '#da251c' }}></i>;
+
+    const logoStr = String(cat.logo);
+
+    // Case 1: Logo is an image filename
+    if (/\.(png|jpe?g|gif|svg)$/i.test(logoStr) && !logoStr.includes(' ')) {
+      return (
+        <img
+          src={`https://iraces.in/uploads/category_logo/${logoStr}`}
+          alt={stripHtml(cat.name)}
+          style={{
+            width: "38px",
+            height: "38px",
+            objectFit: "contain",
+            marginRight: "8px",
+          }}
+          onError={(e) => {
+            e.target.style.display = "none";
+          }}
+        />
+      );
+    }
+
+    // Case 2: Logo is SVG path data (starts with 'M' or 'm')
+    if (logoStr.startsWith('M') || logoStr.startsWith('m')) {
+      return (
+        <svg
+          viewBox="0 -960 960 960"
+          width="32"
+          height="32"
+          style={{ marginRight: "12px", fill: "currentColor", color: "#da251c", flexShrink: 0 }}
+        >
+          <path d={logoStr} />
+        </svg>
+      );
+    }
+
+    // Case 3: Fallback using static list if available, or default icon
+    const plainName = stripHtml(cat.name).toLowerCase();
+    const match = categoryList?.find(c => c.label.toLowerCase() === plainName || plainName.includes(c.label.toLowerCase()));
+
+    if (match) {
+      return <i className={`${match.icon}`} style={{ marginRight: '8px', fontSize: '1.5rem', color: '#da251c' }}></i>;
+    }
+
+    return <i className="fas fa-person-running" style={{ marginRight: '8px', fontSize: '1.5rem', color: '#da251c' }}></i>;
+  };
+
   const categoryList = [
     { label: "Running", icon: "fas fa-person-running" },
     { label: "Walking", icon: "fas fa-person-walking" },
@@ -1497,9 +1546,6 @@ export default function CreateEvent() {
                     <div className="category-grid">
                       {categories.length > 0 ? (
                         categories.map((cat, index) => {
-                          // Check if logo is a valid image filename (not a name)
-                          const isLogoImage =
-                            cat.logo && /\.(png|jpe?g)$/i.test(cat.logo);
                           return (
                             <div
                               key={cat.id || index}
@@ -1510,21 +1556,7 @@ export default function CreateEvent() {
                               onClick={() => handleCategoryToggle(cat.name)}
                               title={stripHtml(cat.name)}
                             >
-                              {isLogoImage ? (
-                                <img
-                                  src={`https://iraces.in/uploads/category_logo/${cat.logo}`}
-                                  alt={stripHtml(cat.name)}
-                                  style={{
-                                    width: "38px",
-                                    height: "38px",
-                                    objectFit: "contain",
-                                    marginRight: "8px",
-                                  }}
-                                  onError={(e) => {
-                                    e.target.style.display = "none";
-                                  }}
-                                />
-                              ) : null}
+                              {renderCategoryIcon(cat)}
                               <span className="category-name-text">{stripHtml(cat.name)}</span>
                               <input
                                 type="checkbox"

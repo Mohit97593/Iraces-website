@@ -580,3 +580,37 @@
     gap: 10px;
   }
 }
+
+/* Category List Styles */
+.info-value-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.info-value-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #f8f9fa;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: #333;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border-left: 3px solid #da251c;
+}
+
+.info-value-item:hover {
+  background-color: #e9ecef;
+  transform: translateX(3px);
+}
+
+.info-value-item i {
+  font-size: 0.85rem;
+  color: #da251c;
+  width: 16px;
+  text-align: center;
+}

@@ -770,7 +770,7 @@ export default function Participants() {
                                         <td>{participant.booking_date}</td>
                                         <td>{participant.transaction_id || 'N/A'}</td>
                                         <td>{participant.registration_id || 'N/A'}</td>
-                                        <td>₹ {participant.total_amount || '0.00'}</td>
+                                        <td>₹ {participant.total_amount ? Number(participant.total_amount).toFixed(2) : '0.00'}</td>
                                         <td>
                                             <span className={`status-badge status-${participant.transaction_status}`}>
                                                 {participant.transaction_status === 1 ? 'Success' :
@@ -906,8 +906,8 @@ export default function Participants() {
                                                     <tr>
                                                         <td>{bookingDetails.TicketName || 'N/A'}</td>
                                                         <td>1</td>
-                                                        <td>{bookingDetails.ticket_price || '0'}</td>
-                                                        <td>{bookingDetails.TicketDiscount || '0'}</td>
+                                                        <td>{bookingDetails.ticket_price ? Number(bookingDetails.ticket_price).toFixed(2) : '0.00'}</td>
+                                                        <td>{bookingDetails.TicketDiscount ? Number(bookingDetails.TicketDiscount).toFixed(2) : '0.00'}</td>
                                                     </tr>
                                                 </tbody>
                                             </table>
@@ -915,7 +915,7 @@ export default function Participants() {
 
                                         {/* Additional Purchases Section */}
                                         <div className="details-section">
-                                            <h3>Additional Purchases</h3>
+                                            <h3>Additional Details</h3>
                                             {bookingDetails.amount_details && bookingDetails.amount_details.length > 0 ? (
                                                 <table className="details-table">
                                                     <thead>

@@ -428,7 +428,7 @@ export default function TicketDetails() {
                 <div className="container">
                     <div className="row">
                         <div className="col-12">
-                            <h1 className="contact-hero-title">Ticket Details</h1>
+                            <h1 className="contact-hero-title">Registration Details</h1>
                             <nav className="contact-breadcrumb">
                                 <span onClick={() => navigate("/")} style={{ cursor: "pointer" }}>Home</span>
                                 <span className="breadcrumb-separator">→</span>
@@ -524,13 +524,13 @@ export default function TicketDetails() {
                                             <button
                                                 className="action-btn download-btn"
                                                 onClick={() => handleDownloadTicket(ticket)}
-                                                title="Download Ticket"
+                                                title="Download"
                                             >
                                                 <i className="fas fa-download"></i>
                                             </button>
                                             <button
                                                 className="action-btn share-btn"
-                                                title="Share Ticket"
+                                                title="Share "
                                                 onClick={() => handleOpenShare(ticket)}
                                             >
                                                 <i className="fas fa-share-alt"></i>
@@ -538,7 +538,7 @@ export default function TicketDetails() {
                                             <button
                                                 className="action-btn print-btn"
                                                 onClick={() => handlePrintTicket(ticket)}
-                                                title="Print Ticket"
+                                                title="Print "
                                             >
                                                 <i className="fas fa-print"></i>
                                             </button>
@@ -592,7 +592,7 @@ export default function TicketDetails() {
                         <div className="share-modal-content" onClick={(e) => e.stopPropagation()}>
                             <button className="share-modal-close" onClick={handleCloseShare}>&times;</button>
                             <div className="share-modal-header">
-                                <h3>Share Ticket</h3>
+                                <h3>Registration Details</h3>
                                 <p>Select a platform to share your ticket</p>
                             </div>
                             <div className="share-modal-body">
