@@ -1854,7 +1854,6 @@ export const authAPI = {
       const formData = new FormData();
       formData.append("booking_pay_id", payload.booking_pay_id);
       formData.append("event_id", payload.event_id);
-      formData.append("event_url", payload.event_url);
 
       const response = await api.post("/send_email_payment_success", formData, {
         headers: {

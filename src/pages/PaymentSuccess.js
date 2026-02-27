@@ -41,7 +41,6 @@ export default function PaymentSuccess() {
     const emailPayload = {
       booking_pay_id: details.booking_pay_id || details.udf1 || details.mihpayid,
       event_id: details.event_id || details.udf2 || '',
-      event_url: details.udf3 || 'https://racesregistrations.com'
     };
 
     console.log('📧 Email Payload:', emailPayload);

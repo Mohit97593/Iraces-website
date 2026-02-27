@@ -3185,7 +3185,6 @@ export default function ParticipantDetails() {
             const emailPayload = {
               booking_pay_id: booking_id,
               event_id: eventId,
-              event_url: window.location.origin + `/event/${eventId}`
             };
             console.log("📧 Sending success email for free registration:", emailPayload);
             authAPI.sendEmailPaymentSuccess(emailPayload)
