@@ -18,6 +18,7 @@ export default function RaceCategories({
   const [showForm, setShowForm] = useState(false);
   const [eventDetails, setEventDetails] = useState(null);
   const [tickets, setTickets] = useState([]);
+  const [chargesDetails, setChargesDetails] = useState([]);
 
   useEffect(() => {
     fetchEventDetails();
@@ -49,6 +50,22 @@ export default function RaceCategories({
                 setTaxType(eventData.prices_taxes_status === 1 ? 'inclusive' : 'exclusive');
               }
             }
+
+            // Capture race_category_charges_details from API
+            let apiCharges = res.data.race_category_charges_details;
+
+            // If not in root, check in EventData[0]
+            if (!apiCharges && res.data.EventData && res.data.EventData[0]) {
+              apiCharges = res.data.EventData[0].race_category_charges_details;
+            }
+
+            if (apiCharges && Array.isArray(apiCharges)) {
+              console.log("✅ Dynamic charges found:", apiCharges);
+              setChargesDetails(apiCharges);
+            } else {
+              console.log("ℹ️ No dynamic charges found in API response, using defaults.");
+            }
+
             // Store AllEventTypes in sessionStorage as event_categories
             if (
               res.data.AllEventTypes &&
@@ -187,6 +204,7 @@ export default function RaceCategories({
           organizerGST={organizerGST}
           collectGST={gst}
           taxType={taxType}
+          apiChargesDetails={chargesDetails}
         />
       ) : (
         <>

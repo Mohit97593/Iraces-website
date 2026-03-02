@@ -1799,9 +1799,26 @@ export default function CreateEvent() {
                       ? baseAmount + (baseAmount * 0.18)
                       : baseAmount;
 
-                    // Tiered convenience fee: 0-1000 = 2%, 1001-1400 = ₹30, 1401+ = ₹40
+                    // Use dynamic values from ticketCalculation if available
                     let convenienceFee = 0;
-                    if (amountForConvenienceFee > 0) {
+                    let platformFee = 0;
+                    let paymentGatewayFee = 0;
+                    let convenienceFeeGST = 0;
+                    let platformFeeGST = 0;
+                    let registrationGST = 0;
+                    let paymentGatewayGST = 0;
+
+                    if (ticketCalc.convenienceFee !== undefined) {
+                      // Use values directly from the form's dynamic calculation
+                      convenienceFee = ticketCalc.convenienceFee;
+                      platformFee = ticketCalc.platformFee;
+                      paymentGatewayFee = ticketCalc.paymentGatewayBuyer;
+                      convenienceFeeGST = ticketCalc.convenienceFeeGST;
+                      platformFeeGST = ticketCalc.platformFeeGST;
+                      registrationGST = ticketCalc.registrationGST;
+                      paymentGatewayGST = ticketCalc.paymentGatewayGST;
+                    } else if (amountForConvenienceFee > 0) {
+                      // Hardcoded fallback ONLY if form hasn't calculated anything yet
                       if (amountForConvenienceFee <= 1000) {
                         convenienceFee = 0.02 * amountForConvenienceFee;
                       } else if (amountForConvenienceFee <= 1400) {
@@ -1809,38 +1826,22 @@ export default function CreateEvent() {
                       } else {
                         convenienceFee = 40;
                       }
+                      platformFee = baseAmount > 0 ? 5 : 0;
+                      convenienceFeeGST = Math.round(convenienceFee * 0.18 * 100) / 100;
+                      platformFeeGST = Math.round(platformFee * 0.18 * 100) / 100;
+                      registrationGST = (collectGST && taxType === 'exclusive' && baseAmount > 0)
+                        ? (organizerGST ? Math.round(baseAmount * 0.18 * 100) / 100 : 0)
+                        : 0;
+
+                      const registrationAmount = baseAmount + registrationGST;
+                      let gatewayBasis = registrationAmount;
+                      if (convenienceFeePlayer === "Participant") {
+                        gatewayBasis += (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
+                      }
+                      const paymentGatewayFeeRaw = gatewayBasis > 0 ? 0.0185 * gatewayBasis : 0;
+                      paymentGatewayFee = gatewayBasis > 0 ? Math.round(paymentGatewayFeeRaw * 100) / 100 : 0;
+                      paymentGatewayGST = baseAmount > 0 ? Math.round(paymentGatewayFee * 0.18 * 100) / 100 : 0;
                     }
-                    const platformFee = baseAmount > 0 ? 5 : 0;
-                    const convenienceFeeGST =
-                      baseAmount > 0
-                        ? Math.round(convenienceFee * 0.18 * 100) / 100
-                        : 0;
-                    const platformFeeGST =
-                      baseAmount > 0
-                        ? Math.round(platformFee * 0.18 * 100) / 100
-                        : 0;
-
-                    // Registration GST: Show line if collectGST=Yes AND taxType=Exclusive
-                    // Amount: ₹0 if organizerGST=false, otherwise 18%
-                    const registrationGST = (collectGST && taxType === 'exclusive' && baseAmount > 0)
-                      ? (organizerGST ? Math.round(baseAmount * 0.18 * 100) / 100 : 0)
-                      : 0;
-
-                    // Registration amount includes GST if exclusive
-                    const registrationAmount = baseAmount + registrationGST;
-
-                    // Payment gateway fee basis: Only include what the Participant actually pays
-                    let gatewayBasis = registrationAmount;
-                    if (convenienceFeePlayer === "Participant") {
-                      gatewayBasis += (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
-                    }
-
-                    const paymentGatewayFeeRaw = gatewayBasis > 0 ? 0.0185 * gatewayBasis : 0;
-                    const paymentGatewayFee = gatewayBasis > 0 ? Math.round(paymentGatewayFeeRaw * 100) / 100 : 0;
-                    const paymentGatewayGST =
-                      baseAmount > 0
-                        ? Math.round(paymentGatewayFee * 0.18 * 100) / 100
-                        : 0;
                     // Start with all fees included
                     let totalPayable =
                       baseAmount +

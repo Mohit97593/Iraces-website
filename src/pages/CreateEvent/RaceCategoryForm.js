@@ -18,6 +18,7 @@ const RaceCategoryForm = ({
   organizerGST,
   collectGST,
   taxType,
+  apiChargesDetails,
 }) => {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
@@ -26,6 +27,44 @@ const RaceCategoryForm = ({
     setToast({ message, type });
   };
   const [eventCategories, setEventCategories] = useState([]);
+  const [chargesDetails, setChargesDetails] = useState([
+    {
+      "id": 1015,
+      "registration_amount": "1000",
+      "convenience_fee": "2",
+      "platform_fee": "5",
+      "payment_gateway_fee": 1.85
+    },
+    {
+      "id": 1016,
+      "registration_amount": "1400",
+      "convenience_fee": "50",
+      "platform_fee": "5",
+      "payment_gateway_fee": 1.85
+    },
+    {
+      "id": 1017,
+      "registration_amount": "1401",
+      "convenience_fee": "40",
+      "platform_fee": "5",
+      "payment_gateway_fee": 1.85
+    }
+  ]);
+
+  // Update chargesDetails when apiChargesDetails prop changes
+  useEffect(() => {
+    if (apiChargesDetails && Array.isArray(apiChargesDetails) && apiChargesDetails.length > 0) {
+      console.log("✅ RaceCategoryForm: Updating chargesDetails from prop:", apiChargesDetails);
+      setChargesDetails(apiChargesDetails);
+    }
+  }, [apiChargesDetails]);
+
+  // Recalculate fees whenever chargesDetails (API data) changes
+  useEffect(() => {
+    if (chargesDetails.length > 0 && (formData.raceCategoryPrice || editTicket?.ticket_price)) {
+      recalculateFees(formData);
+    }
+  }, [chargesDetails]);
 
   // Read initial categories from sessionStorage
   useEffect(() => {
@@ -87,6 +126,126 @@ const RaceCategoryForm = ({
     ebEndTime: editTicket?.eb_end_time || "",
   });
 
+  // Helper function to calculate all tiered fees
+  const calculateFeesHelper = (price, convenienceFeePlayer, gatewayFeePlayer) => {
+    if (price <= 0) {
+      return {
+        baseAmount: 0,
+        convenienceFeeBase: 0,
+        convenienceFee: 0,
+        convenienceFeeGST: 0,
+        totalConvenienceFees: 0,
+        platformFee: 0,
+        platformFeeGST: 0,
+        totalPlatformFees: 0,
+        paymentGatewayFee: 1.85,
+        paymentGatewayBuyer: 0,
+        paymentGatewayGST: 0,
+        registrationAmount: 0,
+        registrationGST: 0,
+        netRegistrationAmount: 0,
+        totalPayable: 0,
+        receivableAmount: 0,
+        totalPG: 0,
+        convenienceFeePlayer,
+        gatewayFeePlayer,
+        collectGST,
+        taxType,
+      };
+    }
+
+    // 1. Calculate amount for tiered lookup
+    const amountForConvenienceFee = (collectGST && taxType === 'exclusive')
+      ? price + (price * 0.18)
+      : price;
+
+    // 2. Find matching tier
+    const sortedCharges = [...chargesDetails].sort((a, b) => Number(a.registration_amount) - Number(b.registration_amount));
+    const matchedCharge = sortedCharges.find(c => amountForConvenienceFee <= Number(c.registration_amount)) || sortedCharges[sortedCharges.length - 1];
+
+    if (!matchedCharge) return null;
+
+    // 3. Convenience Fee (Tier 1 = Percentage, Others = Fixed)
+    const matchedIndex = sortedCharges.findIndex(c => amountForConvenienceFee <= Number(c.registration_amount));
+    const isFirstTier = (matchedIndex === 0 || (matchedIndex === -1 && sortedCharges.length === 1));
+
+    const feeVal = Number(matchedCharge.convenience_fee);
+    let convenienceFee = 0;
+    if (isFirstTier) {
+      convenienceFee = (feeVal / 100) * amountForConvenienceFee;
+    } else {
+      convenienceFee = feeVal;
+    }
+
+    // 4. Other Base Fees from API
+    const platformFee = Number(matchedCharge.platform_fee);
+    const pgRate = Number(matchedCharge.payment_gateway_fee) / 100;
+
+    // 5. GST and Secondary Calculations
+    const convenienceFeeGST = Math.round(convenienceFee * 0.18 * 100) / 100;
+    const platformFeeGST = Math.round(platformFee * 0.18 * 100) / 100;
+    const registrationGST = (collectGST && taxType === 'exclusive')
+      ? Math.round(price * 0.18 * 100) / 100
+      : 0;
+    const registrationAmount = price + registrationGST;
+
+    // 6. Gateway Fee
+    let gatewayBasis = registrationAmount;
+    if (convenienceFeePlayer === "Participant") {
+      gatewayBasis += (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
+    }
+    const paymentGatewayFee = Math.round(pgRate * gatewayBasis * 100) / 100;
+    const paymentGatewayGST = Math.round(paymentGatewayFee * 0.18 * 100) / 100;
+
+    // 7. Total Payable (Buyer Pays)
+    let totalPayable = registrationAmount + convenienceFee + convenienceFeeGST + platformFee + platformFeeGST + paymentGatewayFee + paymentGatewayGST;
+    if (convenienceFeePlayer === "Organiser") {
+      totalPayable -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
+    }
+    if (gatewayFeePlayer === "Organiser") {
+      totalPayable -= (paymentGatewayFee + paymentGatewayGST);
+    }
+
+    // 8. Receivable (Organiser Gets)
+    let receivableAmount = receivableAmountRaw(price, registrationGST, convenienceFee, convenienceFeeGST, platformFee, platformFeeGST, paymentGatewayFee, paymentGatewayGST, convenienceFeePlayer, gatewayFeePlayer);
+
+    return {
+      baseAmount: price,
+      convenienceFeeBase: matchedCharge ? Number(matchedCharge.convenience_fee) : 0,
+      convenienceFee,
+      convenienceFeeGST,
+      totalConvenienceFees: convenienceFee + convenienceFeeGST,
+      platformFee,
+      platformFeeGST,
+      totalPlatformFees: platformFee + platformFeeGST,
+      paymentGatewayFee: Number(matchedCharge.payment_gateway_fee),
+      paymentGatewayBuyer: paymentGatewayFee,
+      paymentGatewayGST,
+      registrationAmount,
+      registrationGST,
+      netRegistrationAmount: registrationAmount + convenienceFee + convenienceFeeGST + platformFee + platformFeeGST,
+      totalPayable,
+      receivableAmount,
+      totalPG: totalPayable,
+      convenienceFeePlayer,
+      gatewayFeePlayer,
+      collectGST,
+      taxType,
+      matchedTierAmount: matchedCharge.registration_amount
+    };
+  };
+
+  const receivableAmountRaw = (price, registrationGST, convenienceFee, convenienceFeeGST, platformFee, platformFeeGST, paymentGatewayFee, paymentGatewayGST, convenienceFeePlayer, gatewayFeePlayer) => {
+    let receivableAmount = price + registrationGST;
+    if (convenienceFeePlayer === "Organiser") {
+      receivableAmount -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
+    }
+    if (gatewayFeePlayer === "Organiser") {
+      receivableAmount -= (paymentGatewayFee + paymentGatewayGST);
+    }
+    return receivableAmount;
+  }
+
   // Validation errors state
   const [errors, setErrors] = useState({});
 
@@ -139,106 +298,20 @@ const RaceCategoryForm = ({
 
       // Calculate and update eventFormData with edited ticket's price
       const price = Number(editTicket.ticket_price) || 0;
-      if (price > 0) {
-        // Calculate amount for convenience fee calculation
-        // Add GST only if: collectGST=true AND taxType='exclusive'
-        const amountForConvenienceFee = (collectGST && taxType === 'exclusive')
-          ? price + (price * 0.18)
-          : price;
+      const convPlayer = editTicket.player_of_fee === 2 ? "Participant" : "Organiser";
+      const gatePlayer = editTicket.player_of_gateway_fee === 2 ? "Participant" : "Organiser";
 
-        // Tiered convenience fee: 0-1000 = 2%, 1001-1400 = ₹30, 1401+ = ₹40
-        let convenienceFee;
-        if (amountForConvenienceFee <= 1000) {
-          convenienceFee = 0.02 * amountForConvenienceFee;
-        } else if (amountForConvenienceFee <= 1400) {
-          convenienceFee = 30;
-        } else {
-          convenienceFee = 40;
-        }
-        const platformFee = 5;
-        const convenienceFeeGST = Math.round(convenienceFee * 0.18 * 100) / 100;
-        const platformFeeGST = Math.round(platformFee * 0.18 * 100) / 100;
-        // Registration GST: Calculate if collectGST=Yes AND taxType=Exclusive
-        const registrationGST = (collectGST && taxType === 'exclusive')
-          ? Math.round(price * 0.18 * 100) / 100
-          : 0;
+      const calcResult = calculateFeesHelper(price, convPlayer, gatePlayer);
 
-        // Registration amount includes GST if exclusive
-        const registrationAmount = price + registrationGST;
-
-        // Payment gateway fee basis: Only include what the Participant actually pays
-        let gatewayBasis = registrationAmount;
-        if (updatedFormData.convenienceFeePlayer === "Participant") {
-          gatewayBasis += (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
-        }
-
-        const paymentGatewayFeeRaw = gatewayBasis > 0 ? 0.0185 * gatewayBasis : 0;
-        const paymentGatewayFee = gatewayBasis > 0 ? Math.round(paymentGatewayFeeRaw * 100) / 100 : 0;
-        const paymentGatewayGST = Math.round(paymentGatewayFee * 0.18 * 100) / 100;
-
-        // Start with all fees included
-        let totalPayable =
-          price +
-          convenienceFee +
-          platformFee +
-          paymentGatewayFee +
-          convenienceFeeGST +
-          platformFeeGST +
-          paymentGatewayGST +
-          registrationGST;
-
-        // Subtract convenience fees if Organiser pays them
-        if (updatedFormData.convenienceFeePlayer === "Organiser") {
-          totalPayable -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
-        }
-
-        // Subtract gateway fees if Organiser pays them
-        if (updatedFormData.gatewayFeePlayer === "Organiser") {
-          totalPayable -= (paymentGatewayFee + paymentGatewayGST);
-        }
-
-        // Calculate receivable amount - start with registration amount (includes GST)
-        let receivableAmount = registrationAmount;
-
-        if (updatedFormData.convenienceFeePlayer === "Organiser") {
-          receivableAmount -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
-        }
-
-        if (updatedFormData.gatewayFeePlayer === "Organiser") {
-          receivableAmount -= (paymentGatewayFee + paymentGatewayGST);
-        }
-
+      if (calcResult) {
         setEventFormData({
           ...eventFormData,
           raceCategoryPrice: editTicket.ticket_price,
-          ticketCalculation: {
-            baseAmount: price,
-            // Store the base rate/amount, not the calculated fee
-            convenienceFeeBase: amountForConvenienceFee <= 1000 ? 2 : (amountForConvenienceFee <= 1400 ? 30 : 40),
-            convenienceFee: convenienceFee,
-            convenienceFeeGST: convenienceFeeGST,
-            totalConvenienceFees: convenienceFee + convenienceFeeGST,
-            platformFee: platformFee,
-            platformFeeGST: platformFeeGST,
-            totalPlatformFees: platformFee + platformFeeGST,
-            paymentGatewayFee: 1.85,
-            paymentGatewayBuyer: paymentGatewayFee,
-            paymentGatewayGST: paymentGatewayGST,
-            registrationAmount: registrationAmount,  // price + registrationGST
-            registrationGST: registrationGST,
-            netRegistrationAmount: registrationAmount + convenienceFee + convenienceFeeGST + platformFee + platformFeeGST,
-            totalPayable: totalPayable,
-            receivableAmount: receivableAmount,
-            totalPG: totalPayable,  // Real website stores total_buyer here
-            convenienceFeePlayer: updatedFormData.convenienceFeePlayer,
-            gatewayFeePlayer: updatedFormData.gatewayFeePlayer,
-            collectGST: collectGST,
-            taxType: taxType
-          },
+          ticketCalculation: calcResult
         });
       }
     }
-  }, [editTicket]);
+  }, [editTicket, chargesDetails]);
 
   // Helper to check if paidType is Free
   const isFree = paidType === "Free";
@@ -248,119 +321,28 @@ const RaceCategoryForm = ({
 
   // Handle form field changes
   const handleChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
+    const nextFormData = {
+      ...formData,
       [field]: value,
-    }));
+    };
+    setFormData(nextFormData);
+
+    // Recalculate fees if price or payers change
+    if (["raceCategoryPrice", "convenienceFeePlayer", "gatewayFeePlayer"].includes(field)) {
+      recalculateFees(nextFormData);
+    }
   };
 
   // Helper function to recalculate fees when fee payer changes
   const recalculateFees = (updatedFormData) => {
-    const price = Number(updatedFormData.raceCategoryPrice || eventFormData.raceCategoryPrice) || 0;
+    const price = Number(updatedFormData.raceCategoryPrice) || 0;
+    const calcResult = calculateFeesHelper(price, updatedFormData.convenienceFeePlayer, updatedFormData.gatewayFeePlayer);
 
-    if (price <= 0) return;
-
-    // Calculate amount for convenience fee calculation
-    // Add GST only if: collectGST=true AND taxType='exclusive'
-    const amountForConvenienceFee = (collectGST && taxType === 'exclusive')
-      ? price + (price * 0.18)
-      : price;
-
-    // Calculate all fees
-    // Tiered convenience fee: 0-1000 = 2%, 1001-1400 = ₹30, 1401+ = ₹40
-    let convenienceFee = 0;
-    if (amountForConvenienceFee > 0) {
-      if (amountForConvenienceFee <= 1000) {
-        convenienceFee = 0.02 * amountForConvenienceFee;
-      } else if (amountForConvenienceFee <= 1400) {
-        convenienceFee = 30;
-      } else {
-        convenienceFee = 40;
-      }
-    }
-    const platformFee = price > 0 ? 5 : 0;
-    const convenienceFeeGST = price > 0 ? Math.round(convenienceFee * 0.18 * 100) / 100 : 0;
-    const platformFeeGST = price > 0 ? Math.round(platformFee * 0.18 * 100) / 100 : 0;
-    // Registration GST: Calculate if collectGST=Yes AND taxType=Exclusive
-    const registrationGST = (collectGST && taxType === 'exclusive' && price > 0)
-      ? Math.round(price * 0.18 * 100) / 100
-      : 0;
-
-    // Registration amount includes GST if exclusive
-    const registrationAmount = price + registrationGST;
-
-    // Payment gateway fee basis: Only include what the Participant actually pays
-    let gatewayBasis = registrationAmount;
-    if (updatedFormData.convenienceFeePlayer === "Participant") {
-      gatewayBasis += (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
-    }
-
-    const paymentGatewayFeeRaw = gatewayBasis > 0 ? 0.0185 * gatewayBasis : 0;
-    const paymentGatewayFee = gatewayBasis > 0 ? Math.round(paymentGatewayFeeRaw * 100) / 100 : 0;
-    const paymentGatewayGST = price > 0 ? Math.round(paymentGatewayFee * 0.18 * 100) / 100 : 0;
-
-    // Start with all fees included
-    let totalPayable =
-      price +
-      convenienceFee +
-      platformFee +
-      paymentGatewayFee +
-      convenienceFeeGST +
-      platformFeeGST +
-      paymentGatewayGST +
-      registrationGST;
-
-    // Subtract convenience fees if Organiser pays them
-    if (updatedFormData.convenienceFeePlayer === "Organiser") {
-      totalPayable -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
-    }
-
-    // Subtract gateway fees if Organiser pays them
-    if (updatedFormData.gatewayFeePlayer === "Organiser") {
-      totalPayable -= (paymentGatewayFee + paymentGatewayGST);
-    }
-
-    // Calculate receivable amount - start with registration amount (includes GST)
-    let receivableAmount = registrationAmount;
-
-    // Deduct convenience fee + platform fee if organiser pays convenience fee
-    if (updatedFormData.convenienceFeePlayer === "Organiser") {
-      receivableAmount -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
-    }
-
-    // Deduct gateway fee if organiser pays gateway fee
-    if (updatedFormData.gatewayFeePlayer === "Organiser") {
-      receivableAmount -= (paymentGatewayFee + paymentGatewayGST);
-    }
-
-    setEventFormData({
-      ...eventFormData,
-      raceCategoryPrice: price,
-      ticketCalculation: {
-        baseAmount: price,
-        // Store the base rate/amount, not the calculated fee
-        convenienceFeeBase: amountForConvenienceFee <= 1000 ? 2 : (amountForConvenienceFee <= 1400 ? 30 : 40),
-        convenienceFee: convenienceFee,
-        convenienceFeeGST: convenienceFeeGST,
-        totalConvenienceFees: convenienceFee + convenienceFeeGST,
-        platformFee: platformFee,
-        platformFeeGST: platformFeeGST,
-        totalPlatformFees: platformFee + platformFeeGST,
-        paymentGatewayFee: 1.85,
-        paymentGatewayBuyer: paymentGatewayFee,
-        paymentGatewayGST: paymentGatewayGST,
-        registrationAmount: registrationAmount,  // price + registrationGST
-        registrationGST: registrationGST,
-        netRegistrationAmount: registrationAmount + convenienceFee + convenienceFeeGST + platformFee + platformFeeGST,
-        totalPayable: totalPayable,
-        receivableAmount: receivableAmount,
-        totalPG: totalPayable,  // Real website stores total_buyer here
-        convenienceFeePlayer: updatedFormData.convenienceFeePlayer,
-        gatewayFeePlayer: updatedFormData.gatewayFeePlayer,
-        collectGST: collectGST,
-        taxType: taxType,
-      },
-    });
+    setEventFormData(prev => ({
+      ...prev,
+      raceCategoryPrice: updatedFormData.raceCategoryPrice, // Store the raw value (could be empty string)
+      ticketCalculation: calcResult
+    }));
   };
 
   // Handle form submission
@@ -499,15 +481,15 @@ const RaceCategoryForm = ({
           formData.raceCategoryPrice ||
           0,
         "ticket_calculation_details[convenience_fee_base]":
-          ticketCalcDetails.convenienceFeeBase || 40,
+          ticketCalcDetails.convenienceFeeBase || 0,
         "ticket_calculation_details[convenience_fee_amount]":
-          ticketCalcDetails.convenienceFee || 40,
+          ticketCalcDetails.convenienceFee || 0,
         "ticket_calculation_details[18_percent_GST_convenience_fees]":
           ticketCalcDetails.convenienceFeeGST || 0,
         "ticket_calculation_details[total_convenience_fees]":
           ticketCalcDetails.totalConvenienceFees || 0,
         "ticket_calculation_details[platform_fees_5_each]":
-          ticketCalcDetails.platformFee || 5,
+          ticketCalcDetails.platformFee || 0,
         "ticket_calculation_details[18_percent_GST_platform_fees]":
           ticketCalcDetails.platformFeeGST || 0,
         "ticket_calculation_details[total_platform_fees]":
@@ -732,139 +714,9 @@ const RaceCategoryForm = ({
                       borderRadius: 8,
                       border: errors.raceCategoryPrice ? "1px solid #d63031" : "1px solid #ddd",
                     }}
-                    value={
-                      formData.raceCategoryPrice ||
-                      eventFormData.raceCategoryPrice ||
-                      ""
-                    }
+                    value={formData.raceCategoryPrice ?? ""}
                     onChange={(e) => {
-                      const price = Number(e.target.value) || 0;
                       handleChange("raceCategoryPrice", e.target.value);
-
-                      // Clear error if valid price is entered
-                      if (price > 0 && errors.raceCategoryPrice) {
-                        setErrors((prev) => {
-                          const newErrors = { ...prev };
-                          delete newErrors.raceCategoryPrice;
-                          return newErrors;
-                        });
-                      }
-
-                      // Calculate all fees and update eventFormData
-                      // Calculate amount for convenience fee calculation
-                      // Add GST only if: collectGST=true AND taxType='exclusive'
-                      const amountForConvenienceFee = (collectGST && taxType === 'exclusive')
-                        ? price + (price * 0.18)
-                        : price;
-
-                      // Tiered convenience fee: 0-1000 = 2%, 1001-1400 = ₹30, 1401+ = ₹40
-                      let convenienceFee = 0;
-                      if (amountForConvenienceFee > 0) {
-                        if (amountForConvenienceFee <= 1000) {
-                          convenienceFee = 0.02 * amountForConvenienceFee;
-                        } else if (amountForConvenienceFee <= 1400) {
-                          convenienceFee = 30;
-                        } else {
-                          convenienceFee = 40;
-                        }
-                      }
-                      const platformFee = price > 0 ? 5 : 0;
-                      const convenienceFeeGST =
-                        price > 0
-                          ? Math.round(convenienceFee * 0.18 * 100) / 100
-                          : 0;
-                      const platformFeeGST =
-                        price > 0
-                          ? Math.round(platformFee * 0.18 * 100) / 100
-                          : 0;
-                      // Registration GST: Calculate if collectGST=Yes AND taxType=Exclusive
-                      const registrationGST = (collectGST && taxType === 'exclusive' && price > 0)
-                        ? Math.round(price * 0.18 * 100) / 100
-                        : 0;
-
-                      // Registration amount includes GST if exclusive
-                      const registrationAmount = price + registrationGST;
-
-                      // Payment gateway fee basis: Only include what the Participant actually pays
-                      let gatewayBasis = registrationAmount;
-                      if (formData.convenienceFeePlayer === "Participant") {
-                        gatewayBasis += (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
-                      }
-
-                      const paymentGatewayFeeRaw = gatewayBasis > 0 ? 0.0185 * gatewayBasis : 0;
-                      const paymentGatewayFee = gatewayBasis > 0 ? Math.round(paymentGatewayFeeRaw * 100) / 100 : 0;
-                      const paymentGatewayGST =
-                        price > 0
-                          ? Math.round(paymentGatewayFee * 0.18 * 100) / 100
-                          : 0;
-
-                      // Start with all fees included
-                      let totalPayable =
-                        price +
-                        convenienceFee +
-                        platformFee +
-                        paymentGatewayFee +
-                        convenienceFeeGST +
-                        platformFeeGST +
-                        paymentGatewayGST +
-                        registrationGST;
-
-                      // Subtract convenience fees if Organiser pays them
-                      if (formData.convenienceFeePlayer === "Organiser") {
-                        totalPayable -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
-                      }
-
-                      // Subtract gateway fees if Organiser pays them
-                      if (formData.gatewayFeePlayer === "Organiser") {
-                        totalPayable -= (paymentGatewayFee + paymentGatewayGST);
-                      }
-
-                      // Calculate receivable amount - start with registration amount (includes GST)
-                      let receivableAmount = registrationAmount;
-
-                      // Deduct convenience fee + platform fee if organiser pays convenience fee
-                      // For ₹100: ₹100 - ₹2 - ₹0.36 - ₹5 - ₹0.90 = ₹91.74
-                      if (formData.convenienceFeePlayer === "Organiser") {
-                        receivableAmount -= (convenienceFee + convenienceFeeGST + platformFee + platformFeeGST);
-                      }
-
-                      // Deduct gateway fee if organiser pays gateway fee
-                      // Additional deduction: ₹1.85 + ₹0.33 = ₹2.18
-                      // Total: ₹91.74 - ₹2.18 = ₹89.56
-                      if (formData.gatewayFeePlayer === "Organiser") {
-                        receivableAmount -= (paymentGatewayFee + paymentGatewayGST);
-                      }
-
-                      setEventFormData({
-                        ...eventFormData,
-                        raceCategoryPrice: e.target.value,
-                        ticketCalculation: {
-                          baseAmount: price,
-                          // Store the base rate/amount, not the calculated fee
-                          convenienceFeeBase: amountForConvenienceFee <= 1000 ? 2 : (amountForConvenienceFee <= 1400 ? 30 : 40),
-                          convenienceFee: convenienceFee,
-                          convenienceFeeGST: convenienceFeeGST,
-                          totalConvenienceFees:
-                            convenienceFee + convenienceFeeGST,
-                          platformFee: platformFee,
-                          platformFeeGST: platformFeeGST,
-                          totalPlatformFees: platformFee + platformFeeGST,
-                          paymentGatewayFee: 1.85,
-                          paymentGatewayBuyer: paymentGatewayFee,
-                          paymentGatewayGST: paymentGatewayGST,
-                          registrationAmount: registrationAmount,  // price + registrationGST
-                          registrationGST: registrationGST,
-                          netRegistrationAmount:
-                            registrationAmount + convenienceFee + convenienceFeeGST + platformFee + platformFeeGST,
-                          totalPayable: totalPayable,
-                          receivableAmount: receivableAmount,
-                          totalPG: totalPayable,  // Real website stores total_buyer here
-                          convenienceFeePlayer: formData.convenienceFeePlayer,
-                          gatewayFeePlayer: formData.gatewayFeePlayer,
-                          collectGST: collectGST,
-                          taxType: taxType,
-                        },
-                      });
                     }}
                   />
                   {errors.raceCategoryPrice && (
@@ -1195,14 +1047,7 @@ const RaceCategoryForm = ({
                     }}
                     value={formData.convenienceFeePlayer}
                     onChange={(e) => {
-                      const newValue = e.target.value;
-                      handleChange("convenienceFeePlayer", newValue);
-                      const updatedFormData = {
-                        ...formData,
-                        convenienceFeePlayer: newValue,
-                        gatewayFeePlayer: formData.gatewayFeePlayer
-                      };
-                      recalculateFees(updatedFormData);
+                      handleChange("convenienceFeePlayer", e.target.value);
                     }}
                   >
                     <option value="Organiser">Organiser</option>
@@ -1226,14 +1071,7 @@ const RaceCategoryForm = ({
                     }}
                     value={formData.gatewayFeePlayer}
                     onChange={(e) => {
-                      const newValue = e.target.value;
-                      handleChange("gatewayFeePlayer", newValue);
-                      const updatedFormData = {
-                        ...formData,
-                        convenienceFeePlayer: formData.convenienceFeePlayer,
-                        gatewayFeePlayer: newValue
-                      };
-                      recalculateFees(updatedFormData);
+                      handleChange("gatewayFeePlayer", e.target.value);
                     }}
                   >
                     <option value="Organiser">Organiser</option>
