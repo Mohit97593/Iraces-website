@@ -27,7 +27,7 @@ import BlogPanel from "../BlogPanel/BlogPanel";
 import FAQPanel from "../FAQPanel/FAQPanel";
 import Footer from "../Footer/Footer";
 import YouCanRunBanner from "../YouCanRun";
-import DefaultBanner from "../../assets/image/default-banner.png";
+import DefaultBanner from "../../assets/image/1731486552_banner.jpg.jpeg";
 
 export default function HeroCarousel() {
   // Local state for API banners
@@ -87,45 +87,44 @@ export default function HeroCarousel() {
       const data = await res.json();
 
       if (data.status === "success" && Array.isArray(data.data) && data.data.length > 0) {
-        let bannersToShow = data.data;
+        let cityBanners = [];
 
-        // If a cityId is provided, filter the banners to show ONLY those for this city
+        // If a cityId is provided, attempt to filter for city-specific banners
         if (cityId) {
-          bannersToShow = data.data.filter(
+          cityBanners = data.data.filter(
             (banner) => banner.city == cityId
           );
         }
 
-        if (bannersToShow.length > 0) {
-          setSlides(bannersToShow);
+        if (cityBanners.length > 0) {
+          // Priority 1: City-specific banners
+          setSlides(cityBanners);
+        } else if (data.data.length > 0) {
+          // Priority 2: Fallback to ALL banners from API if no city specific found
+          setSlides(data.data);
         } else {
-          // Fallback to default banner if no banners match the cityId
-          setSlides([{
-            id: 'default',
-            banner_image_url: DefaultBanner,
-            title: "RUN TOGETHER, ACHIEVE MORE",
-            subtitle: "Join our vibrant running club and conquer every mile"
-          }]);
+          // Priority 3: Ultimate hardcoded fallback
+          setFallbackBanner();
         }
       } else {
         // Fallback to default banner if no banners found at all
-        setSlides([{
-          id: 'default',
-          banner_image_url: DefaultBanner,
-          title: "RUN TOGETHER, ACHIEVE MORE",
-          subtitle: "Join our vibrant running club and conquer every mile"
-        }]);
+        setFallbackBanner();
       }
     } catch (error) {
       console.error("Error fetching banners:", error);
       // Fallback on error
-      setSlides([{
-        id: 'default',
-        banner_image_url: DefaultBanner,
-        title: "RUN TOGETHER, ACHIEVE MORE",
-        subtitle: "Join our vibrant running club and conquer every mile"
-      }]);
+      setFallbackBanner();
     }
+  };
+
+  // Helper to set the fallback hardcoded banner
+  const setFallbackBanner = () => {
+    setSlides([{
+      id: 'default',
+      banner_image_url: DefaultBanner,
+      title: "RUN TOGETHER, ACHIEVE MORE",
+      subtitle: "Join our vibrant running club and conquer every mile"
+    }]);
   };
 
   // Initial banner fetch
