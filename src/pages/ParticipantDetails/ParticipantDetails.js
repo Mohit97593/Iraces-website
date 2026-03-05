@@ -2203,7 +2203,7 @@ export default function ParticipantDetails() {
                             }}
                           >
                             <img
-                              src={question.hint_image || question.question_hint}
+                              src={authAPI.getImageUrl(question.hint_image || question.question_hint)}
                               alt="Hint"
                               style={{
                                 maxWidth: '300px',
@@ -2432,7 +2432,7 @@ export default function ParticipantDetails() {
                     {question.question_hint && question.question_hint.trim() !== '' && (
                       <span style={{ marginLeft: '8px', cursor: 'help', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', border: '1.5px solid #666', fontSize: '12px', fontWeight: 'bold', color: '#666', position: 'relative' }} title={question.hint_type === 1 || !question.hint_type ? question.question_hint : undefined} onMouseEnter={(e) => { if (question.hint_type === 2 || question.hint_type === '2') { const tooltip = e.currentTarget.querySelector('.image-tooltip'); if (tooltip) tooltip.style.display = 'block'; } }} onMouseLeave={(e) => { if (question.hint_type === 2 || question.hint_type === '2') { const tooltip = e.currentTarget.querySelector('.image-tooltip'); if (tooltip) tooltip.style.display = 'none'; } }}>
                         i
-                        {(question.hint_type === 2 || question.hint_type === '2') && (<div className="image-tooltip" style={{ display: 'none', position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: '8px', padding: '8px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 1000, whiteSpace: 'nowrap' }}><img src={question.hint_image || question.question_hint} alt="Hint" style={{ maxWidth: '300px', maxHeight: '200px', display: 'block' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div style="padding: 8px; color: #666;">Image not available</div>'; }} /></div>)}
+                        {(question.hint_type === 2 || question.hint_type === '2') && (<div className="image-tooltip" style={{ display: 'none', position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: '8px', padding: '8px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 1000, whiteSpace: 'nowrap' }}><img src={authAPI.getImageUrl(question.hint_image || question.question_hint)} alt="Hint" style={{ maxWidth: '300px', maxHeight: '200px', display: 'block' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div style="padding: 8px; color: #666;">Image not available</div>'; }} /></div>)}
                       </span>
                     )}
                   </label>
@@ -2506,7 +2506,7 @@ export default function ParticipantDetails() {
                     {question.question_hint && question.question_hint.trim() !== '' && (
                       <span style={{ marginLeft: '8px', cursor: 'help', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', border: '1.5px solid #666', fontSize: '12px', fontWeight: 'bold', color: '#666', position: 'relative' }} title={question.hint_type === 1 || !question.hint_type ? question.question_hint : undefined} onMouseEnter={(e) => { if (question.hint_type === 2 || question.hint_type === '2') { const tooltip = e.currentTarget.querySelector('.image-tooltip'); if (tooltip) tooltip.style.display = 'block'; } }} onMouseLeave={(e) => { if (question.hint_type === 2 || question.hint_type === '2') { const tooltip = e.currentTarget.querySelector('.image-tooltip'); if (tooltip) tooltip.style.display = 'none'; } }}>
                         i
-                        {(question.hint_type === 2 || question.hint_type === '2') && (<div className="image-tooltip" style={{ display: 'none', position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: '8px', padding: '8px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 1000, whiteSpace: 'nowrap' }}><img src={question.hint_image || question.question_hint} alt="Hint" style={{ maxWidth: '300px', maxHeight: '200px', display: 'block' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div style="padding: 8px; color: #666;">Image not available</div>'; }} /></div>)}
+                        {(question.hint_type === 2 || question.hint_type === '2') && (<div className="image-tooltip" style={{ display: 'none', position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: '8px', padding: '8px', backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 1000, whiteSpace: 'nowrap' }}><img src={authAPI.getImageUrl(question.hint_image || question.question_hint)} alt="Hint" style={{ maxWidth: '300px', maxHeight: '200px', display: 'block' }} onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<div style="padding: 8px; color: #666;">Image not available</div>'; }} /></div>)}
                       </span>
                     )}
                   </label>
@@ -2620,11 +2620,58 @@ export default function ParticipantDetails() {
                           border: '1.5px solid #666',
                           fontSize: '12px',
                           fontWeight: 'bold',
-                          color: '#666'
+                          color: '#666',
+                          position: 'relative'
                         }}
-                        title={question.question_hint}
+                        title={question.hint_type === 1 || !question.hint_type ? question.question_hint : undefined}
+                        onMouseEnter={(e) => {
+                          if (question.hint_type === 2 || question.hint_type === '2') {
+                            const tooltip = e.currentTarget.querySelector('.image-tooltip');
+                            if (tooltip) tooltip.style.display = 'block';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (question.hint_type === 2 || question.hint_type === '2') {
+                            const tooltip = e.currentTarget.querySelector('.image-tooltip');
+                            if (tooltip) tooltip.style.display = 'none';
+                          }
+                        }}
                       >
                         i
+                        {(question.hint_type === 2 || question.hint_type === '2') && (
+                          <div
+                            className="image-tooltip"
+                            style={{
+                              display: 'none',
+                              position: 'absolute',
+                              bottom: '100%',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              marginBottom: '8px',
+                              padding: '8px',
+                              backgroundColor: '#fff',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                              zIndex: 1000,
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            <img
+                              src={authAPI.getImageUrl(question.hint_image || question.question_hint)}
+                              alt="Hint"
+                              style={{
+                                maxWidth: '300px',
+                                maxHeight: '200px',
+                                display: 'block'
+                              }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.parentElement.innerHTML = '<div style="padding: 8px; color: #666;">Image not available</div>';
+                              }}
+                            />
+                          </div>
+                        )}
                       </span>
                     )}
                   </label>

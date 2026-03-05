@@ -591,176 +591,28 @@ export default function HeroCarousel() {
   return (
     <>
       <section className="hero-viewport">
-        <div className="hero-slide">
-          {/* Banner image with static test image for debugging */}
-          <div
-            className="hero-bg"
-            style={{ backgroundImage: `url(${active.banner_image_url})` }}
-          />
-          <div className="hero-overlay">
-            <div className="container h-100">
-              <div className="row h-100 align-items-center">
-                {/* <div
-                  className={`col-lg-7 text-white position-relative`}
-                  style={{ marginBottom: "80px" }}
-                >
-                  <div className="avatar-row mb-3">
-                    <img src={Avatar1} className="avatar" alt="a" />
-                    <img src={Avatar2} className="avatar" alt="b" />
-                    <img src={Avatar3} className="avatar" alt="c" />
-                    <img src={Avatar4} className="avatar" alt="d" />
-                    <div className="active-count ms-3">
-                      1.200+
-                      <br />
-                      <small>Active Members</small>
-                    </div>
-                  </div> */}
-
-                {/* <h4
-                    className={`display-1 hero-title ${animate ? "animated slide-in-left" : ""
-                      }`}
-                    style={{
-                      fontSize: "90px",
-                      lineHeight: "100px",
-                      // marginBottom: "1rem",
-                    }}
-                  >
-                    {staticTitle}
-                  </h4> */}
-                {/* <p className="lead hero-sub">{staticSubtitle}</p> */}
-                {/* ✅ Modal Open Button */}
-                {/* <button
-                    className="btn btn-success mt-3"
-                    onClick={() => dispatch(toggleModal())}
-                  >
-                    Learn More
-                  </button> */}
-                {/* </div> */}
-
-                {/* <div className="col-lg-5 d-flex justify-content-end align-items-center">
-                  <div className={animate ? "animated slide-in-right" : ""}>
-                    {nextUpcomingEvent ? (
-                      <div className="upcoming-card">
-                        <img
-                          src={
-                            nextUpcomingEvent.banner_image
-                              ? nextUpcomingEvent.banner_image
-                              : logo
-                          }
-                          alt={nextUpcomingEvent.name}
-                          className="upcoming-image"
-                        />
-                        <div className="upcoming-content">
-                          <div className="upcoming-header">
-                            <div className="badge">- UPCOMING RACES -</div>
-                            <h4>{nextUpcomingEvent.name}</h4>
-                          </div>
-                          <div className="info-box mt-3 p-3">
-                            <div className="info-row">
-                              <i
-                                className="info-icon fa-regular fa-calendar"
-                                aria-hidden="true"
-                              ></i>
-                              <span>
-                                <strong>
-                                  {nextUpcomingEvent.start_date ||
-                                    new Date(
-                                      nextUpcomingEvent.start_time * 1000
-                                    ).toLocaleDateString("en-US", {
-                                      day: "2-digit",
-                                      month: "long",
-                                      year: "numeric",
-                                    })}
-                                </strong>
-                              </span>
-                            </div>
-                            <div className="info-row">
-                              <i
-                                className="info-icon fa-regular fa-clock"
-                                aria-hidden="true"
-                              ></i>
-                              <span>
-                                {nextUpcomingEvent.start_time_event ||
-                                  new Date(
-                                    nextUpcomingEvent.start_time * 1000
-                                  ).toLocaleTimeString("en-US", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                -{" "}
-                                {nextUpcomingEvent.end_date_event ||
-                                  (nextUpcomingEvent.end_time
-                                    ? new Date(
-                                      nextUpcomingEvent.end_time * 1000
-                                    ).toLocaleTimeString("en-US", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })
-                                    : "")}
-                              </span>
-                            </div>
-                            <div className="info-row">
-                              <i
-                                className="info-icon fa-solid fa-location-dot"
-                                aria-hidden="true"
-                              ></i>
-                              <span>
-                                {nextUpcomingEvent.city_name || cityName}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="upcoming-card">
-                        <img
-                          src={logo}
-                          alt="event"
-                          className="upcoming-image"
-                        />
-                        <div className="upcoming-content">
-                          <div className="upcoming-header">
-                            <div className="badge">- UPCOMING RACES -</div>
-                            <h4>
-                              RACES CITY
-                              <br />
-                              SPRINT 10K
-                            </h4>
-                          </div>
-                          <div className="info-box mt-3 p-3">
-                            <div className="info-row">
-                              <i
-                                className="info-icon fa-regular fa-calendar"
-                                aria-hidden="true"
-                              ></i>
-                              <span>
-                                <strong>September 20, 2025</strong>
-                              </span>
-                            </div>
-                            <div className="info-row">
-                              <i
-                                className="info-icon fa-regular fa-clock"
-                                aria-hidden="true"
-                              ></i>
-                              <span>Start 05:00 AM - Finish 10:00 AM</span>
-                            </div>
-                            <div className="info-row">
-                              <i
-                                className="info-icon fa-solid fa-location-dot"
-                                aria-hidden="true"
-                              ></i>
-                              <span>South Jekardah</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div> */}
+        <a
+          href={active.banner_url || "#"}
+          target="_blank"
+          rel="noreferrer"
+          className="hero-slide-link"
+          style={{ display: "block", textDecoration: "none" }}
+        >
+          <div className="hero-slide" style={{ cursor: active.banner_url ? "pointer" : "default" }}>
+            {/* Banner image with static test image for debugging */}
+            <div
+              className="hero-bg"
+              style={{ backgroundImage: `url(${active.banner_image_url})` }}
+            />
+            <div className="hero-overlay">
+              <div className="container h-100">
+                <div className="row h-100 align-items-center">
+                  {/* ... contents ... */}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </a>
 
         <div className="social-vertical">
           {/* <a

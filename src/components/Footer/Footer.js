@@ -99,19 +99,19 @@ export default function Footer() {
             <h3 className="footer-heading">Products & Services</h3>
             <ul className="footer-links">
               <li>
-                <a href="https://youtoocanrun.com/races.php" target="_blank" >Races</a>
+                <a href="https://youtoocanrun.com/races" target="_blank" >Races</a>
               </li>
               <li>
-                <a href="http://youtoocanrun.com/race_management.php" target="_blank">Race Management</a>
+                <a href="https://youtoocanrun.com/race-management" target="_blank">Race Management</a>
               </li>
               <li>
-                <a href="https://youtoocanrun.com/treasured_moments.php" target="_blank">Treasured moments</a>
+                <a href="https://youtoocanrun.com/treasured-moments" target="_blank">Treasured moments</a>
               </li>
               <li>
-                <a href="https://youtoocanrun.com/racemart.php" target="_blank">Racemart</a>
+                <a href=" https://racemart.in/" target="_blank">Racemart</a>
               </li>
               <li>
-                <a href=" https://youtoocanrun.com/race_kit_management.php" target="_blank">Bib Expo Management</a>
+                <a href=" https://youtoocanrun.com/race-kit-management" target="_blank">Bib Expo Management</a>
               </li>
             </ul>
           </div>
@@ -121,19 +121,19 @@ export default function Footer() {
             <h3 className="footer-heading">Additional Services</h3>
             <ul className="footer-links">
               <li>
-                <a href="https://youtoocanrun.com/activeaura.php" target="_blank">Active Aura</a>
+                <a href="https://youtoocanrun.com/activeaura" target="_blank">Active Aura</a>
               </li>
               <li>
-                <a href="https://youtoocanrun.com/rase.php" target="_blank">RASE</a>
+                <a href="https://youtoocanrun.com/rase" target="_blank">RASE</a>
               </li>
               <li>
                 <a href="#">Athlete Id Card</a>
               </li>
               <li>
-                <a href="https://youtoocanrun.com/pace_calculator.php" target="_blank">Pace Calculator</a>
+                <a href=" https://youtoocanrun.com/pace-calculator" target="_blank">Pace Calculator</a>
               </li>
               <li>
-                <a href="https://youtoocanrun.com/trump.php" target="_blank">TRUMP </a>
+                <a href="https://youtoocanrun.com/trump" target="_blank">TRUMP </a>
               </li>
             </ul>
           </div>
