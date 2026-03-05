@@ -217,7 +217,10 @@ export default function ParticipantDetails() {
           countriesRes.data &&
           Array.isArray(countriesRes.data.AllCountries)
         ) {
-          setCountries(countriesRes.data.AllCountries);
+          const sortedCountries = [...countriesRes.data.AllCountries].sort((a, b) =>
+            (a.country_name || a.name || "").localeCompare(b.country_name || b.name || "")
+          );
+          setCountries(sortedCountries);
         }
         // 5. Fetch states for default country (India or first country)
         let countryId = null;
@@ -235,7 +238,10 @@ export default function ParticipantDetails() {
             statesRes.data &&
             Array.isArray(statesRes.data.AllStates)
           ) {
-            setStates(statesRes.data.AllStates);
+            const sortedStates = [...statesRes.data.AllStates].sort((a, b) =>
+              (a.state_name || a.name || "").localeCompare(b.state_name || b.name || "")
+            );
+            setStates(sortedStates);
           }
         }
         // 6. Fetch cities for default state (first state)
@@ -251,7 +257,10 @@ export default function ParticipantDetails() {
             citiesRes.data &&
             Array.isArray(citiesRes.data.AllCities)
           ) {
-            setCities(citiesRes.data.AllCities);
+            const sortedCities = [...citiesRes.data.AllCities].sort((a, b) =>
+              (a.city_name || a.name || "").localeCompare(b.city_name || b.name || "")
+            );
+            setCities(sortedCities);
           }
         }
       } catch (error) {
@@ -2619,73 +2628,101 @@ export default function ParticipantDetails() {
                       </span>
                     )}
                   </label>
-                  <SearchableSelect
-                    name={fieldName}
-                    options={displayOptions.map(opt => ({
-                      value: opt.label || opt.name || opt.code || opt.id,
-                      label: opt.label || opt.name || opt.code
-                    }))}
-                    value={currentFormData[fieldName] || ""}
-                    placeholder={`Select ${question.question_label}...`}
-                    required={isRequired}
-                    searchable={['countries', 'states', 'cities'].includes(question.question_form_type)}
-                    onChange={async (e) => {
-                      const { name, value } = e.target;
 
-                      if (question.question_form_type === 'countries') {
-                        setParticipantForms(prev => prev.map((form, idx) =>
-                          idx === participantIndex ? {
-                            ...form,
-                            formData: { ...form.formData, [name]: value, state: "", city: "" }
-                          } : form
-                        ));
-                        const selectedCountry = options.find(
-                          (c) => (c.label || c.name) === value || c.id == value
-                        );
-                        if (selectedCountry && selectedCountry.id) {
-                          try {
-                            const statesRes = await authAPI.getStates({ country_id: selectedCountry.id });
-                            if (statesRes && statesRes.data && Array.isArray(statesRes.data.AllState)) {
-                              setStates(statesRes.data.AllState);
-                            } else {
+                  {/* Use normal select for general questions, SearchableSelect for locations */}
+                  {question.question_form_type === 'select' ? (
+                    <select
+                      name={fieldName}
+                      className="form-control3"
+                      value={currentFormData[fieldName] || ""}
+                      onChange={(e) => handleInputChange(participantIndex, e)}
+                      required={isRequired}
+                    >
+                      <option value="">Select {question.question_label}...</option>
+                      {displayOptions.map((opt, idx) => (
+                        <option
+                          key={idx}
+                          value={opt.label || opt.name || opt.id || opt}
+                        >
+                          {opt.label || opt.name || opt}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <SearchableSelect
+                      name={fieldName}
+                      options={displayOptions.map(opt => ({
+                        value: opt.label || opt.name || opt.code || opt.id,
+                        label: opt.label || opt.name || opt.code
+                      }))}
+                      value={currentFormData[fieldName] || ""}
+                      placeholder={`Select ${question.question_label}...`}
+                      required={isRequired}
+                      searchable={['countries', 'states', 'cities'].includes(question.question_form_type)}
+                      onChange={async (e) => {
+                        const { name, value } = e.target;
+
+                        if (question.question_form_type === 'countries') {
+                          setParticipantForms(prev => prev.map((form, idx) =>
+                            idx === participantIndex ? {
+                              ...form,
+                              formData: { ...form.formData, [name]: value, state: "", city: "" }
+                            } : form
+                          ));
+                          const selectedCountry = options.find(
+                            (c) => (c.label || c.name) === value || c.id == value
+                          );
+                          if (selectedCountry && selectedCountry.id) {
+                            try {
+                              const statesRes = await authAPI.getStates({ country_id: selectedCountry.id });
+                              if (statesRes && statesRes.data && Array.isArray(statesRes.data.AllState)) {
+                                const sortedStates = [...statesRes.data.AllState].sort((a, b) =>
+                                  (a.state_name || a.name || "").localeCompare(b.state_name || b.name || "")
+                                );
+                                setStates(sortedStates);
+                              } else {
+                                setStates([]);
+                              }
+                              setCities([]);
+                            } catch (error) {
+                              console.error("Error fetching states:", error);
                               setStates([]);
                             }
-                            setCities([]);
-                          } catch (error) {
-                            console.error("Error fetching states:", error);
-                            setStates([]);
                           }
                         }
-                      }
-                      else if (question.question_form_type === 'states') {
-                        setParticipantForms(prev => prev.map((form, idx) =>
-                          idx === participantIndex ? {
-                            ...form,
-                            formData: { ...form.formData, [name]: value, city: "" }
-                          } : form
-                        ));
-                        const selectedState = states.find(
-                          (s) => (s.state_name || s.name) === value || s.id == value
-                        );
-                        if (selectedState && selectedState.id) {
-                          try {
-                            const citiesRes = await authAPI.getCities({ state_id: selectedState.id });
-                            if (citiesRes && citiesRes.data && Array.isArray(citiesRes.data.AllCities)) {
-                              setCities(citiesRes.data.AllCities);
-                            } else {
+                        else if (question.question_form_type === 'states') {
+                          setParticipantForms(prev => prev.map((form, idx) =>
+                            idx === participantIndex ? {
+                              ...form,
+                              formData: { ...form.formData, [name]: value, city: "" }
+                            } : form
+                          ));
+                          const selectedState = states.find(
+                            (s) => (s.state_name || s.name) === value || s.id == value
+                          );
+                          if (selectedState && selectedState.id) {
+                            try {
+                              const citiesRes = await authAPI.getCities({ state_id: selectedState.id });
+                              if (citiesRes && citiesRes.data && Array.isArray(citiesRes.data.AllCities)) {
+                                const sortedCities = [...citiesRes.data.AllCities].sort((a, b) =>
+                                  (a.city_name || a.name || "").localeCompare(b.city_name || b.name || "")
+                                );
+                                setCities(sortedCities);
+                              } else {
+                                setCities([]);
+                              }
+                            } catch (error) {
+                              console.error("Error fetching cities:", error);
                               setCities([]);
                             }
-                          } catch (error) {
-                            console.error("Error fetching cities:", error);
-                            setCities([]);
                           }
                         }
-                      }
-                      else {
-                        handleInputChange(participantIndex, e);
-                      }
-                    }}
-                  />
+                        else {
+                          handleInputChange(participantIndex, e);
+                        }
+                      }}
+                    />
+                  )}
                   {formErrors[`participant_${participantIndex}_${fieldName}`] && (
                     <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
                       {formErrors[`participant_${participantIndex}_${fieldName}`]}

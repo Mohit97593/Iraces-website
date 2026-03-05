@@ -567,8 +567,14 @@ export default function CreateEvent() {
                       "registration_end_date",
                       "timezone",
                       "timeZone",
+                      "time_zone",
                       "city",
                       "city_name",
+                      "pincode",
+                      "state",
+                      "state_name",
+                      "country",
+                      "country_name"
                     ])
                   )
                     stepSaved[1] = true;
@@ -580,6 +586,9 @@ export default function CreateEvent() {
                       "event_description",
                       "description",
                       "event_keywords",
+                      "keywords",
+                      "background_color",
+                      "bg_color"
                     ])
                   )
                     stepSaved[2] = true;
@@ -589,12 +598,15 @@ export default function CreateEvent() {
                     (det.data &&
                       Array.isArray(det.data.event_setting_details) &&
                       det.data.event_setting_details.length > 0) ||
+                    (det.data && det.data.EventSettingDetails && det.data.EventSettingDetails.length > 0) ||
                     hasAny([
                       "payment_type",
                       "paid_status",
                       "settings",
                       "event_settings",
+                      "event_setting",
                       "refund_policy",
+                      "is_refund_policy"
                     ])
                   )
                     stepSaved[3] = true;
@@ -604,10 +616,12 @@ export default function CreateEvent() {
                     (det.data &&
                       det.data.AllEventTypes &&
                       det.data.AllEventTypes.length > 0) ||
+                    (det.data && det.data.EventCategories && det.data.EventCategories.length > 0) ||
                     hasAny([
                       "categories",
                       "event_categories",
                       "race_categories",
+                      "AllEventTypes"
                     ])
                   )
                     stepSaved[4] = true;
@@ -620,9 +634,11 @@ export default function CreateEvent() {
                     (det.data &&
                       Array.isArray(det.data.EventFormQuestions) &&
                       det.data.EventFormQuestions.length > 0) ||
+                    (det.data && det.data.event_form_details && Object.keys(det.data.event_form_details).length > 0) ||
                     hasAny([
                       "form_questions",
                       "event_form_questions",
+                      "event_form_details",
                       "formQuestions",
                       "GeneralFormQuestions",
                       "EventFormQuestions",
@@ -635,12 +651,14 @@ export default function CreateEvent() {
                     (det.data &&
                       Array.isArray(det.data.AllGroupQuestion) &&
                       det.data.AllGroupQuestion.length > 0) ||
+                    (det.data && det.data.GroupQuestions && det.data.GroupQuestions.length > 0) ||
                     hasAny([
                       "grouping",
                       "event_grouping",
                       "groups",
                       "AllGroupQuestion",
                       "group_questions",
+                      "GroupQuestions"
                     ])
                   )
                     stepSaved[6] = true;
@@ -650,9 +668,11 @@ export default function CreateEvent() {
                     (det.data &&
                       Array.isArray(det.data.AllAgeCategory) &&
                       det.data.AllAgeCategory.length > 0) ||
+                    (det.data && det.data.AgeCategories && det.data.AgeCategories.length > 0) ||
                     hasAny([
                       "age_categories",
                       "AllAgeCategory",
+                      "AgeCategories",
                       "ageCategory",
                       "age_category",
                     ])
@@ -667,6 +687,7 @@ export default function CreateEvent() {
                     (det.data &&
                       Array.isArray(det.data.EventCoupons) &&
                       det.data.EventCoupons.length > 0) ||
+                    (det.data && det.data.coupons && det.data.coupons.length > 0) ||
                     hasAny([
                       "coupons",
                       "event_coupons",
@@ -685,6 +706,7 @@ export default function CreateEvent() {
                     (det.data &&
                       Array.isArray(det.data.event_communications) &&
                       det.data.event_communications.length > 0) ||
+                    (det.data && det.data.communications && det.data.communications.length > 0) ||
                     hasAny([
                       "communications",
                       "event_comm",
@@ -699,6 +721,7 @@ export default function CreateEvent() {
                     (det.data &&
                       Array.isArray(det.data.EventFaq) &&
                       det.data.EventFaq.length > 0) ||
+                    (det.data && det.data.faqs && det.data.faqs.length > 0) ||
                     hasAny([
                       "faqs",
                       "EventFaq",
@@ -716,6 +739,7 @@ export default function CreateEvent() {
                     (det.data &&
                       Array.isArray(det.data.event_integrations) &&
                       det.data.event_integrations.length > 0) ||
+                    (det.data && det.data.integrations && det.data.integrations.length > 0) ||
                     hasAny([
                       "integrations",
                       "event_integrations",

@@ -4357,7 +4357,7 @@ const GeneralFormQuestions = ({
                               {/* Delete button only for custom questions */}
                               {((q.is_custom_form == 1 || q.is_custom == 1 || q.is_custom_form == '1' || q.is_custom == '1' || (q.created_by && q.created_by != 0) || q.user_id || q.question_id || q.id > 50) &&
                                 !(formName || "").toLowerCase().includes("address") &&
-                                !["country", "state", "nationality", "city", "pincode"].includes((q.question_label || "").toLowerCase().trim())) && (
+                                !["country", "state", "nationality", "city", "pincode", "enter coupon code"].includes((q.question_label || "").toLowerCase().trim())) && (
                                   <button
                                     className="btn-toggle delete-btn"
                                     title="Delete question"

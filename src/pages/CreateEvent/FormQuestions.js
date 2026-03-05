@@ -220,6 +220,7 @@ const FormQuestions = ({ onBack, onNext }) => {
   }, []);
 
   const handleAddQuestions = () => {
+    setEditQuestion(null);
     setShowGeneralForm(true);
   };
 
@@ -270,6 +271,7 @@ const FormQuestions = ({ onBack, onNext }) => {
     }
 
     setShowGeneralForm(false);
+    setEditQuestion(null);
     console.log("Saved questions (optimistic):", newQuestions, updatedQuestion);
     // Refresh from server to reflect canonical state
     (async () => {

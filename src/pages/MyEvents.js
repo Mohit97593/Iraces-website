@@ -318,6 +318,24 @@ export default function MyEvents() {
     return endTime * 1000 < Date.now();
   };
 
+  const isEarlyBirdActive = (event) => {
+    // Top-level flag check
+    if (event.early_bird !== 1 && event.early_bird !== "1") return false;
+
+    const currentTime = Math.floor(Date.now() / 1000);
+    // Standardize ticket list from different possible API keys
+    const tickets = event.TicketDetails || event.ticket_details || [];
+
+    if (!Array.isArray(tickets) || tickets.length === 0) return false;
+
+    // Check if any ticket has an active early bird period
+    return tickets.some(ticket =>
+      (ticket.early_bird === 1 || ticket.early_bird === "1") &&
+      currentTime >= (ticket.start_time || 0) &&
+      currentTime <= (ticket.end_time || 0)
+    );
+  };
+
   return (
     <>
       <TopNav />
@@ -410,7 +428,7 @@ export default function MyEvents() {
                             {event.city_name || event.city || "City"}
                           </span>
                           {/* Early Bird Badge */}
-                          {(event.early_bird === 1 || event.early_bird === "1") && (
+                          {isEarlyBirdActive(event) && (
                             <span
                               className="event-card-badge"
                               style={{
