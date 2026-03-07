@@ -25,6 +25,7 @@ export default function Participants() {
     const [selectedParticipants, setSelectedParticipants] = useState([]);
     const [customSubject, setCustomSubject] = useState("");
     const [customMessage, setCustomMessage] = useState("");
+    const [sendingEmail, setSendingEmail] = useState(false);
 
     // WhatsApp states
     const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
@@ -311,6 +312,7 @@ export default function Participants() {
 
     const handleConfirmSendEmail = async () => {
         try {
+            setSendingEmail(true);
             // Check if Custom Email is selected and validate fields
             const selectedEmail = emailTypes.find(type => type.id == selectedEmailType);
             const isCustomEmail = selectedEmail && selectedEmail.subject_name === "Custom Email";
@@ -362,6 +364,8 @@ export default function Participants() {
         } catch (error) {
             console.error("❌ Error sending email:", error);
             alert("Failed to send email. Please try again.");
+        } finally {
+            setSendingEmail(false);
         }
     };
 
@@ -1034,8 +1038,18 @@ export default function Participants() {
                                 <button className="email-cancel-btn" onClick={() => setShowEmailModal(false)}>
                                     Cancel
                                 </button>
-                                <button className="email-send-btn" onClick={handleConfirmSendEmail}>
-                                    Send
+                                <button 
+                                    className="email-send-btn" 
+                                    onClick={handleConfirmSendEmail}
+                                    disabled={sendingEmail}
+                                >
+                                    {sendingEmail ? (
+                                        <>
+                                            <i className="fas fa-spinner fa-spin"></i> Sending...
+                                        </>
+                                    ) : (
+                                        "Send"
+                                    )}
                                 </button>
                             </div>
                         </div>

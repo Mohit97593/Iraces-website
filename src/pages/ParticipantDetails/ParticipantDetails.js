@@ -393,6 +393,18 @@ export default function ParticipantDetails() {
     }
   }, [eventId]);
 
+  // Handle automatic redirection for Himalaya Wellness (Event 349)
+  useEffect(() => {
+    let timer;
+    if (showSuccessModal && eventId === "349") {
+      console.log("🚀 Automatic redirection for Himalaya Wellness initiated...");
+      timer = setTimeout(() => {
+        window.location.href = 'https://ashwagandha.in/';
+      }, 5000); // 5 second delay to allow reading the message
+    }
+    return () => clearTimeout(timer);
+  }, [showSuccessModal, eventId]);
+
   // Fetch active payment gateway on component mount
   useEffect(() => {
     const fetchActivePaymentGateway = async () => {
@@ -1479,29 +1491,38 @@ export default function ParticipantDetails() {
         const questionsData = formQuestions[ticketId];
         const questionsList = questionsData[participantIndex] || questionsData[0] || [];
 
-        const participantQuestions = questionsList.map(q => {
+        // Helper to recursively map questions and their subquestions
+        const mapQuestion = (q) => {
           const fieldName = getMappedKey(q);
           const fieldValue = participantForm.formData[fieldName];
 
-          // NEW: Handle File objects for "upload id" fields
+          // Handle File objects for "upload id" fields
+          let actualValue = fieldValue || "";
           if (fieldValue instanceof File) {
             files_to_collect.push(fieldValue);
-            return {
-              ...q,
-              ActualValue: fieldValue.name, // Send filename as string to avoid stdClass error
-              Error: "",
-              TicketId: ticketId.toString()
-            };
+            actualValue = fieldValue.name;
           }
 
-          return {
+          // Recursively map subquestions if they exist
+          const mappedSubQuestions = q.sub_questions_array 
+            ? q.sub_questions_array.map(sq => mapQuestion(sq))
+            : undefined;
+
+          const mappedQ = {
             ...q,
-            ActualValue: fieldValue || "",
+            ActualValue: actualValue,
             Error: "",
             TicketId: ticketId.toString()
           };
-        });
 
+          if (mappedSubQuestions) {
+            mappedQ.sub_questions_array = mappedSubQuestions;
+          }
+
+          return mappedQ;
+        };
+
+        const participantQuestions = questionsList.map(q => mapQuestion(q));
         FormQuestions[ticketId].push(participantQuestions);
       }
     });
@@ -2392,6 +2413,20 @@ export default function ParticipantDetails() {
                       </span>
                     )
                   }
+                  {
+                    formErrors[`participant_${participantIndex}_${fieldName}_age`] && (
+                      <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                        {formErrors[`participant_${participantIndex}_${fieldName}_age`]}
+                      </span>
+                    )
+                  }
+                  {
+                    formErrors[`participant_${participantIndex}_${fieldName}_domain`] && (
+                      <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                        {formErrors[`participant_${participantIndex}_${fieldName}_domain`]}
+                      </span>
+                    )
+                  }
                 </div>
               );
             }
@@ -3218,7 +3253,21 @@ export default function ParticipantDetails() {
       }
     } catch (error) {
       console.error("❌ Payment Error:", error);
-      alert(`Payment initiation failed: ${error.response?.data?.message || error.message || 'Please try again'}`);
+      
+      let errorMessage = "Please try again";
+      if (error.response?.data) {
+        if (error.response.data.errors) {
+          // If there are detailed validation errors (like email/mobile already taken)
+          const detailedErrors = Object.values(error.response.data.errors).flat();
+          errorMessage = detailedErrors.length > 0 ? detailedErrors.join("\n") : error.response.data.message;
+        } else {
+          errorMessage = error.response.data.message || error.message;
+        }
+      } else {
+        errorMessage = error.message;
+      }
+      
+      alert(`Registration failed: ${errorMessage}`);
       setShowPaymentModal(false);
     } finally {
       setIsProceeding(false);
@@ -3290,7 +3339,21 @@ export default function ParticipantDetails() {
       }
     } catch (error) {
       console.error("❌ Free Registration Error:", error);
-      alert(`Registration failed: ${error.response?.data?.message || error.message || 'Please try again'}`);
+      
+      let errorMessage = "Please try again";
+      if (error.response?.data) {
+        if (error.response.data.errors) {
+          // Handle structured validation errors
+          const detailedErrors = Object.values(error.response.data.errors).flat();
+          errorMessage = detailedErrors.length > 0 ? detailedErrors.join("\n") : error.response.data.message;
+        } else {
+          errorMessage = error.response.data.message || error.message;
+        }
+      } else {
+        errorMessage = error.message;
+      }
+      
+      alert(`Registration failed: ${errorMessage}`);
     } finally {
       setIsProceeding(false);
     }
@@ -3440,7 +3503,6 @@ export default function ParticipantDetails() {
                 }
                 hasErrors = true;
                 console.log(`❌ Age from DOB out of range: ${q.question_label} for Participant ${participantIndex + 1} (Age: ${ageValue}, Range: ${ageStart}-${ageEnd})`);
-                alert(ageErrorMessage);
               }
             }
 
@@ -3536,9 +3598,6 @@ export default function ParticipantDetails() {
                   }
                   hasErrors = true;
                   console.log(`❌ Invalid email domain: ${q.question_label} for Participant ${participantIndex + 1} (expected: ${expectedDomain}, got: ${emailDomain})`);
-                  alert(`Email for "${q.question_label}" must be from ${q.domain_name} domain`);
-                  // Not returning false here to allow collecting all errors, but original code had return false.
-                  // Restoring alert as requested to keep it "as it was".
                 }
               }
             }
@@ -4449,7 +4508,9 @@ export default function ParticipantDetails() {
             <h2 className="success-title">YAY!</h2>
 
             <p className="success-message">
-              Your registration is successful..!
+              {eventId === "349" 
+                ? "Redirecting to the Himalaya Wellness site for a 1-minute wellness test. Track your registration in RACES Profile → Registration Tracker."
+                : "Your registration is successful..!"}
             </p>
 
             <button
@@ -4462,7 +4523,7 @@ export default function ParticipantDetails() {
                 }
               }}
             >
-              View My Tickets
+              {eventId === "349" ? "Redirect Now" : "View My Tickets"}
             </button>
           </div>
         </div>

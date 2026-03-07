@@ -29,6 +29,18 @@ const GeneralFormQuestions = ({
   const [selectedQuestionForSubDetails, setSelectedQuestionForSubDetails] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [toast, setToast] = useState(null);
+  const [currentUserId] = useState(() => {
+    const ud = sessionStorage.getItem("userData");
+    if (ud) {
+      try {
+        const parsed = JSON.parse(ud);
+        return String(parsed.user_id || parsed.id || "");
+      } catch (e) {
+        return "";
+      }
+    }
+    return sessionStorage.getItem("user_id") || "";
+  });
 
   const triggerToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -62,7 +74,7 @@ const GeneralFormQuestions = ({
       fd.append("event_id", eventId);
       fd.append("user_id", userId);
       const res = await authAPI.generalFormQuestions(fd);
-      console.log("generalFormQuestions response:", res);
+      console.log("RAW generalFormQuestions response:", res);
       if (res && res.data && res.data.form_question) {
         setApiQuestions(res.data.form_question);
       }
@@ -631,6 +643,18 @@ const GeneralFormQuestions = ({
 
   const handleDeleteQuestion = async (e, question) => {
     e.stopPropagation();
+
+    // Check ownership before proceeding
+    const isOwner = !!(currentUserId && currentUserId !== "0" && (
+      (question.user_id && String(question.user_id) === String(currentUserId)) ||
+      (question.created_by && String(question.created_by) === String(currentUserId))
+    ));
+
+    if (!isOwner) {
+      triggerToast("You do not have permission to delete this question.", "error");
+      return;
+    }
+
     if (!window.confirm(`Are you sure you want to delete "${question.question_label}"?`)) {
       return;
     }
@@ -4354,10 +4378,14 @@ const GeneralFormQuestions = ({
                                   +
                                 </button>
                               )}
-                              {/* Delete button only for custom questions */}
-                              {((q.is_custom_form == 1 || q.is_custom == 1 || q.is_custom_form == '1' || q.is_custom == '1' || (q.created_by && q.created_by != 0) || q.user_id || q.question_id || q.id > 50) &&
+                              {/* Delete button only for custom questions created by the CURRENT user */}
+                              {!!((q.is_custom_form == 1 || q.is_custom == 1 || q.is_custom_form == '1' || q.is_custom == '1' || (q.created_by && q.created_by != 0) || q.user_id || q.question_id || q.id > 50) &&
                                 !(formName || "").toLowerCase().includes("address") &&
-                                !["country", "state", "nationality", "city", "pincode", "enter coupon code"].includes((q.question_label || "").toLowerCase().trim())) && (
+                                !["country", "state", "nationality", "city", "pincode", "enter coupon code"].includes((q.question_label || "").toLowerCase().trim()) &&
+                                (currentUserId && currentUserId !== "0" && (
+                                  (q.user_id && String(q.user_id) === String(currentUserId)) ||
+                                  (q.created_by && String(q.created_by) === String(currentUserId))
+                                ))) && (
                                   <button
                                     className="btn-toggle delete-btn"
                                     title="Delete question"

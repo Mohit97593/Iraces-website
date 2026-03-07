@@ -85,7 +85,9 @@ const AddCustomForm = ({ onCancel }) => {
     }
 
     const fd = new FormData();
-    fd.append("user_id", sessionStorage.getItem("user_id") || "");
+    const ud = JSON.parse(sessionStorage.getItem("userData") || "{}");
+    const userId = ud.user_id || ud.id || sessionStorage.getItem("user_id") || "";
+    fd.append("user_id", userId);
     // Use default form_id as "1" since Choose Form dropdown is removed
     // fd.append("form_id", selectedFormId || "1");
     fd.append("question_label", question_label);
