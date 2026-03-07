@@ -85,7 +85,11 @@ export default function PaymentSuccess() {
   }, [searchParams]);
 
   const handleViewBookings = () => {
-    navigate('/registration-tracker');
+    if (paymentDetails?.event_id === "349" || paymentDetails?.udf2 === "349") {
+      window.location.href = 'https://ashwagandha.in/';
+    } else {
+      navigate('/registration-tracker');
+    }
   };
 
   const handleGoHome = () => {

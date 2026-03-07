@@ -4428,7 +4428,11 @@ export default function ParticipantDetails() {
               className="modal-close-btn"
               onClick={() => {
                 setShowSuccessModal(false);
-                window.location.href = '/registration-tracker';
+                if (eventId === "349") {
+                  window.location.href = 'https://ashwagandha.in/';
+                } else {
+                  window.location.href = '/registration-tracker';
+                }
               }}
             >
               <i className="fas fa-times"></i>
@@ -4450,7 +4454,13 @@ export default function ParticipantDetails() {
 
             <button
               className="view-tickets-btn"
-              onClick={() => window.location.href = '/registration-tracker'}
+              onClick={() => {
+                if (eventId === "349") {
+                  window.location.href = 'https://ashwagandha.in/';
+                } else {
+                  window.location.href = '/registration-tracker';
+                }
+              }}
             >
               View My Tickets
             </button>
