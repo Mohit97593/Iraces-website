@@ -530,7 +530,7 @@ const Grouping = ({ onBack, onNext }) => {
                 }}
             >
                 <h3 style={{ fontWeight: 700, fontSize: "1.6rem", margin: 0 }}>
-                    Grouping
+                    Question Grouping
                 </h3>
                 <button
                     style={{

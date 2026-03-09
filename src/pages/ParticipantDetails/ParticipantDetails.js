@@ -763,416 +763,437 @@ export default function ParticipantDetails() {
       }
     } else {
       // Update specific participant's form data
-      setParticipantForms(prev => prev.map((form, idx) => {
-        if (idx === participantIndex) {
-          const updatedFormData = {
-            ...form.formData,
-            [name]: type === "checkbox" ? checked : type === "file" ? files[0] : value,
-          };
+      setParticipantForms(prev => {
+        const updatedForms = prev.map((form, idx) => {
+          if (idx === participantIndex) {
+            const updatedFormData = {
+              ...form.formData,
+              [name]: type === "checkbox" ? checked : type === "file" ? files[0] : value,
+            };
 
-          // Check if both Age and DOB fields exist
-          const { hasAge, hasDOB, ageQuestion, dobQuestion } = hasBothAgeAndDOB(participantIndex);
+            // Check if both Age and DOB fields exist
+            const { hasAge, hasDOB, ageQuestion, dobQuestion } = hasBothAgeAndDOB(participantIndex);
 
-          // If both Age and DOB exist, and user is changing DOB, auto-calculate age
-          if (hasAge && hasDOB && dobQuestion) {
-            const dobFieldName = getMappedKey(dobQuestion);
-            const ageFieldName = getMappedKey(ageQuestion);
+            // If both Age and DOB exist, and user is changing DOB, auto-calculate age
+            if (hasAge && hasDOB && dobQuestion) {
+              const dobFieldName = getMappedKey(dobQuestion);
+              const ageFieldName = getMappedKey(ageQuestion);
 
-            // If the changed field is DOB, calculate and set age
-            if (name === dobFieldName && value) {
-              const calculatedAge = calculateAge(value);
-              updatedFormData[ageFieldName] = calculatedAge;
-              console.log(`🎂 Auto-calculated age: ${calculatedAge} from DOB: ${value}`);
+              // If the changed field is DOB, calculate and set age
+              if (name === dobFieldName && value) {
+                const calculatedAge = calculateAge(value);
+                updatedFormData[ageFieldName] = calculatedAge;
+                console.log(`🎂 Auto-calculated age: ${calculatedAge} from DOB: ${value}`);
 
-              // NEW: Validate auto-calculated age against ticket limits
-              const currentTicket = form.ticketInfo;
-              if (currentTicket) {
+                // NEW: Validate auto-calculated age against ticket limits
+                const currentTicket = form.ticketInfo;
+                if (currentTicket) {
+                  const ageStart = parseInt(currentTicket.age_start);
+                  const ageEnd = parseInt(currentTicket.age_end);
+
+                  let ageError = "";
+                  if (!isNaN(ageStart) && ageStart > 0 && calculatedAge < ageStart) {
+                    ageError = `Age must be at least ${ageStart} for this category`;
+                  } else if (!isNaN(ageEnd) && ageEnd > 0 && calculatedAge > ageEnd) {
+                    ageError = `Age must be at most ${ageEnd} for this category`;
+                  }
+
+                  if (ageError) {
+                    setFormErrors(prevErr => ({
+                      ...prevErr,
+                      [`participant_${participantIndex}_${ageFieldName}`]: ageError
+                    }));
+                  } else {
+                    setFormErrors(prevErr => {
+                      const newErrors = { ...prevErr };
+                      delete newErrors[`participant_${participantIndex}_${ageFieldName}`];
+                      return newErrors;
+                    });
+                  }
+                }
+              }
+            }
+
+            // Validate date range for date fields
+            const currentTicket = form.ticketInfo;
+            if (formQuestions && formQuestions[currentTicket.id]) {
+              const questionsData = formQuestions[currentTicket.id];
+              const questionsList = questionsData[participantIndex] || questionsData[0] || [];
+
+              // Helper function to find question recursively (including nested subquestions)
+              const findQuestionRecursive = (questions, fieldNm) => {
+                for (const q of questions) {
+                  if (getMappedKey(q) === fieldNm) {
+                    return q;
+                  }
+                  // Check in sub_questions_array
+                  if (q.sub_questions_array && Array.isArray(q.sub_questions_array)) {
+                    const found = findQuestionRecursive(q.sub_questions_array, fieldNm);
+                    if (found) return found;
+                  }
+                }
+                return null;
+              };
+
+              const question = findQuestionRecursive(questionsList, name);
+
+              // Check if this is a date field with range validation
+              if (question && question.question_form_type === 'date' && question.date_range === 1 && value) {
+                const enteredDate = new Date(value);
+                let isValid = true;
+                let errorMessage = "";
+
+                if (question.range_start_date) {
+                  const startTimestamp = parseInt(question.range_start_date);
+                  const minDt = new Date(startTimestamp * 1000);
+                  minDt.setHours(0, 0, 0, 0);
+
+                  if (enteredDate < minDt) {
+                    isValid = false;
+                    const minDateStr = minDt.toISOString().split('T')[0];
+                    errorMessage = `Date must be on or after ${minDateStr}`;
+                  }
+                }
+
+                if (question.range_end_date && isValid) {
+                  const endTimestamp = parseInt(question.range_end_date);
+                  const maxDt = new Date(endTimestamp * 1000);
+                  maxDt.setHours(23, 59, 59, 999);
+
+                  if (enteredDate > maxDt) {
+                    isValid = false;
+                    const maxDateStr = maxDt.toISOString().split('T')[0];
+                    errorMessage = `Date must be on or before ${maxDateStr}`;
+                  }
+                }
+
+                // Update form errors
+                if (!isValid) {
+                  setFormErrors(prevErrors => ({
+                    ...prevErrors,
+                    [`participant_${participantIndex}_${name}`]: errorMessage
+                  }));
+                } else {
+                  // Clear error if date is valid
+                  setFormErrors(prevErrors => {
+                    const newErrors = { ...prevErrors };
+                    delete newErrors[`participant_${participantIndex}_${name}`];
+                    return newErrors;
+                  });
+                }
+              }
+              // Validate mobile number field
+              else if (question && question.question_form_type === 'mobile') {
+                if (value) {
+                  // Only validate if there's a value
+                  const mobileRegex = /^[0-9]{10}$/;
+                  const isValid = mobileRegex.test(value);
+
+                  if (!isValid) {
+                    setFormErrors(prevErrors => ({
+                      ...prevErrors,
+                      [`participant_${participantIndex}_${name}`]: 'Mobile number must be exactly 10 digits'
+                    }));
+                  } else {
+                    // Clear error if mobile is valid
+                    setFormErrors(prevErrors => {
+                      const newErrors = { ...prevErrors };
+                      delete newErrors[`participant_${participantIndex}_${name}`];
+                      return newErrors;
+                    });
+                  }
+                } else {
+                  // Clear error if field is empty
+                  setFormErrors(prevErrors => {
+                    const newErrors = { ...prevErrors };
+                    delete newErrors[`participant_${participantIndex}_${name}`];
+                    return newErrors;
+                  });
+                }
+              }
+              // Validate email field
+              else if (question && question.question_form_type === 'email') {
+                if (value) {
+                  // Only validate if there's a value
+                  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                  const isValid = emailRegex.test(value);
+
+                  if (!isValid) {
+                    setFormErrors(prevErrors => ({
+                      ...prevErrors,
+                      [`participant_${participantIndex}_${name}`]: 'Please enter a valid email address'
+                    }));
+                  } else {
+                    // Clear error if email is valid
+                    setFormErrors(prevErrors => {
+                      const newErrors = { ...prevErrors };
+                      delete newErrors[`participant_${participantIndex}_${name}`];
+                      return newErrors;
+                    });
+                  }
+                } else {
+                  // Clear error if field is empty
+                  setFormErrors(prevErrors => {
+                    const newErrors = { ...prevErrors };
+                    delete newErrors[`participant_${participantIndex}_${name}`];
+                    return newErrors;
+                  });
+                }
+              }
+              // NEW: Validate Age field against ticket limits
+              else if (question && (question.question_label?.toLowerCase() === 'age' || getMappedKey(question) === 'age')) {
+                const ageValue = parseInt(value);
                 const ageStart = parseInt(currentTicket.age_start);
                 const ageEnd = parseInt(currentTicket.age_end);
 
-                let ageError = "";
-                if (!isNaN(ageStart) && ageStart > 0 && calculatedAge < ageStart) {
-                  ageError = `Age must be at least ${ageStart} for this category`;
-                } else if (!isNaN(ageEnd) && ageEnd > 0 && calculatedAge > ageEnd) {
-                  ageError = `Age must be at most ${ageEnd} for this category`;
+                let isValid = true;
+                let errorMessage = "";
+
+                if (!isNaN(ageValue)) {
+                  if (!isNaN(ageStart) && ageStart > 0 && ageValue < ageStart) {
+                    isValid = false;
+                    errorMessage = `Age must be at least ${ageStart} for this category`;
+                  } else if (!isNaN(ageEnd) && ageEnd > 0 && ageValue > ageEnd) {
+                    isValid = false;
+                    errorMessage = `Age must be at most ${ageEnd} for this category`;
+                  }
                 }
-
-                if (ageError) {
-                  setFormErrors(prev => ({
-                    ...prev,
-                    [`participant_${participantIndex}_${ageFieldName}`]: ageError
-                  }));
-                } else {
-                  setFormErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors[`participant_${participantIndex}_${ageFieldName}`];
-                    return newErrors;
-                  });
-                }
-              }
-            }
-          }
-
-          // Validate date range for date fields
-          const currentTicket = form.ticketInfo;
-          if (formQuestions && formQuestions[currentTicket.id]) {
-            const questionsData = formQuestions[currentTicket.id];
-            const questionsList = questionsData[participantIndex] || questionsData[0] || [];
-
-            // Helper function to find question recursively (including nested subquestions)
-            const findQuestionRecursive = (questions, fieldName) => {
-              for (const q of questions) {
-                if (getMappedKey(q) === fieldName) {
-                  return q;
-                }
-                // Check in sub_questions_array
-                if (q.sub_questions_array && Array.isArray(q.sub_questions_array)) {
-                  const found = findQuestionRecursive(q.sub_questions_array, fieldName);
-                  if (found) return found;
-                }
-              }
-              return null;
-            };
-
-            const question = findQuestionRecursive(questionsList, name);
-
-            // Check if this is a date field with range validation
-            if (question && question.question_form_type === 'date' && question.date_range === 1 && value) {
-              const enteredDate = new Date(value);
-              let isValid = true;
-              let errorMessage = "";
-
-              if (question.range_start_date) {
-                const startTimestamp = parseInt(question.range_start_date);
-                const minDate = new Date(startTimestamp * 1000);
-                minDate.setHours(0, 0, 0, 0);
-
-                if (enteredDate < minDate) {
-                  isValid = false;
-                  const minDateStr = minDate.toISOString().split('T')[0];
-                  errorMessage = `Date must be on or after ${minDateStr}`;
-                }
-              }
-
-              if (question.range_end_date && isValid) {
-                const endTimestamp = parseInt(question.range_end_date);
-                const maxDate = new Date(endTimestamp * 1000);
-                maxDate.setHours(23, 59, 59, 999);
-
-                if (enteredDate > maxDate) {
-                  isValid = false;
-                  const maxDateStr = maxDate.toISOString().split('T')[0];
-                  errorMessage = `Date must be on or before ${maxDateStr}`;
-                }
-              }
-
-              // Update form errors
-              if (!isValid) {
-                setFormErrors(prevErrors => ({
-                  ...prevErrors,
-                  [`participant_${participantIndex}_${name}`]: errorMessage
-                }));
-              } else {
-                // Clear error if date is valid
-                setFormErrors(prevErrors => {
-                  const newErrors = { ...prevErrors };
-                  delete newErrors[`participant_${participantIndex}_${name}`];
-                  return newErrors;
-                });
-              }
-            }
-            // Validate mobile number field
-            else if (question && question.question_form_type === 'mobile') {
-              if (value) {
-                // Only validate if there's a value
-                const mobileRegex = /^[0-9]{10}$/;
-                const isValid = mobileRegex.test(value);
 
                 if (!isValid) {
                   setFormErrors(prevErrors => ({
                     ...prevErrors,
-                    [`participant_${participantIndex}_${name}`]: 'Mobile number must be exactly 10 digits'
+                    [`participant_${participantIndex}_${name}`]: errorMessage
                   }));
                 } else {
-                  // Clear error if mobile is valid
                   setFormErrors(prevErrors => {
                     const newErrors = { ...prevErrors };
                     delete newErrors[`participant_${participantIndex}_${name}`];
                     return newErrors;
                   });
                 }
-              } else {
-                // Clear error if field is empty
+              }
+              else {
+                // Clear error for non-date fields or when value is empty
                 setFormErrors(prevErrors => {
                   const newErrors = { ...prevErrors };
                   delete newErrors[`participant_${participantIndex}_${name}`];
                   return newErrors;
                 });
               }
-            }
-            // Validate email field
-            else if (question && question.question_form_type === 'email') {
-              if (value) {
-                // Only validate if there's a value
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                const isValid = emailRegex.test(value);
 
-                if (!isValid) {
-                  setFormErrors(prevErrors => ({
-                    ...prevErrors,
-                    [`participant_${participantIndex}_${name}`]: 'Please enter a valid email address'
-                  }));
+              // Track parent selection for conditional subquestions
+              if (question && question.child_question_ids && question.child_question_ids.trim() !== '') {
+                // Store parent selection with actual value
+                let valueToStore;
+                if (type === "checkbox") {
+                  // For checkbox, store the updated array of selected values
+                  valueToStore = updatedFormData[name];
                 } else {
-                  // Clear error if email is valid
-                  setFormErrors(prevErrors => {
-                    const newErrors = { ...prevErrors };
-                    delete newErrors[`participant_${participantIndex}_${name}`];
-                    return newErrors;
-                  });
+                  // For radio/select, store the selected value
+                  valueToStore = value;
                 }
-              } else {
-                // Clear error if field is empty
-                setFormErrors(prevErrors => {
-                  const newErrors = { ...prevErrors };
-                  delete newErrors[`participant_${participantIndex}_${name}`];
-                  return newErrors;
-                });
-              }
-            }
-            // NEW: Validate Age field against ticket limits
-            else if (question && (question.question_label?.toLowerCase() === 'age' || getMappedKey(question) === 'age')) {
-              const ageValue = parseInt(value);
-              const ageStart = parseInt(currentTicket.age_start);
-              const ageEnd = parseInt(currentTicket.age_end);
 
-              let isValid = true;
-              let errorMessage = "";
-
-              if (!isNaN(ageValue)) {
-                if (!isNaN(ageStart) && ageStart > 0 && ageValue < ageStart) {
-                  isValid = false;
-                  errorMessage = `Age must be at least ${ageStart} for this category`;
-                } else if (!isNaN(ageEnd) && ageEnd > 0 && ageValue > ageEnd) {
-                  isValid = false;
-                  errorMessage = `Age must be at most ${ageEnd} for this category`;
-                }
-              }
-
-              if (!isValid) {
-                setFormErrors(prevErrors => ({
-                  ...prevErrors,
-                  [`participant_${participantIndex}_${name}`]: errorMessage
+                setParentSelections(prevSelections => ({
+                  ...prevSelections,
+                  [`${participantIndex}_${question.id}`]: valueToStore
                 }));
-              } else {
-                setFormErrors(prevErrors => {
-                  const newErrors = { ...prevErrors };
-                  delete newErrors[`participant_${participantIndex}_${name}`];
-                  return newErrors;
+
+                // Clear all nested subquestion prices when parent selection changes
+                const clearNestedPrices = (parentQuestionId) => {
+                  setQuestionPrices(prevPrices => {
+                    const newPrices = { ...prevPrices };
+
+                    // Helper to recursively find all child question IDs
+                    const getAllChildQuestionIds = (parentId) => {
+                      const childIds = [];
+
+                      // Find the parent question in questionsList
+                      const findQuestionById = (questions, qId) => {
+                        for (const q of questions) {
+                          if (q.id === qId || q.general_form_id === qId) {
+                            return q;
+                          }
+                          if (q.sub_questions_array && Array.isArray(q.sub_questions_array)) {
+                            const found = findQuestionById(q.sub_questions_array, qId);
+                            if (found) return found;
+                          }
+                        }
+                        return null;
+                      };
+
+                      const parentQ = findQuestionById(questionsList, parentId);
+                      if (parentQ && parentQ.sub_questions_array) {
+                        // Recursively collect all nested question IDs
+                        const collectIds = (subQuestions) => {
+                          subQuestions.forEach(sq => {
+                            const sqId = sq.id || sq.general_form_id;
+                            childIds.push(sqId);
+                            if (sq.sub_questions_array && Array.isArray(sq.sub_questions_array)) {
+                              collectIds(sq.sub_questions_array);
+                            }
+                          });
+                        };
+                        collectIds(parentQ.sub_questions_array);
+                      }
+
+                      return childIds;
+                    };
+
+                    // Get all child question IDs
+                    const childQuestionIds = getAllChildQuestionIds(parentQuestionId);
+
+                    // Remove prices for all child questions
+                    Object.keys(newPrices).forEach(key => {
+                      const [pIdx, qId] = key.split('_');
+                      if (parseInt(pIdx) === participantIndex && childQuestionIds.includes(parseInt(qId))) {
+                        delete newPrices[key];
+                        console.log('🗑️ Removed price for nested question:', key);
+                      }
+                    });
+
+                    return newPrices;
+                  });
+                };
+
+                // Clear nested prices for this parent question
+                clearNestedPrices(question.id || question.general_form_id);
+              }
+
+              // Track prices for 'amount' type questions (custom donations)
+              if (question && question.question_form_type === 'amount') {
+                const amountValue = parseFloat(value) || 0;
+                setQuestionPrices(prevPrices => {
+                  const newPrices = { ...prevPrices };
+                  const priceKey = `${participantIndex}_${question.id}_amount`;
+
+                  if (amountValue > 0) {
+                    newPrices[priceKey] = {
+                      label: question.question_label,
+                      price: amountValue,
+                      questionLabel: question.question_label
+                    };
+                  } else {
+                    delete newPrices[priceKey];
+                  }
+
+                  console.log('📊 Updated custom amount price in state:', newPrices);
+                  return newPrices;
                 });
               }
-            }
-            else {
-              // Clear error for non-date fields or when value is empty
-              setFormErrors(prevErrors => {
-                const newErrors = { ...prevErrors };
-                delete newErrors[`participant_${participantIndex}_${name}`];
-                return newErrors;
-              });
-            }
 
-            // Track parent selection for conditional subquestions
-            if (question && question.child_question_ids && question.child_question_ids.trim() !== '') {
-              // Store parent selection with actual value
-              let valueToStore;
-              if (type === "checkbox") {
-                // For checkbox, store the updated array of selected values
-                valueToStore = updatedFormData[name];
-              } else {
-                // For radio/select, store the selected value
-                valueToStore = value;
-              }
+              // Track prices from question options (Supporting select, radio, and checkbox)
+              if (question && ['select', 'radio', 'checkbox'].includes(question.question_form_type)) {
+                // Parse question options
+                let rawOptions = [];
+                try {
+                  if (typeof question.question_form_option === 'string') {
+                    rawOptions = JSON.parse(question.question_form_option);
+                  } else if (Array.isArray(question.question_form_option)) {
+                    rawOptions = question.question_form_option;
+                  }
+                } catch (e) {
+                  console.error('Error parsing question options:', e);
+                }
 
-              setParentSelections(prevSelections => ({
-                ...prevSelections,
-                [`${participantIndex}_${question.id}`]: valueToStore
-              }));
+                // Flatten options with comma-separated labels and prices
+                const flattenedOptions = [];
+                rawOptions.forEach(opt => {
+                  const labelStr = opt.label || opt.name || "";
+                  const priceStr = String(opt.price || "0");
 
-              // Clear all nested subquestion prices when parent selection changes
-              // This ensures that when switching from Male to Female, the Male's nested prices are removed
-              const clearNestedPrices = (parentQuestionId) => {
+                  const labels = labelStr.split(',').map(l => l.trim()).filter(l => l);
+                  const prices = priceStr.split(',').map(p => p.trim()).filter(p => p);
+
+                  labels.forEach((lbl, idxx) => {
+                    flattenedOptions.push({
+                      ...opt,
+                      label: lbl,
+                      price: parseFloat(prices[idxx] || prices[0] || 0) // Fallback to first price if fewer prices than labels
+                    });
+                  });
+                });
+
+                console.log('🔍 Price tracking for:', {
+                  type: question.question_form_type,
+                  name,
+                  value,
+                  flattenedOptions
+                });
+
+                // Update question prices based on selection
                 setQuestionPrices(prevPrices => {
                   const newPrices = { ...prevPrices };
 
-                  // Helper to recursively find all child question IDs
-                  const getAllChildQuestionIds = (parentId) => {
-                    const childIds = [];
-
-                    // Find the parent question in questionsList
-                    const findQuestionById = (questions, qId) => {
-                      for (const q of questions) {
-                        if (q.id === qId || q.general_form_id === qId) {
-                          return q;
-                        }
-                        if (q.sub_questions_array && Array.isArray(q.sub_questions_array)) {
-                          const found = findQuestionById(q.sub_questions_array, qId);
-                          if (found) return found;
-                        }
-                      }
-                      return null;
-                    };
-
-                    const parentQ = findQuestionById(questionsList, parentId);
-                    if (parentQ && parentQ.sub_questions_array) {
-                      // Recursively collect all nested question IDs
-                      const collectIds = (subQuestions) => {
-                        subQuestions.forEach(sq => {
-                          const sqId = sq.id || sq.general_form_id;
-                          childIds.push(sqId);
-                          if (sq.sub_questions_array && Array.isArray(sq.sub_questions_array)) {
-                            collectIds(sq.sub_questions_array);
-                          }
-                        });
-                      };
-                      collectIds(parentQ.sub_questions_array);
-                    }
-
-                    return childIds;
-                  };
-
-                  // Get all child question IDs
-                  const childQuestionIds = getAllChildQuestionIds(parentQuestionId);
-
-                  // Remove prices for all child questions
+                  // Remove all previous prices for this question/participant index
                   Object.keys(newPrices).forEach(key => {
-                    const [pIndex, qId] = key.split('_');
-                    if (parseInt(pIndex) === participantIndex && childQuestionIds.includes(parseInt(qId))) {
+                    if (key.startsWith(`${participantIndex}_${question.id}_`)) {
                       delete newPrices[key];
-                      console.log('🗑️ Removed price for nested question:', key);
                     }
                   });
 
+                  // Add new prices based on current selection(s)
+                  if (question.question_form_type === 'checkbox') {
+                    const values = Array.isArray(value) ? value : [];
+                    values.forEach(v => {
+                      const matchedOpt = flattenedOptions.find(opt => opt.label === v);
+                      if (matchedOpt && matchedOpt.price > 0) {
+                        const priceKey = `${participantIndex}_${question.id}_${matchedOpt.label}`;
+                        newPrices[priceKey] = {
+                          label: matchedOpt.label,
+                          price: matchedOpt.price,
+                          questionLabel: question.question_label
+                        };
+                      }
+                    });
+                  } else {
+                    // select or radio
+                    if (value) {
+                      const matchedOpt = flattenedOptions.find(opt => opt.label === value || opt.id == value);
+                      if (matchedOpt && matchedOpt.price > 0) {
+                        const priceKey = `${participantIndex}_${question.id}_${matchedOpt.label || matchedOpt.id}`;
+                        newPrices[priceKey] = {
+                          label: matchedOpt.label,
+                          price: matchedOpt.price,
+                          questionLabel: question.question_label
+                        };
+                      }
+                    }
+                  }
+
+                  console.log('📊 Updated item prices in state:', newPrices);
                   return newPrices;
                 });
-              };
-
-              // Clear nested prices for this parent question
-              clearNestedPrices(question.id || question.general_form_id);
-            }
-
-            // Track prices for 'amount' type questions (custom donations)
-            if (question && question.question_form_type === 'amount') {
-              const amountValue = parseFloat(value) || 0;
-              setQuestionPrices(prevPrices => {
-                const newPrices = { ...prevPrices };
-                const priceKey = `${participantIndex}_${question.id}_amount`;
-
-                if (amountValue > 0) {
-                  newPrices[priceKey] = {
-                    label: question.question_label,
-                    price: amountValue,
-                    questionLabel: question.question_label
-                  };
-                } else {
-                  delete newPrices[priceKey];
-                }
-
-                console.log('📊 Updated custom amount price in state:', newPrices);
-                return newPrices;
-              });
-            }
-
-            // Track prices from question options (Supporting select, radio, and checkbox)
-            if (question && ['select', 'radio', 'checkbox'].includes(question.question_form_type)) {
-              // Parse question options
-              let rawOptions = [];
-              try {
-                if (typeof question.question_form_option === 'string') {
-                  rawOptions = JSON.parse(question.question_form_option);
-                } else if (Array.isArray(question.question_form_option)) {
-                  rawOptions = question.question_form_option;
-                }
-              } catch (e) {
-                console.error('Error parsing question options:', e);
               }
-
-              // Flatten options with comma-separated labels and prices
-              const flattenedOptions = [];
-              rawOptions.forEach(opt => {
-                const labelStr = opt.label || opt.name || "";
-                const priceStr = String(opt.price || "0");
-
-                const labels = labelStr.split(',').map(l => l.trim()).filter(l => l);
-                const prices = priceStr.split(',').map(p => p.trim()).filter(p => p);
-
-                labels.forEach((lbl, idx) => {
-                  flattenedOptions.push({
-                    ...opt,
-                    label: lbl,
-                    price: parseFloat(prices[idx] || prices[0] || 0) // Fallback to first price if fewer prices than labels
-                  });
-                });
-              });
-
-              console.log('🔍 Price tracking for:', {
-                type: question.question_form_type,
-                name,
-                value,
-                flattenedOptions
-              });
-
-              // Update question prices based on selection
-              setQuestionPrices(prevPrices => {
-                const newPrices = { ...prevPrices };
-
-                // Remove all previous prices for this question/participant index
-                Object.keys(newPrices).forEach(key => {
-                  if (key.startsWith(`${participantIndex}_${question.id}_`)) {
-                    delete newPrices[key];
-                  }
-                });
-
-                // Add new prices based on current selection(s)
-                if (question.question_form_type === 'checkbox') {
-                  const values = Array.isArray(value) ? value : [];
-                  values.forEach(v => {
-                    const matchedOpt = flattenedOptions.find(opt => opt.label === v);
-                    if (matchedOpt && matchedOpt.price > 0) {
-                      const priceKey = `${participantIndex}_${question.id}_${matchedOpt.label}`;
-                      newPrices[priceKey] = {
-                        label: matchedOpt.label,
-                        price: matchedOpt.price,
-                        questionLabel: question.question_label
-                      };
-                    }
-                  });
-                } else {
-                  // select or radio
-                  if (value) {
-                    const matchedOpt = flattenedOptions.find(opt => opt.label === value || opt.id == value);
-                    if (matchedOpt && matchedOpt.price > 0) {
-                      const priceKey = `${participantIndex}_${question.id}_${matchedOpt.label || matchedOpt.id}`;
-                      newPrices[priceKey] = {
-                        label: matchedOpt.label,
-                        price: matchedOpt.price,
-                        questionLabel: question.question_label
-                      };
-                    }
-                  }
-                }
-
-                console.log('📊 Updated item prices in state:', newPrices);
-                return newPrices;
-              });
             }
-          }
 
-          return {
-            ...form,
-            formData: updatedFormData
-          };
+            return {
+              ...form,
+              formData: updatedFormData
+            };
+          }
+          return form;
+        });
+
+        // Uniqueness check for email/mobile
+        if (allowUniqueRegistration === 1) {
+          const uniqueErrors = checkUniqueness(updatedForms);
+          setFormErrors(prev => {
+            const newErrors = { ...prev };
+            // Clear existing uniqueness errors first
+            Object.keys(newErrors).forEach(key => {
+              if (key.includes('_email') || key.includes('_mobile')) {
+                // Only clear if it was a uniqueness error (contains duplicate message)
+                if (String(newErrors[key]).includes('already used')) {
+                  delete newErrors[key];
+                }
+              }
+            });
+            return { ...newErrors, ...uniqueErrors };
+          });
         }
-        return form;
-      }));
+
+        return updatedForms;
+      });
     }
   };
 
@@ -1373,7 +1394,39 @@ export default function ParticipantDetails() {
     return finalPrice.toFixed(2);
   };
 
-  // Handle Apply Coupon
+  // Helper function to check uniqueness across participants
+  const checkUniqueness = (forms) => {
+    if (allowUniqueRegistration !== 1 || forms.length <= 1) return {};
+
+    const errors = {};
+    const emails = {};
+    const mobiles = {};
+
+    forms.forEach((form, idx) => {
+      const { email, mobile } = form.formData;
+      if (email && email.trim()) {
+        const lowerEmail = email.trim().toLowerCase();
+        if (emails[lowerEmail] !== undefined) {
+          const errorKey = `participant_${idx}_email`;
+          errors[errorKey] = `Email "${email}" is already used by Participant ${emails[lowerEmail] + 1}`;
+        } else {
+          emails[lowerEmail] = idx;
+        }
+      }
+      if (mobile && mobile.trim()) {
+        const cleanMobile = mobile.trim();
+        if (mobiles[cleanMobile] !== undefined) {
+          const errorKey = `participant_${idx}_mobile`;
+          errors[errorKey] = `Mobile number "${mobile}" is already used by Participant ${mobiles[cleanMobile] + 1}`;
+        } else {
+          mobiles[cleanMobile] = idx;
+        }
+      }
+    });
+
+    return errors;
+  };
+
   const handleApplyCoupon = async (couponCode, participantIndex, questionId) => {
     if (!couponCode || couponCode.trim() === '') {
       setCouponError('Please enter a coupon code');
@@ -3629,45 +3682,11 @@ export default function ParticipantDetails() {
 
     // NEW: Cross-participant uniqueness check if AllowUniqueRegistration is enabled
     if (allowUniqueRegistration === 1 && participantForms.length > 1) {
-      console.log("🔍 Checking for unique mobile/email across participants...");
-      const emails = {};
-      const mobiles = {};
-
-      participantForms.forEach((form, idx) => {
-        const { email, mobile } = form.formData;
-        if (email && email.trim()) {
-          const lowerEmail = email.trim().toLowerCase();
-          if (emails[lowerEmail] !== undefined) {
-            const errorKey = `participant_${idx}_email_unique`;
-            errors[errorKey] = `Email "${email}" is already used by Participant ${emails[lowerEmail] + 1}`;
-            hasErrors = true;
-          } else {
-            emails[lowerEmail] = idx;
-          }
-        }
-        if (mobile && mobile.trim()) {
-          const cleanMobile = mobile.trim();
-          if (mobiles[cleanMobile] !== undefined) {
-            const errorKey = `participant_${idx}_mobile_unique`;
-            errors[errorKey] = `Mobile number "${mobile}" is already used by Participant ${mobiles[cleanMobile] + 1}`;
-            hasErrors = true;
-          } else {
-            mobiles[cleanMobile] = idx;
-          }
-        }
-      });
-
-      if (hasErrors) {
-        // Collect duplicate counts for alert
-        const duplicateEmails = Object.keys(emails).filter(e => participantForms.filter(f => f.formData.email?.trim().toLowerCase() === e).length > 1);
-        const duplicateMobiles = Object.keys(mobiles).filter(m => participantForms.filter(f => f.formData.mobile?.trim() === m).length > 1);
-
-        let alertMsg = "Duplicate registration details found:";
-        if (duplicateEmails.length > 0) alertMsg += `\n- Same email used multiple times.`;
-        if (duplicateMobiles.length > 0) alertMsg += `\n- Same mobile number used multiple times.`;
-        alertMsg += "\n\nPlease ensure each participant has unique details.";
-
-        alert(alertMsg);
+      console.log("🔍 Checking for unique mobile/email across participants in validateForm...");
+      const uniqueErrors = checkUniqueness(participantForms);
+      if (Object.keys(uniqueErrors).length > 0) {
+        Object.assign(errors, uniqueErrors);
+        hasErrors = true;
       }
     }
 
