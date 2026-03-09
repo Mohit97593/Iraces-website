@@ -299,7 +299,7 @@ export default function HeroCarousel() {
           return isRegistrationOpen && isNotClosed;
         });
 
-        // 2. Partition Local Events (Selected City)
+        // 2. Partition Local Events (Selected City) for Trending
         const localEvents = activeEvents.filter(
           (event) =>
             event.city_name &&
@@ -312,61 +312,43 @@ export default function HeroCarousel() {
           return regStart <= now;
         });
 
-        // Upcoming: Local events where registration hasn't started yet
-        const localUpcoming = localEvents.filter((event) => {
-          const regStart = event.registration_start_time ? event.registration_start_time * 1000 : 0;
-          return regStart > now;
-        });
-
-        // 3. Global Suggestions (Fallback)
+        // Global Live: Fallback for Trending if no local live
         const globalLive = activeEvents.filter((event) => {
           const regStart = event.registration_start_time ? event.registration_start_time * 1000 : 0;
           return regStart <= now;
-        }).slice(0, 12);
+        });
 
-        const globalUpcoming = activeEvents.filter((event) => {
-          const regStart = event.registration_start_time ? event.registration_start_time * 1000 : 0;
-          return regStart > now;
-        }).sort((a, b) => a.start_time - b.start_time).slice(0, 12);
-
-        // 4. Update state logic with fallback
+        // 3. Final Trending Assignment
         let finalTrending = [];
-        let finalUpcoming = [];
-
         if (localLive.length > 0) {
           finalTrending = localLive;
           setHasLocalEvents(true);
         } else if (globalLive.length > 0) {
-          // Fallback to global live events for Trending
-          finalTrending = globalLive;
+          finalTrending = globalLive.slice(0, 12);
           setHasLocalEvents(false);
           console.log("ℹ️ No local LIVE events. Showing global live suggestions.");
         } else {
           setHasLocalEvents(false);
         }
 
-        if (localUpcoming.length > 0) {
-          finalUpcoming = localUpcoming;
-          setHasLocalUpcoming(true);
-        } else {
-          // Fallback to global upcoming events for Upcoming
-          finalUpcoming = globalUpcoming;
-          setHasLocalUpcoming(false);
-          console.log("ℹ️ No local UPCOMING events. Showing global upcoming suggestions.");
-        }
+        // 4. Final Upcoming Assignment (ALWAYS Global / All India as per user request)
+        // PER USER REQUIREMENT: Show ALL India events (Live + Future) in Upcoming
+        const finalUpcoming = [...activeEvents].sort((a, b) => a.start_time - b.start_time);
+        
+        // Ensure no empty section if we have any active events
+        setHasLocalUpcoming(finalUpcoming.length > 0);
 
-        // DE-DUPLICATION: Ensure no event appears in both sections
-        // Even though Live vs Future should be distinct, some events might have edge case timings
-        // or the API might return them in both blocks.
-        const trendingIds = new Set(finalTrending.map(ev => ev.id));
-        finalUpcoming = finalUpcoming.filter(ev => !trendingIds.has(ev.id));
-
+        // DE-DUPLICATION: Ensure no event appears in both sections if needed?
+        // Actually, user wants Trending to be special and Upcoming to be "All"
+        // But usually it's better to not repeat. 
+        // However, user said "upcoming me sare events dikhna do joki chl rhe h".
+        // Let's keep Trending as "Live/Current" and Upcoming as "The whole list".
+        
         setTrendingEvents(finalTrending);
         setUpcomingEvents(finalUpcoming);
 
-        // Use all active events for suggestions state if needed elsewhere, 
-        // but carousel will now use trendingEvents
-        setSuggestionEvents(activeEvents.sort((a, b) => a.start_time - b.start_time).slice(0, 12));
+        // Update suggestions
+        setSuggestionEvents(activeEvents.slice(0, 12));
 
         // Initialize liked state for all events found
         const initialLikes = {};

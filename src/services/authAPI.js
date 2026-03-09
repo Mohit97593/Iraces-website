@@ -2066,6 +2066,21 @@ export const authAPI = {
       throw error.response?.data || error.message;
     }
   },
+  // Accept Organizer Invitation API
+  acceptOrgInvitation: async (orgId, email) => {
+    try {
+      console.log("🚀 Calling accept_org_invitation API:", { org_id: orgId, email });
+      const formData = new FormData();
+      formData.append("orgId", orgId);
+      formData.append("email", email);
+      const response = await api.post("/accept_org_invitation", formData);
+      console.log("📄 API Response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("❌ acceptOrgInvitation API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 // Token को axios header में set करें app load होते समय

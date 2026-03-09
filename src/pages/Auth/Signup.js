@@ -115,6 +115,20 @@ export default function Signup() {
       }
     };
     fetchPhoneCodes();
+
+    // Pre-fill email from pending invitation
+    const pendingInv = sessionStorage.getItem("pendingInvitation");
+    if (pendingInv) {
+      try {
+        const { email: invEmail } = JSON.parse(pendingInv);
+        if (invEmail) {
+          setFormData(prev => ({ ...prev, email: invEmail }));
+          console.log("📧 Invitation email pre-filled in signup:", invEmail);
+        }
+      } catch (e) {
+        console.error("Failed to parse pending invitation in signup:", e);
+      }
+    }
   }, []);
 
   const validateForm = () => {
@@ -302,7 +316,14 @@ export default function Signup() {
 
       if (result.success) {
         console.log("OTP verification successful");
-        navigate("/login");
+        
+        // If the user is already authenticated (from validateOTP), go to home
+        const token = sessionStorage.getItem("token");
+        if (token) {
+          navigate("/");
+        } else {
+          navigate("/login");
+        }
       } else {
         setErrors({
           general:
@@ -525,6 +546,20 @@ export default function Signup() {
                         Your all-in-one event planning tool
                       </p>
                     </div>
+
+                    {/* Organizer Invitation Notice */}
+                    {sessionStorage.getItem("authNote") && (
+                      <div className="alert alert-info border-0 shadow-sm mb-4" style={{ borderRadius: "12px", background: "#f0f7ff" }}>
+                        <div className="d-flex align-items-center">
+                          <div className="me-3">
+                            <i className="fas fa-info-circle fa-lg text-primary"></i>
+                          </div>
+                          <div style={{ fontSize: "14px", color: "#0056b3", lineHeight: "1.4" }}>
+                            {sessionStorage.getItem("authNote")}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <form onSubmit={handleSubmit} className="auth-form">
                       {/* Responsive field order for mobile and desktop - only one set per view */}
                       <div className="row">

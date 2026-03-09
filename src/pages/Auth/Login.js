@@ -14,11 +14,21 @@ export default function Login() {
   const handleLoginRedirect = () => {
     const token = sessionStorage.getItem("token");
     if (token) {
+      // 1. Check if we have an explicit redirect after login
       const redirectUrl = sessionStorage.getItem("redirectAfterLogin");
+      
+      // 2. Clear invitation-related redirects immediately to prevent loops
+      if (redirectUrl && redirectUrl.includes("/invitation/")) {
+        sessionStorage.removeItem("redirectAfterLogin");
+        navigate("/");
+        return;
+      }
+
       if (redirectUrl) {
         sessionStorage.removeItem("redirectAfterLogin");
         navigate(redirectUrl);
       } else {
+        // Fallback to home
         navigate("/");
       }
     } else {
@@ -122,6 +132,21 @@ export default function Login() {
     if (email && eventId) {
       setHasGuestInfo(true);
       console.log("🎟️ Guest login info detected for email:", email);
+    }
+
+    // Pre-fill email from pending invitation
+    const pendingInv = sessionStorage.getItem("pendingInvitation");
+    if (pendingInv) {
+      try {
+        const { email: invEmail } = JSON.parse(pendingInv);
+        if (invEmail) {
+          setFormData(prev => ({ ...prev, identifier: invEmail }));
+          setLoginType("email");
+          console.log("📧 Invitation email pre-filled:", invEmail);
+        }
+      } catch (e) {
+        console.error("Failed to parse pending invitation:", e);
+      }
     }
   }, []);
 
@@ -588,6 +613,20 @@ export default function Login() {
                     Your all-in-one event registering tool
                   </p>
                 </div>
+
+                {/* Organizer Invitation Notice */}
+                {sessionStorage.getItem("authNote") && (
+                  <div className="alert alert-info border-0 shadow-sm mb-4" style={{ borderRadius: "12px", background: "#f0f7ff" }}>
+                    <div className="d-flex align-items-center">
+                      <div className="me-3">
+                        <i className="fas fa-info-circle fa-lg text-primary"></i>
+                      </div>
+                      <div style={{ fontSize: "14px", color: "#0056b3", lineHeight: "1.4" }}>
+                        {sessionStorage.getItem("authNote")}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <form onSubmit={handleSubmit} className="auth-form">
                   {/* Login Type Selector */}
                   <div className="login-type-selector">

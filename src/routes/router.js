@@ -1,4 +1,5 @@
 import ResetPasswordPage from "../pages/ResetPasswordPage";
+import InvitationHandler from "../pages/Auth/InvitationHandler";
 import SetNewPassword from "../pages/Auth/SetNewPassword";
 import React from "react";
 import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
@@ -138,6 +139,15 @@ const AppRouter = createBrowserRouter([
         element: (
           <ErrorBoundary>
             <WhyChooseRaces />
+          </ErrorBoundary>
+        ),
+        errorElement: <NotFound />,
+      },
+      {
+        path: "/invitation/:orgId/:email",
+        element: (
+          <ErrorBoundary>
+            <InvitationHandler />
           </ErrorBoundary>
         ),
         errorElement: <NotFound />,

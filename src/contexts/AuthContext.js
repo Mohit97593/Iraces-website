@@ -77,6 +77,30 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
+  // 4. Automatic processing of pending invitations after login
+  useEffect(() => {
+    if (isAuthenticated) {
+      const processPendingInvitation = async () => {
+        const pendingInv = sessionStorage.getItem("pendingInvitation");
+        if (pendingInv) {
+          try {
+            const { orgId, email } = JSON.parse(pendingInv);
+            console.log("🔄 Processing pending invitation for:", email);
+            await authAPI.acceptOrgInvitation(orgId, email);
+            console.log("✅ Invitation accepted automatically after login");
+          } catch (error) {
+            console.error("❌ Failed to accept invitation after login:", error);
+          } finally {
+            // Always clean up to prevent repeat calls or stale UI
+            sessionStorage.removeItem("pendingInvitation");
+            sessionStorage.removeItem("authNote");
+          }
+        }
+      };
+      processPendingInvitation();
+    }
+  }, [isAuthenticated]);
+
   const checkAuthStatus = () => {
     try {
       const token = authAPI.getToken();
