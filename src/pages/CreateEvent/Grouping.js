@@ -713,7 +713,7 @@ const Grouping = ({ onBack, onNext }) => {
                                 className="fas fa-layer-group"
                                 style={{ fontSize: "3rem", color: "#da251c", marginBottom: 16 }}
                             ></i>
-                            <p>No groups added yet. Click "Add Group" to get started.</p>
+                            <p>“Organize your event form questions into groups, such as Personal Details, Address Information, Emergency Details and as per your choice”, to get started Click on Add Group to create the group and add questions as per the group you created</p>
                         </div>
                     </div>
                 ) : (

@@ -290,7 +290,7 @@ export default function EventDetails() {
             {/* Description Section */}
             <div className="event-section">
               <h3 className="section-title">
-                <i className="fas fa-align-left"></i> Description
+                <i className="fas fa-align-left"></i>Event Description
               </h3>
               <div className="section-content">
                 {event.event_description ? (
@@ -579,7 +579,7 @@ export default function EventDetails() {
                   <i className="fas fa-clock"></i>
                   <div>
                     <span className="info-label1">
-                      Registration starting From
+                      Registration Starting From
                     </span>
                     <span className="info-value">
                       {formatDate(event.registration_start_time)}{" "}
@@ -591,7 +591,7 @@ export default function EventDetails() {
                 <div className="info-item">
                   <i className="fas fa-clock"></i>
                   <div>
-                    <span className="info-label1">Registration ending To</span>
+                    <span className="info-label1">Registration Ending On</span>
                     <span className="info-value">
                       {formatDate(event.registration_end_time)}{" "}
                       {formatTime(event.registration_end_time)}

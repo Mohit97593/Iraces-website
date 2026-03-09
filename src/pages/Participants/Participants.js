@@ -1038,8 +1038,8 @@ export default function Participants() {
                                 <button className="email-cancel-btn" onClick={() => setShowEmailModal(false)}>
                                     Cancel
                                 </button>
-                                <button 
-                                    className="email-send-btn" 
+                                <button
+                                    className="email-send-btn"
                                     onClick={handleConfirmSendEmail}
                                     disabled={sendingEmail}
                                 >

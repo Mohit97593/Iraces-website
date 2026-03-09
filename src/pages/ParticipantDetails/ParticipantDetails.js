@@ -4508,8 +4508,14 @@ export default function ParticipantDetails() {
             <h2 className="success-title">YAY!</h2>
 
             <p className="success-message">
-              {eventId === "349" 
-                ? "Redirecting to the Himalaya Wellness site for a 1-minute wellness test. Track your registration in RACES Profile → Registration Tracker."
+              {eventId === "349"
+                ? (
+                  <>
+                    Your spot for the Himalaya Walkathon Delhi on April 12, 2026, is confirmed.<br /><br />
+                    Redirecting to the Himalaya Wellness site — take our one-minute Wellness Test to understand your stress levels and wellness score.<br /><br />
+                    You can also track your registration through your RACES Profile → Registration Tracker.
+                  </>
+                )
                 : "Your registration is successful..!"}
             </p>
 
@@ -4522,8 +4528,9 @@ export default function ParticipantDetails() {
                   window.location.href = '/registration-tracker';
                 }
               }}
+              style={{ backgroundColor: eventId === "349" ? "#17C653" : "" }}
             >
-              {eventId === "349" ? "Redirect Now" : "View My Tickets"}
+              {eventId === "349" ? "Take the Wellness Test" : "View My Tickets"}
             </button>
           </div>
         </div>

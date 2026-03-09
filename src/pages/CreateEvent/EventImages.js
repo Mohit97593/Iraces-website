@@ -360,7 +360,7 @@ export default function EventImages({ onBack, onNext }) {
         <div className="form-row" style={{ display: "flex", gap: 16 }}>
           <div className="form-group" style={{ flex: 1 }}>
             <label>
-              Event banner <span style={{ color: "#da251c" }}>*</span>
+              Event Banner <span style={{ color: "#da251c" }}>*</span>
             </label>
             <input
               type="file"
@@ -413,7 +413,7 @@ export default function EventImages({ onBack, onNext }) {
                 {errorMsg}
               </div>
             )}
-            <small>In jpg, jpeg, png formats. Max upto 5MB.</small>
+            <small>In jpg, jpeg, png formats. Max upto 5MB. Recommended size: 1490 x 450 pixels (3.3:1 aspect ratio).</small>
             {eventBannerPreview && (
               <div
                 style={{

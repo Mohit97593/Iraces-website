@@ -434,7 +434,7 @@ export default function TicketDetails() {
                                 <span className="breadcrumb-separator">→</span>
                                 <span onClick={() => navigate("/registration-tracker")} style={{ cursor: "pointer" }}>Registration Tracker</span>
                                 <span className="breadcrumb-separator">→</span>
-                                <span>Ticket Details</span>
+                                <span>Registration Details</span>
                             </nav>
                         </div>
                     </div>
