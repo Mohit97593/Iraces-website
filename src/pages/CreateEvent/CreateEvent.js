@@ -48,6 +48,7 @@ export default function CreateEvent() {
   const [bannerImageUrl, setBannerImageUrl] = useState(null);
   const [organizerGST, setOrganizerGST] = useState(false); // Track organizer's GST setting
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditingCommunication, setIsEditingCommunication] = useState(false);
   const [toast, setToast] = useState(null); // Toast notification state
   const today = new Date();
   const year = today.getFullYear();
