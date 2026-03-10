@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
 import { authAPI } from "../../services/authAPI";
 import SearchableSelect from "../../components/SearchableSelect/SearchableSelect";
@@ -10,6 +10,7 @@ export default function ParticipantDetails() {
   const couponDiscount = parseFloat(sessionStorage.getItem("couponDiscount")) || 0;
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const isGuestLogin = sessionStorage.getItem("isGuestLogin") === "true";
 
   const [formData, setFormData] = useState({
@@ -96,6 +97,16 @@ export default function ParticipantDetails() {
       }
     }
   }, []);
+
+
+  // Check for test success modal via URL parameter
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('testSuccess') === 'true') {
+      setShowSuccessModal(true);
+      console.log('🧪 Success modal test mode active');
+    }
+  }, [location.search]);
 
 
   const fieldMapping = {
@@ -4524,32 +4535,41 @@ export default function ParticipantDetails() {
               />
             </div>
 
-            <h4 className="success-title">
-              {eventId === "349" ? "YAY! You have successfully registered!" : "YAY!"}
-            </h4>
-
-            <p className="success-message">
-              {eventId === "349"
-                ? (
+            <div className={`success-content-wrapper ${eventId === "349" ? "himalaya-content" : ""}`}>
+              <div className="success-header-wrapper">
+                {eventId === "349" ? (
                   <>
-                    Your spot for the Himalaya Walkathon Delhi on April 12, 2026, is confirmed.<br /><br />
-                    As you gear up for the Mindful Strides walkathon, check in on your mental wellness with this quick one-minute stress test.<br /><br />
-                    You can also track your registration through your RACES Profile → Registration Tracker.
+                    <h2 className="success-yay">YAY!</h2>
+                    <h3 className="success-subtitle" style={{ color: '#27ae60', fontSize: '28px' }}>You have successfully registered!</h3>
                   </>
-                )
-                : "Your registration is successful..!"}
-            </p>
+                ) : (
+                  <h4 className="success-title">YAY!</h4>
+                )}
+              </div>
+
+              <div className="success-message">
+                {eventId === "349"
+                  ? (
+                    <div className="himalaya-details">
+                      <p>Your spot for the Himalaya Walkathon Delhi on April 12, 2026, is confirmed.</p>
+                      <p>As you gear up for the Mindful Strides walkathon, check in on your mental wellness with this quick one-minute stress test.</p>
+                      <p>You can also track your registration through your RACES Profile → Registration Tracker.</p>
+                    </div>
+                  )
+                  : <p>Your registration is successful..!</p>}
+              </div>
+            </div>
 
             <button
               className="view-tickets-btn"
               onClick={() => {
-                if (eventId === "349") {
+                if (String(eventId) === "349") {
                   window.location.href = 'https://ashwagandha.in/';
                 } else {
                   window.location.href = '/registration-tracker';
                 }
               }}
-              style={{ backgroundColor: eventId === "349" ? "#17C653" : "" }}
+              style={{ backgroundColor: String(eventId) === "349" ? "#17C653" : "" }}
             >
               {eventId === "349" ? "Check Your Score Now!" : "View My Tickets"}
             </button>

@@ -348,12 +348,12 @@ textarea.form-control3 {
 
 .registration-success-modal {
   background-color: #fff;
-  padding: 40px;
+  padding: 30px;
   border-radius: 20px;
   text-align: center;
-  max-width: 450px;
+  max-width: 500px;
   width: 90%;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
   position: relative;
   animation: modalSlideUp 0.3s ease-out;
 }
@@ -400,37 +400,69 @@ textarea.form-control3 {
   width: 120px;
 }
 
+.success-header-wrapper {
+  margin-bottom: 20px;
+}
+
+.success-yay {
+  color: #27ae60;
+  font-size: 36px;
+  font-weight: 800;
+  margin-bottom: 5px;
+  line-height: 1.1;
+}
+
+.success-subtitle {
+  color: #27ae60;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 0;
+  line-height: 1.2;
+}
+
 .success-title {
-  color: #FF4D4D;
+  color: #27ae60;
   font-size: 32px;
   font-weight: 800;
   margin-bottom: 10px;
-  font-family: 'Inter', sans-serif;
+  line-height: 1.2;
 }
 
 .success-message {
-  font-size: 22px;
   color: #1A237E;
   font-weight: 600;
-  line-height: 1.4;
-  margin: 0 0 30px 0;
+  line-height: 1.5;
+  margin-bottom: 25px;
+}
+
+.success-message p {
+  margin-bottom: 12px;
+}
+
+.success-message p:last-child {
+  margin-bottom: 0;
+}
+
+.himalaya-details p {
+  font-size: 17px;
+  margin-bottom: 10px;
 }
 
 .view-tickets-btn {
   background-color: #17C653;
   color: white;
   border: none;
-  padding: 14px 40px;
+  padding: 12px 35px;
   font-size: 18px;
-  border-radius: 10px;
+  border-radius: 30px;
   cursor: pointer;
   font-weight: 700;
-  transition: all 0.2s;
-  box-shadow: 0 4px 10px rgba(23, 198, 83, 0.3);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(23, 198, 83, 0.3);
 }
 
 .view-tickets-btn:hover {
   background-color: #14B049;
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(23, 198, 83, 0.4);
+  box-shadow: 0 6px 18px rgba(23, 198, 83, 0.4);
 }

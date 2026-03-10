@@ -85,7 +85,7 @@ export default function PaymentSuccess() {
   }, [searchParams]);
 
   const handleViewBookings = () => {
-    if (paymentDetails?.event_id === "349" || paymentDetails?.udf2 === "349") {
+    if (String(paymentDetails?.event_id) === "349" || String(paymentDetails?.udf2) === "349") {
       window.location.href = 'https://ashwagandha.in/';
     } else {
       navigate('/registration-tracker');
@@ -195,9 +195,22 @@ export default function PaymentSuccess() {
 
           {/* Action Buttons */}
           <div className="action-buttons">
-            <button className="btn-primary" onClick={handleViewBookings}>
-              <i className="fas fa-ticket-alt"></i>
-              View My Registrations
+            <button 
+              className="btn-primary" 
+              onClick={handleViewBookings}
+              style={(String(paymentDetails?.event_id) === "349" || String(paymentDetails?.udf2) === "349") ? { backgroundColor: '#17C653', border: 'none' } : {}}
+            >
+              {(String(paymentDetails?.event_id) === "349" || String(paymentDetails?.udf2) === "349") ? (
+                <>
+                  <i className="fas fa-clipboard-check"></i>
+                  Check Your Score Now!
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-ticket-alt"></i>
+                  View My Registrations
+                </>
+              )}
             </button>
             <button className="btn-secondary" onClick={handleGoHome}>
               <i className="fas fa-home"></i>
