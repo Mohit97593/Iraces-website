@@ -3,7 +3,7 @@ import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 import Toast from "../../components/Toast/Toast";
 
-const DiscountCoupons = ({ onBack, onNext }) => {
+export default function DiscountCoupons({ onBack, onNext, isEditMode }) {
   const [toast, setToast] = useState(null);
 
   const triggerToast = (message, type = 'success') => {
@@ -139,7 +139,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       from.setHours(0, 0, 0, 0);
-      if (from < today) {
+      if (!isEditMode && from < today) {
         errors.discountAvailedFromDate = "Start date cannot be before today";
       }
 
@@ -978,7 +978,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                       }));
                     }}
                     placeholder="dd-mm-yyyy"
-                    min={todayStr}
+                    min={isEditMode ? "" : todayStr}
                     style={{
                       width: "100%",
                       padding: "10px",
@@ -1045,7 +1045,7 @@ const DiscountCoupons = ({ onBack, onNext }) => {
                       }));
                     }}
                     placeholder="dd-mm-yyyy"
-                    min={formData.discountAvailedFromDate || todayStr}
+                    min={isEditMode ? "" : (formData.discountAvailedFromDate || todayStr)}
                     style={{
                       width: "100%",
                       padding: "10px",
@@ -2141,5 +2141,3 @@ const DiscountCoupons = ({ onBack, onNext }) => {
     </div >
   );
 };
-
-export default DiscountCoupons;

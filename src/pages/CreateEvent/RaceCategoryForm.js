@@ -19,6 +19,7 @@ const RaceCategoryForm = ({
   collectGST,
   taxType,
   apiChargesDetails,
+  isEditMode,
 }) => {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
@@ -820,7 +821,7 @@ const RaceCategoryForm = ({
               <input
                 type="date"
                 placeholder="dd-mm-yyyy"
-                min={todayDate}
+                min={isEditMode ? "" : todayDate}
                 value={formData.registrationStartDate}
                 onChange={(e) => {
                   handleChange("registrationStartDate", e.target.value);
@@ -832,7 +833,7 @@ const RaceCategoryForm = ({
                     today.setHours(0, 0, 0, 0);
                     const selectedDate = new Date(e.target.value);
 
-                    if (selectedDate < today) {
+                    if (!isEditMode && selectedDate < today) {
                       newErrors.registrationStartDate = "Start date cannot be in the past";
                     } else {
                       delete newErrors.registrationStartDate;
@@ -903,7 +904,7 @@ const RaceCategoryForm = ({
               <input
                 type="date"
                 placeholder="dd-mm-yyyy"
-                min={formData.registrationStartDate || todayDate}
+                min={isEditMode ? "" : (formData.registrationStartDate || todayDate)}
                 value={formData.registrationEndDate}
                 onChange={(e) => {
                   handleChange("registrationEndDate", e.target.value);
@@ -1393,7 +1394,7 @@ const RaceCategoryForm = ({
                       type="date"
                       placeholder="dd-mm-yyyy"
                       required
-                      min={todayDate}
+                      min={isEditMode ? "" : todayDate}
                       value={formData.ebStartDate}
                       onChange={(e) =>
                         handleChange("ebStartDate", e.target.value)
@@ -1448,7 +1449,7 @@ const RaceCategoryForm = ({
                       type="date"
                       placeholder="dd-mm-yyyy"
                       required
-                      min={formData.ebStartDate || todayDate}
+                      min={isEditMode ? "" : (formData.ebStartDate || todayDate)}
                       value={formData.ebEndDate}
                       onChange={(e) => handleChange("ebEndDate", e.target.value)}
                       style={{

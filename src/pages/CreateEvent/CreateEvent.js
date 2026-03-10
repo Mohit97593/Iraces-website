@@ -47,7 +47,7 @@ export default function CreateEvent() {
   const [paidType, setPaidType] = useState("Paid");
   const [bannerImageUrl, setBannerImageUrl] = useState(null);
   const [organizerGST, setOrganizerGST] = useState(false); // Track organizer's GST setting
-  const [isEditingCommunication, setIsEditingCommunication] = useState(false); // Track if editing communication
+  const [isEditMode, setIsEditMode] = useState(false);
   const [toast, setToast] = useState(null); // Toast notification state
   const today = new Date();
   const year = today.getFullYear();
@@ -192,6 +192,7 @@ export default function CreateEvent() {
       }
 
       if (eid) {
+        setIsEditMode(true);
         // Clear editEventId from sessionStorage after reading it
         sessionStorage.removeItem('editEventId');
 
@@ -1616,9 +1617,8 @@ export default function CreateEvent() {
                 onNext={handleSchedulingNext}
                 initialFormData={eventFormData}
                 showToast={showToast}
-                onChange={(updatedData) => {
-                  setEventFormData(prev => ({ ...prev, ...updatedData }));
-                }}
+                onChange={(data) => setEventFormData((prev) => ({ ...prev, ...data }))}
+                isEditMode={isEditMode}
               />
             )}
             {currentStep === 3 && (
@@ -1646,6 +1646,7 @@ export default function CreateEvent() {
                 setEventFormData={setEventFormData}
                 organizerGST={organizerGST}
                 showToast={showToast}
+                isEditMode={isEditMode}
               />
             )}
             {currentStep === 6 && (
@@ -1682,6 +1683,7 @@ export default function CreateEvent() {
                 onBack={() => setCurrentStep(8)}
                 onNext={() => markCurrentSavedAndGo(10)}
                 showToast={showToast}
+                isEditMode={isEditMode}
               />
             )}
             {currentStep === 10 && (

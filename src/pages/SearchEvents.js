@@ -33,6 +33,8 @@ export default function SearchEvents() {
 
   // States for API data
   const [events, setEvents] = useState([]);
+  const [allEvents, setAllEvents] = useState([]); // Master list of sorted events
+  const [displayedCount, setDisplayedCount] = useState(20); // How many to show initially
   const [cities, setCities] = useState([]);
   const [eventTypes, setEventTypes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -40,7 +42,7 @@ export default function SearchEvents() {
   const [loadingTypes, setLoadingTypes] = useState(false);
   const [pagination, setPagination] = useState({
     total: 0,
-    per_page: 6,
+    per_page: 20,
     current_page: 1,
     last_page: 1,
     from: 0,
@@ -109,54 +111,80 @@ export default function SearchEvents() {
     };
   };
 
-  // Fetch Events with filters
-  const fetchEvents = async (page = 1, append = false) => {
+  // Fetch Events with filters - FETCHES ALL PAGES for true global sorting
+  const fetchEvents = async () => {
     setLoading(true);
     try {
-      const params = {
-        page,
-        per_page: 6, // Show 6 events per page
+      const getParams = (page) => {
+        const p = {
+          page: page,
+          per_page: 50, // Higher batch size if supported
+        };
+        if (searchQuery) p.event_name = searchQuery;
+        if (selectedCity) p.city = selectedCity;
+        if (selectedCategoryId) p.category_id = selectedCategoryId;
+
+        if (dateFilter) {
+          const { startDate, endDate } = getDateRange(dateFilter);
+          if (startDate) p.start_date = startDate;
+          if (endDate) p.end_date = endDate;
+        } else {
+          if (regStartDate) p.start_date = regStartDate;
+          if (regEndDate) p.end_date = regEndDate;
+        }
+        return p;
       };
 
-      if (searchQuery) params.event_name = searchQuery;
-      if (selectedCity) params.city = selectedCity;
-      if (selectedCategoryId) params.category_id = selectedCategoryId;
+      console.log("Starting exhaustive fetch for global sorting...");
+      
+      // Fetch Page 1 first to see how many there are
+      const firstResponse = await authAPI.getEvents(getParams(1));
+      let allFetchedEvents = [];
+      let totalCount = 0;
 
-      // Apply date filter if selected
-      if (dateFilter) {
-        const { startDate, endDate } = getDateRange(dateFilter);
-        if (startDate) params.start_date = startDate;
-        if (endDate) params.end_date = endDate;
-      } else {
-        // Use manual date filters if no preset filter is selected
-        if (regStartDate) params.start_date = regStartDate;
-        if (regEndDate) params.end_date = regEndDate;
-      }
+      if (firstResponse && firstResponse.data && firstResponse.data.EventData) {
+        allFetchedEvents = [...firstResponse.data.EventData];
+        const paginationInfo = firstResponse.pagination || {};
+        const lastPage = paginationInfo.last_page || 1;
+        totalCount = paginationInfo.total || allFetchedEvents.length;
 
-      console.log("Fetching events with params:", params);
-      const response = await authAPI.getEvents(params);
-      console.log("Events API response:", response);
-      if (response && response.data && response.data.EventData) {
-        if (append) {
-          setEvents((prevEvents) => [
-            ...prevEvents,
-            ...response.data.EventData,
-          ]);
-        } else {
-          setEvents(response.data.EventData);
-        }
-        if (response.pagination) {
-          setPagination({
-            ...response.pagination,
-            per_page: 6, // Always show 6 per page in UI
+        // If there are more pages, fetch them too
+        if (lastPage > 1) {
+          console.log(`Fetching remaining ${lastPage - 1} pages...`);
+          const remainingPromises = [];
+          for (let p = 2; p <= lastPage; p++) {
+            remainingPromises.push(authAPI.getEvents(getParams(p)));
+          }
+          
+          const remainingResponses = await Promise.all(remainingPromises);
+          remainingResponses.forEach(resp => {
+            if (resp && resp.data && resp.data.EventData) {
+              allFetchedEvents = [...allFetchedEvents, ...resp.data.EventData];
+            }
           });
         }
       }
+
+      console.log(`Total events fetched: ${allFetchedEvents.length}`);
+      
+      // GLOBAL SORT: Group 0 (Live) -> Group 1 (Upcoming) -> Group 2 (Closed)
+      const sortedEvents = [...allFetchedEvents].sort((a, b) => getEventGroup(a) - getEventGroup(b));
+      
+      setAllEvents(sortedEvents);
+      setDisplayedCount(20);
+      setEvents(sortedEvents.slice(0, 20));
+      
+      setPagination({
+        total: totalCount,
+        per_page: 20,
+        current_page: 1,
+        last_page: Math.ceil(sortedEvents.length / 20),
+      });
+
     } catch (error) {
-      console.error("Error fetching events:", error);
-      if (!append) {
-        setEvents([]);
-      }
+      console.error("Error in exhaustive event fetch:", error);
+      setEvents([]);
+      setAllEvents([]);
     } finally {
       setLoading(false);
     }
@@ -339,8 +367,8 @@ export default function SearchEvents() {
       const isFollow = newLikeStatus ? 0 : 1;
       await authAPI.followEvent(eventId, isFollow);
 
-      // Refresh events to get updated is_follow status
-      fetchEvents(pagination.current_page);
+      // Re-fetch everything to maintain global sorting consistency
+      fetchEvents();
     } catch (error) {
       console.error("Error toggling like:", error);
       // Revert on error
@@ -359,7 +387,7 @@ export default function SearchEvents() {
     setRegStartDate("");
     setRegEndDate("");
     setDateFilter("");
-    fetchEvents(1);
+    // fetchEvents() will be triggered by the useEffect hooks watching these states
   };
 
   // Format date for display
@@ -387,6 +415,20 @@ export default function SearchEvents() {
   const isRegistrationClosed = (endTime) => {
     if (!endTime) return false;
     return endTime * 1000 < Date.now();
+  };
+
+  // Helper to determine event status group for sorting
+  const getEventGroup = (event) => {
+    const today = Date.now();
+    const regStart = event.registration_start_time ? event.registration_start_time * 1000 : 0;
+    const regEnd = event.registration_end_time ? event.registration_end_time * 1000 : 0;
+
+    // Group 0: LIVE (Registration Open)
+    if (regStart <= today && regEnd >= today) return 0;
+    // Group 1: UPCOMING (Registration Not Started)
+    if (regStart > today) return 1;
+    // Group 2: CLOSED (Registration Ended)
+    return 2;
   };
 
   return (
@@ -603,6 +645,7 @@ export default function SearchEvents() {
                             ></i>
                             {event.city_name || "City"}
                           </span>
+                          
                           <button
                             className={`search-like-btn${likedEvents[event.id] ? " liked" : ""
                               }`}
@@ -788,16 +831,21 @@ export default function SearchEvents() {
               </div>
             )}
 
-            {/* Load More / Pagination */}
+            {/* Load More / Local Pagination */}
             {!loading &&
-              events.length > 0 &&
-              pagination.current_page < pagination.last_page && (
+              allEvents.length > events.length && (
                 <div className="text-center mt-4">
                   <button
                     className="btn btn-load-more"
-                    onClick={() =>
-                      fetchEvents(pagination.current_page + 1, true)
-                    }
+                    onClick={() => {
+                      const nextCount = displayedCount + 20;
+                      setDisplayedCount(nextCount);
+                      setEvents(allEvents.slice(0, nextCount));
+                      setPagination(prev => ({
+                        ...prev,
+                        current_page: Math.ceil(nextCount / 20)
+                      }));
+                    }}
                   >
                     Load more
                   </button>

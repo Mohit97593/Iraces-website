@@ -12,6 +12,7 @@ export default function RaceCategories({
   setEventFormData,
   organizerGST,
   showToast,
+  isEditMode,
 }) {
   const [gst, setGst] = useState(false);
   const [taxType, setTaxType] = useState("inclusive");
@@ -205,6 +206,7 @@ export default function RaceCategories({
           collectGST={gst}
           taxType={taxType}
           apiChargesDetails={chargesDetails}
+          isEditMode={isEditMode}
         />
       ) : (
         <>

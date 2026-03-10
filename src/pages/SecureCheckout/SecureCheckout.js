@@ -254,6 +254,10 @@ export default function SecureCheckout() {
 
     if (!token || !userData) {
       // No token or userData, redirect to login
+      // Save original URL for post-login redirection
+      const currentPath = window.location.pathname + window.location.search;
+      sessionStorage.setItem("redirectAfterLogin", currentPath);
+      console.log("💾 Saved redirect path to sessionStorage:", currentPath);
       navigate("/login");
       return;
     }

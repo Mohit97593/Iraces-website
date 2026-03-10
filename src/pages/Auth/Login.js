@@ -26,7 +26,15 @@ export default function Login() {
 
       if (redirectUrl) {
         sessionStorage.removeItem("redirectAfterLogin");
-        navigate(redirectUrl);
+        // Security Check: Only redirect to internal paths
+        const isSafePath = redirectUrl.startsWith("/") && !redirectUrl.startsWith("//");
+        if (isSafePath) {
+          console.log("🚀 Redirecting to saved path:", redirectUrl);
+          navigate(redirectUrl);
+        } else {
+          console.warn("⚠️ Unsafe redirect blocked:", redirectUrl);
+          navigate("/");
+        }
       } else {
         // Fallback to home
         navigate("/");

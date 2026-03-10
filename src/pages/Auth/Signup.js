@@ -8,6 +8,29 @@ export default function Signup() {
   const navigate = useNavigate();
   const { signup, validateOTP, resendOTP } = useAuth();
 
+  // Helper to handle redirect after signup
+  const handleSignupRedirect = () => {
+    const token = sessionStorage.getItem("token");
+    const redirectUrl = sessionStorage.getItem("redirectAfterLogin");
+
+    if (token && redirectUrl) {
+      sessionStorage.removeItem("redirectAfterLogin");
+      // Security Check: Only redirect to internal paths
+      const isSafePath = redirectUrl.startsWith("/") && !redirectUrl.startsWith("//");
+      if (isSafePath) {
+        console.log("🚀 Post-signup redirect to saved path:", redirectUrl);
+        navigate(redirectUrl);
+      } else {
+        console.warn("⚠️ Unsafe post-signup redirect blocked:", redirectUrl);
+        navigate("/");
+      }
+    } else if (token) {
+      navigate("/");
+    } else {
+      navigate("/login");
+    }
+  };
+
   // Set maxDob to today so only DOB before today can be selected
   const today = new Date();
   const yyyy = today.getFullYear();
@@ -316,14 +339,7 @@ export default function Signup() {
 
       if (result.success) {
         console.log("OTP verification successful");
-        
-        // If the user is already authenticated (from validateOTP), go to home
-        const token = sessionStorage.getItem("token");
-        if (token) {
-          navigate("/");
-        } else {
-          navigate("/login");
-        }
+        handleSignupRedirect();
       } else {
         setErrors({
           general:

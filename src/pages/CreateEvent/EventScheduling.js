@@ -3,7 +3,7 @@ import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 import Toast from "../../components/Toast/Toast";
 
-export default function EventScheduling({ onBack, onNext, initialFormData, showToast, onChange }) {
+export default function EventScheduling({ onBack, onNext, initialFormData, showToast, onChange, isEditMode }) {
   const defaultFormData = {
     timeZone: "",
     country: "",
@@ -81,7 +81,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
     const dd = String(d.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
   };
-  const minStartDate = getTodayString();
+  const minStartDate = isEditMode ? "" : getTodayString();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -681,7 +681,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
       const todayDate = new Date();
       todayDate.setHours(0, 0, 0, 0);
       const startDateOnly = new Date(`${formData.eventStartDate}T00:00`);
-      if (startDateOnly < todayDate) {
+      if (!isEditMode && startDateOnly < todayDate) {
         newErrors.eventStartDate = "Event start date cannot be in the past";
       }
     }
@@ -1293,7 +1293,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
                 value={formData.registrationEndDate}
                 onChange={handleChange}
                 onClick={(e) => e.target.showPicker && e.target.showPicker()}
-                min={formData.registrationStartDate || minStartDate}
+                min={isEditMode ? "" : (formData.registrationStartDate || minStartDate)}
                 max={formData.eventEndDate ? formData.eventEndDate : ""}
                 required={!!(formData.eventStartDate && formData.eventEndDate)}
                 disabled={!(formData.eventStartDate && formData.eventEndDate)}

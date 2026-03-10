@@ -1557,7 +1557,7 @@ export default function ParticipantDetails() {
           }
 
           // Recursively map subquestions if they exist
-          const mappedSubQuestions = q.sub_questions_array 
+          const mappedSubQuestions = q.sub_questions_array
             ? q.sub_questions_array.map(sq => mapQuestion(sq))
             : undefined;
 
@@ -3306,7 +3306,7 @@ export default function ParticipantDetails() {
       }
     } catch (error) {
       console.error("❌ Payment Error:", error);
-      
+
       let errorMessage = "Please try again";
       if (error.response?.data) {
         if (error.response.data.errors) {
@@ -3319,7 +3319,7 @@ export default function ParticipantDetails() {
       } else {
         errorMessage = error.message;
       }
-      
+
       alert(`Registration failed: ${errorMessage}`);
       setShowPaymentModal(false);
     } finally {
@@ -3392,7 +3392,7 @@ export default function ParticipantDetails() {
       }
     } catch (error) {
       console.error("❌ Free Registration Error:", error);
-      
+
       let errorMessage = "Please try again";
       if (error.response?.data) {
         if (error.response.data.errors) {
@@ -3405,7 +3405,7 @@ export default function ParticipantDetails() {
       } else {
         errorMessage = error.message;
       }
-      
+
       alert(`Registration failed: ${errorMessage}`);
     } finally {
       setIsProceeding(false);
@@ -4524,14 +4524,16 @@ export default function ParticipantDetails() {
               />
             </div>
 
-            <h2 className="success-title">YAY!</h2>
+            <h4 className="success-title">
+              {eventId === "349" ? "YAY! You have successfully registered!" : "YAY!"}
+            </h4>
 
             <p className="success-message">
               {eventId === "349"
                 ? (
                   <>
                     Your spot for the Himalaya Walkathon Delhi on April 12, 2026, is confirmed.<br /><br />
-                    Redirecting to the Himalaya Wellness site — take our one-minute Wellness Test to understand your stress levels and wellness score.<br /><br />
+                    As you gear up for the Mindful Strides walkathon, check in on your mental wellness with this quick one-minute stress test.<br /><br />
                     You can also track your registration through your RACES Profile → Registration Tracker.
                   </>
                 )
@@ -4549,7 +4551,7 @@ export default function ParticipantDetails() {
               }}
               style={{ backgroundColor: eventId === "349" ? "#17C653" : "" }}
             >
-              {eventId === "349" ? "Take the Wellness Test" : "View My Tickets"}
+              {eventId === "349" ? "Check Your Score Now!" : "View My Tickets"}
             </button>
           </div>
         </div>
