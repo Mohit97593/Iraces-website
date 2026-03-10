@@ -4539,8 +4539,8 @@ export default function ParticipantDetails() {
               <div className="success-header-wrapper">
                 {eventId === "349" ? (
                   <>
-                    <h2 className="success-yay">YAY!</h2>
-                    <h3 className="success-subtitle" style={{ color: '#27ae60', fontSize: '28px' }}>You have successfully registered!</h3>
+                    <h2 className="success-yay" style={{ margin: '0 0 4px 0 !important' }}>YAY!</h2>
+                    <h3 className="success-subtitle" style={{ color: '#27ae60', fontSize: '28px', margin: '0 !important' }}>You have successfully registered!</h3>
                   </>
                 ) : (
                   <h4 className="success-title">YAY!</h4>

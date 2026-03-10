@@ -401,14 +401,14 @@ textarea.form-control3 {
 }
 
 .success-header-wrapper {
-  margin-bottom: 20px;
+  margin-bottom: 2px;
 }
 
 .success-yay {
   color: #27ae60;
   font-size: 36px;
   font-weight: 800;
-  margin-bottom: 5px;
+  margin: 0 0 2px 0;
   line-height: 1.1;
 }
 
@@ -416,7 +416,7 @@ textarea.form-control3 {
   color: #27ae60;
   font-size: 24px;
   font-weight: 700;
-  margin-bottom: 0;
+  margin: 0;
   line-height: 1.2;
 }
 
@@ -432,11 +432,13 @@ textarea.form-control3 {
   color: #1A237E;
   font-weight: 600;
   line-height: 1.5;
-  margin-bottom: 25px;
+  margin-top: -15px !important;
+  margin-bottom: 20px;
 }
 
 .success-message p {
-  margin-bottom: 12px;
+  margin-top: 0;
+  margin-bottom: 10px;
 }
 
 .success-message p:last-child {
@@ -445,7 +447,8 @@ textarea.form-control3 {
 
 .himalaya-details p {
   font-size: 17px;
-  margin-bottom: 10px;
+  margin-top: 0;
+  margin-bottom: 8px;
 }
 
 .view-tickets-btn {
