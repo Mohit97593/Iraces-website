@@ -334,7 +334,7 @@ export default function HeroCarousel() {
         // 4. Final Upcoming Assignment (ALWAYS Global / All India as per user request)
         // PER USER REQUIREMENT: Show ALL India events (Live + Future) in Upcoming
         const finalUpcoming = [...activeEvents].sort((a, b) => a.start_time - b.start_time);
-        
+
         // Ensure no empty section if we have any active events
         setHasLocalUpcoming(finalUpcoming.length > 0);
 
@@ -343,7 +343,7 @@ export default function HeroCarousel() {
         // But usually it's better to not repeat. 
         // However, user said "upcoming me sare events dikhna do joki chl rhe h".
         // Let's keep Trending as "Live/Current" and Upcoming as "The whole list".
-        
+
         setTrendingEvents(finalTrending);
         setUpcomingEvents(finalUpcoming);
 
@@ -570,11 +570,22 @@ export default function HeroCarousel() {
     navigate(`/search-events?dateFilter=${encodeURIComponent(timePeriod)}`);
   };
 
+  // Helper to format banner URL: prepend https:// if external and protocol missing
+  const formatBannerUrl = (url) => {
+    if (!url || url === "#") return "#";
+    // If it's an internal link starting with / or already has a protocol, return as is
+    if (url.startsWith("/") || url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+    // For URLs like www.google.com or just google.com, prepend https://
+    return `https://${url}`;
+  };
+
   return (
     <>
       <section className="hero-viewport">
         <a
-          href={active.banner_url || "#"}
+          href={formatBannerUrl(active.banner_url)}
           target="_blank"
           rel="noreferrer"
           className="hero-slide-link"
