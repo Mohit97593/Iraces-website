@@ -16,6 +16,8 @@ const SearchableSelect = ({
     const [isOpen, setIsOpen] = useState(false);
     const [filteredOptions, setFilteredOptions] = useState([]);
     const containerRef = useRef(null);
+    const inputRef = useRef(null);
+    const wasFocused = useRef(false);
 
     // Sync search term with value prop
     useEffect(() => {
@@ -75,12 +77,24 @@ const SearchableSelect = ({
     return (
         <div className={`searchable-select-container ${className}`} ref={containerRef}>
             <input
+                ref={inputRef}
                 type="text"
                 name={name}
                 value={searchTerm}
                 onChange={handleInputChange}
                 onFocus={() => setIsOpen(true)}
-                onClick={() => !disabled && setIsOpen(prev => !prev)}
+                onMouseDown={() => {
+                    wasFocused.current = (document.activeElement === inputRef.current);
+                }}
+                onClick={() => {
+                    if (!disabled) {
+                        if (wasFocused.current) {
+                            setIsOpen(prev => !prev);
+                        } else {
+                            setIsOpen(true);
+                        }
+                    }
+                }}
                 placeholder={placeholder}
                 disabled={disabled}
                 required={required}

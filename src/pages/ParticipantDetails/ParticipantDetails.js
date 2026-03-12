@@ -692,39 +692,79 @@ export default function ParticipantDetails() {
               }
             } : form
           ));
+
+          // NEW: Trigger uniqueness check after auto-fill
+          if (allowUniqueRegistration === 1) {
+            setParticipantForms(currentForms => {
+              const uniqueErrors = checkUniqueness(currentForms);
+              setFormErrors(prev => {
+                const newErrors = { ...prev };
+                // Clear existing uniqueness errors first
+                Object.keys(newErrors).forEach(key => {
+                  if (key.includes('_email') || key.includes('_mobile')) {
+                    if (String(newErrors[key]).includes('already used')) {
+                      delete newErrors[key];
+                    }
+                  }
+                });
+                return { ...newErrors, ...uniqueErrors };
+              });
+              return currentForms;
+            });
+          }
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
       }
     } else if (name === "participantType" && value === "Other") {
       // Clear form when "Other" is selected
-      setParticipantForms(prev => prev.map((form, idx) =>
-        idx === participantIndex ? {
-          ...form,
-          formData: {
-            participantType: value,
-            firstName: "",
-            lastName: "",
-            email: "",
-            mobile: "",
-            gender: "",
-            dob: "",
-            addressLine1: "",
-            addressLine2: "",
-            country: "",
-            state: "",
-            city: "",
-            pincode: "",
-            bloodGroup: "",
-            tshirtSize: "",
-            idProofType: "",
-            idProofFile: null,
-            emergencyContactName: "",
-            emergencyContactNumber: "",
-            termsAccepted: false,
-          }
-        } : form
-      ));
+      setParticipantForms(prev => {
+        const updatedForms = prev.map((form, idx) =>
+          idx === participantIndex ? {
+            ...form,
+            formData: {
+              participantType: value,
+              firstName: "",
+              lastName: "",
+              email: "",
+              mobile: "",
+              gender: "",
+              dob: "",
+              addressLine1: "",
+              addressLine2: "",
+              country: "",
+              state: "",
+              city: "",
+              pincode: "",
+              bloodGroup: "",
+              tshirtSize: "",
+              idProofType: "",
+              idProofFile: null,
+              emergencyContactName: "",
+              emergencyContactNumber: "",
+              termsAccepted: false,
+            }
+          } : form
+        );
+
+        // NEW: Trigger uniqueness check after clearing (to remove previous errors)
+        if (allowUniqueRegistration === 1) {
+          const uniqueErrors = checkUniqueness(updatedForms);
+          setFormErrors(prev => {
+            const newErrors = { ...prev };
+            Object.keys(newErrors).forEach(key => {
+              if (key.includes('_email') || key.includes('_mobile')) {
+                if (String(newErrors[key]).includes('already used')) {
+                  delete newErrors[key];
+                }
+              }
+            });
+            return { ...newErrors, ...uniqueErrors };
+          });
+        }
+
+        return updatedForms;
+      });
     } else if (name === "country") {
       // Country changed: fetch states
       setParticipantForms(prev => prev.map((form, idx) =>
