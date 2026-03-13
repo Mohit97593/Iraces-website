@@ -465,7 +465,7 @@ export default function EventAnalytics() {
             colorByPoint: true,
             data: categoryData.bookingData.map(item => ({
                 name: item.ticket_name || item.name || item.TicketName || 'Unknown',
-                y: item.total_booking || item.count || item.Total || 0,
+                y: item.TicketCount || item.total_booking || item.count || item.Total || 0,
                 color: (item.ticket_name || '').includes('testo') ? '#5c5cff' : undefined // Attempt to match some colors if hinted
             }))
         }],

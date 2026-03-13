@@ -8,6 +8,7 @@ export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [paymentDetails, setPaymentDetails] = useState(null);
+  const isGuestLogin = sessionStorage.getItem("isGuestLogin") === "true";
 
   useEffect(() => {
     // Extract all payment details from URL parameters
@@ -105,6 +106,36 @@ export default function PaymentSuccess() {
     );
   }
 
+  // Guest User View (Requested Modal Style message)
+  // Robust check: sessionStorage flag OR name is "Guest" OR email contains "guestuser"
+  if (isGuestLogin || paymentDetails?.firstname === 'Guest' || paymentDetails?.email?.toLowerCase().includes('guestuser')) {
+    return (
+      <div className="payment-success-page">
+        <TopNav />
+        <div className="payment-success-container">
+          <div className="payment-success-card">
+            <div className="success-icon-wrapper">
+              <div className="success-icon">
+                <i className="fas fa-check-circle"></i>
+              </div>
+            </div>
+            <h1 className="success-title">Payment Successful!</h1>
+            <p className="success-subtitle" style={{ fontSize: '18px', fontWeight: '500', color: '#333' }}>
+              Your registration ticket is sent on your email.
+            </p>
+            <div className="action-buttons" style={{ marginTop: '30px' }}>
+              <button className="btn-secondary" onClick={handleGoHome} style={{ width: '100%' }}>
+                <i className="fas fa-home"></i>
+                Back to Home
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Regular User View
   return (
     <div className="payment-success-page">
       <TopNav />
