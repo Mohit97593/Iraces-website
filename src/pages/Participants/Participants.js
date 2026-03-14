@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
 import { authAPI } from "../../services/authAPI";
+import AccessController from "../../utils/AccessController";
 import "./Participants.css";
 
 export default function Participants() {
@@ -10,6 +11,7 @@ export default function Participants() {
     const location = useLocation();
 
     const [eventName, setEventName] = useState(location.state?.eventName || "");
+    const isOrgEvent = location.state?.isOrgEvent || false;
     const [loading, setLoading] = useState(false);
     const [downloadingAttendee, setDownloadingAttendee] = useState(false);
     const [downloadingRevenue, setDownloadingRevenue] = useState(false);
@@ -107,6 +109,13 @@ export default function Participants() {
                 // Call getProfile API
                 const profileResponse = await authAPI.getProfile();
                 console.log("✅ getProfile API Response:", profileResponse);
+
+                // Save permissions to sessionStorage so AccessController can find them
+                if (profileResponse?.data?.OrgUserAccessModules) {
+                    sessionStorage.setItem("OrgUserAccessModules", JSON.stringify(profileResponse.data.OrgUserAccessModules));
+                } else if (profileResponse?.OrgUserAccessModules) {
+                    sessionStorage.setItem("OrgUserAccessModules", JSON.stringify(profileResponse.OrgUserAccessModules));
+                }
 
                 // Update event name from events response
                 if (eventsResponse && eventsResponse.data) {
@@ -565,26 +574,34 @@ export default function Participants() {
                 <div className="participants-header">
                     <h2>Participants</h2>
                     <div className="header-actions">
-                        <button className="action-btn1 send-email-btn" onClick={handleSendEmail}>
-                            <i className="fas fa-envelope"></i> Send Email
-                        </button>
-                        <button className="action-btn1 send-whatsapp-btn" onClick={handleSendWhatsApp} style={{ backgroundColor: '#25D366' }}>
-                            <i className="fab fa-whatsapp"></i> Send WhatsApp
-                        </button>
-                        <button
-                            className="action-btn1 download-btn"
-                            onClick={handleDownloadExcel}
-                            disabled={downloadingAttendee}
-                        >
-                            <i className="fas fa-download"></i> {downloadingAttendee ? 'Downloading...' : 'Download'}
-                        </button>
-                        <button
-                            className="action-btn1 revenue-btn"
-                            onClick={handleDownloadRevenue}
-                            disabled={downloadingRevenue}
-                        >
-                            <i className="fas fa-rupee-sign"></i> {downloadingRevenue ? 'Downloading...' : 'Revenue'}
-                        </button>
+                        {(!isOrgEvent || AccessController.canInsightEmail()) && (
+                            <button className="action-btn1 send-email-btn" onClick={handleSendEmail}>
+                                <i className="fas fa-envelope"></i> Send Email
+                            </button>
+                        )}
+                        {(!isOrgEvent || AccessController.canInsightWhatsApp()) && (
+                            <button className="action-btn1 send-whatsapp-btn" onClick={handleSendWhatsApp} style={{ backgroundColor: '#25D366' }}>
+                                <i className="fab fa-whatsapp"></i> Send WhatsApp
+                            </button>
+                        )}
+                        {(!isOrgEvent || AccessController.canInsightDownload()) && (
+                            <>
+                                <button
+                                    className="action-btn1 download-btn"
+                                    onClick={handleDownloadExcel}
+                                    disabled={downloadingAttendee}
+                                >
+                                    <i className="fas fa-download"></i> {downloadingAttendee ? 'Downloading...' : 'Download'}
+                                </button>
+                                <button
+                                    className="action-btn1 revenue-btn"
+                                    onClick={handleDownloadRevenue}
+                                    disabled={downloadingRevenue}
+                                >
+                                    <i className="fas fa-rupee-sign"></i> {downloadingRevenue ? 'Downloading...' : 'Revenue'}
+                                </button>
+                            </>
+                        )}
                         <button className="back-btn" onClick={handleBack}>
                             <i className="fas fa-arrow-left"></i> Back
                         </button>

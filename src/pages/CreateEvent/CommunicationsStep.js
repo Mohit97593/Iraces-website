@@ -5,7 +5,7 @@ import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import "./CreateEvent.css";
 import Toast from "../../components/Toast/Toast";
 
-const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
+const CommunicationsStep = ({ onBack, onNext, onEditingChange, isReadOnly }) => {
   const [items, setItems] = useState([]);
   const [termsItem, setTermsItem] = useState(null);
   const [hovered, setHovered] = useState(null);
@@ -599,30 +599,34 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
                   <div style={{ fontWeight: 600, fontSize: 18, flex: 1 }}>
                     {it.title}
                   </div>
-                  <div style={{ marginLeft: 12 }}>
-                    <div
-                      className={`toggle ${it.active ? "on" : ""}`}
-                      onClick={() => handleToggleItem(it)}
-                      role="button"
-                      aria-label="toggle"
-                    >
-                      <div className="knob" />
+                  {!isReadOnly && (
+                    <div style={{ marginLeft: 12 }}>
+                      <div
+                        className={`toggle ${it.active ? "on" : ""}`}
+                        onClick={() => handleToggleItem(it)}
+                        role="button"
+                        aria-label="toggle"
+                      >
+                        <div className="knob" />
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* floating actions */}
-                <div
-                  className={`comm-actions ${hovered === it.id ? "visible" : ""
-                    }`}
-                >
-                  <button onClick={() => handleEdit(it)} title="Edit">
-                    ✎
-                  </button>
-                  <button onClick={() => handleDelete(it)} title="Delete">
-                    🗑
-                  </button>
-                </div>
+                {!isReadOnly && (
+                  <div
+                    className={`comm-actions ${hovered === it.id ? "visible" : ""
+                      }`}
+                  >
+                    <button onClick={() => handleEdit(it)} title="Edit">
+                      ✎
+                    </button>
+                    <button onClick={() => handleDelete(it)} title="Delete">
+                      🗑
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
         </div>
@@ -745,72 +749,78 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange }) => {
               <div style={{ fontWeight: 600, fontSize: 18, flex: 1 }}>
                 {termsItem ? termsItem.title : "Terms and Condition"}
               </div>
-              <div style={{ marginLeft: 12 }}>
-                <div
-                  className={`toggle ${termsItem && termsItem.status ? "on" : ""
-                    }`}
-                  role="button"
-                  aria-label="toggle"
-                  onClick={handleToggleTerms}
-                >
-                  <div className="knob" />
+              {!isReadOnly && (
+                <div style={{ marginLeft: 12 }}>
+                  <div
+                    className={`toggle ${termsItem && termsItem.status ? "on" : ""
+                      }`}
+                    role="button"
+                    aria-label="toggle"
+                    onClick={handleToggleTerms}
+                  >
+                    <div className="knob" />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            <div
-              className={`comm-actions ${hovered === "terms" ? "visible" : ""}`}
-            >
-              <button onClick={() => handleEdit({ id: "terms" })} title="Edit">
-                ✎
-              </button>
-              <button
-                onClick={() => handleDelete({ id: "terms" })}
-                title="Delete"
+            {!isReadOnly && (
+              <div
+                className={`comm-actions ${hovered === "terms" ? "visible" : ""}`}
               >
-                🗑
-              </button>
-            </div>
+                <button onClick={() => handleEdit({ id: "terms" })} title="Edit">
+                  ✎
+                </button>
+                <button
+                  onClick={() => handleDelete({ id: "terms" })}
+                  title="Delete"
+                >
+                  🗑
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 12,
-            marginTop: 24,
-          }}
-        >
-          <button
-            onClick={onBack}
+        {!isReadOnly && (
+          <div
             style={{
-              border: "1.5px solid #da251c",
-              color: "#da251c",
-              background: "#fff",
-              borderRadius: 6,
-              padding: "10px 32px",
-              fontWeight: 600,
-              cursor: "pointer",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 12,
+              marginTop: 24,
             }}
           >
-            Back
-          </button>
-          <button
-            onClick={onNext}
-            style={{
-              background: "#da251c",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6,
-              padding: "10px 32px",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Save & Next (8/11)
-          </button>
-        </div>
+            <button
+              onClick={onBack}
+              style={{
+                border: "1.5px solid #da251c",
+                color: "#da251c",
+                background: "#fff",
+                borderRadius: 6,
+                padding: "10px 32px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Back
+            </button>
+            <button
+              onClick={onNext}
+              style={{
+                background: "#da251c",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                padding: "10px 32px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Save & Next (8/11)
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

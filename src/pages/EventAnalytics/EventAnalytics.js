@@ -12,6 +12,7 @@ export default function EventAnalytics() {
     const location = useLocation();
 
     const [eventName, setEventName] = useState(location.state?.eventName || "");
+    const isOrgEvent = location.state?.isOrgEvent || false;
     const [loading, setLoading] = useState(false);
     const [ticketCategories, setTicketCategories] = useState([]);
     const [filterData, setFilterData] = useState({
@@ -649,7 +650,7 @@ export default function EventAnalytics() {
                             <div className="stat-info">
                                 <h3>Registrations</h3>
                                 <div className="stat-value">{stats.registrations}</div>
-                                <Link to={`/registrations/${eventId}`} state={{ eventName, filterData }} className="view-details">View Details</Link>
+                                <Link to={`/registrations/${eventId}`} state={{ eventName, filterData, isOrgEvent }} className="view-details">View Details</Link>
                             </div>
                             <div className="stat-icon">
                                 <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Registrations" />
@@ -664,7 +665,7 @@ export default function EventAnalytics() {
                             <div className="stat-info">
                                 <h3>Participants</h3>
                                 <div className="stat-value">{stats.participants}</div>
-                                <Link to={`/participants/${eventId}`} state={{ eventName, filterData }} className="view-details">View Details</Link>
+                                <Link to={`/participants/${eventId}`} state={{ eventName, filterData, isOrgEvent }} className="view-details">View Details</Link>
                             </div>
                             <div className="stat-icon">
                                 <img src="https://cdn-icons-png.flaticon.com/512/681/681494.png" alt="Participants" />
@@ -735,7 +736,7 @@ export default function EventAnalytics() {
                             <div className="stat-info">
                                 <h3>Payment History</h3>
                                 {/* <div className="stat-value">{stats.pageViews}</div> */}
-                                <Link to={`/payment-log/${eventId}`} state={{ eventName, filterData }} className="view-details">View Details</Link>
+                                <Link to={`/payment-log/${eventId}`} state={{ eventName, filterData, isOrgEvent }} className="view-details">View Details</Link>
                             </div>
                             <div className="stat-icon">
                                 <img src="https://cdn-icons-png.flaticon.com/512/2331/2331970.png" alt="Page Views" />

@@ -4,7 +4,7 @@ import AddAgeCategoryForm from "./AddAgeCategoryForm";
 import "./CreateEvent.css";
 import Toast from "../../components/Toast/Toast";
 
-const AgeCategory = ({ onBack, onNext }) => {
+const AgeCategory = ({ onBack, onNext, isReadOnly }) => {
   const [hovered, setHovered] = useState(null);
   const [eventDetails, setEventDetails] = useState(null);
   const [eventTickets, setEventTickets] = useState([]);
@@ -196,21 +196,23 @@ const AgeCategory = ({ onBack, onNext }) => {
                 >
                   Age Category
                 </h2>
-                <button
-                  style={{
-                    border: "1.5px solid #da251c",
-                    color: "#da251c",
-                    background: "#fff",
-                    borderRadius: 8,
-                    padding: "8px 32px",
-                    fontWeight: 600,
-                    fontSize: "1.15rem",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => setShowForm(true)}
-                >
-                  + Add Age Category
-                </button>
+                {!isReadOnly && (
+                  <button
+                    style={{
+                      border: "1.5px solid #da251c",
+                      color: "#da251c",
+                      background: "#fff",
+                      borderRadius: 8,
+                      padding: "8px 32px",
+                      fontWeight: 600,
+                      fontSize: "1.15rem",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => setShowForm(true)}
+                  >
+                    + Add Age Category
+                  </button>
+                )}
               </div>
               {/* Show Age Category cards if any exist, else show empty state */}
               {ageCategories.length > 0 ? (
@@ -253,80 +255,86 @@ const AgeCategory = ({ onBack, onNext }) => {
                           >
                             {cat.age_category || "-"}
                           </div>
-                          <div style={{ marginLeft: 12 }}>
-                            <div
-                              className={`toggle ${cat.status ? "on" : ""}`}
-                              role="button"
-                              aria-label="toggle"
-                              onClick={() =>
-                                handleToggleStatus(cat.id, !cat.status)
-                              }
-                            >
-                              <div className="knob" />
+                          {!isReadOnly && (
+                            <div style={{ marginLeft: 12 }}>
+                              <div
+                                className={`toggle ${cat.status ? "on" : ""}`}
+                                role="button"
+                                aria-label="toggle"
+                                onClick={() =>
+                                  handleToggleStatus(cat.id, !cat.status)
+                                }
+                              >
+                                <div className="knob" />
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </div>
 
-                        <div
-                          className={`comm-actions ${hovered === cat.id ? "visible" : ""
-                            }`}
-                        >
-                          <button
-                            title="Edit"
-                            onClick={() => handleEditAgeCategory(cat.id)}
+                        {!isReadOnly && (
+                          <div
+                            className={`comm-actions ${hovered === cat.id ? "visible" : ""
+                              }`}
                           >
-                            ✎
-                          </button>
-                          <button
-                            title="Delete"
-                            onClick={() => handleDeleteAgeCategory(cat.id)}
-                          >
-                            🗑
-                          </button>
-                        </div>
+                            <button
+                              title="Edit"
+                              onClick={() => handleEditAgeCategory(cat.id)}
+                            >
+                              ✎
+                            </button>
+                            <button
+                              title="Delete"
+                              onClick={() => handleDeleteAgeCategory(cat.id)}
+                            >
+                              🗑
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      gap: 12,
-                      marginTop: 24,
-                    }}
-                  >
-                    <button
-                      onClick={onBack}
+                  {!isReadOnly && (
+                    <div
                       style={{
-                        border: "1.5px solid #da251c",
-                        color: "#da251c",
-                        background: "#fff",
-                        borderRadius: 6,
-                        padding: "10px 32px",
-                        fontWeight: 600,
-                        fontSize: "1.1rem",
-                        cursor: "pointer",
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        gap: 12,
+                        marginTop: 24,
                       }}
                     >
-                      Back
-                    </button>
-                    <button
-                      className="next-btn"
-                      onClick={onNext}
-                      style={{
-                        background: "#da251c",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: 6,
-                        padding: "10px 32px",
-                        fontWeight: 600,
-                        fontSize: "1.1rem",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Save & Next (7/11)
-                    </button>
-                  </div>
+                      <button
+                        onClick={onBack}
+                        style={{
+                          border: "1.5px solid #da251c",
+                          color: "#da251c",
+                          background: "#fff",
+                          borderRadius: 6,
+                          padding: "10px 32px",
+                          fontWeight: 600,
+                          fontSize: "1.1rem",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Back
+                      </button>
+                      <button
+                        className="next-btn"
+                        onClick={onNext}
+                        style={{
+                          background: "#da251c",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: 6,
+                          padding: "10px 32px",
+                          fontWeight: 600,
+                          fontSize: "1.1rem",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Save & Next (7/11)
+                      </button>
+                    </div>
+                  )}
                 </React.Fragment>
               ) : (
                 <React.Fragment>
@@ -381,46 +389,48 @@ const AgeCategory = ({ onBack, onNext }) => {
                     </div>
                   </div>
                   {/* Add buttons below empty state */}
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      gap: 12,
-                      marginTop: 24,
-                    }}
-                  >
-                    <button
-                      onClick={onBack}
+                  {!isReadOnly && (
+                    <div
                       style={{
-                        border: "1.5px solid #da251c",
-                        color: "#da251c",
-                        background: "#fff",
-                        borderRadius: 6,
-                        padding: "10px 32px",
-                        fontWeight: 600,
-                        fontSize: "1.1rem",
-                        cursor: "pointer",
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        gap: 12,
+                        marginTop: 24,
                       }}
                     >
-                      Back
-                    </button>
-                    <button
-                      className="next-btn"
-                      onClick={onNext}
-                      style={{
-                        background: "#da251c",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: 6,
-                        padding: "10px 32px",
-                        fontWeight: 600,
-                        fontSize: "1.1rem",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Save & Next (7/11)
-                    </button>
-                  </div>
+                      <button
+                        onClick={onBack}
+                        style={{
+                          border: "1.5px solid #da251c",
+                          color: "#da251c",
+                          background: "#fff",
+                          borderRadius: 6,
+                          padding: "10px 32px",
+                          fontWeight: 600,
+                          fontSize: "1.1rem",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Back
+                      </button>
+                      <button
+                        className="next-btn"
+                        onClick={onNext}
+                        style={{
+                          background: "#da251c",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: 6,
+                          padding: "10px 32px",
+                          fontWeight: 600,
+                          fontSize: "1.1rem",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Save & Next (7/11)
+                      </button>
+                    </div>
+                  )}
                 </React.Fragment>
               )}
             </React.Fragment>

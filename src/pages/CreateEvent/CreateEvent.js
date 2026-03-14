@@ -17,8 +17,12 @@ import FAQsStep from "./FAQsStep";
 import Integrations from "./Integrations";
 import eventViewImg from "../../assets/image/event-view.jpg";
 import Toast from "../../components/Toast/Toast";
+import AccessController from "../../utils/AccessController";
 
 export default function CreateEvent() {
+  const location = useLocation();
+  const isOrgEvent = location.state?.isOrgEvent || false;
+  const isReadOnly = isOrgEvent && AccessController.isEventRead();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
 
@@ -1507,21 +1511,27 @@ export default function CreateEvent() {
                     <button
                       className={`status-btn ${status === "public" ? "active" : ""
                         }`}
-                      onClick={() => setStatus("public")}
+                      onClick={() => !isReadOnly && setStatus("public")}
+                      disabled={isReadOnly}
+                      style={{ cursor: isReadOnly ? "default" : "pointer" }}
                     >
                       <i className="fas fa-globe"></i> Public
                     </button>
                     <button
                       className={`status-btn ${status === "private" ? "active" : ""
                         }`}
-                      onClick={() => setStatus("private")}
+                      onClick={() => !isReadOnly && setStatus("private")}
+                      disabled={isReadOnly}
+                      style={{ cursor: isReadOnly ? "default" : "pointer" }}
                     >
                       <i className="fas fa-lock"></i> Private
                     </button>
                     <button
                       className={`status-btn ${status === "draft" ? "active" : ""
                         }`}
-                      onClick={() => setStatus("draft")}
+                      onClick={() => !isReadOnly && setStatus("draft")}
+                      disabled={isReadOnly}
+                      style={{ cursor: isReadOnly ? "default" : "pointer" }}
                     >
                       <i className="fas fa-file-alt"></i> Draft
                     </button>
@@ -1545,16 +1555,20 @@ export default function CreateEvent() {
                       placeholder={`(Allowed only this special characters - , @ , ' , " )`}
                       value={eventName}
                       onChange={(e) => {
+                        if (isReadOnly) return;
                         setEventName(sanitizeEventName(e.target.value));
                         if (nameError) setNameError("");
                       }}
                       onPaste={(e) => {
+                        if (isReadOnly) return;
                         const pasted = (
                           e.clipboardData || window.clipboardData
                         ).getData("text");
                         e.preventDefault();
                         setEventName(sanitizeEventName(pasted));
                       }}
+                      disabled={isReadOnly}
+                      style={{ cursor: isReadOnly ? "default" : "text" }}
                       required
                     />
                     {nameError ? (
@@ -1579,7 +1593,8 @@ export default function CreateEvent() {
                                 ? "selected"
                                 : ""
                                 }`}
-                              onClick={() => handleCategoryToggle(cat.name)}
+                              onClick={() => !isReadOnly && handleCategoryToggle(cat.name)}
+                              style={{ cursor: isReadOnly ? "default" : "pointer" }}
                               title={stripHtml(cat.name)}
                             >
                               {renderCategoryIcon(cat)}
@@ -1603,11 +1618,13 @@ export default function CreateEvent() {
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-                    <button type="submit" className="btn-save-continue">
-                      Save & Continue
-                    </button>
-                  </div>
+                  {!isReadOnly && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+                      <button type="submit" className="btn-save-continue">
+                        Save & Continue
+                      </button>
+                    </div>
+                  )}
                 </form>
               </div>
             )}
@@ -1620,6 +1637,7 @@ export default function CreateEvent() {
                 showToast={showToast}
                 onChange={(data) => setEventFormData((prev) => ({ ...prev, ...data }))}
                 isEditMode={isEditMode}
+                isReadOnly={isReadOnly}
               />
             )}
             {currentStep === 3 && (
@@ -1627,6 +1645,7 @@ export default function CreateEvent() {
                 onBack={() => setCurrentStep(2)}
                 onNext={handleImagesSave}
                 showToast={showToast}
+                isReadOnly={isReadOnly}
               />
             )}
             {currentStep === 4 && (
@@ -1634,6 +1653,7 @@ export default function CreateEvent() {
                 onBack={() => setCurrentStep(3)}
                 onNext={handleSettingsSave}
                 showToast={showToast}
+                isReadOnly={isReadOnly}
               />
             )}
             {currentStep === 5 && (
@@ -1648,6 +1668,7 @@ export default function CreateEvent() {
                 organizerGST={organizerGST}
                 showToast={showToast}
                 isEditMode={isEditMode}
+                isReadOnly={isReadOnly}
               />
             )}
             {currentStep === 6 && (
@@ -1663,6 +1684,7 @@ export default function CreateEvent() {
                   setCurrentStep(7);
                 }}
                 showToast={showToast}
+                isReadOnly={isReadOnly}
               />
             )}
             {currentStep === 7 && (
@@ -1670,6 +1692,7 @@ export default function CreateEvent() {
                 onBack={() => setCurrentStep(6)}
                 onNext={handleGroupingSave}
                 showToast={showToast}
+                isReadOnly={isReadOnly}
               />
             )}
             {currentStep === 8 && (
@@ -1677,6 +1700,7 @@ export default function CreateEvent() {
                 onBack={() => setCurrentStep(7)}
                 onNext={() => markCurrentSavedAndGo(9)}
                 showToast={showToast}
+                isReadOnly={isReadOnly}
               />
             )}
             {currentStep === 9 && (
@@ -1685,6 +1709,7 @@ export default function CreateEvent() {
                 onNext={() => markCurrentSavedAndGo(10)}
                 showToast={showToast}
                 isEditMode={isEditMode}
+                isReadOnly={isReadOnly}
               />
             )}
             {currentStep === 10 && (
@@ -1693,6 +1718,7 @@ export default function CreateEvent() {
                 onNext={() => markCurrentSavedAndGo(11)}
                 onEditingChange={setIsEditingCommunication}
                 showToast={showToast}
+                isReadOnly={isReadOnly}
               />
             )}
             {currentStep === 11 && (
@@ -1700,6 +1726,7 @@ export default function CreateEvent() {
                 onBack={() => setCurrentStep(10)}
                 onNext={() => markCurrentSavedAndGo(12)}
                 showToast={showToast}
+                isReadOnly={isReadOnly}
               />
             )}
             {currentStep === 12 && (
@@ -1707,6 +1734,7 @@ export default function CreateEvent() {
                 onBack={() => setCurrentStep(11)}
                 onNext={() => markCurrentSavedAndGo(13)}
                 showToast={showToast}
+                isReadOnly={isReadOnly}
               />
             )}
           </div>

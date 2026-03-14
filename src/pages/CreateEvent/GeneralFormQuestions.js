@@ -7,9 +7,11 @@ import Toast from "../../components/Toast/Toast";
 
 const GeneralFormQuestions = ({
   onSave,
+  onCancel,
   questions,
   eventDetails,
   initialEditQuestion,
+  isReadOnly,
 }) => {
   const location = useLocation();
   const [customQuestions, setCustomQuestions] = useState([]);
@@ -2544,8 +2546,10 @@ const GeneralFormQuestions = ({
                                     type="button"
                                     className={`status-btn ${subQ.subQuestionMandatory === "1" ? "active" : ""}`}
                                     onClick={() =>
-                                      updateSubQuestion(index, "subQuestionMandatory", "1")
+                                      !isReadOnly && updateSubQuestion(index, "subQuestionMandatory", "1")
                                     }
+                                    disabled={isReadOnly}
+                                    style={{ cursor: isReadOnly ? "default" : "pointer" }}
                                   >
                                     <span className="star-icon">★</span> Mandatory
                                   </button>
@@ -2553,8 +2557,10 @@ const GeneralFormQuestions = ({
                                     type="button"
                                     className={`status-btn ${subQ.subQuestionMandatory !== "1" ? "active" : ""}`}
                                     onClick={() =>
-                                      updateSubQuestion(index, "subQuestionMandatory", "0")
+                                      !isReadOnly && updateSubQuestion(index, "subQuestionMandatory", "0")
                                     }
+                                    disabled={isReadOnly}
+                                    style={{ cursor: isReadOnly ? "default" : "pointer" }}
                                   >
                                     <span className="star-icon">☆</span> Optional
                                   </button>
@@ -2562,7 +2568,7 @@ const GeneralFormQuestions = ({
                               </div>
 
                               {/* Delete button for this subquestion (except first one) */}
-                              {index > 0 && (
+                              {index > 0 && !isReadOnly && (
                                 <button
                                   type="button"
                                   onClick={() => removeSubQuestion(index)}
@@ -2594,22 +2600,24 @@ const GeneralFormQuestions = ({
                                       <label style={{ fontWeight: '600', fontSize: '0.9rem', color: '#4CAF50' }}>
                                         🔹 Child Sub-Questions (Unlimited)
                                       </label>
-                                      <button
-                                        type="button"
-                                        onClick={() => addChildSubQuestion(index)}
-                                        style={{
-                                          padding: '6px 14px',
-                                          backgroundColor: '#4CAF50',
-                                          color: 'white',
-                                          border: 'none',
-                                          borderRadius: '6px',
-                                          cursor: 'pointer',
-                                          fontSize: '0.85rem',
-                                          fontWeight: '600'
-                                        }}
-                                      >
-                                        ➕ Add Subquestion (Inside This)
-                                      </button>
+                                      {!isReadOnly && (
+                                        <button
+                                          type="button"
+                                          onClick={() => addChildSubQuestion(index)}
+                                          style={{
+                                            padding: '6px 14px',
+                                            backgroundColor: '#4CAF50',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontSize: '0.85rem',
+                                            fontWeight: '600'
+                                          }}
+                                        >
+                                          ➕ Add Subquestion (Inside This)
+                                        </button>
+                                      )}
                                     </div>
 
                                     {/* Render Child Subquestions */}
@@ -2767,9 +2775,9 @@ const GeneralFormQuestions = ({
                                                   {/* Price and Maximum Count Limit toggle switches */}
                                                   <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
                                                     {/* Price Toggle */}
-                                                    <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: isReadOnly ? 'default' : 'pointer' }}>
                                                       <div
-                                                        onClick={() => updateChildSubQuestion(index, childIdx, 'priceEnabled', !child.priceEnabled)}
+                                                        onClick={() => !isReadOnly && updateChildSubQuestion(index, childIdx, 'priceEnabled', !child.priceEnabled)}
                                                         style={{
                                                           width: 48,
                                                           height: 28,
@@ -2777,7 +2785,7 @@ const GeneralFormQuestions = ({
                                                           background: child.priceEnabled ? '#da251c' : '#ccc',
                                                           position: 'relative',
                                                           transition: 'background 0.3s',
-                                                          cursor: 'pointer'
+                                                          cursor: isReadOnly ? 'default' : 'pointer'
                                                         }}
                                                       >
                                                         <div
@@ -2798,9 +2806,9 @@ const GeneralFormQuestions = ({
                                                     </label>
 
                                                     {/* Maximum Count Limit Toggle */}
-                                                    <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: isReadOnly ? 'default' : 'pointer' }}>
                                                       <div
-                                                        onClick={() => updateChildSubQuestion(index, childIdx, 'maxCountEnabled', !child.maxCountEnabled)}
+                                                        onClick={() => !isReadOnly && updateChildSubQuestion(index, childIdx, 'maxCountEnabled', !child.maxCountEnabled)}
                                                         style={{
                                                           width: 48,
                                                           height: 28,
@@ -2808,7 +2816,7 @@ const GeneralFormQuestions = ({
                                                           background: child.maxCountEnabled ? '#da251c' : '#ccc',
                                                           position: 'relative',
                                                           transition: 'background 0.3s',
-                                                          cursor: 'pointer'
+                                                          cursor: isReadOnly ? 'default' : 'pointer'
                                                         }}
                                                       >
                                                         <div
@@ -2947,42 +2955,46 @@ const GeneralFormQuestions = ({
                                             {/* Child Mandatory */}
                                             <div className="form-group2" style={{ marginBottom: '12px' }}>
                                               <label className="form-label" style={{ fontSize: '0.85rem' }}>Status</label>
-                                              <div className="email-toggle-group">
-                                                <button
-                                                  type="button"
-                                                  className={`email-toggle-btn ${child.subQuestionMandatory === "1" ? "active yes" : ""}`}
-                                                  onClick={() => updateChildSubQuestion(index, childIdx, 'subQuestionMandatory', "1")}
-                                                  style={{ fontSize: '0.85rem' }}
-                                                >
-                                                  <span className="lock-icon">🔒</span> Mandatory
-                                                </button>
-                                                <button
-                                                  type="button"
-                                                  className={`email-toggle-btn ${child.subQuestionMandatory !== "1" ? "active" : ""}`}
-                                                  onClick={() => updateChildSubQuestion(index, childIdx, 'subQuestionMandatory', "0")}
-                                                  style={{ fontSize: '0.85rem' }}
-                                                >
-                                                  <span className="unlock-icon">🔓</span> Optional
-                                                </button>
-                                              </div>
+                                                <div className="email-toggle-group">
+                                                  <button
+                                                    type="button"
+                                                    className={`email-toggle-btn ${child.subQuestionMandatory === "1" ? "active yes" : ""}`}
+                                                    onClick={() => !isReadOnly && updateChildSubQuestion(index, childIdx, 'subQuestionMandatory', "1")}
+                                                    style={{ fontSize: '0.85rem', cursor: isReadOnly ? "default" : "pointer" }}
+                                                    disabled={isReadOnly}
+                                                  >
+                                                    <span className="lock-icon">🔒</span> Mandatory
+                                                  </button>
+                                                  <button
+                                                    type="button"
+                                                    className={`email-toggle-btn ${child.subQuestionMandatory !== "1" ? "active" : ""}`}
+                                                    onClick={() => !isReadOnly && updateChildSubQuestion(index, childIdx, 'subQuestionMandatory', "0")}
+                                                    style={{ fontSize: '0.85rem', cursor: isReadOnly ? "default" : "pointer" }}
+                                                    disabled={isReadOnly}
+                                                  >
+                                                    <span className="unlock-icon">🔓</span> Optional
+                                                  </button>
+                                                </div>
                                             </div>
 
                                             {/* Remove Child Button */}
-                                            <button
-                                              type="button"
-                                              onClick={() => removeChildSubQuestion(index, childIdx)}
-                                              style={{
-                                                background: "#fff",
-                                                border: "1px solid #e74c3c",
-                                                color: "#e74c3c",
-                                                borderRadius: 6,
-                                                padding: "6px 12px",
-                                                cursor: "pointer",
-                                                fontSize: "0.85rem"
-                                              }}
-                                            >
-                                              🗑 Remove Child
-                                            </button>
+                                              {!isReadOnly && (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => removeChildSubQuestion(index, childIdx)}
+                                                  style={{
+                                                    background: "#fff",
+                                                    border: "1px solid #e74c3c",
+                                                    color: "#e74c3c",
+                                                    borderRadius: 6,
+                                                    padding: "6px 12px",
+                                                    cursor: "pointer",
+                                                    fontSize: "0.85rem"
+                                                  }}
+                                                >
+                                                  🗑 Remove Child
+                                                </button>
+                                              )}
                                           </div>
                                         ))}
                                       </div>
@@ -4256,12 +4268,14 @@ const GeneralFormQuestions = ({
         <>
           <div className="modal-header">
             <h2>General Form Questions</h2>
-            <button
-              className="btn-add-custom"
-              onClick={() => setShowAddCustomForm(true)}
-            >
-              + Add custom question
-            </button>
+            {!isReadOnly && (
+              <button
+                className="btn-add-custom"
+                onClick={() => setShowAddCustomForm(true)}
+              >
+                + Add custom question
+              </button>
+            )}
           </div>
           <div className="sections-container">
             {apiQuestions && Object.keys(apiQuestions).length > 0 ? (
@@ -4368,15 +4382,17 @@ const GeneralFormQuestions = ({
                                   ℹ️
                                 </button>
                               ) : (
-                                <button
-                                  className="btn-toggle"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleClick(q);
-                                  }}
-                                >
-                                  +
-                                </button>
+                                !isReadOnly && (
+                                  <button
+                                    className="btn-toggle"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleClick(q);
+                                    }}
+                                  >
+                                    +
+                                  </button>
+                                )
                               )}
                               {/* Delete button only for custom questions created by the CURRENT user */}
                               {!!((q.is_custom_form == 1 || q.is_custom == 1 || q.is_custom_form == '1' || q.is_custom == '1' || (q.created_by && q.created_by != 0) || q.user_id || q.question_id || q.id > 50) &&
@@ -4386,20 +4402,22 @@ const GeneralFormQuestions = ({
                                   (q.user_id && String(q.user_id) === String(currentUserId)) ||
                                   (q.created_by && String(q.created_by) === String(currentUserId))
                                 ))) && (
-                                  <button
-                                    className="btn-toggle delete-btn"
-                                    title="Delete question"
-                                    onClick={(e) => handleDeleteQuestion(e, q)}
-                                    style={{
-                                      marginLeft: 8,
-                                      background: "#dc3545",
-                                      color: "#fff",
-                                      fontSize: "1rem",
-                                      padding: "4px 8px"
-                                    }}
-                                  >
-                                    🗑
-                                  </button>
+                                  !isReadOnly && (
+                                    <button
+                                      className="btn-toggle delete-btn"
+                                      title="Delete question"
+                                      onClick={(e) => handleDeleteQuestion(e, q)}
+                                      style={{
+                                        marginLeft: 8,
+                                        background: "#dc3545",
+                                        color: "#fff",
+                                        fontSize: "1rem",
+                                        padding: "4px 8px"
+                                      }}
+                                    >
+                                      🗑
+                                    </button>
+                                  )
                                 )}
                             </div>
                           </div>
@@ -4436,9 +4454,9 @@ const GeneralFormQuestions = ({
               fontSize: "1.1rem",
               cursor: "pointer",
             }}
-            onClick={() => onSave(questions)}
+            onClick={() => isReadOnly ? onCancel() : onSave(questions)}
           >
-            Cancel
+            {isReadOnly ? "Close" : "Cancel"}
           </button>
         </div>
       )}

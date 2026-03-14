@@ -4,7 +4,7 @@ import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import Toast from "../../components/Toast/Toast";
 
-export default function EventImages({ onBack, onNext }) {
+export default function EventImages({ onBack, onNext, isReadOnly }) {
   const [bannerBg, setBannerBg] = useState(false);
   const [eventDetails, setEventDetails] = useState(null);
   const [description, setDescription] = useState("");
@@ -285,6 +285,7 @@ export default function EventImages({ onBack, onNext }) {
             <CKEditor
               editor={ClassicEditor}
               data={description}
+              disabled={isReadOnly}
               config={{
                 // Custom upload adapter for images
                 extraPlugins: [
@@ -342,6 +343,7 @@ export default function EventImages({ onBack, onNext }) {
             className="form-controll"
             value={keywords}
             onChange={(e) => setKeywords(e.target.value)}
+            disabled={isReadOnly}
             required
           />
           {errorMsg === "Keywords/Metatags are required." && (
@@ -387,6 +389,7 @@ export default function EventImages({ onBack, onNext }) {
                   setEventBannerPreview(url);
                 }
               }}
+              disabled={isReadOnly}
               required
             />
             {errorMsg === "Banner image is required." && (
@@ -482,46 +485,48 @@ export default function EventImages({ onBack, onNext }) {
                       </svg>
                     </div>
                     {/* Delete Icon */}
-                    <div
-                      title="Delete"
-                      style={{
-                        cursor: "pointer",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: "rgba(255,255,255,0.2)",
-                        borderRadius: "50%",
-                        width: 32,
-                        height: 32,
-                      }}
-                      onClick={() => {
-                        setEventBanner(null);
-                        if (prevObjectUrl.current) {
-                          try {
-                            URL.revokeObjectURL(prevObjectUrl.current);
-                          } catch (e) { }
-                          prevObjectUrl.current = null;
-                        }
-                        setEventBannerPreview(null);
-                      }}
-                    >
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                    {!isReadOnly && (
+                      <div
+                        title="Delete"
+                        style={{
+                          cursor: "pointer",
+                          color: "#fff",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: "rgba(255,255,255,0.2)",
+                          borderRadius: "50%",
+                          width: 32,
+                          height: 32,
+                        }}
+                        onClick={() => {
+                          setEventBanner(null);
+                          if (prevObjectUrl.current) {
+                            try {
+                              URL.revokeObjectURL(prevObjectUrl.current);
+                            } catch (e) { }
+                            prevObjectUrl.current = null;
+                          }
+                          setEventBannerPreview(null);
+                        }}
                       >
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                      </svg>
-                    </div>
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          <line x1="10" y1="11" x2="10" y2="17"></line>
+                          <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -546,6 +551,7 @@ export default function EventImages({ onBack, onNext }) {
                   e.target.value = null;
                 }
               }}
+              disabled={isReadOnly}
             />
             <small>You can choose multiple files.</small>
             {creativesPreviews.length > 0 && (
@@ -625,58 +631,60 @@ export default function EventImages({ onBack, onNext }) {
                           </svg>
                         </div>
                         {/* Delete Icon */}
-                        <div
-                          title="Delete"
-                          style={{
-                            cursor: "pointer",
-                            color: "#fff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: "rgba(255,255,255,0.2)",
-                            borderRadius: "50%",
-                            width: 28,
-                            height: 28,
-                          }}
-                          onClick={() => {
-                            // Remove from state
-                            const newCreatives = [...creatives];
-                            newCreatives.splice(index, 1);
-                            setCreatives(newCreatives);
+                        {!isReadOnly && (
+                          <div
+                            title="Delete"
+                            style={{
+                              cursor: "pointer",
+                              color: "#fff",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              background: "rgba(255,255,255,0.2)",
+                              borderRadius: "50%",
+                              width: 28,
+                              height: 28,
+                            }}
+                            onClick={() => {
+                              // Remove from state
+                              const newCreatives = [...creatives];
+                              newCreatives.splice(index, 1);
+                              setCreatives(newCreatives);
 
-                            const newPreviews = [...creativesPreviews];
-                            const urlToRemove = newPreviews[index];
+                              const newPreviews = [...creativesPreviews];
+                              const urlToRemove = newPreviews[index];
 
-                            // Only revoke URL if it's a blob URL (newly uploaded)
-                            // Don't revoke if it's a server URL (http/https)
-                            if (urlToRemove && urlToRemove.startsWith('blob:')) {
-                              try {
-                                URL.revokeObjectURL(urlToRemove);
-                              } catch (e) {
-                                console.error('Error revoking URL:', e);
+                              // Only revoke URL if it's a blob URL (newly uploaded)
+                              // Don't revoke if it's a server URL (http/https)
+                              if (urlToRemove && urlToRemove.startsWith('blob:')) {
+                                try {
+                                  URL.revokeObjectURL(urlToRemove);
+                                } catch (e) {
+                                  console.error('Error revoking URL:', e);
+                                }
                               }
-                            }
 
-                            newPreviews.splice(index, 1);
-                            setCreativesPreviews(newPreviews);
-                          }}
-                        >
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                              newPreviews.splice(index, 1);
+                              setCreativesPreviews(newPreviews);
+                            }}
                           >
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            <line x1="10" y1="11" x2="10" y2="17"></line>
-                            <line x1="14" y1="11" x2="14" y2="17"></line>
-                          </svg>
-                        </div>
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              <line x1="10" y1="11" x2="10" y2="17"></line>
+                              <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -700,9 +708,12 @@ export default function EventImages({ onBack, onNext }) {
                 minWidth: 60,
               }}
               onClick={() => {
-                setBannerBg(true);
-                setBackgroundStatus(1);
+                if (!isReadOnly) {
+                  setBannerBg(true);
+                  setBackgroundStatus(1);
+                }
               }}
+              disabled={isReadOnly}
             >
               Yes
             </button>
@@ -718,10 +729,13 @@ export default function EventImages({ onBack, onNext }) {
                 minWidth: 60,
               }}
               onClick={() => {
-                setBannerBg(false);
-                setBackgroundStatus(0);
-                setBackgroundColor("");
+                if (!isReadOnly) {
+                  setBannerBg(false);
+                  setBackgroundStatus(0);
+                  setBackgroundColor("");
+                }
               }}
+              disabled={isReadOnly}
             >
               No
             </button>
@@ -729,13 +743,15 @@ export default function EventImages({ onBack, onNext }) {
               <input
                 type="color"
                 value={backgroundColor}
-                onChange={(e) => setBackgroundColor(e.target.value)}
+                onChange={(e) => !isReadOnly && setBackgroundColor(e.target.value)}
+                disabled={isReadOnly}
                 style={{
                   marginLeft: 16,
                   width: 40,
                   height: 32,
                   border: "1px solid #ccc",
                   borderRadius: 6,
+                  cursor: isReadOnly ? "default" : "pointer"
                 }}
               />
             )}
@@ -760,53 +776,55 @@ export default function EventImages({ onBack, onNext }) {
             onChange={(e) => setDescriptionImage(e.target.files[0])}
           />
         </div> */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            marginTop: 32,
-            gap: 16,
-          }}
-        >
-          <button
-            type="button"
-            className="btn-back"
+        {!isReadOnly && (
+          <div
             style={{
-              minWidth: 100,
-              fontWeight: 600,
-              background: "#fff",
-              color: "#da251c",
-              border: "2px solid #da251c",
-              borderRadius: 8,
-              padding: "8px 20px",
-              fontSize: "1.1rem",
-              height: 42,
-              marginLeft: 8,
-              marginTop: "22px",
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: 32,
+              gap: 16,
             }}
-            onClick={onBack}
           >
-            Back
-          </button>
-          <button
-            type="button"
-            className="btn-save-continue"
-            style={{
-              minWidth: 120,
-              fontWeight: 600,
-              background: "#da251c",
-              color: "#fff",
-              borderRadius: 8,
-              border: "none",
-              padding: "10px 32px",
-              fontSize: "1.1rem",
-              height: 44,
-            }}
-            onClick={handleSave}
-          >
-            Save & Next (3/11)
-          </button>
-        </div>
+            <button
+              type="button"
+              className="btn-back"
+              style={{
+                minWidth: 100,
+                fontWeight: 600,
+                background: "#fff",
+                color: "#da251c",
+                border: "2px solid #da251c",
+                borderRadius: 8,
+                padding: "8px 20px",
+                fontSize: "1.1rem",
+                height: 42,
+                marginLeft: 8,
+                marginTop: "22px",
+              }}
+              onClick={onBack}
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              className="btn-save-continue"
+              style={{
+                minWidth: 120,
+                fontWeight: 600,
+                background: "#da251c",
+                color: "#fff",
+                borderRadius: 8,
+                border: "none",
+                padding: "10px 32px",
+                fontSize: "1.1rem",
+                height: 44,
+              }}
+              onClick={handleSave}
+            >
+              Save & Next (3/11)
+            </button>
+          </div>
+        )}
       </form>
     </div>
   );

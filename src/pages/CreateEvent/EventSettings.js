@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
 import Toast from "../../components/Toast/Toast";
 
-export default function EventSettings({ onBack, onNext, showToast }) {
+export default function EventSettings({ onBack, onNext, showToast, isReadOnly }) {
   const [toast, setToast] = useState(null);
 
   const triggerToast = (message, type = 'success') => {
@@ -134,6 +134,7 @@ export default function EventSettings({ onBack, onNext, showToast }) {
             className="form-controll"
             value={limit}
             onChange={(e) => setLimit(e.target.value)}
+            disabled={isReadOnly}
             style={{
               flex: 1,
               minWidth: 320,
@@ -144,7 +145,8 @@ export default function EventSettings({ onBack, onNext, showToast }) {
               fontSize: "1.1rem",
               paddingLeft: 18,
               fontWeight: 500,
-              background: "#fff",
+              background: isReadOnly ? "#fafafa" : "#fff",
+              cursor: isReadOnly ? "not-allowed" : "text",
             }}
             placeholder="Overall Limit"
           />
@@ -173,6 +175,7 @@ export default function EventSettings({ onBack, onNext, showToast }) {
             <button
               type="button"
               className="btn"
+              disabled={isReadOnly}
               style={{
                 border: "none",
                 outline: "none",
@@ -190,7 +193,7 @@ export default function EventSettings({ onBack, onNext, showToast }) {
                 justifyContent: "center",
                 boxShadow:
                   registrationType === "single" ? "0 2px 8px #eee" : "none",
-                cursor: "pointer",
+                cursor: isReadOnly ? "not-allowed" : "pointer",
               }}
               onClick={() => setRegistrationType("single")}
             >
@@ -206,6 +209,7 @@ export default function EventSettings({ onBack, onNext, showToast }) {
             <button
               type="button"
               className="btn"
+              disabled={isReadOnly}
               style={{
                 border: "none",
                 outline: "none",
@@ -224,7 +228,7 @@ export default function EventSettings({ onBack, onNext, showToast }) {
                 justifyContent: "center",
                 boxShadow:
                   registrationType === "multiple" ? "0 2px 8px #eee" : "none",
-                cursor: "pointer",
+                cursor: isReadOnly ? "not-allowed" : "pointer",
               }}
               onClick={() => setRegistrationType("multiple")}
             >
@@ -258,9 +262,10 @@ export default function EventSettings({ onBack, onNext, showToast }) {
                 borderRadius: 12,
                 position: "relative",
                 transition: "background 0.2s",
-                cursor: "pointer",
+                cursor: isReadOnly ? "not-allowed" : "pointer",
+                opacity: isReadOnly ? 0.7 : 1,
               }}
-              onClick={() => setUniqueOnly(!uniqueOnly)}
+              onClick={() => !isReadOnly && setUniqueOnly(!uniqueOnly)}
             >
               <span
                 style={{
@@ -279,52 +284,54 @@ export default function EventSettings({ onBack, onNext, showToast }) {
             Allow only unique registrations
           </label>
         </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 16,
-          }}
-        >
-          <button
-            type="button"
-            className="btn-back"
+        {!isReadOnly && (
+          <div
             style={{
-              minWidth: 100,
-              fontWeight: 600,
-              background: "#fff",
-              color: "#da251c",
-              border: "2px solid #da251c",
-              borderRadius: 8,
-              padding: "8px 20px",
-              fontSize: "1.1rem",
-              height: 42,
-              marginLeft: 8,
-              marginTop: "22px",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 16,
             }}
-            onClick={onBack}
           >
-            Back
-          </button>
-          <button
-            type="button"
-            className="btn-save-continue"
-            style={{
-              minWidth: 120,
-              fontWeight: 600,
-              background: "#da251c",
-              color: "#fff",
-              borderRadius: 8,
-              border: "none",
-              padding: "10px 32px",
-              fontSize: "1.1rem",
-              height: 44,
-            }}
-            onClick={handleSaveSettings}
-          >
-            Save & Next (4/11)
-          </button>
-        </div>
+            <button
+              type="button"
+              className="btn-back"
+              style={{
+                minWidth: 100,
+                fontWeight: 600,
+                background: "#fff",
+                color: "#da251c",
+                border: "2px solid #da251c",
+                borderRadius: 8,
+                padding: "8px 20px",
+                fontSize: "1.1rem",
+                height: 42,
+                marginLeft: 8,
+                marginTop: "22px",
+              }}
+              onClick={onBack}
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              className="btn-save-continue"
+              style={{
+                minWidth: 120,
+                fontWeight: 600,
+                background: "#da251c",
+                color: "#fff",
+                borderRadius: 8,
+                border: "none",
+                padding: "10px 32px",
+                fontSize: "1.1rem",
+                height: 44,
+              }}
+              onClick={handleSaveSettings}
+            >
+              Save & Next (4/11)
+            </button>
+          </div>
+        )}
       </form>
     </div>
   );

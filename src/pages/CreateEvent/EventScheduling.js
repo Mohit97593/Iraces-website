@@ -3,7 +3,7 @@ import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 import Toast from "../../components/Toast/Toast";
 
-export default function EventScheduling({ onBack, onNext, initialFormData, showToast, onChange, isEditMode }) {
+export default function EventScheduling({ onBack, onNext, initialFormData, showToast, onChange, isEditMode, isReadOnly }) {
   const defaultFormData = {
     timeZone: "",
     country: "",
@@ -881,11 +881,12 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
                 });
               }
             }}
-            onFocus={() => setShowTzDropdown(true)}
+            onFocus={() => !isReadOnly && setShowTzDropdown(true)}
             onBlur={() => {
               // small timeout to allow click on dropdown item
               setTimeout(() => setShowTzDropdown(false), 150);
             }}
+            disabled={isReadOnly}
           />
 
           {showTzDropdown && (
@@ -967,8 +968,9 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
                     setFormData(prev => ({ ...prev, country: "", state: "", city: "" }));
                   }
                 }}
-                onFocus={() => setShowCountryDropdown(true)}
+                onFocus={() => !isReadOnly && setShowCountryDropdown(true)}
                 onBlur={() => setTimeout(() => setShowCountryDropdown(false), 200)}
+                disabled={isReadOnly}
               />
               {showCountryDropdown && (
                 <div style={dropdownListStyle}>
@@ -1012,6 +1014,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
                 value={formData.pincode}
                 onChange={handlePincodeChange}
                 maxLength="6"
+                disabled={isReadOnly}
                 required
               />
               {pincodeLoading && (
@@ -1047,9 +1050,9 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
                     setFormData(prev => ({ ...prev, state: "", city: "" }));
                   }
                 }}
-                onFocus={() => setShowStateDropdown(true)}
+                onFocus={() => !isReadOnly && setShowStateDropdown(true)}
                 onBlur={() => setTimeout(() => setShowStateDropdown(false), 200)}
-                disabled={!formData.country}
+                disabled={isReadOnly || !formData.country}
               />
               {showStateDropdown && (
                 <div style={dropdownListStyle}>
@@ -1099,9 +1102,9 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
                     setFormData(prev => ({ ...prev, city: "" }));
                   }
                 }}
-                onFocus={() => setShowCityDropdown(true)}
+                onFocus={() => !isReadOnly && setShowCityDropdown(true)}
                 onBlur={() => setTimeout(() => setShowCityDropdown(false), 200)}
-                disabled={!formData.state}
+                disabled={isReadOnly || !formData.state}
               />
               {showCityDropdown && (
                 <div style={dropdownListStyle}>
@@ -1142,6 +1145,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
             name="googleMapLink"
             value={formData.googleMapLink}
             onChange={handleChange}
+            disabled={isReadOnly}
           />
         </div>
 
@@ -1157,6 +1161,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
             value={formData.eventAddress}
             onChange={handleChange}
             rows="4"
+            disabled={isReadOnly}
             required
           />
           {renderError("eventAddress")}
@@ -1175,8 +1180,9 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
                 name="eventStartDate"
                 value={formData.eventStartDate}
                 onChange={handleChange}
-                onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                onClick={(e) => !isReadOnly && e.target.showPicker && e.target.showPicker()}
                 min={minStartDate}
+                disabled={isReadOnly}
                 required
               />
               {renderError("eventStartDate")}
@@ -1193,6 +1199,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
                 name="eventStartTime"
                 value={formData.eventStartTime}
                 onChange={handleChange}
+                disabled={isReadOnly}
                 required
               />
               {renderError("eventStartTime")}
@@ -1213,8 +1220,9 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
                 name="eventEndDate"
                 value={formData.eventEndDate}
                 onChange={handleChange}
-                onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                onClick={(e) => !isReadOnly && e.target.showPicker && e.target.showPicker()}
                 min={formData.eventStartDate || minStartDate}
+                disabled={isReadOnly}
                 required
               />
               {renderError("eventEndDate")}
@@ -1231,6 +1239,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
                 name="eventEndTime"
                 value={formData.eventEndTime}
                 onChange={handleChange}
+                disabled={isReadOnly}
                 required
               />
               {renderError("eventEndTime")}
@@ -1251,11 +1260,11 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
                 name="registrationStartDate"
                 value={formData.registrationStartDate}
                 onChange={handleChange}
-                onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                onClick={(e) => !isReadOnly && e.target.showPicker && e.target.showPicker()}
                 min={minStartDate}
                 max={formData.eventEndDate ? formData.eventEndDate : ""}
                 required={!!(formData.eventStartDate && formData.eventEndDate)}
-                disabled={!(formData.eventStartDate && formData.eventEndDate)}
+                disabled={isReadOnly || !(formData.eventStartDate && formData.eventEndDate)}
               />
               {renderError("registrationStartDate")}
             </div>
@@ -1272,7 +1281,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
                 value={formData.registrationStartTime}
                 onChange={handleChange}
                 required={!!(formData.eventStartDate && formData.eventEndDate)}
-                disabled={!(formData.eventStartDate && formData.eventEndDate)}
+                disabled={isReadOnly || !(formData.eventStartDate && formData.eventEndDate)}
               />
               {renderError("registrationStartTime")}
             </div>
@@ -1292,11 +1301,11 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
                 name="registrationEndDate"
                 value={formData.registrationEndDate}
                 onChange={handleChange}
-                onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                onClick={(e) => !isReadOnly && e.target.showPicker && e.target.showPicker()}
                 min={isEditMode ? "" : (formData.registrationStartDate || minStartDate)}
                 max={formData.eventEndDate ? formData.eventEndDate : ""}
                 required={!!(formData.eventStartDate && formData.eventEndDate)}
-                disabled={!(formData.eventStartDate && formData.eventEndDate)}
+                disabled={isReadOnly || !(formData.eventStartDate && formData.eventEndDate)}
               />
               {renderError("registrationEndDate")}
             </div>
@@ -1319,7 +1328,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
                     : ""
                 }
                 required={!!(formData.eventStartDate && formData.eventEndDate)}
-                disabled={!(formData.eventStartDate && formData.eventEndDate)}
+                disabled={isReadOnly || !(formData.eventStartDate && formData.eventEndDate)}
               />
               {renderError("registrationEndTime")}
             </div>
@@ -1334,45 +1343,47 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
         )}
 
         {/* Navigation Buttons */}
-        <div className="form-navigation-buttons">
-          <button
-            type="button"
-            className="btn-back"
-            style={{
-              minWidth: 100,
-              fontWeight: 600,
-              background: "#fff",
-              color: "#da251c",
-              border: "2px solid #da251c",
-              borderRadius: 8,
-              padding: "8px 20px",
-              fontSize: "1.1rem",
-              height: 42,
-              marginLeft: 8,
-              marginTop: "22px",
-            }}
-            onClick={onBack}
-          >
-            Back
-          </button>
-          <button
-            type="submit"
-            className="btn-save-continue"
-            style={{
-              minWidth: 120,
-              fontWeight: 600,
-              background: "#da251c",
-              color: "#fff",
-              borderRadius: 8,
-              border: "none",
-              padding: "10px 32px",
-              fontSize: "1.1rem",
-              height: 44,
-            }}
-          >
-            Save & Next (3/11)
-          </button>
-        </div>
+        {!isReadOnly && (
+          <div className="form-navigation-buttons">
+            <button
+              type="button"
+              className="btn-back"
+              style={{
+                minWidth: 100,
+                fontWeight: 600,
+                background: "#fff",
+                color: "#da251c",
+                border: "2px solid #da251c",
+                borderRadius: 8,
+                padding: "8px 20px",
+                fontSize: "1.1rem",
+                height: 42,
+                marginLeft: 8,
+                marginTop: "22px",
+              }}
+              onClick={onBack}
+            >
+              Back
+            </button>
+            <button
+              type="submit"
+              className="btn-save-continue"
+              style={{
+                minWidth: 120,
+                fontWeight: 600,
+                background: "#da251c",
+                color: "#fff",
+                borderRadius: 8,
+                border: "none",
+                padding: "10px 32px",
+                fontSize: "1.1rem",
+                height: 44,
+              }}
+            >
+              Save & Next (3/11)
+            </button>
+          </div>
+        )}
       </form>
 
       {/* Local Toast Notification */}

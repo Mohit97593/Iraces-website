@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 
-const FAQsStep = ({ onBack, onNext, showToast }) => {
+const FAQsStep = ({ onBack, onNext, showToast, isReadOnly }) => {
   const [items, setItems] = useState([]);
   const [hovered, setHovered] = useState(null);
   const [adding, setAdding] = useState(false);
@@ -222,7 +222,7 @@ const FAQsStep = ({ onBack, onNext, showToast }) => {
     <div className="event-form-section">
       <div className="section-header">
         <h3>{adding ? "Add FAQ's" : "FAQ's"}</h3>
-        {!adding && (
+        {!adding && !isReadOnly && (
           <button
             onClick={handleAdd}
             style={{
@@ -288,26 +288,30 @@ const FAQsStep = ({ onBack, onNext, showToast }) => {
               >
                 <div style={{ fontWeight: 600, fontSize: 18 }}>{it.title}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div
-                    className={`toggle ${it.active ? "on" : ""}`}
-                    onClick={() => handleToggle(it)}
-                    role="button"
-                  >
-                    <div className="knob" />
-                  </div>
+                  {!isReadOnly && (
+                    <div
+                      className={`toggle ${it.active ? "on" : ""}`}
+                      onClick={() => handleToggle(it)}
+                      role="button"
+                    >
+                      <div className="knob" />
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div
-                className={`faq-actions ${hovered === it.id ? "visible" : ""}`}
-              >
-                <button onClick={() => handleEdit(it)} title="Edit">
-                  ✎
-                </button>
-                <button onClick={() => handleDelete(it)} title="Delete">
-                  🗑
-                </button>
-              </div>
+              {!isReadOnly && (
+                <div
+                  className={`faq-actions ${hovered === it.id ? "visible" : ""}`}
+                >
+                  <button onClick={() => handleEdit(it)} title="Edit">
+                    ✎
+                  </button>
+                  <button onClick={() => handleDelete(it)} title="Delete">
+                    🗑
+                  </button>
+                </div>
+              )}
             </div>
           ))
         )}
@@ -357,34 +361,36 @@ const FAQsStep = ({ onBack, onNext, showToast }) => {
             </button>
           </>
         ) : (
-          <>
-            <button
-              onClick={onBack}
-              style={{
-                border: "1.5px solid #da251c",
-                color: "#da251c",
-                background: "#fff",
-                borderRadius: 6,
-                padding: "10px 32px",
-                fontWeight: 600,
-              }}
-            >
-              Back
-            </button>
-            <button
-              onClick={() => onNext()}
-              style={{
-                background: "#da251c",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                padding: "10px 32px",
-                fontWeight: 600,
-              }}
-            >
-              Save & Next (10/11)
-            </button>
-          </>
+          !isReadOnly && (
+            <>
+              <button
+                onClick={onBack}
+                style={{
+                  border: "1.5px solid #da251c",
+                  color: "#da251c",
+                  background: "#fff",
+                  borderRadius: 6,
+                  padding: "10px 32px",
+                  fontWeight: 600,
+                }}
+              >
+                Back
+              </button>
+              <button
+                onClick={() => onNext()}
+                style={{
+                  background: "#da251c",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 6,
+                  padding: "10px 32px",
+                  fontWeight: 600,
+                }}
+              >
+                Save & Next (10/11)
+              </button>
+            </>
+          )
         )}
       </div>
     </div>

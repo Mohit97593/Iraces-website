@@ -3,7 +3,7 @@ import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 import Toast from "../../components/Toast/Toast";
 
-export default function DiscountCoupons({ onBack, onNext, isEditMode }) {
+export default function DiscountCoupons({ onBack, onNext, isEditMode, isReadOnly }) {
   const [toast, setToast] = useState(null);
 
   const triggerToast = (message, type = 'success') => {
@@ -478,7 +478,7 @@ export default function DiscountCoupons({ onBack, onNext, isEditMode }) {
             }}
           >
             {!showForm && <h4 style={{ margin: 0 }}>Discount Coupons</h4>}
-            {!showForm && (
+            {!showForm && !isReadOnly && (
               <button
                 onClick={() => {
                   setFormData(initialFormState);
@@ -1884,59 +1884,61 @@ export default function DiscountCoupons({ onBack, onNext, isEditMode }) {
                       }}
                     >
                       {/* floating edit/delete icons */}
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: -14,
-                          right: 12,
-                          display: "flex",
-                          gap: 8,
-                          transition: "opacity 120ms ease",
-                          opacity: hoveredCoupon === c.id ? 1 : 0,
-                          pointerEvents:
-                            hoveredCoupon === c.id ? "auto" : "none",
-                        }}
-                      >
-                        <button
-                          title="Edit"
-                          onClick={() => handleEditCoupon(c)}
+                      {!isReadOnly && (
+                        <div
                           style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 20,
-                            background: "#da251c",
-                            border: "none",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#fff",
-                            cursor: "pointer",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                            position: "absolute",
+                            top: -14,
+                            right: 12,
+                            display: "flex",
+                            gap: 8,
+                            transition: "opacity 120ms ease",
+                            opacity: hoveredCoupon === c.id ? 1 : 0,
+                            pointerEvents:
+                              hoveredCoupon === c.id ? "auto" : "none",
                           }}
                         >
-                          ✎
-                        </button>
+                          <button
+                            title="Edit"
+                            onClick={() => handleEditCoupon(c)}
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 20,
+                              background: "#da251c",
+                              border: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#fff",
+                              cursor: "pointer",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                            }}
+                          >
+                            ✎
+                          </button>
 
-                        <button
-                          title="Delete"
-                          onClick={() => handleDeleteCoupon(c.id)}
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 20,
-                            background: "#da251c",
-                            border: "none",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#fff",
-                            cursor: "pointer",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-                          }}
-                        >
-                          🗑
-                        </button>
-                      </div>
+                          <button
+                            title="Delete"
+                            onClick={() => handleDeleteCoupon(c.id)}
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 20,
+                              background: "#da251c",
+                              border: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#fff",
+                              cursor: "pointer",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                            }}
+                          >
+                            🗑
+                          </button>
+                        </div>
+                      )}
 
                       {/* top row: name */}
                       <div
@@ -1951,37 +1953,39 @@ export default function DiscountCoupons({ onBack, onNext, isEditMode }) {
                         </div>
 
                         {/* toggle switch */}
-                        <div style={{ marginLeft: 12 }}>
-                          <div
-                            role="button"
-                            aria-label="Toggle coupon status"
-                            onClick={() => handleToggleCoupon(c)}
-                            style={{
-                              width: 48,
-                              marginTop: 12,
-                              height: 28,
-                              borderRadius: 20,
-                              background: c.coupon_status ? "#da251c" : "#eee",
-                              padding: 4,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: c.coupon_status
-                                ? "flex-end"
-                                : "flex-start",
-                              cursor: "pointer",
-                            }}
-                          >
+                        {!isReadOnly && (
+                          <div style={{ marginLeft: 12 }}>
                             <div
+                              role="button"
+                              aria-label="Toggle coupon status"
+                              onClick={() => handleToggleCoupon(c)}
                               style={{
-                                width: 20,
-                                height: 20,
-                                borderRadius: 10,
-                                background: "#fff",
-                                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                                width: 48,
+                                marginTop: 12,
+                                height: 28,
+                                borderRadius: 20,
+                                background: c.coupon_status ? "#da251c" : "#eee",
+                                padding: 4,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: c.coupon_status
+                                  ? "flex-end"
+                                  : "flex-start",
+                                cursor: "pointer",
                               }}
-                            />
+                            >
+                              <div
+                                style={{
+                                  width: 20,
+                                  height: 20,
+                                  borderRadius: 10,
+                                  background: "#fff",
+                                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                                }}
+                              />
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
 
                       {/* middle: stats */}
@@ -2097,7 +2101,7 @@ export default function DiscountCoupons({ onBack, onNext, isEditMode }) {
               </div>
             ))}
 
-          {!showForm && (
+          {!showForm && !isReadOnly && (
             <div
               style={{
                 display: "flex",

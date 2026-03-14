@@ -13,6 +13,7 @@ export default function RaceCategories({
   organizerGST,
   showToast,
   isEditMode,
+  isReadOnly,
 }) {
   const [gst, setGst] = useState(false);
   const [taxType, setTaxType] = useState("inclusive");
@@ -221,39 +222,41 @@ export default function RaceCategories({
             <h3 style={{ fontWeight: 700, fontSize: "1.6rem", margin: 0 }}>
               Race Category
             </h3>
-            <button
-              type="button"
-              style={{
-                border: "2px solid #da251c",
-                color: "#da251c",
-                background: "#fff",
-                borderRadius: 8,
-                fontWeight: 600,
-                padding: "8px 24px",
-                fontSize: "1.1rem",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#000";
-                e.currentTarget.style.color = "#fff";
-                e.currentTarget.style.border = "2px solid #000";
-                e.currentTarget.querySelector("i").style.color = "#fff";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#fff";
-                e.currentTarget.style.color = "#da251c";
-                e.currentTarget.style.border = "2px solid #da251c";
-                e.currentTarget.querySelector("i").style.color = "#da251c";
-              }}
-              onClick={handleNewClick}
-            >
-              <i className="fas fa-users" style={{ color: "#da251c", transition: "color 0.3s ease" }}></i> +
-              New Race Category
-            </button>
+            {!isReadOnly && (
+              <button
+                type="button"
+                style={{
+                  border: "2px solid #da251c",
+                  color: "#da251c",
+                  background: "#fff",
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  padding: "8px 24px",
+                  fontSize: "1.1rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#000";
+                  e.currentTarget.style.color = "#fff";
+                  e.currentTarget.style.border = "2px solid #000";
+                  e.currentTarget.querySelector("i").style.color = "#fff";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#fff";
+                  e.currentTarget.style.color = "#da251c";
+                  e.currentTarget.style.border = "2px solid #da251c";
+                  e.currentTarget.querySelector("i").style.color = "#da251c";
+                }}
+                onClick={handleNewClick}
+              >
+                <i className="fas fa-users" style={{ color: "#da251c", transition: "color 0.3s ease" }}></i> +
+                New Race Category
+              </button>
+            )}
           </div>
           <div
             style={{
@@ -307,10 +310,11 @@ export default function RaceCategories({
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
-                      cursor: "pointer",
+                      cursor: isReadOnly ? "default" : "pointer",
                       transition: "all 0.3s ease",
                     }}
-                    onClick={() => handleGstChange(true)}
+                    onClick={() => !isReadOnly && handleGstChange(true)}
+                    disabled={isReadOnly}
                   >
                     <i className="fas fa-check-circle"></i> Yes
                   </button>
@@ -328,10 +332,11 @@ export default function RaceCategories({
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
-                      cursor: "pointer",
+                      cursor: isReadOnly ? "default" : "pointer",
                       transition: "all 0.3s ease",
                     }}
-                    onClick={() => handleGstChange(false)}
+                    onClick={() => !isReadOnly && handleGstChange(false)}
+                    disabled={isReadOnly}
                   >
                     <i className="fas fa-lock"></i> No
                   </button>
@@ -383,10 +388,11 @@ export default function RaceCategories({
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
-                      cursor: "pointer",
+                      cursor: isReadOnly ? "default" : "pointer",
                       transition: "all 0.3s ease",
                     }}
-                    onClick={() => handleTaxTypeChange("inclusive")}
+                    onClick={() => !isReadOnly && handleTaxTypeChange("inclusive")}
+                    disabled={isReadOnly}
                   >
                     <i className="fas fa-check-circle"></i> Inclusive Taxes
                   </button>
@@ -404,10 +410,11 @@ export default function RaceCategories({
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
-                      cursor: "pointer",
+                      cursor: isReadOnly ? "default" : "pointer",
                       transition: "all 0.3s ease",
                     }}
-                    onClick={() => handleTaxTypeChange("exclusive")}
+                    onClick={() => !isReadOnly && handleTaxTypeChange("exclusive")}
+                    disabled={isReadOnly}
                   >
                     <i className="fas fa-lock"></i> Exclusive Taxes
                   </button>
@@ -574,95 +581,97 @@ export default function RaceCategories({
                   </div>
 
                   {/* Right side icons */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      right: 0,
-                      bottom: 0,
-                      width: 68,
-                      background: "rgba(255,255,255,0.2)",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 24,
-                      borderLeft: "1px solid rgba(255,255,255,0.3)",
-                    }}
-                  >
-                    <button
+                  {!isReadOnly && (
+                    <div
                       style={{
-                        background: "transparent",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: 8,
-                      }}
-                      onClick={async () => {
-                        try {
-                          const res = await authAPI.getTicketDetail(ticket.id);
-                          if (
-                            res &&
-                            res.data &&
-                            res.data.Ticket &&
-                            res.data.Ticket.length > 0
-                          ) {
-                            setEditTicket(res.data.Ticket[0]);
-                            // Set paidType based on ticket_status: 2 = Free, else Paid
-                            if (setPaidType) {
-                              setPaidType(
-                                res.data.Ticket[0].ticket_status === 2
-                                  ? "Free"
-                                  : "Paid"
-                              );
-                            }
-                            setShowForm(true);
-                            if (setShowPreview) setShowPreview(false);
-                          } else {
-                            showToast && showToast("No ticket data found", 'error');
-                          }
-                        } catch (err) {
-                          showToast && showToast("Failed to fetch ticket details", 'error');
-                        }
+                        position: "absolute",
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                        width: 68,
+                        background: "rgba(255,255,255,0.2)",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 24,
+                        borderLeft: "1px solid rgba(255,255,255,0.3)",
                       }}
                     >
-                      <i
-                        className="fas fa-edit"
-                        style={{ fontSize: "1.2rem", color: "#2d3436" }}
-                      ></i>
-                    </button>
-                    <button
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: 8,
-                      }}
-                      onClick={async () => {
-                        if (
-                          window.confirm(
-                            "Are you sure you want to delete this ticket?"
-                          )
-                        ) {
+                      <button
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 8,
+                        }}
+                        onClick={async () => {
                           try {
-                            const formData = new FormData();
-                            formData.append("ticket_id", ticket.id.toString());
-                            await authAPI.deleteEventTicket(formData);
-                            setTickets((prev) =>
-                              prev.filter((t) => t.id !== ticket.id)
-                            );
-                            fetchEventDetails(); // Sync with backend
+                            const res = await authAPI.getTicketDetail(ticket.id);
+                            if (
+                              res &&
+                              res.data &&
+                              res.data.Ticket &&
+                              res.data.Ticket.length > 0
+                            ) {
+                              setEditTicket(res.data.Ticket[0]);
+                              // Set paidType based on ticket_status: 2 = Free, else Paid
+                              if (setPaidType) {
+                                setPaidType(
+                                  res.data.Ticket[0].ticket_status === 2
+                                    ? "Free"
+                                    : "Paid"
+                                );
+                              }
+                              setShowForm(true);
+                              if (setShowPreview) setShowPreview(false);
+                            } else {
+                              showToast && showToast("No ticket data found", 'error');
+                            }
                           } catch (err) {
-                            showToast && showToast("Failed to delete ticket", 'error');
+                            showToast && showToast("Failed to fetch ticket details", 'error');
                           }
-                        }
-                      }}
-                    >
-                      <i
-                        className="fas fa-trash"
-                        style={{ fontSize: "1.2rem", color: "#2d3436" }}
-                      ></i>
-                    </button>
-                  </div>
+                        }}
+                      >
+                        <i
+                          className="fas fa-edit"
+                          style={{ fontSize: "1.2rem", color: "#2d3436" }}
+                        ></i>
+                      </button>
+                      <button
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 8,
+                        }}
+                        onClick={async () => {
+                          if (
+                            window.confirm(
+                              "Are you sure you want to delete this ticket?"
+                            )
+                          ) {
+                            try {
+                              const formData = new FormData();
+                              formData.append("ticket_id", ticket.id.toString());
+                              await authAPI.deleteEventTicket(formData);
+                              setTickets((prev) =>
+                                prev.filter((t) => t.id !== ticket.id)
+                              );
+                              fetchEventDetails(); // Sync with backend
+                            } catch (err) {
+                              showToast && showToast("Failed to delete ticket", 'error');
+                            }
+                          }
+                        }}
+                      >
+                        <i
+                          className="fas fa-trash"
+                          style={{ fontSize: "1.2rem", color: "#2d3436" }}
+                        ></i>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -773,46 +782,48 @@ export default function RaceCategories({
               </button>
             </div>
           )}
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 16 }}>
-            <button
-              type="button"
-              className="btn-back"
-              style={{
-                minWidth: 100,
-                fontWeight: 600,
-                background: "#fff",
-                color: "#da251c",
-                border: "2px solid #da251c",
-                borderRadius: 8,
-                padding: "8px 20px",
-                fontSize: "1.1rem",
-                height: 42,
-                marginLeft: 8,
-                marginTop: "22px",
-              }}
-              onClick={onBack}
-            >
-              Back
-            </button>
-            <button
-              type="button"
-              className="btn-save-continue"
-              style={{
-                minWidth: 120,
-                fontWeight: 600,
-                background: "#da251c",
-                color: "#fff",
-                borderRadius: 8,
-                border: "none",
-                padding: "10px 32px",
-                fontSize: "1.1rem",
-                height: 44,
-              }}
-              onClick={onNext}
-            >
-              Save & Next (5/11)
-            </button>
-          </div>
+          {!isReadOnly && (
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 16 }}>
+              <button
+                type="button"
+                className="btn-back"
+                style={{
+                  minWidth: 100,
+                  fontWeight: 600,
+                  background: "#fff",
+                  color: "#da251c",
+                  border: "2px solid #da251c",
+                  borderRadius: 8,
+                  padding: "8px 20px",
+                  fontSize: "1.1rem",
+                  height: 42,
+                  marginLeft: 8,
+                  marginTop: "22px",
+                }}
+                onClick={onBack}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                className="btn-save-continue"
+                style={{
+                  minWidth: 120,
+                  fontWeight: 600,
+                  background: "#da251c",
+                  color: "#fff",
+                  borderRadius: 8,
+                  border: "none",
+                  padding: "10px 32px",
+                  fontSize: "1.1rem",
+                  height: 44,
+                }}
+                onClick={onNext}
+              >
+                Save & Next (5/11)
+              </button>
+            </div>
+          )}
         </>
       )
       }

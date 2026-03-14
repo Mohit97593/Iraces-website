@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 
-const Integrations = ({ onBack, onNext, showToast }) => {
+const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
   const [eventDetails, setEventDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -169,20 +169,22 @@ const Integrations = ({ onBack, onNext, showToast }) => {
           >
             Back
           </button>
-          <button
-            onClick={handleSaveClick}
-            style={{
-              background: "#da251c",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6,
-              padding: "10px 32px",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Save
-          </button>
+          {!isReadOnly && (
+            <button
+              onClick={handleSaveClick}
+              style={{
+                background: "#da251c",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                padding: "10px 32px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Save
+            </button>
+          )}
         </div>
       </div>
 

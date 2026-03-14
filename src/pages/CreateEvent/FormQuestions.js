@@ -4,7 +4,7 @@ import GeneralFormQuestions from "./GeneralFormQuestions";
 import { authAPI } from "../../services/authAPI";
 import Toast from "../../components/Toast/Toast";
 
-const FormQuestions = ({ onBack, onNext }) => {
+const FormQuestions = ({ onBack, onNext, isReadOnly }) => {
   const [showGeneralForm, setShowGeneralForm] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [formCommon, setFormCommon] = useState(null);
@@ -698,21 +698,23 @@ const FormQuestions = ({ onBack, onNext }) => {
                 <i className="fas fa-info-circle"></i>
               </span>
             </h2>
-            <button
-              onClick={handleAddQuestions}
-              style={{
-                border: "1.5px solid #da251c",
-                color: "#da251c",
-                background: "#fff",
-                borderRadius: 6,
-                padding: "8px 22px",
-                fontWeight: 600,
-                fontSize: "1rem",
-                cursor: "pointer",
-              }}
-            >
-              + Add Questions
-            </button>
+            {!isReadOnly && (
+              <button
+                onClick={handleAddQuestions}
+                style={{
+                  border: "1.5px solid #da251c",
+                  color: "#da251c",
+                  background: "#fff",
+                  borderRadius: 6,
+                  padding: "8px 22px",
+                  fontWeight: 600,
+                  fontSize: "1rem",
+                  cursor: "pointer",
+                }}
+              >
+                + Add Questions
+              </button>
+            )}
           </div>
           <div
             style={{
@@ -810,18 +812,18 @@ const FormQuestions = ({ onBack, onNext }) => {
                             }}
                           >
                             <div
-                              draggable="true"
-                              onDragStart={(e) => handleDragStart(e, q, "all", i)}
-                              onDragOver={(e) => handleDragOver(e, i)}
-                              onDragEnter={(e) => handleDragEnter(e, i)}
-                              onDragLeave={handleDragLeave}
-                              onDrop={(e) => handleDrop(e, "all", i)}
-                              onDragEnd={handleDragEnd}
+                              draggable={!isReadOnly}
+                              onDragStart={(e) => !isReadOnly && handleDragStart(e, q, "all", i)}
+                              onDragOver={(e) => !isReadOnly && handleDragOver(e, i)}
+                              onDragEnter={(e) => !isReadOnly && handleDragEnter(e, i)}
+                              onDragLeave={!isReadOnly ? handleDragLeave : undefined}
+                              onDrop={(e) => !isReadOnly && handleDrop(e, "all", i)}
+                              onDragEnd={!isReadOnly ? handleDragEnd : undefined}
                               style={{
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "space-between",
-                                cursor: "grab",
+                                cursor: isReadOnly ? "default" : "grab",
                               }}
                             >
                               <div
@@ -831,18 +833,20 @@ const FormQuestions = ({ onBack, onNext }) => {
                                   gap: 12,
                                 }}
                               >
-                                <div
-                                  style={{
-                                    width: 16,
-                                    height: 24,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    color: "#666",
-                                  }}
-                                >
-                                  <span style={{ fontSize: 18 }}>⋮⋮</span>
-                                </div>
+                                {!isReadOnly && (
+                                  <div
+                                    style={{
+                                      width: 16,
+                                      height: 24,
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      color: "#666",
+                                    }}
+                                  >
+                                    <span style={{ fontSize: 18 }}>⋮⋮</span>
+                                  </div>
+                                )}
                                 <div
                                   style={{
                                     background: "#f0f4f6",
@@ -881,145 +885,149 @@ const FormQuestions = ({ onBack, onNext }) => {
                                   gap: 12,
                                 }}
                               >
-                                <div style={{ display: "flex", gap: 8 }}>
-                                  <button
-                                    title="Delete"
-                                    onClick={() => handleDeleteQuestion(q)}
-                                    style={{
-                                      width: 34,
-                                      height: 34,
-                                      borderRadius: 18,
-                                      background: "#fff",
-                                      border: "1px solid #e74c3c",
-                                      color: "#e74c3c",
-                                      cursor: "pointer",
-                                    }}
-                                  >
-                                    🗑
-                                  </button>
-                                  <button
-                                    title="Edit"
-                                    onClick={() => {
-                                      setEditQuestion(q);
-                                      setShowGeneralForm(true);
-                                    }}
-                                    style={{
-                                      width: 34,
-                                      height: 34,
-                                      borderRadius: 18,
-                                      background: "#fff",
-                                      border: "1px solid #007bff",
-                                      color: "#007bff",
-                                      cursor: "pointer",
-                                    }}
-                                  >
-                                    ✎
-                                  </button>
-                                </div>
-                                <div>
-                                  <label
-                                    role="button"
-                                    tabIndex={0}
-                                    onClick={() => handleToggleClick(q)}
-                                    onKeyDown={(e) => {
-                                      if (
-                                        e.key === "Enter" ||
-                                        e.key === " "
-                                      ) {
-                                        handleToggleClick(q);
-                                      }
-                                    }}
-                                    style={{
-                                      display: "inline-block",
-                                      width: 46,
-                                      height: 28,
-                                      borderRadius: 18,
-                                      background: (() => {
-                                        const id = getQId(q);
-                                        const serverBool = parseServerBool(
-                                          q.question_status // Use question_status
-                                        );
-                                        const val =
-                                          id in localToggleMap
-                                            ? localToggleMap[id]
-                                            : serverBool; // Direct mapping: true = ON (red)
-                                        return val ? "#da251c" : "#fff";
-                                      })(),
-                                      border: "2px solid #da251c",
-                                      position: "relative",
-                                      cursor: "pointer",
-                                    }}
-                                  >
-                                    <span
+                                {!isReadOnly && (
+                                  <>
+                                    <div style={{ display: "flex", gap: 8 }}>
+                                      <button
+                                        title="Delete"
+                                        onClick={() => handleDeleteQuestion(q)}
+                                        style={{
+                                          width: 34,
+                                          height: 34,
+                                          borderRadius: 18,
+                                          background: "#fff",
+                                          border: "1px solid #e74c3c",
+                                          color: "#e74c3c",
+                                          cursor: "pointer",
+                                        }}
+                                      >
+                                        🗑
+                                      </button>
+                                      <button
+                                        title="Edit"
+                                        onClick={() => {
+                                          setEditQuestion(q);
+                                          setShowGeneralForm(true);
+                                        }}
+                                        style={{
+                                          width: 34,
+                                          height: 34,
+                                          borderRadius: 18,
+                                          background: "#fff",
+                                          border: "1px solid #007bff",
+                                          color: "#007bff",
+                                          cursor: "pointer",
+                                        }}
+                                      >
+                                        ✎
+                                      </button>
+                                    </div>
+                                    <div>
+                                      <label
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => handleToggleClick(q)}
+                                        onKeyDown={(e) => {
+                                          if (
+                                            e.key === "Enter" ||
+                                            e.key === " "
+                                          ) {
+                                            handleToggleClick(q);
+                                          }
+                                        }}
+                                        style={{
+                                          display: "inline-block",
+                                          width: 46,
+                                          height: 28,
+                                          borderRadius: 18,
+                                          background: (() => {
+                                            const id = getQId(q);
+                                            const serverBool = parseServerBool(
+                                              q.question_status // Use question_status
+                                            );
+                                            const val =
+                                              id in localToggleMap
+                                                ? localToggleMap[id]
+                                                : serverBool; // Direct mapping: true = ON (red)
+                                            return val ? "#da251c" : "#fff";
+                                          })(),
+                                          border: "2px solid #da251c",
+                                          position: "relative",
+                                          cursor: "pointer",
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            position: "absolute",
+                                            left: (() => {
+                                              const id = getQId(q);
+                                              const serverBool =
+                                                parseServerBool(
+                                                  q.question_status // Use question_status
+                                                );
+                                              const val =
+                                                id in localToggleMap
+                                                  ? localToggleMap[id]
+                                                  : serverBool; // Direct mapping
+                                              return val ? 20 : 4;
+                                            })(),
+                                            top: 3,
+                                            width: 20,
+                                            height: 20,
+                                            background: (() => {
+                                              const id = getQId(q);
+                                              const serverBool =
+                                                parseServerBool(
+                                                  q.question_status // Use question_status
+                                                );
+                                              const val =
+                                                id in localToggleMap
+                                                  ? localToggleMap[id]
+                                                  : serverBool; // Direct mapping
+                                              return val ? "#fff" : "#da251c";
+                                            })(),
+                                            borderRadius: 10,
+                                            display: "inline-block",
+                                          }}
+                                        ></span>
+                                      </label>
+                                    </div>
+                                    <div
                                       style={{
-                                        position: "absolute",
-                                        left: (() => {
-                                          const id = getQId(q);
-                                          const serverBool =
-                                            parseServerBool(
-                                              q.question_status // Use question_status
-                                            );
-                                          const val =
-                                            id in localToggleMap
-                                              ? localToggleMap[id]
-                                              : serverBool; // Direct mapping
-                                          return val ? 20 : 4;
-                                        })(),
-                                        top: 3,
-                                        width: 20,
-                                        height: 20,
-                                        background: (() => {
-                                          const id = getQId(q);
-                                          const serverBool =
-                                            parseServerBool(
-                                              q.question_status // Use question_status
-                                            );
-                                          const val =
-                                            id in localToggleMap
-                                              ? localToggleMap[id]
-                                              : serverBool; // Direct mapping
-                                          return val ? "#fff" : "#da251c";
-                                        })(),
-                                        borderRadius: 10,
-                                        display: "inline-block",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
                                       }}
-                                    ></span>
-                                  </label>
-                                </div>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 8,
-                                  }}
-                                >
-                                  <label
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 8,
-                                      cursor: "pointer",
-                                    }}
-                                  >
-                                    <input
-                                      style={{ width: 25, height: 25 }}
-                                      type="checkbox"
-                                      checked={
-                                        q.show_on_ticket_pdf === "1" ||
-                                          q.show_on_ticket_pdf === 1 ||
-                                          q.show_on_ticket_pdf === true
-                                          ? true
-                                          : false
-                                      }
-                                      onChange={(e) =>
-                                        handleTicketCheckboxConfirm(
-                                          q,
-                                          e.target.checked
-                                        )
-                                      }
-                                    />
-                                  </label>
-                                </div>
+                                    >
+                                      <label
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: 8,
+                                          cursor: "pointer",
+                                        }}
+                                      >
+                                        <input
+                                          style={{ width: 25, height: 25 }}
+                                          type="checkbox"
+                                          checked={
+                                            q.show_on_ticket_pdf === "1" ||
+                                              q.show_on_ticket_pdf === 1 ||
+                                              q.show_on_ticket_pdf === true
+                                              ? true
+                                              : false
+                                          }
+                                          onChange={(e) =>
+                                            handleTicketCheckboxConfirm(
+                                              q,
+                                              e.target.checked
+                                            )
+                                          }
+                                        />
+                                      </label>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </div>
 
@@ -1203,15 +1211,17 @@ const FormQuestions = ({ onBack, onNext }) => {
               ) : (
                 <GeneralFormQuestions
                   onSave={handleSaveQuestions}
+                  onCancel={() => setShowGeneralForm(false)}
                   questions={questions}
                   eventDetails={eventDetails}
                   initialEditQuestion={editQuestion}
+                  isReadOnly={isReadOnly}
                 />
               )}
             </div>
           </div>
 
-          {!showGeneralForm && (
+          {!showGeneralForm && !isReadOnly && (
             <>
               <div
                 style={{

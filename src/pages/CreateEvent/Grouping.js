@@ -3,7 +3,7 @@ import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 import Toast from "../../components/Toast/Toast";
 
-const Grouping = ({ onBack, onNext }) => {
+const Grouping = ({ onBack, onNext, isReadOnly }) => {
     const [groups, setGroups] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [groupName, setGroupName] = useState("");
@@ -532,32 +532,34 @@ const Grouping = ({ onBack, onNext }) => {
                 <h3 style={{ fontWeight: 700, fontSize: "1.6rem", margin: 0 }}>
                     Question Grouping
                 </h3>
-                <button
-                    style={{
-                        border: "1.5px solid #da251c",
-                        color: "#da251c",
-                        background: "#fff",
-                        borderRadius: 6,
-                        padding: "8px 22px",
-                        fontWeight: 600,
-                        fontSize: "1rem",
-                        cursor: "pointer",
-                        transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "#000";
-                        e.currentTarget.style.color = "#fff";
-                        e.currentTarget.style.border = "1.5px solid #000";
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "#fff";
-                        e.currentTarget.style.color = "#da251c";
-                        e.currentTarget.style.border = "1.5px solid #da251c";
-                    }}
-                    onClick={handleAddGroup}
-                >
-                    + Add Group
-                </button>
+                {!isReadOnly && (
+                    <button
+                        style={{
+                            border: "1.5px solid #da251c",
+                            color: "#da251c",
+                            background: "#fff",
+                            borderRadius: 6,
+                            padding: "8px 22px",
+                            fontWeight: 600,
+                            fontSize: "1rem",
+                            cursor: "pointer",
+                            transition: "all 0.2s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "#000";
+                            e.currentTarget.style.color = "#fff";
+                            e.currentTarget.style.border = "1.5px solid #000";
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "#fff";
+                            e.currentTarget.style.color = "#da251c";
+                            e.currentTarget.style.border = "1.5px solid #da251c";
+                        }}
+                        onClick={handleAddGroup}
+                    >
+                        + Add Group
+                    </button>
+                )}
             </div>
 
             {/* Modal */}
@@ -726,12 +728,12 @@ const Grouping = ({ onBack, onNext }) => {
                             return (
                                 <div
                                     key={group.id}
-                                    draggable
-                                    onDragStart={(e) => handleDragStart(e, index)}
-                                    onDragOver={(e) => handleDragOver(e, index)}
-                                    onDragLeave={handleDragLeave}
-                                    onDrop={(e) => handleDrop(e, index)}
-                                    onDragEnd={handleDragEnd}
+                                    draggable={!isReadOnly}
+                                    onDragStart={(e) => !isReadOnly && handleDragStart(e, index)}
+                                    onDragOver={(e) => !isReadOnly && handleDragOver(e, index)}
+                                    onDragLeave={!isReadOnly ? handleDragLeave : undefined}
+                                    onDrop={(e) => !isReadOnly && handleDrop(e, index)}
+                                    onDragEnd={!isReadOnly ? handleDragEnd : undefined}
                                     style={{
                                         border: isDraggedOver ? "2px dashed #da251c" : "1.5px solid transparent",
                                         borderRadius: 12,
@@ -745,15 +747,15 @@ const Grouping = ({ onBack, onNext }) => {
                                         transition: "all 0.2s ease",
                                         position: "relative",
                                         opacity: isDragging ? 0.5 : 1,
-                                        cursor: "move",
+                                        cursor: isReadOnly ? "default" : "move",
                                     }}
                                     onMouseEnter={(e) => {
-                                        if (!isDragging) {
+                                        if (!isDragging && !isReadOnly) {
                                             e.currentTarget.style.border = "1.5px solid #da251c";
                                             e.currentTarget.style.boxShadow = "0 4px 16px rgba(0, 0, 0, 0.2)";
                                         }
                                         const icons = e.currentTarget.querySelector('.group-icons');
-                                        if (icons) icons.style.opacity = "1";
+                                        if (icons && !isReadOnly) icons.style.opacity = "1";
                                     }}
                                     onMouseLeave={(e) => {
                                         if (!isDragging && !isDraggedOver) {
@@ -775,71 +777,75 @@ const Grouping = ({ onBack, onNext }) => {
                                     </span>
 
                                     {/* Edit and Delete Icons - appear on hover */}
-                                    <div
-                                        className="group-icons"
-                                        style={{
-                                            position: "absolute",
-                                            top: -20,
-                                            right: 12,
-                                            display: "flex",
-                                            gap: 8,
-                                            opacity: 0,
-                                            transition: "opacity 0.2s ease",
-                                        }}
-                                    >
-                                        <button
+                                    {!isReadOnly && (
+                                        <div
+                                            className="group-icons"
                                             style={{
-                                                width: 32,
-                                                height: 32,
-                                                borderRadius: 6,
-                                                border: "1.5px solid #da251c",
-                                                background: "#fff",
-                                                color: "#da251c",
-                                                cursor: "pointer",
+                                                position: "absolute",
+                                                top: -20,
+                                                right: 12,
                                                 display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
+                                                gap: 8,
+                                                opacity: 0,
+                                                transition: "opacity 0.2s ease",
                                             }}
-                                            onClick={() => handleEditGroup(group.id, group.name)}
-                                            title="Edit"
                                         >
-                                            <i className="fas fa-edit"></i>
-                                        </button>
-                                        <button
-                                            style={{
-                                                width: 32,
-                                                height: 32,
-                                                borderRadius: 6,
-                                                border: "1.5px solid #da251c",
-                                                background: "#fff",
-                                                color: "#da251c",
-                                                cursor: "pointer",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                            }}
-                                            onClick={() => handleDeleteGroup(group.id, group.name)}
-                                            title="Delete"
-                                        >
-                                            <i className="fas fa-trash"></i>
-                                        </button>
-                                    </div>
+                                            <button
+                                                style={{
+                                                    width: 32,
+                                                    height: 32,
+                                                    borderRadius: 6,
+                                                    border: "1.5px solid #da251c",
+                                                    background: "#fff",
+                                                    color: "#da251c",
+                                                    cursor: "pointer",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                }}
+                                                onClick={() => handleEditGroup(group.id, group.name)}
+                                                title="Edit"
+                                            >
+                                                <i className="fas fa-edit"></i>
+                                            </button>
+                                            <button
+                                                style={{
+                                                    width: 32,
+                                                    height: 32,
+                                                    borderRadius: 6,
+                                                    border: "1.5px solid #da251c",
+                                                    background: "#fff",
+                                                    color: "#da251c",
+                                                    cursor: "pointer",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                }}
+                                                onClick={() => handleDeleteGroup(group.id, group.name)}
+                                                title="Delete"
+                                            >
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    )}
 
-                                    <button
-                                        style={{
-                                            border: "1.5px solid #da251c",
-                                            color: "#da251c",
-                                            background: "#fff",
-                                            borderRadius: 6,
-                                            padding: "8px 18px",
-                                            fontWeight: 600,
-                                            fontSize: "0.95rem",
-                                            cursor: "pointer",
-                                        }}
-                                        onClick={() => handleAddQuestion(group.id)}
-                                    >
-                                        + Add Question
-                                    </button>
+                                    {!isReadOnly && (
+                                        <button
+                                            style={{
+                                                border: "1.5px solid #da251c",
+                                                color: "#da251c",
+                                                background: "#fff",
+                                                borderRadius: 6,
+                                                padding: "8px 18px",
+                                                fontWeight: 600,
+                                                fontSize: "0.95rem",
+                                                cursor: "pointer",
+                                            }}
+                                            onClick={() => handleAddQuestion(group.id)}
+                                        >
+                                            + Add Question
+                                        </button>
+                                    )}
                                 </div>
                             );
                         })}
@@ -1059,46 +1065,48 @@ const Grouping = ({ onBack, onNext }) => {
             )}
 
             {/* Navigation Buttons */}
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: 12,
-                    marginTop: 24,
-                }}
-            >
-                <button
-                    onClick={onBack}
+            {!isReadOnly && (
+                <div
                     style={{
-                        border: "1.5px solid #da251c",
-                        color: "#da251c",
-                        background: "#fff",
-                        borderRadius: 6,
-                        padding: "10px 32px",
-                        fontWeight: 600,
-                        fontSize: "1.1rem",
-                        cursor: "pointer",
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        gap: 12,
+                        marginTop: 24,
                     }}
                 >
-                    Back
-                </button>
-                <button
-                    className="next-btn"
-                    onClick={onNext}
-                    style={{
-                        background: "#da251c",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: 6,
-                        padding: "10px 32px",
-                        fontWeight: 600,
-                        fontSize: "1.1rem",
-                        cursor: "pointer",
-                    }}
-                >
-                    Save & Next (6/11)
-                </button>
-            </div>
+                    <button
+                        onClick={onBack}
+                        style={{
+                            border: "1.5px solid #da251c",
+                            color: "#da251c",
+                            background: "#fff",
+                            borderRadius: 6,
+                            padding: "10px 32px",
+                            fontWeight: 600,
+                            fontSize: "1.1rem",
+                            cursor: "pointer",
+                        }}
+                    >
+                        Back
+                    </button>
+                    <button
+                        className="next-btn"
+                        onClick={onNext}
+                        style={{
+                            background: "#da251c",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 6,
+                            padding: "10px 32px",
+                            fontWeight: 600,
+                            fontSize: "1.1rem",
+                            cursor: "pointer",
+                        }}
+                    >
+                        Save & Next (6/11)
+                    </button>
+                </div>
+            )}
 
             {/* Custom Confirmation Modal */}
             {showConfirmModal && (
