@@ -465,16 +465,18 @@ const Profile = () => {
     } else if (!/^[0-9]{10}$/.test(addContactNumber.trim())) {
       errors.addContactNumber = "Please enter a valid 10-digit mobile number";
     }
-    if (!addEmail.trim()) {
-      errors.addEmail = "Email is required";
-    } else if (!/^\S+@\S+\.\S+$/.test(addEmail.trim())) {
-      errors.addEmail = "Please enter a valid email address";
-    } else if (
-      orgUserDetails.some(
-        (user) => user.email?.toLowerCase() === addEmail.trim().toLowerCase()
-      )
-    ) {
-      errors.addEmail = "This email is already used by another organiser.";
+    if (!editOrgUserId) {
+      if (!addEmail.trim()) {
+        errors.addEmail = "Email is required";
+      } else if (!/^\S+@\S+\.\S+$/.test(addEmail.trim())) {
+        errors.addEmail = "Please enter a valid email address";
+      } else if (
+        orgUserDetails.some(
+          (user) => user.email?.toLowerCase() === addEmail.trim().toLowerCase()
+        )
+      ) {
+        errors.addEmail = "This email is already used by another organiser.";
+      }
     }
     if (!addDob.trim()) {
       errors.addDob = "Date of birth is required";
@@ -4639,8 +4641,11 @@ const Profile = () => {
                       borderRadius: "8px",
                       border: "1px solid #ddd",
                       fontSize: "14px",
+                      backgroundColor: editOrgUserId ? "#f5f5f5" : "white",
+                      cursor: editOrgUserId ? "not-allowed" : "text",
                     }}
                     value={addEmail}
+                    disabled={editOrgUserId !== 0}
                     onChange={(e) => setAddEmail(e.target.value)}
                   />
                   {orgUserErrors.addEmail && (
