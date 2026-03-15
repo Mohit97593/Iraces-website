@@ -98,15 +98,10 @@ export default function Participants() {
 
     // Fetch event and profile data on component mount
     useEffect(() => {
-        const fetchData = async () => {
+        const initializeData = async () => {
             try {
-                console.log("📊 Fetching event data for:", eventId);
-
-                // Call getEvents API
-                const eventsResponse = await authAPI.getEvents({});
-                console.log("✅ getEvents API Response:", eventsResponse);
-
-                // Call getProfile API
+                // 1. Call getProfile first (Priority)
+                console.log("👤 Fetching profile data first...");
                 const profileResponse = await authAPI.getProfile();
                 console.log("✅ getProfile API Response:", profileResponse);
 
@@ -117,6 +112,17 @@ export default function Participants() {
                     sessionStorage.setItem("OrgUserAccessModules", JSON.stringify(profileResponse.OrgUserAccessModules));
                 }
 
+                // 2. Now call other APIs in parallel
+                console.log("📊 Fetching remaining event data for:", eventId);
+                const [eventsResponse] = await Promise.all([
+                    authAPI.getEvents({}),
+                    fetchParticipants(),
+                    fetchEmailTypes(),
+                    fetchWhatsAppTemplates()
+                ]);
+
+                console.log("✅ getEvents API Response:", eventsResponse);
+
                 // Update event name from events response
                 if (eventsResponse && eventsResponse.data) {
                     const event = eventsResponse.data.find(e => e.id == eventId);
@@ -124,15 +130,12 @@ export default function Participants() {
                 }
 
             } catch (error) {
-                console.error("❌ Error fetching event data:", error);
+                console.error("❌ Error in component initialization:", error);
             }
         };
 
         if (eventId) {
-            fetchData();
-            fetchParticipants();
-            fetchEmailTypes();
-            fetchWhatsAppTemplates();
+            initializeData();
         }
     }, [eventId]);
 

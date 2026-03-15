@@ -472,15 +472,15 @@ export default function MyEvents() {
                 {(!isOrgEvent || AccessController.hasEventAccess()) && (
                   <button
                     className="event-edit-btn"
-                    aria-label="Edit event"
-                    title="Edit Event"
+                    aria-label={isOrgEvent && AccessController.isEventRead() ? "View event" : "Edit event"}
+                    title={isOrgEvent && AccessController.isEventRead() ? "View Event" : "Edit Event"}
                     onClick={() => {
                       // Store event_id in sessionStorage instead of URL
                       sessionStorage.setItem('editEventId', event.id);
                       navigate('/create-event', { state: { isOrgEvent: isOrgEvent } });
                     }}
                   >
-                    <i className="fas fa-pen"></i>
+                    <i className={isOrgEvent && AccessController.isEventRead() ? "fas fa-eye" : "fas fa-pen"}></i>
                   </button>
                 )}
 
