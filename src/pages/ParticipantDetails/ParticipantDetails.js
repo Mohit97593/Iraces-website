@@ -4557,10 +4557,12 @@ export default function ParticipantDetails() {
               className="modal-close-btn"
               onClick={() => {
                 setShowSuccessModal(false);
-                if (eventId === "349") {
-                  window.location.href = 'https://ashwagandha.in/';
-                } else {
-                  window.location.href = '/registration-tracker';
+                if (!isGuestLogin) {
+                  if (eventId === "349") {
+                    window.location.href = 'https://ashwagandha.in/';
+                  } else {
+                    window.location.href = '/registration-tracker';
+                  }
                 }
               }}
             >
@@ -4600,19 +4602,34 @@ export default function ParticipantDetails() {
               </div>
             </div>
 
-            <button
-              className="view-tickets-btn"
-              onClick={() => {
-                if (String(eventId) === "349") {
-                  window.location.href = 'https://ashwagandha.in/';
-                } else {
-                  window.location.href = '/registration-tracker';
-                }
-              }}
-              style={{ backgroundColor: String(eventId) === "349" ? "#17C653" : "" }}
-            >
-              {eventId === "349" ? "Check Your Score Now!" : "View My Tickets"}
-            </button>
+            {isGuestLogin ? (
+              <p style={{
+                color: "#1a237e",
+                fontWeight: "600",
+                fontSize: "16px",
+                marginTop: "20px",
+                padding: "12px",
+                backgroundColor: "#e8eaf6",
+                borderRadius: "8px",
+                textAlign: "center"
+              }}>
+                Your registrations details is send on email
+              </p>
+            ) : (
+              <button
+                className="view-tickets-btn"
+                onClick={() => {
+                  if (String(eventId) === "349") {
+                    window.location.href = 'https://ashwagandha.in/';
+                  } else {
+                    window.location.href = '/registration-tracker';
+                  }
+                }}
+                style={{ backgroundColor: String(eventId) === "349" ? "#17C653" : "" }}
+              >
+                {eventId === "349" ? "Check Your Score Now!" : "View My Tickets"}
+              </button>
+            )}
           </div>
         </div>
       )}

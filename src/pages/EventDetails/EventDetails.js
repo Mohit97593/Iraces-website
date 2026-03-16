@@ -9,7 +9,7 @@ import "./EventDetails.css";
 export default function EventDetails() {
   const { eventId: urlEventId } = useParams();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [eventId, setEventId] = useState(null);
   const [event, setEvent] = useState(null);
   const [eventDetails, setEventDetails] = useState(null);
@@ -490,44 +490,65 @@ export default function EventDetails() {
                     style={isRegistrationClosedByLimit ? { backgroundColor: '#da251c', cursor: 'not-allowed', opacity: 0.8 } : {}}
                     onClick={() => {
                       if (isRegistrationClosedByLimit) return;
-                      // Check if user is logged in
-                      const token = sessionStorage.getItem("token");
-                      if (!token) {
+                      // Use user from AuthContext as primary login check
+                      if (!user) {
                         // Save current URL for redirect after login
                         const currentPath = window.location.pathname + window.location.search;
                         sessionStorage.setItem("redirectAfterLogin", currentPath);
                         console.log("💾 Saved redirect URL before login:", currentPath);
 
-                        // Check for guest login availability
+                        // Check for guest login availability from API response
                         const allowGuest = eventDetails?.EventData?.[0]?.allow_guest_login;
-                        const guestEmail = eventDetails?.UserEmail;
+                        const guestEmailFromDetails = eventDetails?.UserEmail;
 
                         if (allowGuest === 1 || allowGuest === "1") {
-                          sessionStorage.setItem("guestEmail", guestEmail || "");
-                          sessionStorage.setItem("guestAllowedEventId", eventId);
+                          sessionStorage.setItem("guestEmail", guestEmailFromDetails || "");
+                          sessionStorage.setItem("guestAllowedEventId", urlEventId);
                           sessionStorage.setItem("guestAllowedEventName", event?.name || "");
-                          console.log("🎟️ Guest login info saved:", { guestEmail, eventId });
+                          console.log("🎟️ Guest login info saved:", { guestEmailFromDetails, urlEventId });
                         } else {
                           // Clear any old guest info
                           sessionStorage.removeItem("guestEmail");
                           sessionStorage.removeItem("guestAllowedEventId");
                           sessionStorage.removeItem("guestAllowedEventName");
+                          sessionStorage.removeItem("isGuestLogin");
                         }
 
                         // Redirect to login
                         navigate("/login");
                       } else {
                         // User is logged in, proceed to checkout
-                        // Guest Login Restriction Check
-                        const isGuest = sessionStorage.getItem("isGuestLogin") === "true";
-                        const allowedEventId = sessionStorage.getItem("guestAllowedEventId");
+                        // Robust Guest Login Detection
+                        const isGuestSession = sessionStorage.getItem("isGuestLogin") === "true";
+                        const hasGuestEmail = !!sessionStorage.getItem("guestEmail");
+                        const isGuestByName = user?.firstName === "Guest" || user?.firstname === "Guest";
+                        const isGuest = isGuestSession || hasGuestEmail || isGuestByName;
 
-                        if (isGuest && allowedEventId && String(eventId) !== String(allowedEventId)) {
-                          setShowGuestLogoutPopup(true);
-                          return;
+                        const allowedEventId = sessionStorage.getItem("guestAllowedEventId");
+                        const currentEventGuestAllowed = (event?.allow_guest_login == 1 || eventDetails?.EventData?.[0]?.allow_guest_login == 1);
+
+                        console.log("🎟️ Guest Detection (Logged In):", {
+                          isGuest,
+                          isGuestSession,
+                          hasGuestEmail,
+                          isGuestByName,
+                          allowedEventId,
+                          urlEventId,
+                          currentEventGuestAllowed
+                        });
+
+                        if (isGuest) {
+                          // Block if:
+                          // 1. Current event doesn't allow guests (allow_guest_login != 1)
+                          // 2. OR User is a guest for a different event (urlEventId mismatch)
+                          if (!currentEventGuestAllowed || (allowedEventId && String(urlEventId) !== String(allowedEventId))) {
+                            console.warn("🚫 Guest registration blocked: Not allowed for this event.");
+                            setShowGuestLogoutPopup(true);
+                            return;
+                          }
                         }
 
-                        navigate(`/checkout/${eventId}`);
+                        navigate(`/checkout/${urlEventId}`);
                       }
                     }}
                   >

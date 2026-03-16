@@ -9,7 +9,7 @@ import "./SecureCheckout.css";
 export default function SecureCheckout() {
   const { eventId } = useParams();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [event, setEvent] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -248,12 +248,8 @@ export default function SecureCheckout() {
   }, []);
 
   const checkUserLoginAndFetch = async () => {
-    // Check if user has token/userData in sessionStorage
-    const token = sessionStorage.getItem("token");
-    const userData = sessionStorage.getItem("userData");
-
-    if (!token || !userData) {
-      // No token or userData, redirect to login
+    if (!user) {
+      // No user, redirect to login
       // Save original URL for post-login redirection
       const currentPath = window.location.pathname + window.location.search;
       sessionStorage.setItem("redirectAfterLogin", currentPath);
@@ -262,12 +258,17 @@ export default function SecureCheckout() {
       return;
     }
 
-    // Guest Login Restriction
-    const isGuest = sessionStorage.getItem("isGuestLogin") === "true";
+    // Robust Guest Login Detection
+    const isGuestSession = sessionStorage.getItem("isGuestLogin") === "true";
+    const hasGuestEmail = !!sessionStorage.getItem("guestEmail");
+    const isGuestByName = user?.firstName === "Guest" || user?.firstname === "Guest";
+    const isGuest = isGuestSession || hasGuestEmail || isGuestByName;
+    
     const allowedEventId = sessionStorage.getItem("guestAllowedEventId");
 
+    // We'll perform a strict check after event details are fetched to see allow_guest_login
     if (isGuest && allowedEventId && String(eventId) !== String(allowedEventId)) {
-      console.log("🚫 Guest user attempting to access restricted event:", eventId);
+      console.warn("🚫 Guest user attempting to access restricted event:", eventId);
       setShowGuestLogoutPopup(true);
       setLoading(false);
       return;
@@ -318,6 +319,19 @@ export default function SecureCheckout() {
       ) {
         eventData = eventsResponse.data.EventData[0];
         setEvent(eventData);
+
+        // Secondary Strict Guest Check
+        const isGuestSession = sessionStorage.getItem("isGuestLogin") === "true";
+        const hasGuestEmail = !!sessionStorage.getItem("guestEmail");
+        const isGuestByName = user?.firstName === "Guest" || user?.firstname === "Guest";
+        const isGuest = isGuestSession || hasGuestEmail || isGuestByName;
+
+        if (isGuest && String(eventData.allow_guest_login) !== "1") {
+          console.warn("🚫 SecureCheckout: Guest not allowed for this event.");
+          setShowGuestLogoutPopup(true);
+          setLoading(false);
+          return;
+        }
       }
 
       // Step 2: Fetch ticket details using get_event_ticket API
