@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
 import { authAPI } from "../../services/authAPI";
 import SearchableSelect from "../../components/SearchableSelect/SearchableSelect";
+import PartyPopperIcon from "../../assets/image/party-popper.png";
 import "./ParticipantDetails.css";
 
 export default function ParticipantDetails() {
@@ -3413,6 +3414,7 @@ export default function ParticipantDetails() {
         result.success ||
         result.message === 'Request processed successfully'
       )) {
+        setShowPaymentModal(false);
         setShowSuccessModal(true);
 
         // Call Email API
@@ -4571,7 +4573,7 @@ export default function ParticipantDetails() {
 
             <div className="success-icon-container">
               <img
-                src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png"
+                src={PartyPopperIcon}
                 alt="Success"
                 className="success-party-popper"
               />
