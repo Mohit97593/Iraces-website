@@ -4613,7 +4613,7 @@ export default function ParticipantDetails() {
                 borderRadius: "8px",
                 textAlign: "center"
               }}>
-                Your registrations details is send on email
+                Your registration details have been sent to your email.
               </p>
             ) : (
               <button
