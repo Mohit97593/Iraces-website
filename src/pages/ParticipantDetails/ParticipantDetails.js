@@ -4629,7 +4629,7 @@ export default function ParticipantDetails() {
                 }}
                 style={{ backgroundColor: String(eventId) === "349" ? "#17C653" : "" }}
               >
-                {eventId === "349" ? "Check Your Score Now!" : "View My Tickets"}
+                {eventId === "349" ? "Check Your Score Now!" : "View my Registration Details"}
               </button>
             )}
           </div>

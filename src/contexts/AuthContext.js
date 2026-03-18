@@ -29,10 +29,11 @@ export const AuthProvider = ({ children }) => {
         const userData = sessionStorage.getItem("userData");
 
         if (token && userData) {
-          // Send session data to the requesting tab
+          // Send session data (including guest flag) to the requesting tab
           localStorage.setItem("session_sync_data", JSON.stringify({
             token,
             userData,
+            isGuestLogin: sessionStorage.getItem("isGuestLogin") || "",
             ts: Date.now() // Use timestamp to ensure event fires
           }));
           // Immediately remove to keep localStorage clean
@@ -46,6 +47,12 @@ export const AuthProvider = ({ children }) => {
           if (syncData.token && syncData.userData) {
             sessionStorage.setItem("token", syncData.token);
             sessionStorage.setItem("userData", syncData.userData);
+            // Also restore guest login status so the navbar correctly hides options
+            if (syncData.isGuestLogin) {
+              sessionStorage.setItem("isGuestLogin", syncData.isGuestLogin);
+            } else {
+              sessionStorage.removeItem("isGuestLogin");
+            }
             checkAuthStatus(); // Update state with synced data
           }
         } catch (e) {

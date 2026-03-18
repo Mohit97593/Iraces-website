@@ -93,6 +93,18 @@ export default function TopNav() {
     return first + last || "U";
   };
 
+  // Helper: returns true if the current session is a guest login.
+  // Checks the sessionStorage flag AND the user's email/name as a fallback
+  // (needed when the flag hasn't been synced to a new tab yet).
+  const isGuestUser = () => {
+    if (sessionStorage.getItem("isGuestLogin") === "true") return true;
+    const email = user?.email || user?.loginEmail || "";
+    const name = (user?.firstName || user?.firstname || user?.name || "").toLowerCase();
+    if (email.toLowerCase().includes("guestuser")) return true;
+    if (name === "guest") return true;
+    return false;
+  };
+
   const getUserName = () => {
     // Check if logged in as guest
     if (sessionStorage.getItem("isGuestLogin") === "true") {
@@ -1071,7 +1083,7 @@ export default function TopNav() {
                 <div className="flex-grow-1 overflow-auto">
                   {isAuthenticated ? (
                     <div className="p-2">
-                      {sessionStorage.getItem("isGuestLogin") !== "true" && (
+                      {!isGuestUser() && (
                         <>
                           <NavLink
                             to="/profile"
@@ -1313,7 +1325,7 @@ export default function TopNav() {
                       )}
                     </div>
 
-                    {sessionStorage.getItem("isGuestLogin") !== "true" && (
+                    {!isGuestUser() && (
                       <>
                         <NavLink
                           to="/profile"
