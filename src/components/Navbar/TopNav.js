@@ -376,8 +376,9 @@ export default function TopNav() {
 
         try {
           // Use reverse geocoding to get city name from coordinates
+          // Added accept-language=en to ensure we get English names for slug generation
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=12&addressdetails=1`,
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=12&addressdetails=1&accept-language=en`,
             {
               headers: {
                 'User-Agent': 'iRaces-Website/1.0'
@@ -390,9 +391,10 @@ export default function TopNav() {
           }
 
           const data = await response.json();
-          console.log("Nominatim data:", data);
+          console.log("📍 Geocoding response (EN preferred):", data);
 
           // Try to get city name from various address fields in order of specificity
+          // Nominatim with accept-language=en usually provides English names here
           let detectedCityName =
             data?.address?.city ||
             data?.address?.town ||
@@ -403,18 +405,30 @@ export default function TopNav() {
             data?.address?.city_district ||
             data?.address?.district ||
             data?.address?.state_district ||
-            data?.address?.state ||
             "";
+
+          // If no city name found at all, try state as a fallback
+          if (!detectedCityName || detectedCityName.trim() === "") {
+            detectedCityName = data?.address?.state || "";
+          }
+
+          console.log("✅ Detected location name:", detectedCityName);
 
           // If no valid city name found or it's empty, use "India" as fallback
           if (!detectedCityName || detectedCityName.trim() === "") {
-            detectedCityName = "India";
+            console.warn("⚠️ No specific city/state detected, falling back to IP detection.");
+            await handleIPBasedLocation();
+            return;
           }
 
+          // Generate slug robustly. If name is non-Latin, we might get an empty string
+          // after replace. In that case, we keep the name as is or use a generic one
           const detectedCitySlug = detectedCityName
             .toLowerCase()
+            .trim()
             .replace(/\s+/g, "-")
             .replace(/[^\w-]/g, "")
+            || detectedCityName.toLowerCase().replace(/\s+/g, "-") // Fallback to keeping chars if alpha-strip fails
             || "india";
 
           // Store detected city
@@ -488,81 +502,94 @@ export default function TopNav() {
 
   // Fallback: IP-based location detection
   const handleIPBasedLocation = async () => {
-    try {
-      const response = await fetch("https://ipapi.co/json/");
+    console.log("🌐 Attempting IP-based location detection...");
+    
+    // List of IP Geolocation APIs to try in order
+    const apis = [
+      { url: "https://ipapi.co/json/", cityKey: "city", regionKey: "region" },
+      { url: "https://freeipapi.com/api/json", cityKey: "cityName", regionKey: "regionName" },
+      { url: "https://ipwho.is/", cityKey: "city", regionKey: "region" }
+    ];
 
-      if (!response.ok) {
-        throw new Error('IP-based location API failed');
+    for (const api of apis) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+      try {
+        console.log(`📡 Trying API: ${api.url}`);
+        const response = await fetch(api.url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        if (response && response.ok) {
+          const data = await response.json();
+          const city = data[api.cityKey];
+          const region = data[api.regionKey];
+          
+          let detected = city || region;
+          
+          // If the detected city is just "India", it's too generic, so we skip to next API
+          if (detected && detected.trim() !== "" && detected.toLowerCase() !== "india") {
+            console.log(`✅ Detected location via ${api.url}:`, detected);
+            updateLocationAndNavigate(detected);
+            return;
+          } else {
+             console.warn(`⚠️ API ${api.url} returned generic/empty result: ${detected}`);
+          }
+        }
+      } catch (err) {
+        clearTimeout(timeoutId);
+        console.warn(`❌ API ${api.url} failed or timed out:`, err.name === 'AbortError' ? 'Timeout' : err.message);
       }
+    }
 
-      const data = await response.json();
+    // Ultimate fallback if all APIs fail
+    console.warn("⚠️ All IP Geolocation APIs failed or returned generic results. Defaulting to India.");
+    updateLocationAndNavigate("India");
+  };
 
-      // Get city name from IP data, validate it's not empty
-      let detectedCityName = data?.city || "";
+  // Helper to update state and navigate after location detection
+  const updateLocationAndNavigate = (detectedCityName) => {
+    const detectedCitySlug = detectedCityName
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/[^\w-]/g, "")
+      || "india";
 
-      // If no valid city name found or it's empty, use "India" as fallback
-      if (!detectedCityName || detectedCityName.trim() === "") {
-        detectedCityName = "India";
-      }
+    console.log(`💾 Storing location: ${detectedCityName} (${detectedCitySlug})`);
 
-      const detectedCitySlug = detectedCityName
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^\w-]/g, "")
-        || "india";
+    // Store detected city
+    sessionStorage.setItem("detectedCity", detectedCityName);
+    sessionStorage.setItem("detectedCitySlug", detectedCitySlug);
 
-      // Store detected city
-      sessionStorage.setItem("detectedCity", detectedCityName);
-      sessionStorage.setItem("detectedCitySlug", detectedCitySlug);
+    // CRITICAL: Clear previous user selections so detection takes precedence
+    sessionStorage.removeItem("selectedCityId");
+    sessionStorage.removeItem("selectedCityName");
+    sessionStorage.removeItem("selectedCitySlug");
+    sessionStorage.removeItem("selectedStateId");
+    sessionStorage.removeItem("selectedCountryId");
 
-      // Clear previous selections
-      sessionStorage.removeItem("selectedCityId");
-      sessionStorage.removeItem("selectedCityName");
-      sessionStorage.removeItem("selectedCitySlug");
-      sessionStorage.removeItem("selectedStateId");
-      sessionStorage.removeItem("selectedCountryId");
+    // Close the overlay
+    setShowLocationOverlay(false);
+    setIsDetectingLocation(false);
 
-      // Close the overlay
-      setShowLocationOverlay(false);
+    // Dispatch event to update components (like HeroCarousel)
+    window.dispatchEvent(
+      new CustomEvent("locationDetected", {
+        detail: { 
+          cityName: detectedCityName, 
+          citySlug: detectedCitySlug 
+        },
+      })
+    );
 
-      // Dispatch event to update homepage
-      window.dispatchEvent(
-        new CustomEvent("locationDetected", {
-          detail: { cityName: detectedCityName, citySlug: detectedCitySlug },
-        })
-      );
-
-      // Navigate to detected location
-      const currentPath = window.location.pathname;
-      if ((currentPath === "/" || currentPath.startsWith("/in/")) && detectedCitySlug) {
-        navigate(`/in/${detectedCitySlug}`);
-      }
-    } catch (error) {
-      console.error("Error detecting location via IP:", error);
-      // Fallback to default location "India"
-      sessionStorage.setItem("detectedCity", "India");
-      sessionStorage.setItem("detectedCitySlug", "india");
-
-      // Clear previous selections
-      sessionStorage.removeItem("selectedCityId");
-      sessionStorage.removeItem("selectedCityName");
-      sessionStorage.removeItem("selectedCitySlug");
-      sessionStorage.removeItem("selectedStateId");
-      sessionStorage.removeItem("selectedCountryId");
-
-      // Close the overlay
-      setShowLocationOverlay(false);
-
-      window.dispatchEvent(
-        new CustomEvent("locationDetected", {
-          detail: { cityName: "India", citySlug: "india" },
-        })
-      );
-
-      const currentPath = window.location.pathname;
-      if (currentPath === "/" || currentPath.startsWith("/in/")) {
-        navigate("/in/india");
-      }
+    // Navigate to the detected location if we are on a location-dependent route
+    const currentPath = window.location.pathname;
+    const isLocationPath = currentPath === "/" || currentPath.startsWith("/in/");
+    
+    if (isLocationPath && detectedCitySlug) {
+      console.log(`🚀 Navigating to: /in/${detectedCitySlug}`);
+      navigate(`/in/${detectedCitySlug}`);
     }
   };
 
