@@ -174,41 +174,52 @@ export default function HeroCarousel() {
         search_flag: "HeaderInputCity",
       };
 
-      // If we have cityNameFromSlug but no cityId, fetch the city data
+      // 1. Prepare location-specific params
+      console.log("🔍 Debug - slug:", cityNameFromSlug, "cityId:", cityId, "stateId:", stateId);
+
+      const isIndiaSlug = cityNameFromSlug?.toLowerCase().replace(/-/g, " ").includes("india") ||
+        cityNameFromSlug?.toLowerCase() === "india";
+
       if (
         !cityId &&
         !stateId &&
         cityNameFromSlug &&
-        cityNameFromSlug.toLowerCase() !== "india"
+        !isIndiaSlug
       ) {
         const fetchedCityData = await fetchCityIdByName(cityNameFromSlug);
+        console.log("🔍 Fetched City Data:", fetchedCityData);
         if (fetchedCityData) {
           params.city = fetchedCityData.id;
           params.scity = fetchedCityData.id;
           params.state = fetchedCityData.state_id;
           params.country = fetchedCityData.country_id;
 
-          // Generate and store slug from city name
           const citySlug = cityNameFromSlug
             .toLowerCase()
             .replace(/\s+/g, "-")
             .replace(/[^\w-]/g, "");
 
-          // Store for future use
           sessionStorage.setItem("selectedCityId", fetchedCityData.id);
           sessionStorage.setItem("selectedCityName", cityNameFromSlug);
           sessionStorage.setItem("selectedCitySlug", citySlug);
           sessionStorage.setItem("selectedStateId", fetchedCityData.state_id);
           sessionStorage.setItem("selectedCountryId", fetchedCityData.country_id);
 
-          // Always update city name from the slug, even if no events
           setCityName(cityNameFromSlug);
         }
+      } else if (isIndiaSlug) {
+        console.log("🇮🇳 India detected in slug!");
+        params.country = 101;
+        setCityName("India");
+        sessionStorage.setItem("selectedCityName", "India");
+        sessionStorage.setItem("selectedCitySlug", "india");
+        sessionStorage.setItem("selectedCountryId", "101");
+        sessionStorage.removeItem("selectedCityId");
+        sessionStorage.removeItem("selectedStateId");
       } else if (cityId) {
         params.city = cityId;
         params.scity = cityId;
 
-        // Try to get state and country from sessionStorage
         let storedStateId = sessionStorage.getItem("selectedStateId");
         const storedCountryId = sessionStorage.getItem("selectedCountryId");
 
@@ -264,6 +275,9 @@ export default function HeroCarousel() {
           home_flag: 1,
           search_flag: "HeaderInputCity",
         };
+        if (isIndiaSlug) globalParams.country = 101;
+
+        console.log("🔍 Fetching global suggestions with:", globalParams);
         const globalData = await authAPI.getDataLocationWise(globalParams);
         if (globalData.status === "success") {
           data = globalData;
@@ -300,11 +314,15 @@ export default function HeroCarousel() {
         });
 
         // 2. Partition Local Events (Selected City) for Trending
-        const localEvents = activeEvents.filter(
-          (event) =>
-            event.city_name &&
-            event.city_name.toLowerCase() === currentCityName.toLowerCase()
-        );
+        // If current city is "India", we don't filter by city name (show all India live events)
+        const isIndia = currentCityName?.toLowerCase() === "india";
+        const localEvents = isIndia
+          ? activeEvents
+          : activeEvents.filter(
+            (event) =>
+              event.city_name &&
+              event.city_name.toLowerCase() === currentCityName.toLowerCase()
+          );
 
         // Trending: Local events where registration has started
         const localLive = localEvents.filter((event) => {

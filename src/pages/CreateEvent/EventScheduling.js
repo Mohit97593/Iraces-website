@@ -146,11 +146,6 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
       // clear error for this field when user updates it
       setErrors((prevErr) => ({ ...prevErr, [name]: "" }));
 
-      // Auto-close native date/time picker by blurring the input after selection
-      if (e.target.type === "date" || e.target.type === "time") {
-        e.target.blur();
-      }
-
       if (onChange) {
         onChange(updated);
       }
