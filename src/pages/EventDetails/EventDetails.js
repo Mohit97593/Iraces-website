@@ -4,6 +4,7 @@ import TopNav from "../../components/Navbar/TopNav";
 import { useAuth } from "../../contexts/AuthContext";
 import { authAPI } from "../../services/authAPI";
 import Footer from "../../components/Footer/Footer";
+import { Helmet } from "react-helmet-async";
 import "./EventDetails.css";
 
 export default function EventDetails() {
@@ -222,6 +223,34 @@ export default function EventDetails() {
 
   return (
     <div className="event-details-page">
+      {/* ── Dynamic OG / Social sharing meta tags ── */}
+      {event && (() => {
+        const eventTitle = event.event_name || event.name || "Races Registrations";
+        const eventDesc  = event.event_description
+          ? event.event_description.replace(/<[^>]*>/g, "").slice(0, 155)
+          : "Registration Platform for Sports and Marathons";
+        const rawImg = event.banner_image || event.image || "";
+        const eventImage = rawImg
+          ? (rawImg.startsWith("http") ? rawImg : authAPI.getImageUrl(rawImg))
+          : `${window.location.origin}/races-logo.png`;
+        const pageUrl = window.location.href;
+        return (
+          <Helmet>
+            <title>{eventTitle} | Races Registrations</title>
+            <meta name="description"             content={eventDesc} />
+            <meta property="og:title"             content={eventTitle} />
+            <meta property="og:description"       content={eventDesc} />
+            <meta property="og:image"             content={eventImage} />
+            <meta property="og:url"               content={pageUrl} />
+            <meta property="og:type"              content="event" />
+            <meta name="twitter:card"             content="summary_large_image" />
+            <meta name="twitter:title"            content={eventTitle} />
+            <meta name="twitter:description"      content={eventDesc} />
+            <meta name="twitter:image"            content={eventImage} />
+          </Helmet>
+        );
+      })()}
+
       <TopNav />
 
       {/* Event Banner */}
