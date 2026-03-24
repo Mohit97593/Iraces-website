@@ -1,6 +1,7 @@
-﻿.create-event-page {
+.create-event-page {
   background: #f5f5f5;
   min-height: 100vh;
+  overflow: visible !important; /* Critical for sticky position to work */
 }
 
 .loading-container {
@@ -84,11 +85,17 @@
 }
 
 /* Form Section */
+.create-event-main {
+  flex: 1;
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  min-height: 600px; /* Ensure space for sidebars */
+}
+
 .event-form-section {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 0px;
 }
 
 .section-header {
@@ -428,73 +435,341 @@
   transform: translateY(-2px);
 }
 
-/* Event Preview Sidebar - Sticky Behavior */
+/* Preview Sidebar - Placeholder Container */
 .event-preview-sidebar {
-  position: relative;
+  width: 380px;
+  flex: 0 0 380px;
+  min-height: 1px;
 }
 
-.event-preview-sidebar.is-sticky {
-  position: fixed;
-  top: 30px;
-  right: calc((100vw - 1400px) / 2 + 15px);
-  width: calc(33.333% - 30px);
-  max-width: 450px;
-  max-height: calc(100vh - 50px);
+/* Inner Wrapper that sticks via JS */
+.preview-sticky-wrapper {
+  width: 380px;
+  max-height: calc(100vh - 40px);
   overflow-y: auto;
-  z-index: 50;
+  z-index: 100;
+  background: transparent;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-@media (max-width: 1400px) {
-  .event-preview-sidebar.is-sticky {
-    right: 15px;
-    width: calc(33.333% - 30px);
+.preview-sticky-wrapper h4 {
+  text-align: center;
+  margin-bottom: 24px;
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: #333;
+  width: 100%;
+}
+
+.preview-sticky-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.event-preview-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.event-preview-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 1200px) {
+  .event-preview-sidebar {
+    display: none;
   }
 }
 
-/* Responsive */
+/* ================================================
+   NEW LAYOUT: Vertical Sidebar + Main + Preview
+   ================================================ */
+
+/* Outer flex wrapper */
+.create-event-layout {
+  display: flex;
+  flex-wrap: nowrap; /* Prevent columns from jumping */
+  align-items: flex-start;
+  gap: 24px;
+  padding: 32px 0 48px 0;
+}
+
+/* Left Sidebar */
+/* Left Sidebar - Placeholder Container */
+.create-event-sidebar {
+  width: 230px;
+  flex: 0 0 230px;
+  min-height: 1px;
+}
+
+/* Inner Wrapper that sticks via JS */
+.sidebar-sticky-wrapper {
+  width: 230px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+  padding: 24px 0;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  z-index: 100;
+}
+
+/* Step list inside sidebar */
+.sidebar-step-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0 8px;
+}
+
+/* Each step item row */
+.sidebar-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s ease;
+}
+
+.sidebar-step-item:hover {
+  background: rgba(218, 37, 28, 0.05);
+}
+
+/* Connector line between steps */
+.sidebar-step-connector {
+  position: absolute;
+  left: 27px;
+  top: -10px;
+  width: 2px;
+  height: 10px;
+  background: #e0e0e0;
+}
+
+.sidebar-step-item:first-child .sidebar-step-connector {
+  display: none;
+}
+
+.sidebar-step-completed .sidebar-step-connector,
+.sidebar-step-active .sidebar-step-connector {
+  background: #da251c;
+}
+
+/* Step circle (number or checkmark) */
+.sidebar-step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #e0e0e0;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #999;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.sidebar-step-active .sidebar-step-circle {
+  border-color: #da251c;
+  background: #da251c;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(218, 37, 28, 0.3);
+}
+
+.sidebar-step-completed .sidebar-step-circle {
+  border-color: #43a047;
+  background: #43a047;
+  color: #fff;
+}
+
+/* Step label text */
+.sidebar-step-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.sidebar-step-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+  line-height: 1.3;
+  white-space: normal;
+  word-break: break-word;
+  transition: color 0.2s;
+}
+
+.sidebar-step-active .sidebar-step-title {
+  color: #da251c;
+  font-weight: 700;
+}
+
+.sidebar-step-completed .sidebar-step-title {
+  color: #43a047;
+}
+
+/* Small badge (Done / In Progress) */
+.sidebar-step-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #43a047;
+  background: rgba(67, 160, 71, 0.1);
+  border-radius: 12px;
+  padding: 2px 8px;
+  margin-top: 3px;
+  display: inline-block;
+}
+
+.sidebar-step-badge.active-badge {
+  color: #da251c;
+  background: rgba(218, 37, 28, 0.08);
+}
+
+/* Main content area (form) */
+.create-event-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ================================================
+   Responsive Breakpoints
+   ================================================ */
+
+/* Tablet: hide preview sidebar, sidebar stays */
+/* Tablet / Mobile: Stack everything vertically */
 @media (max-width: 991px) {
-  .event-preview-card {
-    position: static;
-    margin-top: 30px;
+  .create-event-layout {
+    flex-direction: column;
+    padding: 16px 15px 40px 15px;
+    gap: 30px;
   }
 
-  .event-preview-sidebar.is-sticky {
-    position: relative;
-    top: 0;
-    max-height: none;
+  .create-event-sidebar,
+  .sidebar-sticky-wrapper,
+  .event-preview-sidebar,
+  .preview-sticky-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    position: static !important;
+    max-height: none !important;
+    flex: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  /* Navigation Sidebar (Steps) - Horizontal on Mobile */
+  .create-event-sidebar {
+    order: 1;
+    margin-bottom: 0;
+  }
+
+  .sidebar-sticky-wrapper {
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05) !important;
+    padding: 12px !important;
+  }
+
+  .sidebar-step-list {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    padding: 10px 8px;
+    gap: 15px;
+    /* Hide scrollbar */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .sidebar-step-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sidebar-step-item {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-width: 85px;
+    padding: 4px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-step-connector {
+    display: none;
+  }
+
+  .sidebar-step-circle {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+
+  .sidebar-step-title {
+    font-size: 0.75rem;
+    margin-top: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 2rem;
+  }
+
+  .sidebar-step-badge {
+    display: none;
+  }
+
+  /* Main Form Area */
+  .create-event-main {
+    order: 2;
+    width: 100%;
+    padding: 20px !important;
+    min-height: auto;
+  }
+
+  .section-header h3 {
+    font-size: 1.5rem;
+  }
+
+  /* Event Preview Sidebar - Stack below form */
+  .event-preview-sidebar {
+    order: 3;
+    display: block !important; /* Ensure it's never hidden */
+    margin-top: 10px;
+  }
+
+  .event-preview-card {
+    position: static !important;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
   }
 }
 
-@media (max-width: 768px) {
-  .design-event-header h1 {
-    font-size: 2rem;
-  }
-
+@media (max-width: 576px) {
   .section-header {
     flex-direction: column;
     align-items: flex-start;
   }
 
   .category-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  }
-
-  .event-steps-container {
-    padding: 20px 0;
-  }
-}
-
-@media (max-width: 576px) {
-  .design-event-header h1 {
-    font-size: 1.5rem;
-  }
-
-  .category-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
 
   .event-form-section {
-    padding: 20px;
+    padding: 18px;
   }
 }
 

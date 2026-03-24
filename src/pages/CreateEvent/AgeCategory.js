@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Fragment } from "react";
 import { authAPI } from "../../services/authAPI";
 import AddAgeCategoryForm from "./AddAgeCategoryForm";
 import "./CreateEvent.css";
@@ -166,7 +166,7 @@ const AgeCategory = ({ onBack, onNext, isReadOnly }) => {
   return (
     <div
       className="age-category-section"
-      style={{ maxWidth: 1200, margin: "0 auto" }}
+      style={{ width: "100%" }}
     >
       {toast && (
         <Toast
@@ -175,297 +175,288 @@ const AgeCategory = ({ onBack, onNext, isReadOnly }) => {
           onClose={() => setToast(null)}
         />
       )}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 32 }}>
-        <div style={{ flex: 2 }}>
-          {!showForm ? (
-            <React.Fragment>
+      {!showForm ? (
+        <Fragment>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 24,
+            }}
+          >
+            <h2
+              style={{
+                fontWeight: 700,
+                fontSize: "1.6rem",
+                marginBottom: 0,
+              }}
+            >
+              Age Category
+            </h2>
+            {!isReadOnly && (
+              <button
+                style={{
+                  border: "1.5px solid #da251c",
+                  color: "#da251c",
+                  background: "#fff",
+                  borderRadius: 8,
+                  padding: "8px 32px",
+                  fontWeight: 600,
+                  fontSize: "1.15rem",
+                  cursor: "pointer",
+                }}
+                onClick={() => setShowForm(true)}
+              >
+                + Add Age Category
+              </button>
+            )}
+          </div>
+          {/* Show Age Category cards if any exist, else show empty state */}
+          {ageCategories.length > 0 ? (
+            <Fragment>
               <div
                 style={{
                   display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 24,
+                  flexDirection: "column",
+                  gap: 24,
                 }}
               >
-                <h2
+                {ageCategories.map((cat, idx) => (
+                  <div
+                    key={cat.id || idx}
+                    onMouseEnter={() => setHovered(cat.id)}
+                    onMouseLeave={() => setHovered(null)}
+                    className={`comm-card ${hovered === cat.id ? "hover" : ""
+                      }`}
+                    style={{
+                      padding: 24,
+                      borderRadius: 8,
+                      background: "#fff",
+                      boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+                      position: "relative",
+                      minHeight: 107,
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        width: "100%",
+                      }}
+                    >
+                      <div
+                        style={{ fontWeight: 600, fontSize: 18, flex: 1 }}
+                      >
+                        {cat.age_category || "-"}
+                      </div>
+                      {!isReadOnly && (
+                        <div style={{ marginLeft: 12 }}>
+                          <div
+                            className={`toggle ${cat.status ? "on" : ""}`}
+                            role="button"
+                            aria-label="toggle"
+                            onClick={() =>
+                              handleToggleStatus(cat.id, !cat.status)
+                            }
+                          >
+                            <div className="knob" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {!isReadOnly && (
+                      <div
+                        className={`comm-actions ${hovered === cat.id ? "visible" : ""
+                          }`}
+                      >
+                        <button
+                          title="Edit"
+                          onClick={() => handleEditAgeCategory(cat.id)}
+                        >
+                          ✎
+                        </button>
+                        <button
+                          title="Delete"
+                          onClick={() => handleDeleteAgeCategory(cat.id)}
+                        >
+                          🗑
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {!isReadOnly && (
+                <div
                   style={{
-                    fontWeight: 700,
-                    fontSize: "1.6rem",
-                    marginBottom: 0,
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 12,
+                    marginTop: 24,
                   }}
                 >
-                  Age Category
-                </h2>
-                {!isReadOnly && (
                   <button
+                    onClick={onBack}
                     style={{
                       border: "1.5px solid #da251c",
                       color: "#da251c",
                       background: "#fff",
-                      borderRadius: 8,
-                      padding: "8px 32px",
+                      borderRadius: 6,
+                      padding: "10px 32px",
                       fontWeight: 600,
-                      fontSize: "1.15rem",
+                      fontSize: "1.1rem",
                       cursor: "pointer",
                     }}
-                    onClick={() => setShowForm(true)}
                   >
-                    + Add Age Category
+                    Back
                   </button>
-                )}
-              </div>
-              {/* Show Age Category cards if any exist, else show empty state */}
-              {ageCategories.length > 0 ? (
-                <React.Fragment>
-                  <div
+                  <button
+                    className="next-btn"
+                    onClick={onNext}
                     style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 24,
+                      background: "#da251c",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 6,
+                      padding: "10px 32px",
+                      fontWeight: 600,
+                      fontSize: "1.1rem",
+                      cursor: "pointer",
                     }}
                   >
-                    {ageCategories.map((cat, idx) => (
-                      <div
-                        key={cat.id || idx}
-                        onMouseEnter={() => setHovered(cat.id)}
-                        onMouseLeave={() => setHovered(null)}
-                        className={`comm-card ${hovered === cat.id ? "hover" : ""
-                          }`}
-                        style={{
-                          padding: 24,
-                          borderRadius: 8,
-                          background: "#fff",
-                          boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-                          position: "relative",
-                          minHeight: 107,
-                          display: "flex",
-                          alignItems: "center",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            width: "100%",
-                          }}
-                        >
-                          <div
-                            style={{ fontWeight: 600, fontSize: 18, flex: 1 }}
-                          >
-                            {cat.age_category || "-"}
-                          </div>
-                          {!isReadOnly && (
-                            <div style={{ marginLeft: 12 }}>
-                              <div
-                                className={`toggle ${cat.status ? "on" : ""}`}
-                                role="button"
-                                aria-label="toggle"
-                                onClick={() =>
-                                  handleToggleStatus(cat.id, !cat.status)
-                                }
-                              >
-                                <div className="knob" />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {!isReadOnly && (
-                          <div
-                            className={`comm-actions ${hovered === cat.id ? "visible" : ""
-                              }`}
-                          >
-                            <button
-                              title="Edit"
-                              onClick={() => handleEditAgeCategory(cat.id)}
-                            >
-                              ✎
-                            </button>
-                            <button
-                              title="Delete"
-                              onClick={() => handleDeleteAgeCategory(cat.id)}
-                            >
-                              🗑
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  {!isReadOnly && (
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        gap: 12,
-                        marginTop: 24,
-                      }}
-                    >
-                      <button
-                        onClick={onBack}
-                        style={{
-                          border: "1.5px solid #da251c",
-                          color: "#da251c",
-                          background: "#fff",
-                          borderRadius: 6,
-                          padding: "10px 32px",
-                          fontWeight: 600,
-                          fontSize: "1.1rem",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Back
-                      </button>
-                      <button
-                        className="next-btn"
-                        onClick={onNext}
-                        style={{
-                          background: "#da251c",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: 6,
-                          padding: "10px 32px",
-                          fontWeight: 600,
-                          fontSize: "1.1rem",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Save & Next (7/11)
-                      </button>
-                    </div>
-                  )}
-                </React.Fragment>
-              ) : (
-                <React.Fragment>
-                  <div
-                    style={{
-                      background: "#fff",
-                      borderRadius: 16,
-                      boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
-                      padding: 0,
-                      marginBottom: 24,
-                      overflow: "hidden",
-                      display: "flex",
-                      flexDirection: "column",
-                      minHeight: "260px",
-                      border: "1px solid #eee",
-                      position: "relative",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div style={{ padding: "48px 24px", textAlign: "center" }}>
-                      <img
-                        src="https://cdn-icons-png.flaticon.com/512/747/747376.png"
-                        alt="No Age Category"
-                        style={{
-                          width: 80,
-                          marginBottom: 16,
-                          display: "block",
-                          marginLeft: "auto",
-                          marginRight: "auto",
-                        }}
-                      />
-                      <h3
-                        style={{
-                          fontWeight: 700,
-                          fontSize: "1.4rem",
-                          marginBottom: 12,
-                        }}
-                      >
-                        No Age Category Added
-                      </h3>
-                      <div
-                        style={{
-                          fontWeight: 500,
-                          fontSize: "1.1rem",
-                          marginBottom: 18,
-                        }}
-                      >
-                        Please click on " + Add Age Category" button to add new
-                        age category.
-                      </div>
-                    </div>
-                  </div>
-                  {/* Add buttons below empty state */}
-                  {!isReadOnly && (
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        gap: 12,
-                        marginTop: 24,
-                      }}
-                    >
-                      <button
-                        onClick={onBack}
-                        style={{
-                          border: "1.5px solid #da251c",
-                          color: "#da251c",
-                          background: "#fff",
-                          borderRadius: 6,
-                          padding: "10px 32px",
-                          fontWeight: 600,
-                          fontSize: "1.1rem",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Back
-                      </button>
-                      <button
-                        className="next-btn"
-                        onClick={onNext}
-                        style={{
-                          background: "#da251c",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: 6,
-                          padding: "10px 32px",
-                          fontWeight: 600,
-                          fontSize: "1.1rem",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Save & Next (7/11)
-                      </button>
-                    </div>
-                  )}
-                </React.Fragment>
+                    Save & Next (7/11)
+                  </button>
+                </div>
               )}
-            </React.Fragment>
+            </Fragment>
           ) : (
-            <AddAgeCategoryForm
-              initialData={initialFormData || {}}
-              onCancel={() => {
-                setShowForm(false);
-                setInitialFormData(null);
-                setEditingId(null);
-                // Refresh event details, tickets, and age categories after form closes
-                const eventId = sessionStorage.getItem("event_id");
-                if (eventId) {
-                  authAPI.getEventDetails(eventId).then((res) => {
-                    if (res && res.data) {
-                      if (Array.isArray(res.data.age_criteria_details)) {
-                        setAgeCategories(res.data.age_criteria_details);
-                      } else {
-                        setAgeCategories([]);
-                      }
-                      if (Array.isArray(res.data.EventTickets)) {
-                        setEventTickets(res.data.EventTickets);
-                      }
-                      if (res.data.EventData && res.data.EventData[0]) {
-                        setEventDetails(res.data.EventData[0]);
-                      }
-                    }
-                  });
-                }
-              }}
-              tickets={eventTickets}
-            />
+            <Fragment>
+              <div
+                style={{
+                  padding: "48px 24px",
+                  textAlign: "center",
+                  background: "transparent",
+                  marginBottom: 24,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <div style={{ padding: "48px 24px", textAlign: "center" }}>
+                  <img
+                    src="https://cdn-icons-png.flaticon.com/512/747/747376.png"
+                    alt="No Age Category"
+                    style={{
+                      width: 80,
+                      marginBottom: 16,
+                      display: "block",
+                      marginLeft: "auto",
+                      marginRight: "auto",
+                    }}
+                  />
+                  <h3
+                    style={{
+                      fontWeight: 700,
+                      fontSize: "1.4rem",
+                      marginBottom: 12,
+                    }}
+                  >
+                    No Age Category Added
+                  </h3>
+                  <div
+                    style={{
+                      fontWeight: 500,
+                      fontSize: "1.1rem",
+                      marginBottom: 18,
+                    }}
+                  >
+                    Please click on " + Add Age Category" button to add new
+                    age category.
+                  </div>
+                </div>
+              </div>
+              {/* Add buttons below empty state */}
+              {!isReadOnly && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 12,
+                    marginTop: 24,
+                  }}
+                >
+                  <button
+                    onClick={onBack}
+                    style={{
+                      border: "1.5px solid #da251c",
+                      color: "#da251c",
+                      background: "#fff",
+                      borderRadius: 6,
+                      padding: "10px 32px",
+                      fontWeight: 600,
+                      fontSize: "1.1rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Back
+                  </button>
+                  <button
+                    className="next-btn"
+                    onClick={onNext}
+                    style={{
+                      background: "#da251c",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 6,
+                      padding: "10px 32px",
+                      fontWeight: 600,
+                      fontSize: "1.1rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Save & Next (7/11)
+                  </button>
+                </div>
+              )}
+            </Fragment>
           )}
-        </div>
-      </div>
+        </Fragment>
+      ) : (
+        <AddAgeCategoryForm
+          initialData={initialFormData || {}}
+          onCancel={() => {
+            setShowForm(false);
+            setInitialFormData(null);
+            setEditingId(null);
+            // Refresh event details, tickets, and age categories after form closes
+            const eventId = sessionStorage.getItem("event_id");
+            if (eventId) {
+              authAPI.getEventDetails(eventId).then((res) => {
+                if (res && res.data) {
+                  if (Array.isArray(res.data.age_criteria_details)) {
+                    setAgeCategories(res.data.age_criteria_details);
+                  } else {
+                    setAgeCategories([]);
+                  }
+                  if (Array.isArray(res.data.EventTickets)) {
+                    setEventTickets(res.data.EventTickets);
+                  }
+                  if (res.data.EventData && res.data.EventData[0]) {
+                    setEventDetails(res.data.EventData[0]);
+                  }
+                }
+              });
+            }
+          }}
+          tickets={eventTickets}
+        />
+      )}
     </div>
   );
 };

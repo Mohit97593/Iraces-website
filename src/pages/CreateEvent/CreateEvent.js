@@ -803,7 +803,7 @@ export default function CreateEvent() {
       }
       if (s) {
         const n = Number(s);
-        if (!Number.isNaN(n) && n >= 1 && n <= 8) setCurrentStep(n);
+        if (!Number.isNaN(n) && n >= 1 && n <= 12) setCurrentStep(n);
       }
     } catch (e) {
       console.error("Failed to parse step query param:", e);
@@ -957,33 +957,67 @@ export default function CreateEvent() {
     }
   };
 
-  // Sticky event preview scroll behavior
+  // Hard-Lock Sticky sidebars JS
   useEffect(() => {
     const handleScroll = () => {
-      // Only enable sticky on desktop (screen width > 991px)
-      if (window.innerWidth <= 991) {
-        return;
-      }
+      if (window.innerWidth <= 1200) return;
 
-      const previewElement = document.querySelector('.event-preview-sidebar');
-      if (!previewElement) return;
+      const sidebar = document.querySelector('.create-event-sidebar');
+      const preview = document.querySelector('.event-preview-sidebar');
+      const container = document.querySelector('.create-event-layout');
+      
+      if (!sidebar || !preview || !container) return;
 
-      const previewParent = previewElement.parentElement;
-      const scrollThreshold = 450; // Adjust based on hero section height
+      const sidebarChild = sidebar.children[0];
+      const previewChild = preview.children[0];
+      if (!sidebarChild || !previewChild) return;
 
-      if (window.scrollY > scrollThreshold) {
-        previewElement.classList.add('is-sticky');
-        // Calculate and set the width to match the column width
-        const columnWidth = previewParent.offsetWidth;
-        previewElement.style.width = `${columnWidth}px`;
+      const containerRect = container.getBoundingClientRect();
+      const containerTop = container.offsetTop;
+      const stickyOffset = 20;
+
+      // New: Check if middle content is taller than the viewport/sidebars
+      const mainContent = container.querySelector('.create-event-main');
+      const mainHeight = mainContent ? mainContent.offsetHeight : 0;
+      const sidebarHeight = sidebarChild.offsetHeight;
+      const previewHeight = previewChild.offsetHeight;
+      const maxSidebarHeight = Math.max(sidebarHeight, previewHeight);
+
+      // Only pin if the middle content is tall enough to warrant it
+      const shouldPin = mainHeight > 400 && window.scrollY > containerTop - stickyOffset;
+
+      if (shouldPin) {
+        // Fix Left Sidebar
+        sidebarChild.style.position = 'fixed';
+        sidebarChild.style.top = `${stickyOffset}px`;
+        sidebarChild.style.width = '230px';
+        sidebarChild.style.left = `${containerRect.left + 12}px`; 
+        
+        // Fix Right Sidebar
+        previewChild.style.position = 'fixed';
+        previewChild.style.top = `${stickyOffset}px`;
+        previewChild.style.width = '380px';
+        previewChild.style.left = `${containerRect.right - 380 - 12}px`;
       } else {
-        previewElement.classList.remove('is-sticky');
-        previewElement.style.width = '';
+        sidebarChild.style.position = 'static';
+        sidebarChild.style.top = '';
+        sidebarChild.style.width = 'auto';
+        sidebarChild.style.left = '';
+        
+        previewChild.style.position = 'static';
+        previewChild.style.top = '';
+        previewChild.style.width = 'auto';
+        previewChild.style.left = '';
       }
     };
 
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleScroll);
+    handleScroll();
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
   }, []);
 
   const handleCategoryToggle = (label) => {
@@ -1396,113 +1430,49 @@ export default function CreateEvent() {
         </div>
       </section>
 
-      {/* Progress Steps */}
-      <div className="container">
-        <div
-          className="event-steps-container"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "18px",
-            margin: "32px 0",
-          }}
-        >
-          {steps.map((step, idx) => {
-            const isCompleted = savedSteps[idx];
-            const isCurrent = idx === currentStep - 1;
-            // Disable navigation to steps 2+ if first step is not saved
-            const isDisabled = idx > 0 && !savedSteps[0];
-            return (
-              <React.Fragment key={step.title}>
+      {/* Main Content with Vertical Sidebar */}
+      <div className="container create-event-layout">
+        <aside className="create-event-sidebar">
+          <div className="sidebar-sticky-wrapper">
+            <div className="sidebar-step-list">
+            {steps.map((step, idx) => {
+              const isCompleted = savedSteps[idx];
+              const isCurrent = idx === currentStep - 1;
+              const isDisabled = idx > 0 && !savedSteps[0];
+              return (
                 <div
-                  className={
-                    isCompleted
-                      ? "event-step-pill"
-                      : isCurrent
-                        ? "event-step-pill"
-                        : "event-step-circle"
-                  }
-                  style={
-                    isCompleted
-                      ? {
-                        background: "#43a047",
-                        color: "#fff",
-                        borderRadius: "24px",
-                        padding: "10px 24px",
-                        display: "flex",
-                        alignItems: "center",
-                        fontWeight: 600,
-                        cursor: isDisabled ? "not-allowed" : "pointer",
-                        opacity: isDisabled ? 0.5 : 1,
-                      }
-                      : isCurrent
-                        ? {
-                          background: "#da251c",
-                          color: "#fff",
-                          borderRadius: "24px",
-                          padding: "10px 24px",
-                          display: "flex",
-                          alignItems: "center",
-                          fontWeight: 600,
-                          cursor: isDisabled ? "not-allowed" : "pointer",
-                          opacity: isDisabled ? 0.5 : 1,
-                        }
-                        : {
-                          width: "44px",
-                          height: "44px",
-                          border: "2px solid #da251c",
-                          borderRadius: "50%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "#da251c",
-                          fontWeight: 600,
-                          cursor: isDisabled ? "not-allowed" : "pointer",
-                          opacity: isDisabled ? 0.5 : 1,
-                        }
-                  }
-                  title={step.title}
+                  key={step.title}
+                  className={`sidebar-step-item ${isCompleted ? "sidebar-step-completed" : ""} ${isCurrent ? "sidebar-step-active" : ""}`}
                   role="button"
                   tabIndex={isDisabled ? -1 : 0}
                   aria-label={step.title}
-                  onClick={() => {
-                    if (!isDisabled) setCurrentStep(idx + 1);
-                  }}
-                  onKeyDown={(e) => {
-                    if (isDisabled) return;
-                    if (e.key === "Enter" || e.key === " ") {
-                      setCurrentStep(idx + 1);
-                    }
-                  }}
+                  title={isDisabled ? "Complete step 1 first" : step.title}
+                  style={{ cursor: isDisabled ? "not-allowed" : "pointer", opacity: isDisabled ? 0.5 : 1 }}
+                  onClick={() => { if (!isDisabled) setCurrentStep(idx + 1); }}
+                  onKeyDown={(e) => { if (!isDisabled && (e.key === "Enter" || e.key === " ")) setCurrentStep(idx + 1); }}
                 >
-                  {isCompleted ? (
-                    <i className="fas fa-check" style={{ marginRight: 8 }}></i>
-                  ) : isCurrent ? (
-                    <i className="fas fa-circle" style={{ marginRight: 8 }}></i>
-                  ) : null}
-                  {isCompleted || isCurrent ? step.title : null}
+                  <div className="sidebar-step-connector" />
+                  <div className="sidebar-step-circle">
+                    {isCompleted ? (
+                      <i className="fas fa-check" />
+                    ) : (
+                      <span>{idx + 1}</span>
+                    )}
+                  </div>
+                  <div className="sidebar-step-label">
+                    <span className="sidebar-step-title">{step.title}</span>
+                    {isCompleted && <span className="sidebar-step-badge">Done</span>}
+                    {isCurrent && !isCompleted && <span className="sidebar-step-badge active-badge">In Progress</span>}
+                  </div>
                 </div>
-                {idx < steps.length - 1 && (
-                  <div
-                    style={{
-                      width: "32px",
-                      height: "4px",
-                      background: "#da251c",
-                      borderRadius: "2px",
-                    }}
-                  ></div>
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
-      </div>
+              );
+            })}
+            </div>
+          </div>
+        </aside>
 
-      {/* Main Content */}
-      <div className="container event-content-container">
-        <div className="row">
-          {/* Left Column - Form */}
-          <div className="col-lg-8">
+        <div className="create-event-main">
+
             {currentStep === 1 && (
               <div className="event-form-section">
                 <div className="section-header">
@@ -1551,7 +1521,7 @@ export default function CreateEvent() {
                     </label>
                     <input
                       type="text"
-                      className="form-controll"
+                      className="form-control"
                       placeholder={`(Allowed only this special characters - , @ , ' , " )`}
                       value={eventName}
                       onChange={(e) => {
@@ -1739,17 +1709,17 @@ export default function CreateEvent() {
             )}
           </div>
 
-          {/* Right Column - Preview, Placeholders, or Money to you */}
-          <div className="col-lg-4 event-preview-sidebar">
+          {/* Event Preview Sidebar */}
+          <div className="event-preview-sidebar">
+            <div className="preview-sticky-wrapper">
             {/* Show Placeholders section ONLY when editing communication (step 10 + editing mode) */}
             {currentStep === 10 && isEditingCommunication && (
               <div
                 style={{
                   background: "#fff",
-                  borderRadius: "16px",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
-                  padding: "24px",
-                  marginBottom: "24px",
+                  padding: "20px",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
                 }}
               >
                 <h3 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "16px" }}>
@@ -1809,17 +1779,9 @@ export default function CreateEvent() {
             {/* Show Event Preview for all other cases */}
             {!(currentStep === 10 && isEditingCommunication) && (currentStep !== 5 || showPreview) && (
               <>
-                <div
-                  style={{
-                    width: "100%",
-                    textAlign: "center",
-                    fontWeight: "700",
-                    fontSize: "1.2rem",
-                    marginBottom: "10px",
-                  }}
-                >
+                <h4>
                   Event Preview
-                </div>
+                </h4>
               </>
             )}
             {currentStep === 5 &&
@@ -1827,13 +1789,14 @@ export default function CreateEvent() {
               paidType &&
               paidType.toLowerCase() === "paid" && (
                 <div
-                  style={{
-                    background: "#fff",
-                    borderRadius: 16,
-                    padding: 32,
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                  }}
-                >
+                style={{
+                  background: "#fff",
+                  padding: "20px",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+                  marginBottom: "24px",
+                }}
+              >
                   {/* Payment calculation logic */}
                   {(() => {
                     let baseAmount = eventFormData.raceCategoryPrice
@@ -1939,7 +1902,14 @@ export default function CreateEvent() {
                       receivableAmount += registrationGST;
                     }
                     return (
-                      <>
+                      <div
+                        style={{
+                          background: "#fff",
+                          padding: "20px",
+                          borderRadius: "12px",
+                          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+                        }}
+                      >
                         {/* Header Section */}
                         <div
                           style={{
@@ -2201,18 +2171,17 @@ export default function CreateEvent() {
                             </span>
                           </div>
                         </div>
-                      </>
+                      </div>
                     );
                   })()}
                 </div>
               )}
             {!(currentStep === 10 && isEditingCommunication) && (currentStep !== 5 || showPreview) && (
               <div
-                className="event-card search-event-card"
+                className="event-preview-card"
                 style={{
                   background: "#fff",
                   borderRadius: "16px",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
                   padding: 0,
                   marginTop: 0,
                   marginBottom: 24,
@@ -2220,6 +2189,7 @@ export default function CreateEvent() {
                   display: "flex",
                   flexDirection: "column",
                   minHeight: "418px",
+                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
                 }}
               >
                 <div
@@ -2442,9 +2412,9 @@ export default function CreateEvent() {
                 </div>
               </div>
             )}
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Toast Notification */}
       {toast && (
@@ -2454,8 +2424,6 @@ export default function CreateEvent() {
           onClose={() => setToast(null)}
         />
       )}
-
-      {/* <Footer /> */}
     </div>
   );
 }

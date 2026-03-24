@@ -118,7 +118,7 @@ export default function EventSettings({ onBack, onNext, showToast, isReadOnly })
       <h3 style={{ fontWeight: 700, fontSize: "1.6rem", marginBottom: 32 }}>
         Event Settings
       </h3>
-      <form style={{ maxWidth: 900 }}>
+      <form style={{ width: "100%" }}>
         {/* You can use eventDetails here if needed */}
         <div
           style={{

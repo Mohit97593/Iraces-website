@@ -672,7 +672,6 @@ const FormQuestions = ({ onBack, onNext, isReadOnly }) => {
   return (
     <div
       className="form-questions-section"
-      style={{ maxWidth: 900, margin: "0 auto" }}
     >
       {toast && (
         <Toast
@@ -731,49 +730,14 @@ const FormQuestions = ({ onBack, onNext, isReadOnly }) => {
         <div style={{ flex: 1 }}>
           <div
             style={{
-              background: "#fff",
-              borderRadius: 16,
-              boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
               padding: 0,
               marginTop: 0,
               marginBottom: 24,
-              overflow: "hidden",
               display: "flex",
               flexDirection: "column",
-              minHeight: "260px",
-              border: "1px solid #eee",
-              position: "relative",
             }}
           >
-            <div
-              style={{
-                position: "absolute",
-                left: -20,
-                top: "50%",
-                transform: "translateY(-50%)",
-                width: 40,
-                height: 80,
-                background: "#fff",
-                borderRadius: "50%",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                border: "1px solid #eee",
-              }}
-            ></div>
-            <div
-              style={{
-                position: "absolute",
-                right: -20,
-                top: "50%",
-                transform: "translateY(-50%)",
-                width: 40,
-                height: 80,
-                background: "#fff",
-                borderRadius: "50%",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                border: "1px solid #eee",
-              }}
-            ></div>
-            <div style={{ padding: "32px 24px", textAlign: "center" }}>
+            <div style={{ padding: "0px", textAlign: "left" }}>
               {!showGeneralForm ? (
                 (() => {
                   const renderList = getRenderList();

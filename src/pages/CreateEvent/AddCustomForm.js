@@ -200,7 +200,7 @@ const AddCustomForm = ({ onCancel }) => {
   // You can use `formCommon` and `questions` to populate selects and defaults
 
   return (
-    <div style={{ maxWidth: 800, margin: "24px auto", padding: 24 }}>
+    <div style={{ padding: 24, width: "100%" }}>
       {toast && (
         <Toast
           message={toast.message}

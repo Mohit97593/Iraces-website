@@ -271,16 +271,6 @@ export default function RaceCategories({
                 flex: "1 1 320px",
                 minWidth: 260,
                 padding: "24px",
-                borderRadius: 12,
-                border: "2px solid transparent",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                transition: "all 0.3s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.border = "2px solid #da251c";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.border = "2px solid transparent";
               }}
             >
               <div style={{ fontWeight: 600, marginBottom: 12, textAlign: "center" }}>
@@ -349,16 +339,6 @@ export default function RaceCategories({
                 flex: "1 1 320px",
                 minWidth: 260,
                 padding: "18px",
-                borderRadius: 12,
-                border: "2px solid transparent",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                transition: "all 0.3s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.border = "2px solid #da251c";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.border = "2px solid transparent";
               }}
             >
               <div style={{ fontWeight: 600, marginBottom: 12, textAlign: "center" }}>
@@ -678,22 +658,13 @@ export default function RaceCategories({
           ) : (
             <div
               style={{
-                background: "#fff",
-                borderRadius: 16,
-                boxShadow: hoveredTicketId === "empty-state"
-                  ? "0 8px 20px rgba(0,0,0,0.20)"
-                  : "0 2px 8px rgba(0,0,0,0.3)",
                 padding: "48px 32px",
                 marginBottom: 32,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                border: "2px solid #e0e0e0",
-                position: "relative",
-                transition: "all 0.3s ease",
+                background: "transparent",
               }}
-              onMouseEnter={() => setHoveredTicketId("empty-state")}
-              onMouseLeave={() => setHoveredTicketId(null)}
             >
               {/* Left side cutout */}
               <div
@@ -741,7 +712,6 @@ export default function RaceCategories({
                   marginBottom: 24,
                   color: "#666",
                   textAlign: "center",
-                  maxWidth: "600px",
                 }}
               >
                 PLEASE CLICK ON ADD "+ NEW RACE CATEGORY" BUTTON TO ADD NEW RACE

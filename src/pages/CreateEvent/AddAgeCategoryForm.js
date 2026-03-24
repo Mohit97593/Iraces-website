@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, Fragment } from "react";
 import { authAPI } from "../../services/authAPI";
 import Toast from "../../components/Toast/Toast";
 
@@ -11,10 +11,7 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
     setToast({ message, type });
   };
   const [formData, setFormData] = useState({
-    event_id:
-      sessionStorage.getItem("event_id") ||
-      sessionStorage.getItem("event_id") ||
-      "",
+    event_id: sessionStorage.getItem("event_id") || "",
     user_id: sessionStorage.getItem("user_id"),
     distance_category: initialData.distance_category || "",
     age_category: initialData.age_category || "",
@@ -172,15 +169,7 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
   const ages = Array.from({ length: 110 }, (_, i) => i + 1);
   console.log("Distance Category Tickets:", safeTickets);
   return (
-    <div
-      style={{
-        marginTop: 32,
-        background: "#fff",
-        borderRadius: 16,
-        boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
-        padding: "32px 24px",
-      }}
-    >
+    <Fragment>
       {toast && (
         <Toast
           message={toast.message}
@@ -191,7 +180,7 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
       <h2 style={{ fontWeight: 700, fontSize: "2rem", marginBottom: 24 }}>
         Add Age Category
       </h2>
-      <form style={{ maxWidth: 900 }} onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit}>
         <label style={{ fontWeight: 500, marginBottom: 8, display: "block" }}>
           Distance Category <span style={{ color: "#da251c" }}>*</span>
         </label>
@@ -224,7 +213,7 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
             {errors.distance_category}
           </div>
         )}
-        {/* <!-- removed duplicate closing div --> */}
+        {/* Removed duplicate closing div */}
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontWeight: 500, marginBottom: 8, display: "block" }}>
             Age Category Name <span style={{ color: "#da251c" }}>*</span>
@@ -448,7 +437,7 @@ const AddAgeCategoryForm = ({ onCancel, tickets, initialData = {} }) => {
           </button>
         </div>
       </form>
-    </div>
+    </Fragment>
   );
 };
 

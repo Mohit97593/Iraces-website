@@ -451,7 +451,7 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange, isReadOnly }) => 
             onClose={() => setToast(null)}
           />
         )}
-        <div style={{ maxWidth: 900, margin: "20px auto" }}>
+        <div style={{ width: "100%" }}>
           <div className="ce-inline-editor">
             <h3 style={{ marginTop: 0 }}>
               Edit{" "}
