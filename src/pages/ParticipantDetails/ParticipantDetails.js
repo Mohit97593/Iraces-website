@@ -3251,7 +3251,7 @@ export default function ParticipantDetails() {
   };
 
   const handleProceedPayment = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     console.log("🚀 Proceed button clicked");
 
     if (!validateForm()) {
@@ -3259,20 +3259,51 @@ export default function ParticipantDetails() {
       return;
     }
 
+    const finalAmount = parseFloat(calculateFinalAmount());
+
     // For free registrations (0 amount), skip payment gateway
-    if (parseFloat(calculateFinalAmount()) === 0) {
+    if (finalAmount === 0) {
       handleFreeRegistration();
       return;
     }
 
-    if (availableGateways.length > 1) {
-      // Modal logic for multiple gateways
-      console.log("Multiple gateways available, showing selection modal");
-      setShowGatewayModal(true);
-    } else {
-      console.log("Single gateway available, proceeding directly");
-      const gateway = availableGateways[0]?.toLowerCase().includes('phone') ? 'phonepe' : (availableGateways[0]?.toLowerCase().includes('pay') ? 'payu' : activePaymentGateway);
-      executePaymentInitiation(gateway);
+    setIsProceeding(true);
+
+    try {
+      // Call bookingPaymentProcess API first as requested by user
+      console.log("📤 Calling Booking Payment Process API on Proceed...");
+      const { bookingPayload, files } = buildBookingPayload();
+      const ticketType = finalAmount > 0 ? 'paid' : 'free';
+
+      const apiPayload = {
+        event_id: eventId,
+        amount: finalAmount.toFixed(2),
+        ticket_type: ticketType,
+        booking_tickets_array: JSON.stringify(bookingPayload),
+        fils_array: files
+      };
+
+      const response = await authAPI.bookingPaymentProcess(apiPayload);
+      console.log("📥 Booking Payment Process Response on Proceed:", response);
+
+      // Store initial booking response if needed (optional)
+      // setInitialBookingData(response.data);
+
+      if (availableGateways.length > 1) {
+        // Modal logic for multiple gateways
+        console.log("Multiple gateways available, showing selection modal");
+        setIsProceeding(false); // Stop loading before showing modal
+        setShowGatewayModal(true);
+      } else {
+        console.log("Single gateway available, proceeding directly");
+        const gateway = availableGateways[0]?.toLowerCase().includes('phone') ? 'phonepe' : (availableGateways[0]?.toLowerCase().includes('pay') ? 'payu' : activePaymentGateway);
+        // executePaymentInitiation will set its own loading state
+        executePaymentInitiation(gateway);
+      }
+    } catch (error) {
+      console.error("❌ Booking process failed on proceed:", error);
+      setIsProceeding(false);
+      // alert("Something went wrong. Please try again.");
     }
   };
 
