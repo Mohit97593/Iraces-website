@@ -26,67 +26,76 @@
     flex-wrap: wrap;
 }
 
-.action-btn1 {
+.p-header-btn {
     border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
+    padding: 10px 22px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    transition: all 0.3s;
-    font-weight: 500;
+    gap: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.send-email-btn {
-    background-color: #28a745;
-    color: white;
+.p-header-btn i {
+    font-size: 16px;
 }
 
-.send-email-btn:hover {
-    background-color: #218838;
+.p-header-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.p-header-btn:active {
+    transform: translateY(0);
+}
+
+.email-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+}
+
+.invoice-btn {
+    background: linear-gradient(135deg, #28a745 0%, #218838 100%) !important;
+    color: white !important;
+}
+
+.whatsapp-btn {
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%) !important;
+    color: white !important;
 }
 
 .download-btn {
-    background-color: #ffc107;
-    color: #333;
-}
-
-.download-btn:hover {
-    background-color: #e0a800;
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%) !important;
+    color: #333 !important;
 }
 
 .revenue-btn {
-    background-color: #17a2b8;
-    color: white;
-}
-
-.revenue-btn:hover {
-    background-color: #138496;
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
+    color: white !important;
 }
 
 .back-btn {
-    background-color: #dc3545;
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
     color: white;
     border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
+    padding: 10px 22px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    transition: background-color 0.3s;
+    gap: 10px;
+    transition: all 0.3s;
+    font-weight: 600;
 }
 
 .back-btn:hover {
-    background-color: #c82333;
-}
-
-.back-btn i,
-.action-btn1 i {
-    font-size: 14px;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
 }
 
 /* Filter Section */
@@ -256,18 +265,38 @@
     color: #721c24;
 }
 
-.action-icon-btn {
-    background: none;
-    border: none;
+.p-action-icon-btn {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
     cursor: pointer;
     color: #667eea;
     font-size: 16px;
-    padding: 5px;
-    transition: color 0.3s;
+    padding: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.action-icon-btn:hover {
-    color: #5568d3;
+.p-action-icon-btn:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.25);
+}
+
+.p-action-icon-btn.p-invoice-btn {
+    color: #28a745;
+}
+
+.p-action-icon-btn.p-invoice-btn:hover {
+    background: #28a745;
+    color: white;
+    border-color: #28a745;
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.25);
 }
 
 /* Pagination */

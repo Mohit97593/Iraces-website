@@ -622,30 +622,30 @@ export default function Participants() {
                     <div className="header-actions">
                         {(!isOrgEvent || AccessController.canInsightEmail()) && (
                             <>
-                                <button className="action-btn email-btn" onClick={handleSendEmail}>
+                                <button className="p-header-btn email-btn" onClick={handleSendEmail}>
                                     <i className="fas fa-envelope"></i> Send Email
                                 </button>
-                                <button className="action-btn invoice-btn" onClick={handleBulkSendInvoice} style={{ backgroundColor: '#28a745', color: '#fff' }}>
+                                {/* <button className="p-header-btn invoice-btn" onClick={handleBulkSendInvoice}>
                                     <i className="fas fa-file-invoice-dollar"></i> Send Invoice
-                                </button>
+                                </button> */}
                             </>
                         )}
                         {(!isOrgEvent || AccessController.canInsightWhatsApp()) && (
-                            <button className="action-btn1 send-whatsapp-btn" onClick={handleSendWhatsApp} style={{ backgroundColor: '#25D366' }}>
+                            <button className="p-header-btn whatsapp-btn" onClick={handleSendWhatsApp}>
                                 <i className="fab fa-whatsapp"></i> Send WhatsApp
                             </button>
                         )}
                         {(!isOrgEvent || AccessController.canInsightDownload()) && (
                             <>
                                 <button
-                                    className="action-btn1 download-btn"
+                                    className="p-header-btn download-btn"
                                     onClick={handleDownloadExcel}
                                     disabled={downloadingAttendee}
                                 >
                                     <i className="fas fa-download"></i> {downloadingAttendee ? 'Downloading...' : 'Download'}
                                 </button>
                                 <button
-                                    className="action-btn1 revenue-btn"
+                                    className="p-header-btn revenue-btn"
                                     onClick={handleDownloadRevenue}
                                     disabled={downloadingRevenue}
                                 >
@@ -854,22 +854,21 @@ export default function Participants() {
                                         </td>
                                         <td>
                                             <button
-                                                className="action-icon-btn"
+                                                className="p-action-icon-btn"
                                                 title="View Details"
                                                 onClick={() => handleViewDetails(participant)}
                                             >
                                                 <i className="fas fa-eye"></i>
                                             </button>
-                                            {(participant.transaction_status == 101 || String(participant.transaction_status).toLowerCase().includes("pending")) && (
+                                            {/* {(participant.transaction_status == 101 || String(participant.transaction_status).toLowerCase().includes("pending")) && (
                                                 <button
-                                                    className="action-icon-btn invoice-btn"
+                                                    className="p-action-icon-btn p-invoice-btn"
                                                     title="Send Invoice"
                                                     onClick={() => handleSendIndividualInvoice(participant)}
-                                                    style={{ color: '#28a745' }}
                                                 >
                                                     <i className="fas fa-file-invoice-dollar"></i>
                                                 </button>
-                                            )}
+                                            )} */}
                                         </td>
                                     </tr>
                                 ))
