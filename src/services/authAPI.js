@@ -1824,6 +1824,19 @@ export const authAPI = {
     }
   },
 
+  // Resume Payment API
+  resumePayment: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("txnid", payload.txnid);
+      const response = await api.post("/resumePayment", formData);
+      return response.data;
+    } catch (error) {
+      console.error("resumePayment API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Get Active Payment Gateway API
   getActivePaymentGateway: async () => {
     try {

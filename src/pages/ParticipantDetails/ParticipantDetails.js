@@ -1722,7 +1722,7 @@ export default function ParticipantDetails() {
       AllTickets,
       ExtraPricing: [],
       EventUrl,
-      UtmCampaign: "",
+      UtmCampaign: sessionStorage.getItem('utm_campaign') || "",
       GstArray
     };
 
@@ -3280,7 +3280,8 @@ export default function ParticipantDetails() {
         amount: finalAmount.toFixed(2),
         ticket_type: ticketType,
         booking_tickets_array: JSON.stringify(bookingPayload),
-        fils_array: files
+        fils_array: files,
+        UtmCampaign: sessionStorage.getItem('utm_campaign') || ""
       };
 
       const response = await authAPI.bookingPaymentProcess(apiPayload);
@@ -3337,7 +3338,8 @@ export default function ParticipantDetails() {
           amount: finalAmount.toFixed(2),
           ticket_type: ticketType,
           booking_tickets_array: JSON.stringify(bookingPayload),
-          fils_array: files // Pass collected files
+          fils_array: files, // Pass collected files
+          UtmCampaign: sessionStorage.getItem('utm_campaign') || ""
         };
 
         console.log("📦 PhonePe API Payload:", apiPayload);
@@ -3367,7 +3369,8 @@ export default function ParticipantDetails() {
           amount: finalAmount.toFixed(2),
           ticket_type: ticketType,
           booking_tickets_array: JSON.stringify(bookingPayload),
-          fils_array: files // Pass collected files
+          fils_array: files, // Pass collected files
+          UtmCampaign: sessionStorage.getItem('utm_campaign') || ""
         };
 
         console.log("📦 PayU API Payload:", apiPayload);
@@ -3423,7 +3426,8 @@ export default function ParticipantDetails() {
         amount: finalAmount.toFixed(2),
         ticket_type: ticketType,
         booking_tickets_array: JSON.stringify(bookingPayload),
-        fils_array: files
+        fils_array: files,
+        UtmCampaign: sessionStorage.getItem('utm_campaign') || ""
       };
 
       console.log("📤 Submitting Free Registration Payload:", apiPayload);

@@ -40,6 +40,7 @@ import RemittanceDetails from "../pages/RemittanceDetails/RemittanceDetails";
 import PaymentSuccess from "../pages/PaymentSuccess";
 import PaymentFailure from "../pages/PaymentFailure";
 import TicketDetails from "../pages/TicketDetails";
+import ResumePayment from "../pages/ResumePayment/ResumePayment";
 
 const AppRouter = createBrowserRouter([
   {
@@ -367,6 +368,15 @@ const AppRouter = createBrowserRouter([
         element: (
           <ErrorBoundary>
             <RemittanceDetails />
+          </ErrorBoundary>
+        ),
+        errorElement: <NotFound />,
+      },
+      {
+        path: "/resumePayment",
+        element: (
+          <ErrorBoundary>
+            <ResumePayment />
           </ErrorBoundary>
         ),
         errorElement: <NotFound />,

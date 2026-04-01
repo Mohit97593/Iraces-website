@@ -322,6 +322,49 @@ export default function Participants() {
         }
     };
 
+    const handleSendIndividualInvoice = (participant) => {
+        setSelectedParticipants([participant.aId]);
+        // Try to find "Invoice" email type
+        const invoiceType = emailTypes.find(type => 
+            type.subject_name.toLowerCase().includes("invoice") || 
+            type.subject_name.toLowerCase().includes("pending")
+        );
+        if (invoiceType) {
+            setSelectedEmailType(invoiceType.id);
+        }
+        setShowEmailModal(true);
+    };
+
+    const handleBulkSendInvoice = () => {
+        if (selectedParticipants.length === 0) {
+            alert("Please select participants first.");
+            return;
+        }
+
+        // Filter selected participants to only those with status 101 or similar pending status
+        const pendingParticipants = participantData.filter(p => 
+            selectedParticipants.includes(p.aId) && 
+            (p.transaction_status == 101 || String(p.transaction_status).toLowerCase().includes("pending"))
+        );
+
+        if (pendingParticipants.length === 0) {
+            alert("No pending participants selected. Please select at least one participant with 'In Progress' status.");
+            return;
+        }
+
+        // Keep only pending ones selected for this action
+        setSelectedParticipants(pendingParticipants.map(p => p.aId));
+        
+        const invoiceType = emailTypes.find(type => 
+            type.subject_name.toLowerCase().includes("invoice") || 
+            type.subject_name.toLowerCase().includes("pending")
+        );
+        if (invoiceType) {
+            setSelectedEmailType(invoiceType.id);
+        }
+        setShowEmailModal(true);
+    };
+
     const handleConfirmSendEmail = async () => {
         try {
             setSendingEmail(true);
@@ -578,9 +621,14 @@ export default function Participants() {
                     <h2>Participants</h2>
                     <div className="header-actions">
                         {(!isOrgEvent || AccessController.canInsightEmail()) && (
-                            <button className="action-btn1 send-email-btn" onClick={handleSendEmail}>
-                                <i className="fas fa-envelope"></i> Send Email
-                            </button>
+                            <>
+                                <button className="action-btn email-btn" onClick={handleSendEmail}>
+                                    <i className="fas fa-envelope"></i> Send Email
+                                </button>
+                                <button className="action-btn invoice-btn" onClick={handleBulkSendInvoice} style={{ backgroundColor: '#28a745', color: '#fff' }}>
+                                    <i className="fas fa-file-invoice-dollar"></i> Send Invoice
+                                </button>
+                            </>
                         )}
                         {(!isOrgEvent || AccessController.canInsightWhatsApp()) && (
                             <button className="action-btn1 send-whatsapp-btn" onClick={handleSendWhatsApp} style={{ backgroundColor: '#25D366' }}>
@@ -812,6 +860,16 @@ export default function Participants() {
                                             >
                                                 <i className="fas fa-eye"></i>
                                             </button>
+                                            {(participant.transaction_status == 101 || String(participant.transaction_status).toLowerCase().includes("pending")) && (
+                                                <button
+                                                    className="action-icon-btn invoice-btn"
+                                                    title="Send Invoice"
+                                                    onClick={() => handleSendIndividualInvoice(participant)}
+                                                    style={{ color: '#28a745' }}
+                                                >
+                                                    <i className="fas fa-file-invoice-dollar"></i>
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))

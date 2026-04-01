@@ -1,0 +1,208 @@
+.resume-payment-page {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.resume-container {
+    max-width: 800px;
+    margin: -50px auto 100px;
+    padding: 0 20px;
+    position: relative;
+    z-index: 10;
+}
+
+.resume-card {
+    background: #fff;
+    border-radius: 20px;
+    overflow: hidden;
+    padding: 40px;
+    text-align: center;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.resume-state {
+    padding: 40px 0;
+}
+
+.resume-icon {
+    font-size: 60px;
+    color: #da251c;
+    margin-bottom: 20px;
+}
+
+.resume-icon-success {
+    font-size: 60px;
+    color: #28a745;
+    margin-bottom: 20px;
+}
+
+.resume-state h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.resume-state p {
+    color: #666;
+    font-size: 16px;
+}
+
+.resume-state.error .resume-icon {
+    color: #dc3545;
+}
+
+.error-msg {
+    color: #dc3545;
+    background: #fff5f5;
+    padding: 15px;
+    border-radius: 10px;
+    margin: 20px 0;
+    border: 1px solid #ffebeb;
+}
+
+.back-home-btn {
+    background: #da251c;
+    color: #fff;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.back-home-btn:hover {
+    background: #b91e16;
+    transform: translateY(-2px);
+}
+
+.resume-header h2 {
+    font-size: 32px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+}
+
+.resume-header p {
+    font-size: 18px;
+    color: #555;
+    line-height: 1.6;
+}
+
+.transaction-details {
+    background: #fdf2f2;
+    border-radius: 15px;
+    padding: 25px;
+    margin: 30px 0;
+    text-align: left;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(218, 37, 28, 0.1);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #666;
+}
+
+.detail-value {
+    font-weight: 700;
+    color: #333;
+}
+
+.detail-value.highlight {
+    color: #da251c;
+    font-size: 20px;
+}
+
+.resume-actions {
+    margin-top: 30px;
+}
+
+.resume-info-text {
+    color: #777;
+    font-size: 15px;
+    margin-bottom: 20px;
+}
+
+.pay-now-btn {
+    background: linear-gradient(135deg, #da251c 0%, #ff5248 100%);
+    color: #fff;
+    border: none;
+    width: 100%;
+    max-width: 400px;
+    padding: 18px 40px;
+    border-radius: 50px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(218, 37, 28, 0.3);
+}
+
+.pay-now-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(218, 37, 28, 0.4);
+}
+
+.pay-now-btn:active {
+    transform: translateY(-1px);
+}
+
+.pay-now-btn.processing {
+    background: #ccc;
+    cursor: wait;
+    box-shadow: none;
+    transform: none;
+}
+
+.secure-text {
+    margin-top: 20px;
+    color: #999;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.resume-card {
+    animation: fadeIn 0.6s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .resume-container {
+        margin-top: -30px;
+    }
+    
+    .resume-card {
+        padding: 25px;
+    }
+    
+    .resume-header h2 {
+        font-size: 24px;
+    }
+    
+    .detail-row {
+        flex-direction: column;
+        gap: 5px;
+    }
+}

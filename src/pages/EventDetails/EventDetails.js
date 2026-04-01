@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
 import { useAuth } from "../../contexts/AuthContext";
 import { authAPI } from "../../services/authAPI";
@@ -9,6 +9,7 @@ import "./EventDetails.css";
 export default function EventDetails() {
   const { eventId: urlEventId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout, user } = useAuth();
   const [eventId, setEventId] = useState(null);
   const [event, setEvent] = useState(null);
@@ -42,6 +43,36 @@ export default function EventDetails() {
       }
     }
   }, [urlEventId, navigate]);
+
+  // Capture UTM parameters from URL and save to sessionStorage
+  useEffect(() => {
+    try {
+      const queryParams = new URLSearchParams(location.search);
+      const utmSource = queryParams.get('utm_source');
+      const utmMedium = queryParams.get('utm_medium');
+      const utmCampaign = queryParams.get('utm_campaign');
+      const utmId = queryParams.get('utm_id');
+      const utmTerm = queryParams.get('utm_term');
+      const utmContent = queryParams.get('utm_content');
+
+      if (utmSource) sessionStorage.setItem('utm_source', utmSource);
+      if (utmMedium) sessionStorage.setItem('utm_medium', utmMedium);
+      if (utmCampaign) sessionStorage.setItem('utm_campaign', utmCampaign);
+      if (utmId) sessionStorage.setItem('utm_id', utmId);
+      if (utmTerm) sessionStorage.setItem('utm_term', utmTerm);
+      if (utmContent) sessionStorage.setItem('utm_content', utmContent);
+
+      if (utmSource || utmMedium || utmCampaign) {
+        console.log("📍 UTM Parameters captured and saved:", {
+          utm_source: utmSource,
+          utm_medium: utmMedium,
+          utm_campaign: utmCampaign
+        });
+      }
+    } catch (error) {
+      console.error("Error capturing UTM parameters:", error);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     if (eventId) {
