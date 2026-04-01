@@ -120,8 +120,14 @@ export default function ParticipantDetails() {
     address1: "addressLine1",
     address2: "addressLine2",
     country: "country",
+    country_name: "country",
+    country_id: "country",
     state: "state",
+    state_name: "state",
+    state_id: "state",
     city: "city",
+    city_name: "city",
+    city_id: "city",
     pincode: "pincode",
     blood_group: "bloodGroup",
     t_shirt_size: "tshirtSize",
@@ -229,9 +235,15 @@ export default function ParticipantDetails() {
           countriesRes.data &&
           Array.isArray(countriesRes.data.AllCountries)
         ) {
-          const sortedCountries = [...countriesRes.data.AllCountries].sort((a, b) =>
-            (a.country_name || a.name || "").localeCompare(b.country_name || b.name || "")
-          );
+          const sortedCountries = [...countriesRes.data.AllCountries]
+            .map(c => ({
+              ...c,
+              label: c.country_name || c.name,
+              name: c.country_name || c.name
+            }))
+            .sort((a, b) =>
+              (a.label || "").localeCompare(b.label || "")
+            );
           setCountries(sortedCountries);
         }
         // 5. Fetch states for default country (India or first country)
@@ -669,19 +681,15 @@ export default function ParticipantDetails() {
               formData: {
                 ...form.formData,
                 participantType: value,
+                // Static mappings that are always used
                 firstName: user.firstname || "",
                 lastName: user.lastname || "",
                 email: user.email || "",
                 mobile: user.mobile ? String(user.mobile) : "",
                 gender: genderValue,
                 dob: user.dob || "",
-                // Auto-fill age if question exists
-                ...(hasAge && ageQuestion ? { [getMappedKey(ageQuestion)]: autoCalculatedAge } : {}),
                 addressLine1: user.address1 || "",
                 addressLine2: user.address2 || "",
-                country: user.country_name || "",
-                state: user.state_name || "",
-                city: user.city_name || "",
                 pincode: user.pincode ? String(user.pincode) : "",
                 bloodGroup: user.blood_group || "",
                 tshirtSize: user.t_shirt_size || "",
@@ -690,9 +698,71 @@ export default function ParticipantDetails() {
                 emergencyContactNumber: user.emergency_contact_no1
                   ? String(user.emergency_contact_no1)
                   : "",
+                // Dynamic mappings based on question types for more reliability
+                ...(() => {
+                  const dynamicData = {};
+                  const ticketId = participantForms[participantIndex]?.ticketInfo?.id;
+                  if (formQuestions && ticketId) {
+                    const questions = formQuestions[ticketId][participantIndex] || formQuestions[ticketId][0] || [];
+                    questions.forEach(q => {
+                      const key = getMappedKey(q);
+                      if (q.question_form_type === 'countries') dynamicData[key] = user.country_name || "";
+                      if (q.question_form_type === 'states') dynamicData[key] = user.state_name || "";
+                      if (q.question_form_type === 'cities') dynamicData[key] = user.city_name || "";
+                      // Also support generic names just in case
+                      if (q.user_field_mapping && q.user_field_mapping.toLowerCase() === 'country') dynamicData[key] = user.country_name || "";
+                      if (q.user_field_mapping && q.user_field_mapping.toLowerCase() === 'state') dynamicData[key] = user.state_name || "";
+                      if (q.user_field_mapping && q.user_field_mapping.toLowerCase() === 'city') dynamicData[key] = user.city_name || "";
+                    });
+                  }
+                  // Standard fallbacks if not found in questions
+                  if (!dynamicData.country) dynamicData.country = user.country_name || "";
+                  if (!dynamicData.state) dynamicData.state = user.state_name || "";
+                  if (!dynamicData.city) dynamicData.city = user.city_name || "";
+                  
+                  return dynamicData;
+                })(),
+                // Auto-fill age if question exists
+                ...(hasAge && ageQuestion ? { [getMappedKey(ageQuestion)]: autoCalculatedAge } : {}),
               }
             } : form
           ));
+
+          // Fetch states and cities for the auto-filled country
+          const selectedCountry = countries.find(
+            c => c.label === user.country_name || c.name === user.country_name || c.id == user.country
+          );
+
+          if (selectedCountry) {
+            const countryId = selectedCountry.id;
+            try {
+              const statesRes = await authAPI.getStates({ country_id: countryId });
+              if (statesRes && statesRes.data && Array.isArray(statesRes.data.AllState)) {
+                const sortedStates = [...statesRes.data.AllState].sort((a, b) =>
+                  (a.state_name || a.name || "").localeCompare(b.state_name || b.name || "")
+                );
+                setStates(sortedStates);
+
+                // Find state
+                const foundState = sortedStates.find(
+                  s => s.state_name === user.state_name || s.name === user.state_name || s.id == user.state
+                );
+
+                if (foundState) {
+                  const stateId = foundState.id;
+                  const citiesRes = await authAPI.getCities({ state_id: stateId });
+                  if (citiesRes && citiesRes.data && Array.isArray(citiesRes.data.AllCities)) {
+                    const sortedCities = [...citiesRes.data.AllCities].sort((a, b) =>
+                      (a.city_name || a.name || "").localeCompare(b.city_name || b.name || "")
+                    );
+                    setCities(sortedCities);
+                  }
+                }
+              }
+            } catch (err) {
+              console.error("Error fetching states/cities during auto-fill:", err);
+            }
+          }
 
           // NEW: Trigger uniqueness check after auto-fill
           if (allowUniqueRegistration === 1) {
@@ -1251,7 +1321,9 @@ export default function ParticipantDetails() {
 
 
   const getMappedKey = (question) => {
-    return fieldMapping[question.user_field_mapping] || `custom_${question.id}`;
+    if (!question || !question.user_field_mapping) return `custom_${question?.id || 'unknown'}`;
+    const mappingKey = question.user_field_mapping.toLowerCase();
+    return fieldMapping[mappingKey] || `custom_${question.id}`;
   };
 
   // Helper function to check if both Age and DOB fields exist
@@ -2694,6 +2766,10 @@ export default function ParticipantDetails() {
             else if (question.question_form_type === 'select' || question.question_form_type === 'countries' || question.question_form_type === 'states' || question.question_form_type === 'cities') {
               let displayOptions = options;
 
+              if (question.question_form_type === 'countries') {
+                displayOptions = countries;
+              }
+
               if (question.question_form_type === 'states') {
                 displayOptions = states.map(s => ({
                   id: s.id,
@@ -2839,8 +2915,8 @@ export default function ParticipantDetails() {
                     <SearchableSelect
                       name={fieldName}
                       options={displayOptions.map(opt => ({
-                        value: opt.label || opt.name || opt.code || opt.id,
-                        label: opt.label || opt.name || opt.code
+                        value: opt.label || opt.name || opt.country_name || opt.state_name || opt.city_name || opt.code || opt.id,
+                        label: opt.label || opt.name || opt.country_name || opt.state_name || opt.city_name || opt.code
                       }))}
                       value={currentFormData[fieldName] || ""}
                       placeholder={`Select ${question.question_label}...`}
