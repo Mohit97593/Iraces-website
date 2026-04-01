@@ -2809,6 +2809,14 @@ export default function ParticipantDetails() {
                   });
                 });
                 displayOptions = processedOptions;
+
+                // Special Filter: Clear S and L sizes for event 363 as requested
+                if (String(eventId) === "363" && (question.question_label?.toLowerCase().includes('t-shirt') || question.user_field_mapping?.toLowerCase() === 't_shirt_size')) {
+                  displayOptions = displayOptions.filter(opt => {
+                    const label = (opt.label || "").toLowerCase();
+                    return !label.endsWith('-s') && !label.endsWith('-l');
+                  });
+                }
               }
 
               questionElement = (
