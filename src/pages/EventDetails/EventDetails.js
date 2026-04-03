@@ -44,9 +44,11 @@ export default function EventDetails() {
     }
   }, [urlEventId, navigate]);
 
-  // Capture UTM parameters from URL and save to sessionStorage
+  // Capture UTM parameters from URL and save to localStorage (scoped by Event ID)
   useEffect(() => {
     try {
+      if (!urlEventId) return;
+
       const queryParams = new URLSearchParams(location.search);
       const utmSource = queryParams.get('utm_source');
       const utmMedium = queryParams.get('utm_medium');
@@ -55,15 +57,16 @@ export default function EventDetails() {
       const utmTerm = queryParams.get('utm_term');
       const utmContent = queryParams.get('utm_content');
 
-      if (utmSource) sessionStorage.setItem('utm_source', utmSource);
-      if (utmMedium) sessionStorage.setItem('utm_medium', utmMedium);
-      if (utmCampaign) sessionStorage.setItem('utm_campaign', utmCampaign);
-      if (utmId) sessionStorage.setItem('utm_id', utmId);
-      if (utmTerm) sessionStorage.setItem('utm_term', utmTerm);
-      if (utmContent) sessionStorage.setItem('utm_content', utmContent);
+      // Save with event-specific keys
+      if (utmSource) localStorage.setItem(`utm_source_${urlEventId}`, utmSource);
+      if (utmMedium) localStorage.setItem(`utm_medium_${urlEventId}`, utmMedium);
+      if (utmCampaign) localStorage.setItem(`utm_campaign_${urlEventId}`, utmCampaign);
+      if (utmId) localStorage.setItem(`utm_id_${urlEventId}`, utmId);
+      if (utmTerm) localStorage.setItem(`utm_term_${urlEventId}`, utmTerm);
+      if (utmContent) localStorage.setItem(`utm_content_${urlEventId}`, utmContent);
 
       if (utmSource || utmMedium || utmCampaign) {
-        console.log("📍 UTM Parameters captured and saved:", {
+        console.log(`📍 UTM Parameters captured and saved for Event ${urlEventId}:`, {
           utm_source: utmSource,
           utm_medium: utmMedium,
           utm_campaign: utmCampaign
@@ -72,7 +75,7 @@ export default function EventDetails() {
     } catch (error) {
       console.error("Error capturing UTM parameters:", error);
     }
-  }, [location.search]);
+  }, [location.search, urlEventId]);
 
   useEffect(() => {
     if (eventId) {

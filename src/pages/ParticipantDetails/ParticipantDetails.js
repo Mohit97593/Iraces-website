@@ -3365,7 +3365,9 @@ export default function ParticipantDetails() {
         ticket_type: ticketType,
         booking_tickets_array: JSON.stringify(bookingPayload),
         fils_array: files,
-        UtmCampaign: sessionStorage.getItem('utm_campaign') || ""
+        UtmCampaign: localStorage.getItem(`utm_campaign_${eventId}`) || localStorage.getItem('utm_campaign') || sessionStorage.getItem('utm_campaign') || "",
+        UtmSource: localStorage.getItem(`utm_source_${eventId}`) || localStorage.getItem('utm_source') || sessionStorage.getItem('utm_source') || "",
+        UtmMedium: localStorage.getItem(`utm_medium_${eventId}`) || localStorage.getItem('utm_medium') || sessionStorage.getItem('utm_medium') || ""
       };
 
       const response = await authAPI.bookingPaymentProcess(apiPayload);
@@ -3423,7 +3425,9 @@ export default function ParticipantDetails() {
           ticket_type: ticketType,
           booking_tickets_array: JSON.stringify(bookingPayload),
           fils_array: files, // Pass collected files
-          UtmCampaign: sessionStorage.getItem('utm_campaign') || ""
+          UtmCampaign: localStorage.getItem(`utm_campaign_${eventId}`) || localStorage.getItem('utm_campaign') || sessionStorage.getItem('utm_campaign') || "",
+          UtmSource: localStorage.getItem(`utm_source_${eventId}`) || localStorage.getItem('utm_source') || sessionStorage.getItem('utm_source') || "",
+          UtmMedium: localStorage.getItem(`utm_medium_${eventId}`) || localStorage.getItem('utm_medium') || sessionStorage.getItem('utm_medium') || ""
         };
 
         console.log("📦 PhonePe API Payload:", apiPayload);
@@ -3454,7 +3458,9 @@ export default function ParticipantDetails() {
           ticket_type: ticketType,
           booking_tickets_array: JSON.stringify(bookingPayload),
           fils_array: files, // Pass collected files
-          UtmCampaign: sessionStorage.getItem('utm_campaign') || ""
+          UtmCampaign: localStorage.getItem(`utm_campaign_${eventId}`) || localStorage.getItem('utm_campaign') || sessionStorage.getItem('utm_campaign') || "",
+          UtmSource: localStorage.getItem(`utm_source_${eventId}`) || localStorage.getItem('utm_source') || sessionStorage.getItem('utm_source') || "",
+          UtmMedium: localStorage.getItem(`utm_medium_${eventId}`) || localStorage.getItem('utm_medium') || sessionStorage.getItem('utm_medium') || ""
         };
 
         console.log("📦 PayU API Payload:", apiPayload);
@@ -3511,7 +3517,9 @@ export default function ParticipantDetails() {
         ticket_type: ticketType,
         booking_tickets_array: JSON.stringify(bookingPayload),
         fils_array: files,
-        UtmCampaign: sessionStorage.getItem('utm_campaign') || ""
+        UtmCampaign: localStorage.getItem(`utm_campaign_${eventId}`) || localStorage.getItem('utm_campaign') || sessionStorage.getItem('utm_campaign') || "",
+        UtmSource: localStorage.getItem(`utm_source_${eventId}`) || localStorage.getItem('utm_source') || sessionStorage.getItem('utm_source') || "",
+        UtmMedium: localStorage.getItem(`utm_medium_${eventId}`) || localStorage.getItem('utm_medium') || sessionStorage.getItem('utm_medium') || ""
       };
 
       console.log("📤 Submitting Free Registration Payload:", apiPayload);
