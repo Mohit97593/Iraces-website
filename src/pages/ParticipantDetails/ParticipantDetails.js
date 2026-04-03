@@ -719,7 +719,7 @@ export default function ParticipantDetails() {
                   if (!dynamicData.country) dynamicData.country = user.country_name || "";
                   if (!dynamicData.state) dynamicData.state = user.state_name || "";
                   if (!dynamicData.city) dynamicData.city = user.city_name || "";
-                  
+
                   return dynamicData;
                 })(),
                 // Auto-fill age if question exists
@@ -3365,9 +3365,7 @@ export default function ParticipantDetails() {
         ticket_type: ticketType,
         booking_tickets_array: JSON.stringify(bookingPayload),
         fils_array: files,
-        UtmCampaign: sessionStorage.getItem(`utm_campaign_${eventId}`) || sessionStorage.getItem('utm_campaign') || "",
-        UtmSource: sessionStorage.getItem(`utm_source_${eventId}`) || sessionStorage.getItem('utm_source') || "",
-        UtmMedium: sessionStorage.getItem(`utm_medium_${eventId}`) || sessionStorage.getItem('utm_medium') || ""
+        UtmCampaign: sessionStorage.getItem('utm_campaign') || ""
       };
 
       const response = await authAPI.bookingPaymentProcess(apiPayload);
@@ -3425,9 +3423,7 @@ export default function ParticipantDetails() {
           ticket_type: ticketType,
           booking_tickets_array: JSON.stringify(bookingPayload),
           fils_array: files, // Pass collected files
-          UtmCampaign: sessionStorage.getItem(`utm_campaign_${eventId}`) || sessionStorage.getItem('utm_campaign') || "",
-          UtmSource: sessionStorage.getItem(`utm_source_${eventId}`) || sessionStorage.getItem('utm_source') || "",
-          UtmMedium: sessionStorage.getItem(`utm_medium_${eventId}`) || sessionStorage.getItem('utm_medium') || ""
+          UtmCampaign: sessionStorage.getItem('utm_campaign') || ""
         };
 
         console.log("📦 PhonePe API Payload:", apiPayload);
@@ -3458,9 +3454,7 @@ export default function ParticipantDetails() {
           ticket_type: ticketType,
           booking_tickets_array: JSON.stringify(bookingPayload),
           fils_array: files, // Pass collected files
-          UtmCampaign: sessionStorage.getItem(`utm_campaign_${eventId}`) || sessionStorage.getItem('utm_campaign') || "",
-          UtmSource: sessionStorage.getItem(`utm_source_${eventId}`) || sessionStorage.getItem('utm_source') || "",
-          UtmMedium: sessionStorage.getItem(`utm_medium_${eventId}`) || sessionStorage.getItem('utm_medium') || ""
+          UtmCampaign: sessionStorage.getItem('utm_campaign') || ""
         };
 
         console.log("📦 PayU API Payload:", apiPayload);
@@ -3517,9 +3511,7 @@ export default function ParticipantDetails() {
         ticket_type: ticketType,
         booking_tickets_array: JSON.stringify(bookingPayload),
         fils_array: files,
-        UtmCampaign: sessionStorage.getItem(`utm_campaign_${eventId}`) || sessionStorage.getItem('utm_campaign') || "",
-        UtmSource: sessionStorage.getItem(`utm_source_${eventId}`) || sessionStorage.getItem('utm_source') || "",
-        UtmMedium: sessionStorage.getItem(`utm_medium_${eventId}`) || sessionStorage.getItem('utm_medium') || ""
+        UtmCampaign: sessionStorage.getItem('utm_campaign') || ""
       };
 
       console.log("📤 Submitting Free Registration Payload:", apiPayload);

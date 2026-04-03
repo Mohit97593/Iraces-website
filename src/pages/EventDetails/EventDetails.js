@@ -57,13 +57,12 @@ export default function EventDetails() {
       const utmTerm = queryParams.get('utm_term');
       const utmContent = queryParams.get('utm_content');
 
-      // Save with event-specific keys in sessionStorage
-      if (utmSource) sessionStorage.setItem(`utm_source_${urlEventId}`, utmSource);
-      if (utmMedium) sessionStorage.setItem(`utm_medium_${urlEventId}`, utmMedium);
-      if (utmCampaign) sessionStorage.setItem(`utm_campaign_${urlEventId}`, utmCampaign);
-      if (utmId) sessionStorage.setItem(`utm_id_${urlEventId}`, utmId);
-      if (utmTerm) sessionStorage.setItem(`utm_term_${urlEventId}`, utmTerm);
-      if (utmContent) sessionStorage.setItem(`utm_content_${urlEventId}`, utmContent);
+      if (utmSource) sessionStorage.setItem('utm_source', utmSource);
+      if (utmMedium) sessionStorage.setItem('utm_medium', utmMedium);
+      if (utmCampaign) sessionStorage.setItem('utm_campaign', utmCampaign);
+      if (utmId) sessionStorage.setItem('utm_id', utmId);
+      if (utmTerm) sessionStorage.setItem('utm_term', utmTerm);
+      if (utmContent) sessionStorage.setItem('utm_content', utmContent);
 
       if (utmSource || utmMedium || utmCampaign) {
         console.log(`📍 UTM Parameters captured and saved to sessionStorage for Event ${urlEventId}:`, {
