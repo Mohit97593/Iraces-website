@@ -83,6 +83,19 @@ export default function EventDetails() {
     }
   }, [eventId]);
 
+  // Update Meta Keywords for SEO
+  useEffect(() => {
+    if (event && event.event_keywords) {
+      let metaKeywords = document.querySelector('meta[name="keywords"]');
+      if (!metaKeywords) {
+        metaKeywords = document.createElement('meta');
+        metaKeywords.name = 'keywords';
+        document.getElementsByTagName('head')[0].appendChild(metaKeywords);
+      }
+      metaKeywords.content = event.event_keywords;
+    }
+  }, [event]);
+
   const fetchEventDetails = async () => {
     setLoading(true);
     try {
@@ -689,6 +702,22 @@ export default function EventDetails() {
                     </div>
                   </div>
                 </div>
+
+                {event.event_keywords && (
+                  <div className="info-item">
+                    <div style={{ paddingLeft: '0' }}>
+                      <span className="info-label1">Keywords</span>
+                      <div className="info-value-list">
+                        {event.event_keywords.split(',').map((kw, idx) => (
+                          <div key={idx} className="info-value-item">
+                            <i className="fas fa-tag"></i>
+                            <span>{kw.trim()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
