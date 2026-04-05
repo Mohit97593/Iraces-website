@@ -80,6 +80,7 @@ export default function ParticipantDetails() {
 
   // Coupon display location state
   const [couponDisplayLocation, setCouponDisplayLocation] = useState("both"); // Default to 'both'
+  const [apiError, setApiError] = useState(null); // Global API error (e.g. duplicate registration)
   const [allowUniqueRegistration, setAllowUniqueRegistration] = useState(0); // Track AllowUniqueRegistration setting
 
   // Load existing coupon from sessionStorage on mount
@@ -3414,6 +3415,7 @@ export default function ParticipantDetails() {
   const handleProceedPayment = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     console.log("🚀 Proceed button clicked");
+    setApiError(null); // Clear previous API error
 
     if (!validateForm()) {
       console.log("❌ Validation failed, stopping proceed");
@@ -3448,6 +3450,33 @@ export default function ParticipantDetails() {
       const response = await authAPI.bookingPaymentProcess(apiPayload);
       console.log("📥 Booking Payment Process Response on Proceed:", response);
 
+      // Check for validation errors in 200 response (Business Errors)
+      if (response && response.message && (response.message.includes("Duplicate") || response.message.includes("already registered"))) {
+        console.error("❌ Duplicate registration detected by API:", response.message);
+        setApiError(response.message);
+        alert(response.message);
+        
+        // Try to highlight specific fields
+        const emailPart = response.message.split("Email(s) already registered:")[1];
+        if (emailPart) {
+          const registeredEmails = emailPart.split(",").map(e => e.trim().replace(/\.$/, "").toLowerCase());
+          const newErrors = { ...formErrors };
+          let found = false;
+          participantForms.forEach((form, idx) => {
+            const email = form.formData.email?.toLowerCase().trim();
+            if (email && registeredEmails.includes(email)) {
+              newErrors[`participant_${idx}_email`] = "This email is already registered for this event.";
+              found = true;
+            }
+          });
+          if (found) setFormErrors(newErrors);
+        }
+
+        setIsProceeding(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
       // Store initial booking response if needed (optional)
       // setInitialBookingData(response.data);
 
@@ -3465,7 +3494,15 @@ export default function ParticipantDetails() {
     } catch (error) {
       console.error("❌ Booking process failed on proceed:", error);
       setIsProceeding(false);
-      // alert("Something went wrong. Please try again.");
+      
+      let errorMessage = "Registration failed. Please try again.";
+      if (typeof error === 'string') errorMessage = error;
+      else if (error.message) errorMessage = error.message;
+      else if (error.error) errorMessage = error.error;
+
+      setApiError(errorMessage);
+      alert(`Error: ${errorMessage}`);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -3508,6 +3545,34 @@ export default function ParticipantDetails() {
         const res = await authAPI.phonepeInitiatePayment(apiPayload);
         console.log("📥 PhonePe Payment API response:", res);
 
+        // Check for validation errors in 200 response
+        if (res && res.message && (res.message.includes("Duplicate") || res.message.includes("already registered"))) {
+          console.error("❌ Duplicate registration detected in PhonePe call:", res.message);
+          setApiError(res.message);
+          alert(res.message);
+          
+          // Try to highlight specific fields
+          const emailPart = res.message.split("Email(s) already registered:")[1];
+          if (emailPart) {
+            const registeredEmails = emailPart.split(",").map(e => e.trim().replace(/\.$/, "").toLowerCase());
+            const newErrors = { ...formErrors };
+            let found = false;
+            participantForms.forEach((form, idx) => {
+              const email = form.formData.email?.toLowerCase().trim();
+              if (email && registeredEmails.includes(email)) {
+                newErrors[`participant_${idx}_email`] = "This email is already registered for this event.";
+                found = true;
+              }
+            });
+            if (found) setFormErrors(newErrors);
+          }
+
+          setIsProceeding(false);
+          setShowPaymentModal(false);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+
         if (res && res.data && res.data.redirect_url) {
           setPaymentData(res.data);
           setSelectedPaymentMethod('phonepe');
@@ -3537,8 +3602,35 @@ export default function ParticipantDetails() {
         console.log("📦 PayU API Payload:", apiPayload);
 
         const response = await authAPI.bookingPaymentProcess(apiPayload);
-
         console.log("📥 PayU Payment API response:", response);
+
+        // Check for validation errors in 200 response
+        if (response && response.message && (response.message.includes("Duplicate") || response.message.includes("already registered"))) {
+          console.error("❌ Duplicate registration detected in PayU call:", response.message);
+          setApiError(response.message);
+          alert(response.message);
+          
+          // Try to highlight specific fields
+          const emailPart = response.message.split("Email(s) already registered:")[1];
+          if (emailPart) {
+            const registeredEmails = emailPart.split(",").map(e => e.trim().replace(/\.$/, "").toLowerCase());
+            const newErrors = { ...formErrors };
+            let found = false;
+            participantForms.forEach((form, idx) => {
+              const email = form.formData.email?.toLowerCase().trim();
+              if (email && registeredEmails.includes(email)) {
+                newErrors[`participant_${idx}_email`] = "This email is already registered for this event.";
+                found = true;
+              }
+            });
+            if (found) setFormErrors(newErrors);
+          }
+
+          setIsProceeding(false);
+          setShowPaymentModal(false);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
 
         if (response && response.data) {
           setPaymentData(response.data);
@@ -3568,6 +3660,8 @@ export default function ParticipantDetails() {
       }
 
       alert(`Registration failed: ${errorMessage}`);
+      setApiError(errorMessage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setShowPaymentModal(false);
     } finally {
       setIsProceeding(false);
@@ -3603,6 +3697,33 @@ export default function ParticipantDetails() {
       }
 
       console.log("✅ Free Registration Response:", result);
+
+      // Check for validation errors in 200 response
+      if (result && result.message && (result.message.includes("Duplicate") || result.message.includes("already registered"))) {
+        console.error("❌ Duplicate registration detected in Free call:", result.message);
+        setApiError(result.message);
+        alert(result.message);
+        
+        // Try to highlight specific fields
+        const emailPart = result.message.split("Email(s) already registered:")[1];
+        if (emailPart) {
+          const registeredEmails = emailPart.split(",").map(e => e.trim().replace(/\.$/, "").toLowerCase());
+          const newErrors = { ...formErrors };
+          let found = false;
+          participantForms.forEach((form, idx) => {
+            const email = form.formData.email?.toLowerCase().trim();
+            if (email && registeredEmails.includes(email)) {
+              newErrors[`participant_${idx}_email`] = "This email is already registered for this event.";
+              found = true;
+            }
+          });
+          if (found) setFormErrors(newErrors);
+        }
+
+        setIsProceeding(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
 
       if (result && (
         result.status === 'success' ||
