@@ -643,6 +643,35 @@ export default function ParticipantDetails() {
     navigate(-1);
   };
 
+  // Helper to identify T-shirt size questions
+  const isTShirtQuestion = (q) => {
+    if (!q) return false;
+    const label = (q.question_label || "").toLowerCase();
+    const mapping = (q.user_field_mapping || "").toLowerCase();
+    const mappedKey = getMappedKey(q);
+    return label.includes('t-shirt') || mapping === 't_shirt_size' || mappedKey === 'tshirtSize';
+  };
+
+  // Helper to calculate current selection counts for T-shirt sizes
+  const getTShirtSizeCounts = () => {
+    const counts = {};
+    participantForms.forEach((form, idx) => {
+      const currentTicket = form.ticketInfo;
+      if (formQuestions && currentTicket && formQuestions[currentTicket.id]) {
+        const questionsList = formQuestions[currentTicket.id][idx] || formQuestions[currentTicket.id][0] || [];
+        const tShirtQ = questionsList.find(isTShirtQuestion);
+        if (tShirtQ) {
+          const fieldName = getMappedKey(tShirtQ);
+          const value = form.formData[fieldName];
+          if (value) {
+            counts[value] = (counts[value] || 0) + 1;
+          }
+        }
+      }
+    });
+    return counts;
+  };
+
   const handleInputChange = async (participantIndex, e) => {
     let { name, value, type, checked, files } = e.target;
 
@@ -2902,23 +2931,71 @@ export default function ParticipantDetails() {
 
                   {/* Use normal select for general questions, SearchableSelect for locations */}
                   {question.question_form_type === 'select' ? (
-                    <select
-                      name={fieldName}
-                      className="form-control3"
-                      value={currentFormData[fieldName] || ""}
-                      onChange={(e) => handleInputChange(participantIndex, e)}
-                      required={isRequired}
-                    >
-                      <option value="">Select {question.question_label}...</option>
-                      {displayOptions.map((opt, idx) => (
-                        <option
-                          key={idx}
-                          value={opt.label || opt.name || opt.id || opt}
-                        >
-                          {opt.label || opt.name || opt}
-                        </option>
-                      ))}
-                    </select>
+                    <>
+                      <select
+                        name={fieldName}
+                        className="form-control3"
+                        value={currentFormData[fieldName] || ""}
+                        onChange={(e) => handleInputChange(participantIndex, e)}
+                        required={isRequired}
+                      >
+                        <option value="">Select {question.question_label}...</option>
+                        {displayOptions.map((opt, idx) => {
+                          const isTS = isTShirtQuestion(question);
+                          let label = opt.label || opt.name || opt;
+                          let isDisabled = false;
+                          let limitValue = parseInt(opt.limit);
+
+                          if (isTS) {
+                            const currentCounts = getTShirtSizeCounts();
+                            const currentSelection = currentFormData[fieldName];
+                            // Count across other forms (not including current form)
+                            const countOtherForms = (currentCounts[label] || 0) - (currentSelection === label ? 1 : 0);
+
+                            if (limitValue === 0) {
+                              isDisabled = true;
+                              label = `${label} (Not Available)`;
+                            } else if (!isNaN(limitValue) && limitValue > 0) {
+                              if (countOtherForms >= limitValue) {
+                                isDisabled = true;
+                                label = `${label} (Limit Reached ${countOtherForms}/${limitValue})`;
+                              }
+                            }
+                          }
+
+                          return (
+                            <option
+                              key={idx}
+                              value={opt.label || opt.name || opt.id || opt}
+                              disabled={isDisabled}
+                              style={isDisabled ? { color: '#999', fontStyle: 'italic' } : {}}
+                            >
+                              {label}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      {/* Rule 2 & 3: Show inline error if limit is exceeded */}
+                      {isTShirtQuestion(question) && (() => {
+                        const currentSelection = currentFormData[fieldName];
+                        if (currentSelection) {
+                          const matchedOpt = displayOptions.find(o => (o.label || o.name || o.id || o) === currentSelection);
+                          if (matchedOpt && !isNaN(parseInt(matchedOpt.limit)) && parseInt(matchedOpt.limit) > 0) {
+                            const counts = getTShirtSizeCounts();
+                            const limit = parseInt(matchedOpt.limit);
+                            if (counts[currentSelection] > limit) {
+                              return (
+                                <span style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px', fontWeight: '500' }}>
+                                  <i className="fas fa-exclamation-triangle" style={{ marginRight: '5px' }}></i>
+                                  {currentSelection} size limit reached ({counts[currentSelection]}/{limit}). Please choose another size.
+                                </span>
+                              );
+                            }
+                          }
+                        }
+                        return null;
+                      })()}
+                    </>
                   ) : (
                     <SearchableSelect
                       name={fieldName}
@@ -3861,6 +3938,64 @@ export default function ParticipantDetails() {
         hasErrors = true;
       }
     }
+
+    // Rule 4: Final T-shirt size limit verification across all forms
+    console.log("👗 Final T-shirt limit verification...");
+    const tShirtCounts = getTShirtSizeCounts();
+    participantForms.forEach((form, idx) => {
+      const currentTicket = form.ticketInfo;
+      if (formQuestions && currentTicket && formQuestions[currentTicket.id]) {
+        const questionsList = formQuestions[currentTicket.id][idx] || formQuestions[currentTicket.id][0] || [];
+        const tShirtQ = questionsList.find(isTShirtQuestion);
+        if (tShirtQ) {
+          const fieldName = getMappedKey(tShirtQ);
+          const selection = form.formData[fieldName];
+          if (selection) {
+            // Get original options to find the limit
+            let options = [];
+            try {
+              options = typeof tShirtQ.question_form_option === 'string'
+                ? JSON.parse(tShirtQ.question_form_option)
+                : tShirtQ.question_form_option;
+            } catch (e) {
+              console.error("Error parsing T-shirt options in validateForm:", e);
+            }
+
+            // Look for processed label match
+            const matchedOpt = (Array.isArray(options) ? options : []).find(o => {
+              const optLabel = o.label || o.name || o;
+              if (optLabel === selection) return true;
+              // Also check if selection is one of the comma-separated labels
+              const splitLabels = String(optLabel).split(',').map(l => l.trim());
+              return splitLabels.includes(selection);
+            });
+
+            if (matchedOpt) {
+              const limit = parseInt(matchedOpt.limit);
+              if (!isNaN(limit)) {
+                if (limit === 0) {
+                  const errorKey = `participant_${idx}_${fieldName}`;
+                  errors[errorKey] = `${selection} size is not available. Please choose another size.`;
+                  if (!hasErrors) {
+                    firstErrorParticipant = idx;
+                    firstErrorGroup = tShirtQ.group_question_title || 'general';
+                  }
+                  hasErrors = true;
+                } else if (tShirtCounts[selection] > limit) {
+                  const errorKey = `participant_${idx}_${fieldName}`;
+                  errors[errorKey] = `${selection} size limit reached (${tShirtCounts[selection]}/${limit} total). Please choose another size.`;
+                  if (!hasErrors) {
+                    firstErrorParticipant = idx;
+                    firstErrorGroup = tShirtQ.group_question_title || 'general';
+                  }
+                  hasErrors = true;
+                }
+              }
+            }
+          }
+        }
+      }
+    });
 
     if (hasErrors) {
       console.log("❌ Validation failed:", errors);

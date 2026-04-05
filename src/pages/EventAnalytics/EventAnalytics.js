@@ -1132,12 +1132,14 @@ export default function EventAnalytics() {
                                             id: optionId,
                                             label: optionData.label || 'Unknown',
                                             count: optionData.count || 0,
-                                            limit: optionData.limit || 0
+                                            limit: optionData.limit || 0,
+                                            initialLimit: optionData.initial_limit || 0
                                         }));
 
                                     // Calculate totals
-                                    const totalCount = optionsData.reduce((sum, opt) => sum + opt.count, 0);
-                                    const totalLimit = optionsData.reduce((sum, opt) => sum + opt.limit, 0);
+                                    const totalCount = optionsData.reduce((sum, opt) => sum + parseInt(opt.count || 0), 0);
+                                    const totalLimit = optionsData.reduce((sum, opt) => sum + parseInt(opt.limit || 0), 0);
+                                    const totalInitialLimit = optionsData.reduce((sum, opt) => sum + parseInt(opt.initialLimit || 0), 0);
 
                                     return (
                                         <div className="col-lg-6" key={questionId}>
@@ -1149,6 +1151,7 @@ export default function EventAnalytics() {
                                                             <th>Label</th>
                                                             <th>Count</th>
                                                             <th>Limit</th>
+                                                            <th>Total Count</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -1157,12 +1160,14 @@ export default function EventAnalytics() {
                                                                 <td>{option.label}</td>
                                                                 <td>{option.count}</td>
                                                                 <td>{option.limit}</td>
+                                                                <td>{option.initialLimit}</td>
                                                             </tr>
                                                         ))}
                                                         <tr className="total-row">
                                                             <td><strong>Total</strong></td>
                                                             <td><strong>{totalCount}</strong></td>
                                                             <td><strong>{totalLimit}</strong></td>
+                                                            <td><strong>{totalInitialLimit}</strong></td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
