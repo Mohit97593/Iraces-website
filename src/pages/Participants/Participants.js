@@ -325,8 +325,8 @@ export default function Participants() {
     const handleSendIndividualInvoice = (participant) => {
         setSelectedParticipants([participant.aId]);
         // Try to find "Invoice" email type
-        const invoiceType = emailTypes.find(type => 
-            type.subject_name.toLowerCase().includes("invoice") || 
+        const invoiceType = emailTypes.find(type =>
+            type.subject_name.toLowerCase().includes("invoice") ||
             type.subject_name.toLowerCase().includes("pending")
         );
         if (invoiceType) {
@@ -341,22 +341,26 @@ export default function Participants() {
             return;
         }
 
-        // Filter selected participants to only those with status 101 or similar pending status
-        const pendingParticipants = participantData.filter(p => 
-            selectedParticipants.includes(p.aId) && 
-            (p.transaction_status == 101 || String(p.transaction_status).toLowerCase().includes("pending"))
+        // Filter selected participants to only those who haven't paid (not Success or Free)
+        const pendingParticipants = participantData.filter(p =>
+            selectedParticipants.includes(p.aId) &&
+            p.transaction_status != 1 && 
+            p.transaction_status != 3 && 
+            p.transaction_status != 102 &&
+            p.transaction_status != 104 &&
+            p.transaction_status != 5 // Refund
         );
 
         if (pendingParticipants.length === 0) {
-            alert("No pending participants selected. Please select at least one participant with 'In Progress' status.");
+            alert("No pending participants selected. Please select at least one participant who has not completed payment.");
             return;
         }
 
         // Keep only pending ones selected for this action
         setSelectedParticipants(pendingParticipants.map(p => p.aId));
-        
-        const invoiceType = emailTypes.find(type => 
-            type.subject_name.toLowerCase().includes("invoice") || 
+
+        const invoiceType = emailTypes.find(type =>
+            type.subject_name.toLowerCase().includes("invoice") ||
             type.subject_name.toLowerCase().includes("pending")
         );
         if (invoiceType) {
@@ -383,6 +387,38 @@ export default function Participants() {
                 }
             }
 
+            // --- Additional Check: If 'Invoice' or 'Pending Payment' template is selected, filter to only pending participants ---
+            const isInvoiceTemplate = selectedEmail && (
+                selectedEmail.subject_name.toLowerCase().includes("invoice") ||
+                selectedEmail.subject_name.toLowerCase().includes("pending")
+            );
+
+            let activeParticipantsToEmail = [...selectedParticipants];
+
+            if (isInvoiceTemplate) {
+                const pendingParticipants = participantData.filter(p =>
+                    selectedParticipants.includes(p.aId) &&
+                    p.transaction_status != 1 &&   // Success
+                    p.transaction_status != 3 &&   // Free
+                    p.transaction_status != 102 && // Success & Free (Legacy/Specific)
+                    p.transaction_status != 104 && // Success (Legacy/Specific)
+                    p.transaction_status != 5      // Refund
+                );
+
+                if (pendingParticipants.length === 0) {
+                    alert("The selected participants have already completed their payment or are 'Free' registrations. 'Pending Payment' emails cannot be sent to them.");
+                    return;
+                }
+                
+                activeParticipantsToEmail = pendingParticipants.map(p => p.aId);
+                
+                // Optional: If some were filtered out, show a warning
+                if (activeParticipantsToEmail.length < selectedParticipants.length) {
+                    console.warn("⚠️ Some participants were filtered out because they have already paid.");
+                }
+            }
+            // ---------------------------------------------------------------------------------------------------------
+
             console.log("📧 Sending email with type:", selectedEmailType);
             console.log("📧 Selected participants:", selectedParticipants);
 
@@ -398,7 +434,7 @@ export default function Participants() {
                 email_type: selectedEmailType,
                 subject_name: isCustomEmail ? customSubject : "",
                 message_content: isCustomEmail ? customMessage : "",
-                participant_data: selectedParticipants
+                participant_data: activeParticipantsToEmail
             };
 
             console.log("📧 Sending payload:", payload);
@@ -413,12 +449,26 @@ export default function Participants() {
                 setSelectedParticipants([]);
                 setCustomSubject("");
                 setCustomMessage("");
+            } else if (response && response.success === 400 && response.data && response.data.failed_emails) {
+                const failedMessages = response.data.failed_emails.map(f => 
+                    `- ${f.name || f.email}: ${f.reason}`
+                ).join("\n");
+                alert(`Some emails were not sent:\n\n${failedMessages}`);
             } else {
                 alert(response.message || "Failed to send email");
             }
         } catch (error) {
             console.error("❌ Error sending email:", error);
-            alert("Failed to send email. Please try again.");
+            
+            // Check if it's a 400 error with detailed failed_emails (passed from authAPI throw)
+            if (error && error.success === 400 && error.data && error.data.failed_emails) {
+                const failedMessages = error.data.failed_emails.map(f => 
+                    `- ${f.name || f.email}: ${f.reason}`
+                ).join("\n");
+                alert(`Some emails were not sent:\n\n${failedMessages}`);
+            } else {
+                alert(typeof error === 'string' ? error : (error.message || "Failed to send email. Please try again."));
+            }
         } finally {
             setSendingEmail(false);
         }
@@ -625,9 +675,6 @@ export default function Participants() {
                                 <button className="p-header-btn email-btn" onClick={handleSendEmail}>
                                     <i className="fas fa-envelope"></i> Send Email
                                 </button>
-                                {/* <button className="p-header-btn invoice-btn" onClick={handleBulkSendInvoice}>
-                                    <i className="fas fa-file-invoice-dollar"></i> Send Invoice
-                                </button> */}
                             </>
                         )}
                         {(!isOrgEvent || AccessController.canInsightWhatsApp()) && (
@@ -848,7 +895,7 @@ export default function Participants() {
                                                 {participant.transaction_status === 1 ? 'Success' :
                                                     participant.transaction_status === 3 ? 'Free' :
                                                         participant.transaction_status === 102 ? 'Free' :
-                                                            participant.transaction_status === 101 ? 'In Progress' :
+                                                            participant.transaction_status === 101 ? 'Pending' :
                                                                 'Pending'}
                                             </span>
                                         </td>
@@ -860,15 +907,7 @@ export default function Participants() {
                                             >
                                                 <i className="fas fa-eye"></i>
                                             </button>
-                                            {/* {(participant.transaction_status == 101 || String(participant.transaction_status).toLowerCase().includes("pending")) && (
-                                                <button
-                                                    className="p-action-icon-btn p-invoice-btn"
-                                                    title="Send Invoice"
-                                                    onClick={() => handleSendIndividualInvoice(participant)}
-                                                >
-                                                    <i className="fas fa-file-invoice-dollar"></i>
-                                                </button>
-                                            )} */}
+
                                         </td>
                                     </tr>
                                 ))

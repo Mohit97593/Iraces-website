@@ -38,8 +38,8 @@ export default function ResumePayment() {
                 const response = await authAPI.resumePayment({ txnid: txnid });
                 console.log("✅ Resume Payment API Response:", response);
 
-                if (response && response.status === "success") {
-                    setPaymentData(response.data);
+                if (response && (response.status === "success" || response.data || response.message === "Resume payment ready")) {
+                    setPaymentData(response.data || response);
                 } else {
                     setError(response?.message || "Unable to resume payment. Please contact support.");
                 }
@@ -54,29 +54,49 @@ export default function ResumePayment() {
         fetchData();
     }, [txnid, eventId]);
 
-    const handlePayNow = () => {
-        if (!paymentData) return;
+    const handlePayNow = async () => {
+        if (!txnid) return;
 
         setResuming(true);
+        setError(null);
+        
         try {
-            // Priority 1: PayU Payment
-            if (paymentData.hash && (paymentData.merchant_key || paymentData.key)) {
+            // 1. Re-fetch the latest payment data to get a fresh hash/redirect_url
+            console.log("🔄 Re-fetching fresh payment data before redirect...");
+            const response = await authAPI.resumePayment({ txnid: txnid });
+            console.log("📥 Fresh Resume Payment Response:", response);
+
+            if (!response || (response.status === "error" && !response.data)) {
+                throw new Error(response?.message || "Failed to get fresh payment data. Please try again.");
+            }
+
+            const freshData = response.data || response;
+            setPaymentData(freshData); // Update local state with fresh data
+
+            // 2. Determine Gateway and Redirect
+            const gateway = (freshData.payment_gateway || "").toLowerCase();
+            
+            // Priority 1: PayU Payment (Form POST)
+            if (gateway.includes('payu') || (freshData.hash && (freshData.merchant_key || freshData.key))) {
                 console.log("💳 Initiating PayU payment for resumed transaction...");
                 
-                const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
+                const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://api.iraces.in/api';
                 
                 const fields = {
-                    key: paymentData.merchant_key || paymentData.key || '',
-                    txnid: paymentData.txnid || '',
-                    amount: paymentData.amount || '',
-                    productinfo: paymentData.productinfo || '',
-                    firstname: paymentData.firstname || paymentData.first_name || '',
-                    email: paymentData.email || '',
-                    phone: paymentData.phone_no || paymentData.phone || '',
-                    surl: paymentData.surl || `${API_BASE_URL}/payment_gateway/success`,
-                    furl: paymentData.furl || `${API_BASE_URL}/payment_gateway/failure`,
-                    hash: paymentData.hash || ''
+                    key: freshData.merchant_key || freshData.key || '',
+                    txnid: freshData.txnid || txnid,
+                    amount: freshData.amount || '',
+                    productinfo: freshData.productinfo || event?.name || 'Event Registration',
+                    firstname: freshData.firstname || freshData.first_name || '',
+                    lastname: freshData.lastname || freshData.last_name || '',
+                    email: freshData.email || '',
+                    phone: freshData.phone_no || freshData.phone || '',
+                    surl: freshData.surl || `${API_BASE_URL}/payment_gateway/success`,
+                    furl: freshData.furl || `${API_BASE_URL}/payment_gateway/failure`,
+                    hash: freshData.hash || ''
                 };
+
+                console.log("📦 Submitting PayU Form with fields:", fields);
 
                 // Create form
                 const form = document.createElement('form');
@@ -98,23 +118,30 @@ export default function ResumePayment() {
                 document.body.appendChild(form);
                 form.submit();
 
-                // Cleanup
+                // Cleanup fallback
                 setTimeout(() => {
                     if (document.getElementById('payu-resume-form')) {
                         document.body.removeChild(form);
                     }
-                }, 1000);
+                }, 2000);
             } 
             // Priority 2: PhonePe or other Redirect based payments
-            else if (paymentData.redirect_url) {
-                console.log("🔗 Redirecting to payment gateway:", paymentData.redirect_url);
-                window.location.href = paymentData.redirect_url;
-            } else {
+            else if (freshData.redirect_url) {
+                console.log("🔗 Redirecting to payment gateway:", freshData.redirect_url);
+                window.location.href = freshData.redirect_url;
+            } 
+            // Priority 3: Fallback based on Gateway name
+            else if (gateway.includes('phonepe')) {
+                 setError("PhonePe redirection URL is missing. Please try again or contact support.");
+                 setResuming(false);
+            }
+            else {
                 setError("Payment gateway is not properly configured for this transaction.");
+                setResuming(false);
             }
         } catch (err) {
             console.error("❌ Error initiating payment redirect:", err);
-            setError("Failed to initiate payment. Please try again.");
+            setError(err.message || "Failed to initiate payment. Please try again.");
             setResuming(false);
         }
     };
@@ -133,7 +160,7 @@ export default function ResumePayment() {
                                 {event ? event.name : "Resume Payment"}
                             </h1>
                             <nav className="contact-breadcrumb justify-content-center">
-                                <span>Home</span>
+                                <span onClick={() => navigate("/")} style={{cursor: 'pointer'}}>Home</span>
                                 <span className="breadcrumb-separator">→</span>
                                 <span>Complete Registration</span>
                             </nav>
@@ -164,22 +191,49 @@ export default function ResumePayment() {
                             <div className="resume-header">
                                 <i className="fas fa-credit-card resume-icon-success"></i>
                                 <h2>Complete Your Payment</h2>
-                                <p>We found your pending registration for <strong>{event?.name}</strong>.</p>
+                                <p>We found your pending registration for <strong>{event?.name || paymentData?.productinfo}</strong>.</p>
                             </div>
 
                             <div className="transaction-details">
                                 <div className="detail-row">
+                                    <span className="detail-label">Event:</span>
+                                    <span className="detail-value">{event?.name || paymentData?.productinfo}</span>
+                                </div>
+                                <div className="detail-row">
                                     <span className="detail-label">Transaction ID:</span>
                                     <span className="detail-value">{txnid}</span>
                                 </div>
-                                <div className="detail-row">
-                                    <span className="detail-label">Amount:</span>
-                                    <span className="detail-value highlight">₹{paymentData?.amount}</span>
-                                </div>
+                                
                                 {paymentData?.firstname && (
                                     <div className="detail-row">
-                                        <span className="detail-label">Registering As:</span>
+                                        <span className="detail-label">Participant:</span>
                                         <span className="detail-value">{paymentData.firstname} {paymentData.lastname || ""}</span>
+                                    </div>
+                                )}
+
+                                {paymentData?.email && (
+                                    <div className="detail-row">
+                                        <span className="detail-label">Email:</span>
+                                        <span className="detail-value">{paymentData.email}</span>
+                                    </div>
+                                )}
+
+                                {paymentData?.phone_no && (
+                                    <div className="detail-row">
+                                        <span className="detail-label">Phone:</span>
+                                        <span className="detail-value">{paymentData.phone_no}</span>
+                                    </div>
+                                )}
+
+                                <div className="detail-row">
+                                    <span className="detail-label">Total Amount:</span>
+                                    <span className="detail-value highlight">₹{paymentData?.amount}</span>
+                                </div>
+                                
+                                {paymentData?.payment_gateway && (
+                                    <div className="detail-row">
+                                        <span className="detail-label">Payment Gateway:</span>
+                                        <span className="detail-value">{paymentData.payment_gateway}</span>
                                     </div>
                                 )}
                             </div>
@@ -196,17 +250,18 @@ export default function ResumePayment() {
                                     {resuming ? (
                                         <><i className="fas fa-spinner fa-spin"></i> Processing...</>
                                     ) : (
-                                        "Proceed to Secure Payment"
+                                        `Pay ₹${paymentData?.amount} Now`
                                     )}
                                 </button>
                                 <p className="secure-text">
-                                    <i className="fas fa-lock"></i> 100% Secure Transaction
+                                    <i className="fas fa-lock"></i> 100% Secure Transaction via {paymentData?.payment_gateway || "Gateway"}
                                 </p>
                             </div>
                         </div>
                     )}
                 </div>
             </main>
+
 
             <Footer />
         </div>
