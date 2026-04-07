@@ -639,6 +639,17 @@ export const authAPI = {
     }
   },
 
+  // Get Advertisement API
+  getAdvertisement: async () => {
+    try {
+      const response = await api.get("/get_advertisement");
+      return response.data;
+    } catch (error) {
+      console.error("getAdvertisement API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Update Profile Picture API
   updateProfilePic: async (profilePicFile) => {
     try {

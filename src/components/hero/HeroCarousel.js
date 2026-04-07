@@ -28,6 +28,7 @@ import FAQPanel from "../FAQPanel/FAQPanel";
 import Footer from "../Footer/Footer";
 import YouCanRunBanner from "../YouCanRun";
 import DefaultBanner from "../../assets/image/1731486552_banner.jpg.jpeg";
+import Advertisement from "../Advertisement/Advertisement";
 
 export default function HeroCarousel() {
   // Local state for API banners
@@ -50,6 +51,9 @@ export default function HeroCarousel() {
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [hasLocalEvents, setHasLocalEvents] = useState(true); // Track if selected city has trending events
   const [hasLocalUpcoming, setHasLocalUpcoming] = useState(true); // Track if selected city has upcoming events
+
+  // Advertisement state
+  const [advertisements, setAdvertisements] = useState([]);
 
   // Like state for events
   const [likedEvents, setLikedEvents] = useState({});
@@ -519,6 +523,21 @@ export default function HeroCarousel() {
   useEffect(() => {
     const id = setTimeout(() => setAnimate(true), 80);
     return () => clearTimeout(id);
+  }, []);
+
+  // Fetch advertisements
+  useEffect(() => {
+    const loadAds = async () => {
+      try {
+        const response = await authAPI.getAdvertisement();
+        if (response && response.data && response.data.advertisement) {
+          setAdvertisements(response.data.advertisement);
+        }
+      } catch (error) {
+        console.error("Error loading advertisements:", error);
+      }
+    };
+    loadAds();
   }, []);
 
   // Numbers section animation (unchanged)
@@ -1309,6 +1328,9 @@ export default function HeroCarousel() {
           </div>
         </section>
 
+        {/* Top Advertisement Position */}
+        <Advertisement ads={advertisements} position="top" />
+
         {/* Events listing added below the About/Feature section */}
         <EventsPanel
           upcomingEvents={upcomingEvents}
@@ -1403,6 +1425,9 @@ export default function HeroCarousel() {
           </div>
         </section>
 
+        {/* Middle Advertisement Position */}
+        <Advertisement ads={advertisements} position="middle" />
+
         {/* --- Quick Selection Section --- */}
         <section className="quick-selection-section my-5">
           <div className="container">
@@ -1471,6 +1496,9 @@ export default function HeroCarousel() {
         <YouCanRunBanner
           logoSrc={youCanRunBanner}
         />
+
+        {/* Bottom Advertisement Position */}
+        <Advertisement ads={advertisements} position="bottom" />
       </section>
 
       <Footer />

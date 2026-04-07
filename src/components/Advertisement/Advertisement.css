@@ -1,0 +1,87 @@
+.advertisement-section {
+    width: 100%;
+    margin: 30px 0;
+}
+
+.ad-slider-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+.ad-slide {
+    width: 100%;
+    /* Transition is handled inline for opacity */
+}
+
+.ad-wrapper-link {
+    display: block;
+    width: 100%;
+    text-decoration: none;
+}
+
+.ad-aspect-ratio-box {
+    position: relative;
+    width: 100%;
+    padding-bottom: 25%; /* 4:1 Aspect Ratio */
+    background-color: #f0f0f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.ad-img-horizontal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: fill; /* Use fill as requested to keep exact size/ratio */
+    display: block;
+}
+
+.ad-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.ad-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #ddd;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ad-dot:hover {
+    background-color: #bbb;
+}
+
+.ad-dot.active {
+    background-color: #da251c;
+    width: 25px;
+    border-radius: 5px;
+}
+
+@media (max-width: 768px) {
+    .advertisement-section {
+        margin: 20px 0;
+    }
+    
+    .ad-aspect-ratio-box {
+        padding-bottom: 35%; /* Slightly taller on mobile */
+        border-radius: 8px;
+    }
+
+    .ad-dot {
+        width: 8px;
+        height: 8px;
+    }
+
+    .ad-dot.active {
+        width: 20px;
+    }
+}
