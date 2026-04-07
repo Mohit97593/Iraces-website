@@ -640,6 +640,22 @@ export default function ParticipantDetails() {
     return shouldShow;
   };
 
+  // Helper function to check if question is enabled (toggle is ON)
+  const isQuestionEnabled = (q) => {
+    if (!q) return false;
+    const status = q.question_status;
+    // If status is explicitly false, question is disabled
+    if (status === false || status === "false" || status === "0" || status === 0) {
+      return false;
+    }
+    // If status is true or truthy, question is enabled
+    if (status === true || status === "true" || status === "1" || status === 1) {
+      return true;
+    }
+    // Default: if status is null/undefined, show the question (enabled by default)
+    return true;
+  };
+
   const handleBack = () => {
     navigate(-1);
   };
@@ -653,24 +669,183 @@ export default function ParticipantDetails() {
     return label.includes('t-shirt') || mapping === 't_shirt_size' || mappedKey === 'tshirtSize';
   };
 
-  // Helper to calculate current selection counts for T-shirt sizes
-  const getTShirtSizeCounts = () => {
+  // Helper to calculate current selection counts for any question's options
+  const getQuestionOptionCounts = (question) => {
     const counts = {};
-    participantForms.forEach((form, idx) => {
-      const currentTicket = form.ticketInfo;
-      if (formQuestions && currentTicket && formQuestions[currentTicket.id]) {
-        const questionsList = formQuestions[currentTicket.id][idx] || formQuestions[currentTicket.id][0] || [];
-        const tShirtQ = questionsList.find(isTShirtQuestion);
-        if (tShirtQ) {
-          const fieldName = getMappedKey(tShirtQ);
-          const value = form.formData[fieldName];
-          if (value) {
-            counts[value] = (counts[value] || 0) + 1;
-          }
+    const fieldName = getMappedKey(question);
+
+    participantForms.forEach((form) => {
+      const value = form.formData[fieldName];
+      if (value) {
+        if (Array.isArray(value)) {
+          value.forEach(v => {
+            counts[v] = (counts[v] || 0) + 1;
+          });
+        } else {
+          counts[value] = (counts[value] || 0) + 1;
         }
       }
     });
     return counts;
+  };
+
+  // Helper function to check if subquestion should be visible
+  const shouldShowSubquestion = (subQuestion, parentQuestion, selectedValue) => {
+    try {
+      // NEW: Check parent_option_id for sub_questions_array filtering
+      if (subQuestion.parent_option_id) {
+        // Get parent question options
+        const options = parentQuestion.question_form_option
+          ? (typeof parentQuestion.question_form_option === 'string'
+            ? JSON.parse(parentQuestion.question_form_option)
+            : parentQuestion.question_form_option)
+          : [];
+
+        if (Array.isArray(options)) {
+          // Find the selected option
+          const selectedValues = Array.isArray(selectedValue) ? selectedValue : [selectedValue];
+
+          for (const value of selectedValues) {
+            const selectedOption = options.find(opt => {
+              if (typeof opt === 'string') return opt === value;
+              const optLabel = opt.label || opt.name;
+              if (optLabel === value) return true;
+              const splitLabels = optLabel ? optLabel.split(',').map(l => l.trim()) : [];
+              return splitLabels.includes(value);
+            });
+
+            // Check if selected option's ID matches parent_option_id
+            if (selectedOption && selectedOption.id) {
+              const matches = String(selectedOption.id) === String(subQuestion.parent_option_id);
+              if (matches) {
+                return true;
+              }
+            }
+          }
+          // If parent_option_id is specified but doesn't match, hide the subquestion
+          return false;
+        }
+      }
+
+      // CHECKBOX type: Always use question-level child_question_ids
+      if (parentQuestion.question_form_type === 'checkbox') {
+        if (parentQuestion.child_question_ids && parentQuestion.child_question_ids.trim() !== '') {
+          const childIds = parentQuestion.child_question_ids.split(',').map(id => id.trim());
+          const matches = childIds.some(childId => String(childId) === String(subQuestion.general_form_id));
+          if (matches) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // RADIO/SELECT types for SUBQUESTIONS acting as parents (nested subquestions)
+      // Check BOTH question-level AND option-level child_question_ids
+      if (parentQuestion.is_subquestion === 1) {
+        // First check question-level child_question_ids (for checkbox/radio/select subquestions)
+        if (parentQuestion.child_question_ids && parentQuestion.child_question_ids.trim() !== '') {
+          const childIds = parentQuestion.child_question_ids.split(',').map(id => id.trim());
+          const matches = childIds.some(childId => String(childId) === String(subQuestion.general_form_id));
+
+          if (matches) {
+            // For subquestions with question-level child_question_ids, always show
+            // This keeps nested subquestions visible even when parent value changes
+            return true;
+          }
+        }
+
+        // Then check option-level child_question_id (for radio/select subquestions)
+        if (selectedValue && parentQuestion.question_form_option) {
+          const options = typeof parentQuestion.question_form_option === 'string'
+            ? JSON.parse(parentQuestion.question_form_option)
+            : parentQuestion.question_form_option;
+
+          if (Array.isArray(options)) {
+            const selectedValues = Array.isArray(selectedValue) ? selectedValue : [selectedValue];
+
+            for (const value of selectedValues) {
+              const selectedOption = options.find(opt => {
+                if (typeof opt === 'string') return opt === value;
+
+                const optLabel = opt.label || opt.name;
+                if (optLabel === value) return true;
+
+                const splitLabels = optLabel ? optLabel.split(',').map(l => l.trim()) : [];
+                return splitLabels.includes(value);
+              });
+
+              if (selectedOption && selectedOption.child_question_id) {
+                const matches = String(selectedOption.child_question_id) === String(subQuestion.general_form_id);
+                if (matches) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+
+        // If we reached here and parent is a subquestion, return false
+        return false;
+      }
+
+      // For parent RADIO/SELECT questions (not subquestions): ONLY use option-level child_question_id
+      // This ensures only selected option's subquestions show
+      if (!selectedValue || !parentQuestion.question_form_option) {
+        return false;
+      }
+
+      // Parse parent options
+      const options = typeof parentQuestion.question_form_option === 'string'
+        ? JSON.parse(parentQuestion.question_form_option)
+        : parentQuestion.question_form_option;
+
+      if (!Array.isArray(options)) {
+        return false;
+      }
+
+      // Handle both single values (radio/select) and arrays (checkbox)
+      const selectedValues = Array.isArray(selectedValue) ? selectedValue : [selectedValue];
+
+      // Check if any selected value has a matching option with child_question_id
+      for (const value of selectedValues) {
+        const selectedOption = options.find(opt => {
+          if (typeof opt === 'string') return opt === value;
+
+          // Also check if the label was split (e.g., "mm,ll" split to "mm" and "ll")
+          const optLabel = opt.label || opt.name;
+          if (optLabel === value) return true;
+
+          // Check if value is part of comma-separated label
+          const splitLabels = optLabel ? optLabel.split(',').map(l => l.trim()) : [];
+          return splitLabels.includes(value);
+        });
+
+        if (selectedOption) {
+          // Check option-level child_question_id
+          // Support comma-separated child_question_ids for multiple subquestions per option
+          if (selectedOption.child_question_id) {
+            const childIds = String(selectedOption.child_question_id).split(',').map(id => id.trim());
+            const matches = childIds.some(childId => String(childId) === String(subQuestion.general_form_id));
+
+            if (matches) {
+              return true;
+            }
+          }
+
+          // Also check question_type if available (backward compatibility)
+          if (selectedOption.id && subQuestion.question_type) {
+            if (String(subQuestion.question_type) === String(selectedOption.id)) {
+              return true;
+            }
+          }
+        }
+      }
+
+      return false;
+    } catch (e) {
+      console.error("Error checking subquestion visibility:", e);
+      return false;
+    }
   };
 
   const handleInputChange = async (participantIndex, e) => {
@@ -1848,22 +2023,6 @@ export default function ParticipantDetails() {
     // Sort by sort_order
     questionsList.sort((a, b) => a.sort_order - b.sort_order);
 
-    // Helper function to check if question is enabled (toggle is ON)
-    // question_status: true means toggle is ON (enabled)
-    // question_status: false/null/undefined means toggle is OFF (disabled)
-    const isQuestionEnabled = (q) => {
-      const status = q.question_status;
-      // If status is explicitly false, question is disabled
-      if (status === false || status === "false" || status === "0" || status === 0) {
-        return false;
-      }
-      // If status is true or truthy, question is enabled
-      if (status === true || status === "true" || status === "1" || status === 1) {
-        return true;
-      }
-      // Default: if status is null/undefined, show the question (enabled by default)
-      return true;
-    };
 
     // Separate parent questions from subquestions and filter out disabled ones
     console.log('📋 All questions before filtering:', questionsList.map(q => ({
@@ -1935,194 +2094,6 @@ export default function ParticipantDetails() {
     })));
 
 
-    // Helper function to check if subquestion should be visible
-    const shouldShowSubquestion = (subQuestion, parentQuestion, selectedValue) => {
-      try {
-        console.log('🔍 Checking visibility for:', {
-          subQuestion: subQuestion.question_label,
-          subQuestionId: subQuestion.general_form_id,
-          parentQuestion: parentQuestion.question_label,
-          parentType: parentQuestion.question_form_type,
-          parentIsSubquestion: parentQuestion.is_subquestion,
-          selectedValue,
-          parentChildIds: parentQuestion.child_question_ids,
-          parentOptionId: subQuestion.parent_option_id  // NEW: Log parent_option_id
-        });
-
-        // NEW: Check parent_option_id for sub_questions_array filtering
-        if (subQuestion.parent_option_id) {
-          // Get parent question options
-          const options = parentQuestion.question_form_option
-            ? (typeof parentQuestion.question_form_option === 'string'
-              ? JSON.parse(parentQuestion.question_form_option)
-              : parentQuestion.question_form_option)
-            : [];
-
-          if (Array.isArray(options)) {
-            // Find the selected option
-            const selectedValues = Array.isArray(selectedValue) ? selectedValue : [selectedValue];
-
-            for (const value of selectedValues) {
-              const selectedOption = options.find(opt => {
-                if (typeof opt === 'string') return opt === value;
-                const optLabel = opt.label || opt.name;
-                if (optLabel === value) return true;
-                const splitLabels = optLabel ? optLabel.split(',').map(l => l.trim()) : [];
-                return splitLabels.includes(value);
-              });
-
-              // Check if selected option's ID matches parent_option_id
-              if (selectedOption && selectedOption.id) {
-                const matches = String(selectedOption.id) === String(subQuestion.parent_option_id);
-                console.log('🎯 parent_option_id check:', {
-                  selectedOptionId: selectedOption.id,
-                  requiredParentOptionId: subQuestion.parent_option_id,
-                  matches
-                });
-
-                if (matches) {
-                  return true;
-                }
-              }
-            }
-
-            // If parent_option_id is specified but doesn't match, hide the subquestion
-            console.log('❌ parent_option_id mismatch - hiding subquestion');
-            return false;
-          }
-        }
-
-        // CHECKBOX type: Always use question-level child_question_ids
-        if (parentQuestion.question_form_type === 'checkbox') {
-          if (parentQuestion.child_question_ids && parentQuestion.child_question_ids.trim() !== '') {
-            const childIds = parentQuestion.child_question_ids.split(',').map(id => id.trim());
-            const matches = childIds.some(childId => String(childId) === String(subQuestion.general_form_id));
-
-            console.log('✅ Checkbox parent - question-level match:', matches);
-            if (matches) {
-              return true;
-            }
-          }
-          return false;
-        }
-
-        // RADIO/SELECT types for SUBQUESTIONS acting as parents (nested subquestions)
-        // Check BOTH question-level AND option-level child_question_ids
-        if (parentQuestion.is_subquestion === 1) {
-          // First check question-level child_question_ids (for checkbox/radio/select subquestions)
-          if (parentQuestion.child_question_ids && parentQuestion.child_question_ids.trim() !== '') {
-            const childIds = parentQuestion.child_question_ids.split(',').map(id => id.trim());
-            const matches = childIds.some(childId => String(childId) === String(subQuestion.general_form_id));
-
-            if (matches) {
-              console.log('✅ Subquestion parent - question-level match:', matches);
-              // For subquestions with question-level child_question_ids, always show
-              // This keeps nested subquestions visible even when parent value changes
-              return true;
-            }
-          }
-
-          // Then check option-level child_question_id (for radio/select subquestions)
-          if (selectedValue && parentQuestion.question_form_option) {
-            const options = typeof parentQuestion.question_form_option === 'string'
-              ? JSON.parse(parentQuestion.question_form_option)
-              : parentQuestion.question_form_option;
-
-            if (Array.isArray(options)) {
-              const selectedValues = Array.isArray(selectedValue) ? selectedValue : [selectedValue];
-
-              for (const value of selectedValues) {
-                const selectedOption = options.find(opt => {
-                  if (typeof opt === 'string') return opt === value;
-
-                  const optLabel = opt.label || opt.name;
-                  if (optLabel === value) return true;
-
-                  const splitLabels = optLabel ? optLabel.split(',').map(l => l.trim()) : [];
-                  return splitLabels.includes(value);
-                });
-
-                if (selectedOption && selectedOption.child_question_id) {
-                  const matches = String(selectedOption.child_question_id) === String(subQuestion.general_form_id);
-                  console.log('✅ Subquestion parent - option-level match:', matches, 'for option:', value);
-                  if (matches) {
-                    return true;
-                  }
-                }
-              }
-            }
-          }
-
-          // If we reached here and parent is a subquestion, return false
-          return false;
-        }
-
-        // For parent RADIO/SELECT questions (not subquestions): ONLY use option-level child_question_id
-        // This ensures only selected option's subquestions show
-        if (!selectedValue || !parentQuestion.question_form_option) {
-          return false;
-        }
-
-        // Parse parent options
-        const options = typeof parentQuestion.question_form_option === 'string'
-          ? JSON.parse(parentQuestion.question_form_option)
-          : parentQuestion.question_form_option;
-
-        if (!Array.isArray(options)) {
-          return false;
-        }
-
-        // Handle both single values (radio/select) and arrays (checkbox)
-        const selectedValues = Array.isArray(selectedValue) ? selectedValue : [selectedValue];
-
-        // Check if any selected value has a matching option with child_question_id
-        for (const value of selectedValues) {
-          const selectedOption = options.find(opt => {
-            if (typeof opt === 'string') return opt === value;
-
-            // Also check if the label was split (e.g., "mm,ll" split to "mm" and "ll")
-            const optLabel = opt.label || opt.name;
-            if (optLabel === value) return true;
-
-            // Check if value is part of comma-separated label
-            const splitLabels = optLabel ? optLabel.split(',').map(l => l.trim()) : [];
-            return splitLabels.includes(value);
-          });
-
-          if (selectedOption) {
-            // Check option-level child_question_id
-            // Support comma-separated child_question_ids for multiple subquestions per option
-            if (selectedOption.child_question_id) {
-              const childIds = String(selectedOption.child_question_id).split(',').map(id => id.trim());
-              const matches = childIds.some(childId => String(childId) === String(subQuestion.general_form_id));
-
-              if (matches) {
-                console.log('✅ Match found via option child_question_id:', {
-                  optionLabel: selectedOption.label || selectedOption.name,
-                  childQuestionIds: selectedOption.child_question_id,
-                  subQuestionId: subQuestion.general_form_id,
-                  subQuestionLabel: subQuestion.question_label
-                });
-                return true;
-              }
-            }
-
-            // Also check question_type if available (backward compatibility)
-            if (selectedOption.id && subQuestion.question_type) {
-              if (String(subQuestion.question_type) === String(selectedOption.id)) {
-                console.log('✅ Match found via question_type:', subQuestion.question_type, '=', selectedOption.id);
-                return true;
-              }
-            }
-          }
-        }
-
-        return false;
-      } catch (e) {
-        console.error("Error checking subquestion visibility:", e);
-        return false;
-      }
-    };
 
     // Helper function to get subquestions for a parent question
     const getSubquestionsForParent = (parentQuestion) => {
@@ -2679,18 +2650,42 @@ export default function ParticipantDetails() {
                     )}
                   </label>
                   <div className="gender-options">
-                    {processedOptions.map((opt, idx) => (
-                      <label className="gender-option" key={idx}>
-                        <input
-                          type="radio"
-                          name={`${fieldName}_${participantIndex}`}
-                          value={opt.label}
-                          checked={(currentFormData[fieldName] || "") === opt.label}
-                          onChange={(e) => handleInputChange(participantIndex, e)}
-                        />
-                        <span className="gender-label">{opt.label}</span>
-                      </label>
-                    ))}
+                    {processedOptions.map((opt, idx) => {
+                      const labelText = opt.label;
+                      let finalLabel = labelText;
+                      let isDisabled = false;
+                      let limitValue = parseInt(opt.limit);
+
+                      if (!isNaN(limitValue)) {
+                        const currentCounts = getQuestionOptionCounts(question);
+                        const currentSelection = currentFormData[fieldName];
+                        const countOtherForms = (currentCounts[labelText] || 0) - (currentSelection === labelText ? 1 : 0);
+
+                        if (limitValue === 0) {
+                          isDisabled = true;
+                          finalLabel = `${labelText} (Not Available)`;
+                        } else if (limitValue > 0) {
+                          if (countOtherForms >= limitValue) {
+                            isDisabled = true;
+                            finalLabel = `${labelText} (Limit Reached ${countOtherForms}/${limitValue})`;
+                          }
+                        }
+                      }
+
+                      return (
+                        <label className="gender-option" key={idx}>
+                          <input
+                            type="radio"
+                            name={`${fieldName}_${participantIndex}`}
+                            value={opt.label}
+                            checked={(currentFormData[fieldName] || "") === opt.label}
+                            onChange={(e) => handleInputChange(participantIndex, e)}
+                            disabled={isDisabled}
+                          />
+                          <span className="gender-label" style={isDisabled ? { color: '#999', fontStyle: 'italic' } : {}}>{finalLabel}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                   {formErrors[`participant_${participantIndex}_${fieldName}`] && (
                     <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
@@ -2753,27 +2748,52 @@ export default function ParticipantDetails() {
                     )}
                   </label>
                   <div>
-                    {processedOptions.map((opt, idx) => (
-                      <label key={idx} style={{ display: 'block', marginBottom: '8px' }}>
-                        <input
-                          type="checkbox"
-                          name={fieldName}
-                          value={opt.label}
-                          checked={Array.isArray(currentFormData[fieldName]) && currentFormData[fieldName].includes(opt.label)}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            const value = e.target.value;
-                            const currentValues = Array.isArray(currentFormData[fieldName]) ? currentFormData[fieldName] : [];
-                            const newValues = checked
-                              ? [...currentValues, value]
-                              : currentValues.filter(v => v !== value);
-                            handleInputChange(participantIndex, { target: { name: fieldName, value: newValues } });
-                          }}
-                          style={{ marginRight: '8px' }}
-                        />
-                        {opt.label}
-                      </label>
-                    ))}
+                    {processedOptions.map((opt, idx) => {
+                      const labelText = opt.label;
+                      let finalLabel = labelText;
+                      let isDisabled = false;
+                      let limitValue = parseInt(opt.limit);
+
+                      if (!isNaN(limitValue)) {
+                        const currentCounts = getQuestionOptionCounts(question);
+                        const currentSelections = Array.isArray(currentFormData[fieldName]) ? currentFormData[fieldName] : [];
+                        const isSelected = currentSelections.includes(labelText);
+                        const countOtherForms = (currentCounts[labelText] || 0) - (isSelected ? 1 : 0);
+
+                        if (limitValue === 0) {
+                          isDisabled = true;
+                          finalLabel = `${labelText} (Not Available)`;
+                        } else if (limitValue > 0) {
+                          if (countOtherForms >= limitValue) {
+                            isDisabled = true;
+                            finalLabel = `${labelText} (Limit Reached ${countOtherForms}/${limitValue})`;
+                          }
+                        }
+                      }
+
+                      return (
+                        <label key={idx} style={{ display: 'block', marginBottom: '8px', color: isDisabled ? '#999' : 'inherit', fontStyle: isDisabled ? 'italic' : 'normal' }}>
+                          <input
+                            type="checkbox"
+                            name={fieldName}
+                            value={opt.label}
+                            checked={Array.isArray(currentFormData[fieldName]) && currentFormData[fieldName].includes(opt.label)}
+                            disabled={isDisabled}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              const value = e.target.value;
+                              const currentValues = Array.isArray(currentFormData[fieldName]) ? currentFormData[fieldName] : [];
+                              const newValues = checked
+                                ? [...currentValues, value]
+                                : currentValues.filter(v => v !== value);
+                              handleInputChange(participantIndex, { target: { name: fieldName, value: newValues } });
+                            }}
+                            style={{ marginRight: '8px' }}
+                          />
+                          {finalLabel}
+                        </label>
+                      );
+                    })}
                   </div>
                   {formErrors[`participant_${participantIndex}_${fieldName}`] && (
                     <span className="error-message" style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px' }}>
@@ -2942,24 +2962,25 @@ export default function ParticipantDetails() {
                       >
                         <option value="">Select {question.question_label}...</option>
                         {displayOptions.map((opt, idx) => {
-                          const isTS = isTShirtQuestion(question);
-                          let label = opt.label || opt.name || opt;
+                          const labelText = opt.label || opt.name || opt;
+                          let finalLabel = labelText;
                           let isDisabled = false;
                           let limitValue = parseInt(opt.limit);
 
-                          if (isTS) {
-                            const currentCounts = getTShirtSizeCounts();
+                          // General Limit Validation for all questions with limits
+                          if (!isNaN(limitValue)) {
+                            const currentCounts = getQuestionOptionCounts(question);
                             const currentSelection = currentFormData[fieldName];
-                            // Count across other forms (not including current form)
-                            const countOtherForms = (currentCounts[label] || 0) - (currentSelection === label ? 1 : 0);
+                            // Count across other forms (not including current form for this specific option)
+                            const countOtherForms = (currentCounts[labelText] || 0) - (currentSelection === labelText ? 1 : 0);
 
                             if (limitValue === 0) {
                               isDisabled = true;
-                              label = `${label} (Not Available)`;
-                            } else if (!isNaN(limitValue) && limitValue > 0) {
+                              finalLabel = `${labelText} (Not Available)`;
+                            } else if (limitValue > 0) {
                               if (countOtherForms >= limitValue) {
                                 isDisabled = true;
-                                label = `${label} (Limit Reached ${countOtherForms}/${limitValue})`;
+                                finalLabel = `${labelText} (Limit Reached ${countOtherForms}/${limitValue})`;
                               }
                             }
                           }
@@ -2971,24 +2992,26 @@ export default function ParticipantDetails() {
                               disabled={isDisabled}
                               style={isDisabled ? { color: '#999', fontStyle: 'italic' } : {}}
                             >
-                              {label}
+                              {finalLabel}
                             </option>
                           );
                         })}
                       </select>
                       {/* Rule 2 & 3: Show inline error if limit is exceeded */}
-                      {isTShirtQuestion(question) && (() => {
+                      {/* Rule 2 & 3: Show inline error if limit is exceeded for any question with limits */}
+                      {(() => {
                         const currentSelection = currentFormData[fieldName];
                         if (currentSelection) {
                           const matchedOpt = displayOptions.find(o => (o.label || o.name || o.id || o) === currentSelection);
-                          if (matchedOpt && !isNaN(parseInt(matchedOpt.limit)) && parseInt(matchedOpt.limit) > 0) {
-                            const counts = getTShirtSizeCounts();
-                            const limit = parseInt(matchedOpt.limit);
+                          const limit = matchedOpt ? parseInt(matchedOpt.limit) : NaN;
+                          
+                          if (!isNaN(limit) && limit > 0) {
+                            const counts = getQuestionOptionCounts(question);
                             if (counts[currentSelection] > limit) {
                               return (
                                 <span style={{ color: '#e74c3c', fontSize: '12px', display: 'block', marginTop: '4px', fontWeight: '500' }}>
                                   <i className="fas fa-exclamation-triangle" style={{ marginRight: '5px' }}></i>
-                                  {currentSelection} size limit reached ({counts[currentSelection]}/{limit}). Please choose another size.
+                                  {currentSelection} limit reached ({counts[currentSelection]}/{limit}). Please choose another option.
                                 </span>
                               );
                             }
@@ -4060,61 +4083,94 @@ export default function ParticipantDetails() {
       }
     }
 
-    // Rule 4: Final T-shirt size limit verification across all forms
-    console.log("👗 Final T-shirt limit verification...");
-    const tShirtCounts = getTShirtSizeCounts();
+    // Rule 4: Final limit verification across all forms for all questions with limits
+    console.log("📊 Final limit verification for all questions...");
     participantForms.forEach((form, idx) => {
       const currentTicket = form.ticketInfo;
       if (formQuestions && currentTicket && formQuestions[currentTicket.id]) {
+        // Collect all questions for this participant (including subquestions)
         const questionsList = formQuestions[currentTicket.id][idx] || formQuestions[currentTicket.id][0] || [];
-        const tShirtQ = questionsList.find(isTShirtQuestion);
-        if (tShirtQ) {
-          const fieldName = getMappedKey(tShirtQ);
-          const selection = form.formData[fieldName];
-          if (selection) {
-            // Get original options to find the limit
-            let options = [];
-            try {
-              options = typeof tShirtQ.question_form_option === 'string'
-                ? JSON.parse(tShirtQ.question_form_option)
-                : tShirtQ.question_form_option;
-            } catch (e) {
-              console.error("Error parsing T-shirt options in validateForm:", e);
-            }
+        
+        // Use a recursive helper to validate all questions and subquestions
+        const validateLimitsRecursively = (questions) => {
+          questions.forEach(q => {
+            // Skip if question is disabled or should not be shown
+            if (!isQuestionEnabled(q) || !shouldShowQuestion(q)) return;
 
-            // Look for processed label match
-            const matchedOpt = (Array.isArray(options) ? options : []).find(o => {
-              const optLabel = o.label || o.name || o;
-              if (optLabel === selection) return true;
-              // Also check if selection is one of the comma-separated labels
-              const splitLabels = String(optLabel).split(',').map(l => l.trim());
-              return splitLabels.includes(selection);
-            });
-
-            if (matchedOpt) {
-              const limit = parseInt(matchedOpt.limit);
-              if (!isNaN(limit)) {
-                if (limit === 0) {
-                  const errorKey = `participant_${idx}_${fieldName}`;
-                  errors[errorKey] = `${selection} size is not available. Please choose another size.`;
-                  if (!hasErrors) {
-                    firstErrorParticipant = idx;
-                    firstErrorGroup = tShirtQ.group_question_title || 'general';
-                  }
-                  hasErrors = true;
-                } else if (tShirtCounts[selection] > limit) {
-                  const errorKey = `participant_${idx}_${fieldName}`;
-                  errors[errorKey] = `${selection} size limit reached (${tShirtCounts[selection]}/${limit} total). Please choose another size.`;
-                  if (!hasErrors) {
-                    firstErrorParticipant = idx;
-                    firstErrorGroup = tShirtQ.group_question_title || 'general';
-                  }
-                  hasErrors = true;
-                }
+            const fieldName = getMappedKey(q);
+            const selection = form.formData[fieldName];
+            
+            if (selection && q.question_form_option) {
+              let options = [];
+              try {
+                options = typeof q.question_form_option === 'string'
+                  ? JSON.parse(q.question_form_option)
+                  : q.question_form_option;
+              } catch (e) {
+                console.error("Error parsing options in validateForm:", e);
               }
+
+              // Process options if it's a select/radio with comma-separated labels
+              const allPossibleLabels = [];
+              if (Array.isArray(options)) {
+                options.forEach(opt => {
+                  const label = opt.label || opt.name || opt;
+                  if (typeof label === 'string') {
+                    label.split(',').map(l => l.trim()).forEach(l => {
+                      if (l) allPossibleLabels.push({ ...opt, label: l });
+                    });
+                  } else {
+                    allPossibleLabels.push(opt);
+                  }
+                });
+              }
+
+              // Handle both single selection (select/radio) and multiple selections (checkbox)
+              const selections = Array.isArray(selection) ? selection : [selection];
+              const counts = getQuestionOptionCounts(q);
+
+              selections.forEach(itemValue => {
+                const matchedOpt = allPossibleLabels.find(o => {
+                  const optLabel = o.label || o.name || o;
+                  return optLabel === itemValue || o.id == itemValue;
+                });
+
+                if (matchedOpt) {
+                  const limit = parseInt(matchedOpt.limit);
+                  if (!isNaN(limit)) {
+                    if (limit === 0) {
+                      const errorKey = `participant_${idx}_${fieldName}`;
+                      errors[errorKey] = `${itemValue} is not available. Please choose another option.`;
+                      if (!hasErrors) {
+                        firstErrorParticipant = idx;
+                        firstErrorGroup = q.group_question_title || 'general';
+                      }
+                      hasErrors = true;
+                    } else if (counts[itemValue] > limit) {
+                      const errorKey = `participant_${idx}_${fieldName}`;
+                      errors[errorKey] = `${itemValue} limit reached (${counts[itemValue]}/${limit} total). Please choose another option.`;
+                      if (!hasErrors) {
+                        firstErrorParticipant = idx;
+                        firstErrorGroup = q.group_question_title || 'general';
+                      }
+                      hasErrors = true;
+                    }
+                  }
+                }
+              });
             }
-          }
-        }
+
+            // Also validate subquestions if they exist and ARE VISIBLE
+            if (q.sub_questions_array && Array.isArray(q.sub_questions_array)) {
+              // We only validate subquestions that would be visible based on parent selection
+              const parentValue = form.formData[fieldName];
+              const visibleSubQs = q.sub_questions_array.filter(sq => shouldShowSubquestion(sq, q, parentValue));
+              validateLimitsRecursively(visibleSubQs);
+            }
+          });
+        };
+
+        validateLimitsRecursively(questionsList);
       }
     });
 
