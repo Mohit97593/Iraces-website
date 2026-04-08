@@ -1499,6 +1499,9 @@ export default function HeroCarousel() {
 
         {/* Bottom Advertisement Position */}
         <Advertisement ads={advertisements} position="bottom" />
+
+        {/* Premium Popup Advertisement */}
+        <Advertisement ads={advertisements} position="premium" />
       </section>
 
       <Footer />
