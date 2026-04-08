@@ -1098,9 +1098,11 @@ export default function TopNav() {
                         >
                           {getUserName()}
                         </div>
-                        <div style={{ fontSize: "12px", opacity: 0.8 }}>
-                          {getUserDisplayInfo()}
-                        </div>
+                        {sessionStorage.getItem("isGuestLogin") !== "true" && (
+                          <div style={{ fontSize: "12px", opacity: 0.8 }}>
+                            {getUserDisplayInfo()}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

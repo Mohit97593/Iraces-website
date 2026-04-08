@@ -1093,9 +1093,17 @@ export default function ParticipantDetails() {
       setParticipantForms(prev => {
         const updatedForms = prev.map((form, idx) => {
           if (idx === participantIndex) {
+            let finalValue = type === "checkbox" ? checked : type === "file" ? files[0] : value;
+
+            // NEW: Restrict numbers in name fields (First Name, Last Name, Emergency Contact Name)
+            const nameFields = ['firstName', 'lastName', 'emergencyContactName'];
+            if (nameFields.includes(name) && typeof finalValue === 'string') {
+              finalValue = finalValue.replace(/\d/g, ''); // Strip all digits
+            }
+
             const updatedFormData = {
               ...form.formData,
-              [name]: type === "checkbox" ? checked : type === "file" ? files[0] : value,
+              [name]: finalValue,
             };
 
             // Check if both Age and DOB fields exist
@@ -3857,6 +3865,21 @@ export default function ParticipantDetails() {
             }
           }
 
+          // NEW: Validate Name fields (must not contain numbers)
+          const nameFields = ['firstName', 'lastName', 'emergencyContactName'];
+          if (nameFields.includes(fieldName) && fieldValue) {
+            if (/\d/.test(fieldValue)) {
+              const errorKey = `participant_${participantIndex}_${fieldName}`;
+              errors[errorKey] = `${q.question_label} cannot contain numbers for Participant ${participantIndex + 1}`;
+              if (!hasErrors) {
+                firstErrorParticipant = participantIndex;
+                firstErrorGroup = groupTitle;
+              }
+              hasErrors = true;
+              console.log(`❌ Name field contains numbers: ${q.question_label} for Participant ${participantIndex + 1}`);
+            }
+          }
+
           // Check length constraints if limit_check is enabled
           if (q.limit_check === 1 && q.limit_length && fieldValue) {
             try {
@@ -4244,6 +4267,16 @@ export default function ParticipantDetails() {
             if (isEmpty) {
               const errorKey = `participant_${participantIndex}_${fieldName}`;
               errors[errorKey] = `${q.question_label} is required`;
+              hasErrors = true;
+            }
+          }
+
+          // NEW: Validate Name fields (must not contain numbers) - Duplicate validation in PayU block
+          const nameFields = ['firstName', 'lastName', 'emergencyContactName'];
+          if (nameFields.includes(fieldName) && fieldValue) {
+            if (/\d/.test(fieldValue)) {
+              const errorKey = `participant_${participantIndex}_${fieldName}`;
+              errors[errorKey] = `${q.question_label} cannot contain numbers`;
               hasErrors = true;
             }
           }
