@@ -395,19 +395,19 @@ export default function EventAnalytics() {
             type: 'column'
         },
         title: {
-            text: 'Daily Category Count'
+            text: 'Daily Count'
         },
         xAxis: {
             categories: categoryData.barChartData.map(item => item.date || item.Date || item.label || ''),
             crosshair: true,
             title: {
-                text: 'Date'
+                text: 'Registrations'
             }
         },
         yAxis: {
             min: 0,
             title: {
-                text: 'Category Count'
+                text: 'Count'
             }
         },
         tooltip: {
@@ -426,7 +426,7 @@ export default function EventAnalytics() {
             }
         },
         series: [{
-            name: 'Categories',
+            name: 'Registrations',
             data: categoryData.barChartData.map(item => item.count || item.Count || item.value || 0)
         }],
         credits: {
@@ -442,7 +442,7 @@ export default function EventAnalytics() {
             type: 'pie'
         },
         title: {
-            text: 'Category Booking Data'
+            text: 'Category wise count'
         },
         tooltip: {
             pointFormat: '{series.name}: <b>{point.y}</b>'
@@ -648,7 +648,7 @@ export default function EventAnalytics() {
                     <div className="stat-card">
                         <div className="stat-content">
                             <div className="stat-info">
-                                <h3>Registrations</h3>
+                                <h3>Registrants</h3>
                                 <div className="stat-value">{stats.registrations}</div>
                                 <Link to={`/registrations/${eventId}`} state={{ eventName, filterData, isOrgEvent }} className="view-details">View Details</Link>
                             </div>
@@ -678,7 +678,7 @@ export default function EventAnalytics() {
                     <div className="stat-card">
                         <div className="stat-content">
                             <div className="stat-info">
-                                <h3>Net Sales</h3>
+                                <h3>Total Registrations</h3>
                                 <div className="stat-value">{stats.netSales}</div>
                             </div>
                             <div className="stat-icon">
@@ -857,7 +857,7 @@ export default function EventAnalytics() {
                         {/* Number of Categories Sold */}
                         <div className="col-lg-6">
                             <div className="chart-card">
-                                <h3 className="chart-title">Number of Categories Sold</h3>
+                                <h3 className="chart-title">Bifurcation of Categories</h3>
                                 <div className="chart-container">
                                     <HighchartsReact
                                         highcharts={Highcharts}
@@ -875,9 +875,9 @@ export default function EventAnalytics() {
                                     <thead>
                                         <tr>
                                             <th>Category</th>
-                                            <th>Total</th>
-                                            <th>Used</th>
-                                            <th>Pending</th>
+                                            <th>Total Capacity</th>
+                                            <th>Utilised</th>
+                                            <th>Available</th>
                                             <th>Total Collection</th>
                                         </tr>
                                     </thead>
@@ -894,7 +894,7 @@ export default function EventAnalytics() {
                                                     </tr>
                                                 ))}
                                                 <tr className="total-row">
-                                                    <td><strong>Total</strong></td>
+                                                    <td><strong>Total Capacity</strong></td>
                                                     <td>
                                                         <strong>
                                                             {categoryData.bookingData.reduce((sum, cat) =>
@@ -945,7 +945,7 @@ export default function EventAnalytics() {
                                     <thead>
                                         <tr>
                                             <th>UTM Code</th>
-                                            <th>Total Count</th>
+                                            <th>Total Capacity</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -958,7 +958,7 @@ export default function EventAnalytics() {
                                                     </tr>
                                                 ))}
                                                 <tr className="total-row">
-                                                    <td><strong>Total</strong></td>
+                                                    <td><strong>Total Capacity</strong></td>
                                                     <td>
                                                         <strong>
                                                             {categoryData.utmCode.reduce((sum, utm) =>
@@ -975,7 +975,7 @@ export default function EventAnalytics() {
                                                     <td>0</td>
                                                 </tr>
                                                 <tr className="total-row">
-                                                    <td><strong>Total</strong></td>
+                                                    <td><strong>Total Capacity</strong></td>
                                                     <td><strong>0</strong></td>
                                                 </tr>
                                             </>
@@ -994,9 +994,9 @@ export default function EventAnalytics() {
                                         <thead>
                                             <tr>
                                                 <th>Coupon Code</th>
-                                                <th>Total</th>
-                                                <th>Used</th>
-                                                <th>Pending</th>
+                                                <th>Total Capacity</th>
+                                                <th>Utilised</th>
+                                                <th>Available</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -1082,7 +1082,7 @@ export default function EventAnalytics() {
                                                 );
                                             })}
                                             <tr className="total-row">
-                                                <td><strong>Total</strong></td>
+                                                <td><strong>Total Capacity</strong></td>
                                                 <td>
                                                     <strong>
                                                         {categoryData.couponCodes.reduce((sum, coupon) =>
@@ -1136,6 +1136,20 @@ export default function EventAnalytics() {
                                             initialLimit: optionData.initial_limit || 0
                                         }));
 
+                                    // Sort T-shirt sizes if applicable
+                                    const sizeOrder = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "2XL", "3XL", "4XL", "5XL", "6XL"];
+                                    optionsData.sort((a, b) => {
+                                        const labelA = String(a.label).toUpperCase().trim();
+                                        const labelB = String(b.label).toUpperCase().trim();
+                                        const indexA = sizeOrder.indexOf(labelA);
+                                        const indexB = sizeOrder.indexOf(labelB);
+                                        
+                                        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                                        if (indexA !== -1) return -1;
+                                        if (indexB !== -1) return 1;
+                                        return labelA.localeCompare(labelB);
+                                    });
+
                                     // Calculate totals
                                     const totalCount = optionsData.reduce((sum, opt) => sum + parseInt(opt.count || 0), 0);
                                     const totalLimit = optionsData.reduce((sum, opt) => sum + parseInt(opt.limit || 0), 0);
@@ -1149,9 +1163,9 @@ export default function EventAnalytics() {
                                                     <thead>
                                                         <tr>
                                                             <th>Label</th>
-                                                            <th>Count</th>
-                                                            <th>Limit</th>
-                                                            <th>Total Count</th>
+                                                            <th>Utilised</th>
+                                                            <th>Balance</th>
+                                                            <th>Total Capacity</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -1164,7 +1178,7 @@ export default function EventAnalytics() {
                                                             </tr>
                                                         ))}
                                                         <tr className="total-row">
-                                                            <td><strong>Total</strong></td>
+                                                            <td><strong>Total Capacity</strong></td>
                                                             <td><strong>{totalCount}</strong></td>
                                                             <td><strong>{totalLimit}</strong></td>
                                                             <td><strong>{totalInitialLimit}</strong></td>

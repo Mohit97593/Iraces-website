@@ -756,15 +756,15 @@ export default function CreateEvent() {
 
                   console.log("📊 Saved Steps Detection:", stepSaved);
 
-                  // Try to load saved steps from sessionStorage and merge
+                  // Try to load saved steps from localStorage and merge
                   try {
                     const eventId = sessionStorage.getItem("event_id");
                     if (eventId) {
-                      const savedStepsStr = sessionStorage.getItem(`savedSteps_${eventId}`);
+                      const savedStepsStr = localStorage.getItem(`savedSteps_${eventId}`);
                       if (savedStepsStr) {
                         const savedStepsFromStorage = JSON.parse(savedStepsStr);
-                        console.log("📦 Loaded saved steps from sessionStorage:", savedStepsFromStorage);
-                        // Merge: if either API detection OR sessionStorage says it's saved, mark it as saved
+                        console.log("📦 Loaded saved steps from localStorage:", savedStepsFromStorage);
+                        // Merge: if either API detection OR localStorage says it's saved, mark it as saved
                         for (let i = 0; i < stepSaved.length; i++) {
                           if (savedStepsFromStorage[i] === true) {
                             stepSaved[i] = true;
@@ -774,7 +774,7 @@ export default function CreateEvent() {
                       }
                     }
                   } catch (e) {
-                    console.error("Error loading saved steps from sessionStorage:", e);
+                    console.error("Error loading saved steps from localStorage:", e);
                   }
 
                   setSavedSteps(stepSaved);
@@ -960,7 +960,7 @@ export default function CreateEvent() {
   // Hard-Lock Sticky sidebars JS
   useEffect(() => {
     const handleScroll = () => {
-      if (window.innerWidth <= 1200) return;
+      if (window.innerWidth <= 1240) return;
 
       const sidebar = document.querySelector('.create-event-sidebar');
       const preview = document.querySelector('.event-preview-sidebar');
@@ -1069,6 +1069,13 @@ export default function CreateEvent() {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[1] = true;
+      // Persist to localStorage
+      try {
+        const eventId = sessionStorage.getItem("event_id");
+        if (eventId) {
+          localStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+        }
+      } catch (e) { }
       return updated;
     });
     setEventFormData({
@@ -1089,11 +1096,11 @@ export default function CreateEvent() {
       // mark current as saved
       if (currentStep - 1 >= 0 && currentStep - 1 < updated.length)
         updated[currentStep - 1] = true;
-      // Persist to sessionStorage
+      // Persist to localStorage
       try {
         const eventId = sessionStorage.getItem("event_id");
         if (eventId) {
-          sessionStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+          localStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
         }
       } catch (e) { }
       return updated;
@@ -1260,11 +1267,11 @@ export default function CreateEvent() {
         setSavedSteps((prev) => {
           const updated = [...prev];
           updated[0] = true;
-          // Persist to sessionStorage
+          // Persist to localStorage
           try {
             const eventId = sessionStorage.getItem("event_id");
             if (eventId) {
-              sessionStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+              localStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
             }
           } catch (e) { }
           return updated;
@@ -1285,11 +1292,11 @@ export default function CreateEvent() {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[1] = true;
-      // Persist to sessionStorage
+      // Persist to localStorage
       try {
         const eventId = sessionStorage.getItem("event_id");
         if (eventId) {
-          sessionStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+          localStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
         }
       } catch (e) { }
       return updated;
@@ -1301,11 +1308,11 @@ export default function CreateEvent() {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[2] = true;
-      // Persist to sessionStorage
+      // Persist to localStorage
       try {
         const eventId = sessionStorage.getItem("event_id");
         if (eventId) {
-          sessionStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+          localStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
         }
       } catch (e) { }
       return updated;
@@ -1316,11 +1323,11 @@ export default function CreateEvent() {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[3] = true;
-      // Persist to sessionStorage
+      // Persist to localStorage
       try {
         const eventId = sessionStorage.getItem("event_id");
         if (eventId) {
-          sessionStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+          localStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
         }
       } catch (e) { }
       return updated;
@@ -1331,11 +1338,11 @@ export default function CreateEvent() {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[4] = true;
-      // Persist to sessionStorage
+      // Persist to localStorage
       try {
         const eventId = sessionStorage.getItem("event_id");
         if (eventId) {
-          sessionStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+          localStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
         }
       } catch (e) { }
       return updated;
@@ -1346,11 +1353,11 @@ export default function CreateEvent() {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[6] = true;
-      // Persist to sessionStorage
+      // Persist to localStorage
       try {
         const eventId = sessionStorage.getItem("event_id");
         if (eventId) {
-          sessionStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+          localStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
         }
       } catch (e) { }
       return updated;
@@ -1649,6 +1656,13 @@ export default function CreateEvent() {
                   setSavedSteps((prev) => {
                     const updated = [...prev];
                     updated[5] = true;
+                    // Persist to localStorage
+                    try {
+                      const eventId = sessionStorage.getItem("event_id");
+                      if (eventId) {
+                        localStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+                      }
+                    } catch (e) { }
                     return updated;
                   });
                   setCurrentStep(7);

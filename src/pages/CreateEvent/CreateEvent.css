@@ -648,7 +648,7 @@
 
 /* Tablet: hide preview sidebar, sidebar stays */
 /* Tablet / Mobile: Stack everything vertically */
-@media (max-width: 991px) {
+@media (max-width: 1240px) {
   .create-event-layout {
     flex-direction: column;
     padding: 16px 15px 40px 15px;
@@ -770,6 +770,14 @@
 
   .event-form-section {
     padding: 18px;
+  }
+
+  .integration-code-block {
+    font-size: 0.85rem !important;
+    padding: 10px !important;
+    word-break: break-all !important;
+    overflow-wrap: break-word !important;
+    white-space: pre-wrap !important;
   }
 }
 

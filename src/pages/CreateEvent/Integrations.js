@@ -96,7 +96,7 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
         <h3>Integrations</h3>
       </div>
 
-      <div style={{ display: "grid", gap: 20 }}>
+      <div className="integrations-grid" style={{ display: "grid", gap: 20, width: "100%", overflow: "hidden" }}>
         <div>
           <h4 style={{ color: "#da251c" }}>
             &lt;&gt; Embed Tickets on your website (Pop-up)
@@ -105,8 +105,9 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
             To embed ticketing on your website which opens over the content on
             clicking a button, paste this HTML code
           </p>
-          <div style={{ position: "relative" }}>
+          <div className="code-container" style={{ position: "relative" }}>
             <pre
+              className="integration-code-block"
               style={{
                 background: "#f7f7f7",
                 padding: 12,
@@ -115,6 +116,8 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
                 overflowX: "auto",
                 whiteSpace: "pre-wrap",
                 wordBreak: "break-word",
+                maxWidth: "100%",
+                boxSizing: "border-box"
               }}
             >
               <code>{getPopupEmbed()}</code>
@@ -130,8 +133,9 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
             To embed ticketing within the content on your website, paste this
             HTML code
           </p>
-          <div style={{ position: "relative" }}>
+          <div className="code-container" style={{ position: "relative" }}>
             <pre
+              className="integration-code-block"
               style={{
                 background: "#f7f7f7",
                 padding: 12,
@@ -140,6 +144,8 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
                 overflowX: "auto",
                 whiteSpace: "pre-wrap",
                 wordBreak: "break-word",
+                maxWidth: "100%",
+                boxSizing: "border-box"
               }}
             >
               <code>{getIframeEmbed()}</code>
