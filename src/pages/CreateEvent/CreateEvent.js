@@ -218,6 +218,7 @@ export default function CreateEvent() {
             } catch (e) { }
           }
           sessionStorage.setItem("event_id", String(eid));
+          setLastEventId(String(eid));
         } catch (e) { }
         // fetch event details and prefill basic fields
         (async () => {
