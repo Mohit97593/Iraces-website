@@ -87,6 +87,14 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
         const origin = window.location.origin;
         const eventUrl = `${origin}/event/${eventId}`;
         setSavedEventUrl(eventUrl);
+
+        try {
+          await authAPI.sendCreateEventEmail({ event_id: eventId });
+          console.log("✅ Successfully sent create event email");
+        } catch (e) {
+          console.error("❌ Failed to send create event email:", e);
+        }
+
         // Show modal here and let user navigate using modal button
         setShowSuccessModal(true);
       } else {

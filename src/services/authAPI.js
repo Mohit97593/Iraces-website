@@ -27,7 +27,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor - token handling के लिए
@@ -37,8 +37,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Check if we're on payment success page - don't redirect
       const currentPath = window.location.pathname;
-      if (currentPath.includes('/payment/success') || currentPath.includes('/payment/failure')) {
-        console.warn('⚠️ 401 error on payment page - not redirecting to login');
+      if (
+        currentPath.includes("/payment/success") ||
+        currentPath.includes("/payment/failure")
+      ) {
+        console.warn("⚠️ 401 error on payment page - not redirecting to login");
         return Promise.reject(error);
       }
 
@@ -58,7 +61,7 @@ api.interceptors.response.use(
       window.location.href = "/login";
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Auth API Functions
@@ -199,9 +202,13 @@ export const authAPI = {
   // Delete General Form Question API
   deleteGeneralFormQuestion: async (id) => {
     try {
-      const response = await api.post("/deleteGeneralFormQuestion", { id }, {
-        headers: { "Content-Type": "application/json" }
-      });
+      const response = await api.post(
+        "/deleteGeneralFormQuestion",
+        { id },
+        {
+          headers: { "Content-Type": "application/json" },
+        },
+      );
       return response.data;
     } catch (error) {
       console.error("deleteGeneralFormQuestion API error:", error);
@@ -269,10 +276,16 @@ export const authAPI = {
       formData.append("event_id", payload.event_id);
 
       // Add event_form_question_array as nested array structure
-      if (payload.event_form_question_array && Array.isArray(payload.event_form_question_array)) {
+      if (
+        payload.event_form_question_array &&
+        Array.isArray(payload.event_form_question_array)
+      ) {
         payload.event_form_question_array.forEach((question, index) => {
           Object.keys(question).forEach((key) => {
-            formData.append(`event_form_question_array[${index}][${key}]`, question[key] || "");
+            formData.append(
+              `event_form_question_array[${index}][${key}]`,
+              question[key] || "",
+            );
           });
         });
       }
@@ -631,7 +644,10 @@ export const authAPI = {
     try {
       const formData = new FormData();
       formData.append("event_id", event_id);
-      const response = await api.post("/get_event_term_and_conditions", formData);
+      const response = await api.post(
+        "/get_event_term_and_conditions",
+        formData,
+      );
       return response.data;
     } catch (error) {
       console.error("getEventTermsConditions API error:", error);
@@ -987,7 +1003,7 @@ export const authAPI = {
       formData.append("event_id", payload.event_id);
       // Append ticket_ids as array
       if (payload.ticket_ids && Array.isArray(payload.ticket_ids)) {
-        payload.ticket_ids.forEach(ticketId => {
+        payload.ticket_ids.forEach((ticketId) => {
           formData.append("ticket_ids[]", ticketId);
         });
       }
@@ -1016,7 +1032,7 @@ export const authAPI = {
 
       // Append file uploads if present
       if (payload.fils_array && Array.isArray(payload.fils_array)) {
-        payload.fils_array.forEach(file => {
+        payload.fils_array.forEach((file) => {
           formData.append("fils_array[]", file);
         });
       }
@@ -1067,11 +1083,10 @@ export const authAPI = {
         sessionStorage.setItem("token", response.data.data.token);
         sessionStorage.setItem(
           "userData",
-          JSON.stringify(response.data.data.userData)
+          JSON.stringify(response.data.data.userData),
         );
-        api.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${response.data.data.token}`;
+        api.defaults.headers.common["Authorization"] =
+          `Bearer ${response.data.data.token}`;
       }
 
       return response.data;
@@ -1167,7 +1182,7 @@ export const authAPI = {
       const formData = new FormData();
       formData.append(
         "emergency_contact_person",
-        details.emergency_contact_person
+        details.emergency_contact_person,
       );
       formData.append("emergency_contact_no", details.emergency_contact_no);
       formData.append("organization", details.organization);
@@ -1414,6 +1429,21 @@ export const authAPI = {
     }
   },
 
+  // Send Create Event Email API
+  sendCreateEventEmail: async (payload) => {
+    try {
+      const formData = new FormData();
+      formData.append("event_id", payload.event_id);
+      const response = await api.post("/send_create_event_email", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("sendCreateEventEmail API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Get All Events API
   getAllEvents: async (params = {}) => {
     try {
@@ -1489,9 +1519,13 @@ export const authAPI = {
   // Get Group Questions API
   getGroupQuestions: async () => {
     try {
-      const response = await api.post("/get_group_questions", {}, {
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await api.post(
+        "/get_group_questions",
+        {},
+        {
+          headers: { "Content-Type": "application/json" },
+        },
+      );
       return response.data;
     } catch (error) {
       console.error("getGroupQuestions API error:", error);
@@ -1502,9 +1536,13 @@ export const authAPI = {
   // Delete Group Question API
   deleteGroupQuestion: async (id) => {
     try {
-      const response = await api.post("/delete_group_question", { id }, {
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await api.post(
+        "/delete_group_question",
+        { id },
+        {
+          headers: { "Content-Type": "application/json" },
+        },
+      );
       return response.data;
     } catch (error) {
       console.error("deleteGroupQuestion API error:", error);
@@ -1529,9 +1567,10 @@ export const authAPI = {
   updateEventFormQuestion: async (payload) => {
     try {
       const response = await api.post("/updateEventFormQuestion", payload, {
-        headers: payload instanceof FormData
-          ? { "Content-Type": "multipart/form-data" }
-          : { "Content-Type": "application/json" },
+        headers:
+          payload instanceof FormData
+            ? { "Content-Type": "multipart/form-data" }
+            : { "Content-Type": "application/json" },
       });
       return response.data;
     } catch (error) {
@@ -1803,8 +1842,14 @@ export const authAPI = {
       formData.append("email_type", payload.email_type);
       formData.append("subject_name", payload.subject_name || "");
       formData.append("message_content", payload.message_content || "");
-      formData.append("participant_data", JSON.stringify(payload.participant_data));
-      const response = await api.post("/participant_send_multiple_email", formData);
+      formData.append(
+        "participant_data",
+        JSON.stringify(payload.participant_data),
+      );
+      const response = await api.post(
+        "/participant_send_multiple_email",
+        formData,
+      );
       return response.data;
     } catch (error) {
       console.error("sendParticipantEmail API error:", error);
@@ -1822,8 +1867,10 @@ export const authAPI = {
 
       if (payload.user_name) formData.append("user_name", payload.user_name);
       if (payload.email) formData.append("email", payload.email);
-      if (payload.TransactionID) formData.append("TransactionID", payload.TransactionID);
-      if (payload.TransactionStatus) formData.append("TransactionStatus", payload.TransactionStatus);
+      if (payload.TransactionID)
+        formData.append("TransactionID", payload.TransactionID);
+      if (payload.TransactionStatus)
+        formData.append("TransactionStatus", payload.TransactionStatus);
       if (payload.from_date) formData.append("from_date", payload.from_date);
       if (payload.to_date) formData.append("to_date", payload.to_date);
 
@@ -1882,7 +1929,7 @@ export const authAPI = {
       const response = await api.post("/send_email_payment_success", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          "Authorization": "" // Remove auth - endpoint should be public
+          Authorization: "", // Remove auth - endpoint should be public
         },
       });
       return response.data;
@@ -1909,7 +1956,7 @@ export const authAPI = {
       const response = await api.post("/whatsapp_send_message", {
         participant_id: payload.participant_id,
         template_id: payload.template_id,
-        params: payload.params || []
+        params: payload.params || [],
       });
       return response.data;
     } catch (error) {
@@ -1924,7 +1971,7 @@ export const authAPI = {
       const response = await api.post("/whatsapp_send_multiple", {
         participant_data: JSON.stringify(payload.participant_data),
         template_id: payload.template_id,
-        params: payload.params || []
+        params: payload.params || [],
       });
       return response.data;
     } catch (error) {
@@ -1973,9 +2020,13 @@ export const authAPI = {
         formData.append("include_pending", payload.include_pending);
       }
 
-      const response = await api.post("/attendee_netsales_excell_data", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await api.post(
+        "/attendee_netsales_excell_data",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
       return response.data;
     } catch (error) {
       console.error("attendeeNetsalesExcellData API error:", error);
@@ -2006,8 +2057,10 @@ export const authAPI = {
       if (payload.scity) formData.append("scity", payload.scity);
       if (payload.state) formData.append("state", payload.state);
       if (payload.country) formData.append("country", payload.country);
-      if (payload.search_flag) formData.append("search_flag", payload.search_flag);
-      if (payload.home_flag !== undefined) formData.append("home_flag", payload.home_flag);
+      if (payload.search_flag)
+        formData.append("search_flag", payload.search_flag);
+      if (payload.home_flag !== undefined)
+        formData.append("home_flag", payload.home_flag);
 
       const response = await api.post("/get_data_location_wise", formData);
       return response.data;
@@ -2036,11 +2089,14 @@ export const authAPI = {
       const formData = new FormData();
 
       // Add all ticket fields to FormData
-      Object.keys(ticketData).forEach(key => {
-        if (key === 'ticket') {
+      Object.keys(ticketData).forEach((key) => {
+        if (key === "ticket") {
           // Handle nested ticket object
-          Object.keys(ticketData.ticket).forEach(ticketKey => {
-            formData.append(`ticket[${ticketKey}]`, ticketData.ticket[ticketKey]);
+          Object.keys(ticketData.ticket).forEach((ticketKey) => {
+            formData.append(
+              `ticket[${ticketKey}]`,
+              ticketData.ticket[ticketKey],
+            );
           });
         } else {
           formData.append(key, ticketData[key]);
@@ -2075,7 +2131,7 @@ export const authAPI = {
   getRemittanceByEvent: async (payload) => {
     try {
       const formData = new FormData();
-      const event_id = typeof payload === 'object' ? payload.event_id : payload;
+      const event_id = typeof payload === "object" ? payload.event_id : payload;
       formData.append("event_id", event_id);
 
       if (payload.from_date) formData.append("from_date", payload.from_date);
@@ -2093,7 +2149,10 @@ export const authAPI = {
   // Accept Organizer Invitation API
   acceptOrgInvitation: async (orgId, email) => {
     try {
-      console.log("🚀 Calling accept_org_invitation API:", { org_id: orgId, email });
+      console.log("🚀 Calling accept_org_invitation API:", {
+        org_id: orgId,
+        email,
+      });
       const formData = new FormData();
       formData.append("orgId", orgId);
       formData.append("email", email);

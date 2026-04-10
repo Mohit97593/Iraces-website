@@ -344,8 +344,8 @@ export default function Participants() {
         // Filter selected participants to only those who haven't paid (not Success or Free)
         const pendingParticipants = participantData.filter(p =>
             selectedParticipants.includes(p.aId) &&
-            p.transaction_status != 1 && 
-            p.transaction_status != 3 && 
+            p.transaction_status != 1 &&
+            p.transaction_status != 3 &&
             p.transaction_status != 102 &&
             p.transaction_status != 104 &&
             p.transaction_status != 5 // Refund
@@ -409,9 +409,9 @@ export default function Participants() {
                     alert("The selected participants have already completed their payment or are 'Free' registrations. 'Pending Payment' emails cannot be sent to them.");
                     return;
                 }
-                
+
                 activeParticipantsToEmail = pendingParticipants.map(p => p.aId);
-                
+
                 // Optional: If some were filtered out, show a warning
                 if (activeParticipantsToEmail.length < selectedParticipants.length) {
                     console.warn("⚠️ Some participants were filtered out because they have already paid.");
@@ -450,7 +450,7 @@ export default function Participants() {
                 setCustomSubject("");
                 setCustomMessage("");
             } else if (response && response.success === 400 && response.data && response.data.failed_emails) {
-                const failedMessages = response.data.failed_emails.map(f => 
+                const failedMessages = response.data.failed_emails.map(f =>
                     `- ${f.name || f.email}: ${f.reason}`
                 ).join("\n");
                 alert(`Some emails were not sent:\n\n${failedMessages}`);
@@ -459,10 +459,10 @@ export default function Participants() {
             }
         } catch (error) {
             console.error("❌ Error sending email:", error);
-            
+
             // Check if it's a 400 error with detailed failed_emails (passed from authAPI throw)
             if (error && error.success === 400 && error.data && error.data.failed_emails) {
-                const failedMessages = error.data.failed_emails.map(f => 
+                const failedMessages = error.data.failed_emails.map(f =>
                     `- ${f.name || f.email}: ${f.reason}`
                 ).join("\n");
                 alert(`Some emails were not sent:\n\n${failedMessages}`);
@@ -677,11 +677,11 @@ export default function Participants() {
                                 </button>
                             </>
                         )}
-                        {(!isOrgEvent || AccessController.canInsightWhatsApp()) && (
-                            <button className="p-header-btn whatsapp-btn" onClick={handleSendWhatsApp}>
-                                <i className="fab fa-whatsapp"></i> Send WhatsApp
-                            </button>
-                        )}
+                        {/* {(!isOrgEvent || AccessController.canInsightWhatsApp()) && (
+                            // <button className="p-header-btn whatsapp-btn" onClick={handleSendWhatsApp}>
+                            //     <i className="fab fa-whatsapp"></i> Send WhatsApp
+                            // </button>
+                        )} */}
                         {(!isOrgEvent || AccessController.canInsightDownload()) && (
                             <>
                                 <button

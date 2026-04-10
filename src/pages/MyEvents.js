@@ -21,7 +21,7 @@ export default function MyEvents() {
     try {
       const ud = authAPI.getUserData && authAPI.getUserData();
       if (ud && (ud.user_id || ud.id)) return ud.user_id || ud.id;
-    } catch (e) { }
+    } catch (e) {}
     return 0;
   };
 
@@ -36,9 +36,15 @@ export default function MyEvents() {
 
         // Save permissions to sessionStorage so AccessController can find them
         if (profile?.data?.OrgUserAccessModules) {
-          sessionStorage.setItem("OrgUserAccessModules", JSON.stringify(profile.data.OrgUserAccessModules));
+          sessionStorage.setItem(
+            "OrgUserAccessModules",
+            JSON.stringify(profile.data.OrgUserAccessModules),
+          );
         } else if (profile?.OrgUserAccessModules) {
-          sessionStorage.setItem("OrgUserAccessModules", JSON.stringify(profile.OrgUserAccessModules));
+          sessionStorage.setItem(
+            "OrgUserAccessModules",
+            JSON.stringify(profile.OrgUserAccessModules),
+          );
         }
 
         let organizer_user = 0;
@@ -64,9 +70,15 @@ export default function MyEvents() {
         const eventDetails = await authAPI.allEventDetails(payload);
         console.log("MyEvents allEventDetails API result:", eventDetails);
 
-        if (eventDetails?.data?.org_event_data && Array.isArray(eventDetails.data.org_event_data)) {
+        if (
+          eventDetails?.data?.org_event_data &&
+          Array.isArray(eventDetails.data.org_event_data)
+        ) {
           setOrgEvents(eventDetails.data.org_event_data);
-        } else if (eventDetails?.org_event_data && Array.isArray(eventDetails.org_event_data)) {
+        } else if (
+          eventDetails?.org_event_data &&
+          Array.isArray(eventDetails.org_event_data)
+        ) {
           setOrgEvents(eventDetails.org_event_data);
         } else {
           setOrgEvents([]);
@@ -174,7 +186,10 @@ export default function MyEvents() {
       // event_status: true = toggle ON, event_status: false = toggle OFF
       const initialToggles = {};
       allEvents.forEach((ev) => {
-        initialToggles[ev.id] = ev.event_status === true || ev.event_status === "true" || ev.event_status === 1;
+        initialToggles[ev.id] =
+          ev.event_status === true ||
+          ev.event_status === "true" ||
+          ev.event_status === 1;
       });
       setToggleStates(initialToggles);
     }
@@ -210,7 +225,7 @@ export default function MyEvents() {
       const payload = {
         event_id: eventId,
         event_status: statusToSend,
-        action_flag: "change_status"
+        action_flag: "change_status",
       };
 
       const response = await authAPI.changeEventStatus(payload);
@@ -226,9 +241,15 @@ export default function MyEvents() {
 
       const refreshRes = await authAPI.allEventDetails(refreshPayload);
 
-      if (refreshRes?.data?.org_event_data && Array.isArray(refreshRes.data.org_event_data)) {
+      if (
+        refreshRes?.data?.org_event_data &&
+        Array.isArray(refreshRes.data.org_event_data)
+      ) {
         setOrgEvents(refreshRes.data.org_event_data);
-      } else if (refreshRes?.org_event_data && Array.isArray(refreshRes.org_event_data)) {
+      } else if (
+        refreshRes?.org_event_data &&
+        Array.isArray(refreshRes.org_event_data)
+      ) {
         setOrgEvents(refreshRes.org_event_data);
       } else {
         setOrgEvents([]);
@@ -269,7 +290,7 @@ export default function MyEvents() {
         try {
           // show server message when present
           alert(res.message);
-        } catch (e) { }
+        } catch (e) {}
       }
     } catch (err) {
       console.error("Delete API error:", err);
@@ -279,7 +300,7 @@ export default function MyEvents() {
     try {
       console.log(
         "Refreshing events after delete (direct call), activeType:",
-        activeType
+        activeType,
       );
       const user_id = getStoredUserId();
       const payloadRefresh = {
@@ -291,9 +312,15 @@ export default function MyEvents() {
       const refreshRes = await authAPI.allEventDetails(payloadRefresh);
       console.log("allEventDetails refresh response:", refreshRes);
 
-      if (refreshRes?.data?.org_event_data && Array.isArray(refreshRes.data.org_event_data)) {
+      if (
+        refreshRes?.data?.org_event_data &&
+        Array.isArray(refreshRes.data.org_event_data)
+      ) {
         setOrgEvents(refreshRes.data.org_event_data);
-      } else if (refreshRes?.org_event_data && Array.isArray(refreshRes.org_event_data)) {
+      } else if (
+        refreshRes?.org_event_data &&
+        Array.isArray(refreshRes.org_event_data)
+      ) {
         setOrgEvents(refreshRes.org_event_data);
       } else {
         setOrgEvents([]);
@@ -305,7 +332,7 @@ export default function MyEvents() {
       if (deleteSucceeded) {
         try {
           // no-op if already alerted
-        } catch (e) { }
+        } catch (e) {}
       }
     } catch (e) {
       console.error("Direct refresh after delete failed:", e);
@@ -325,14 +352,23 @@ export default function MyEvents() {
         copy_tickets: true,
         copy_questions: true,
         copy_age_criteria: true,
-        copy_communications: true
+        copy_communications: true,
       };
 
       console.log("🚀 Copying event with payload:", payload);
       const res = await authAPI.copyEvent(payload);
       console.log("✅ Copy response:", res);
 
-      if (res && (res.status == 1 || res.status == "1" || res.status == 200 || res.validate == 0 || res.validate == "0" || res.success || (res.message && res.message.toLowerCase().includes("success")))) {
+      if (
+        res &&
+        (res.status == 1 ||
+          res.status == "1" ||
+          res.status == 200 ||
+          res.validate == 0 ||
+          res.validate == "0" ||
+          res.success ||
+          (res.message && res.message.toLowerCase().includes("success")))
+      ) {
         // Close modal and stop loading BEFORE the long refresh call
         setShowCopyModal(false);
         setIsCopying(false);
@@ -389,17 +425,20 @@ export default function MyEvents() {
     if (!Array.isArray(tickets) || tickets.length === 0) return false;
 
     // Check if any ticket has an active early bird period
-    return tickets.some(ticket =>
-      (ticket.early_bird === 1 || ticket.early_bird === "1") &&
-      currentTime >= (ticket.start_time || 0) &&
-      currentTime <= (ticket.end_time || 0)
+    return tickets.some(
+      (ticket) =>
+        (ticket.early_bird === 1 || ticket.early_bird === "1") &&
+        currentTime >= (ticket.start_time || 0) &&
+        currentTime <= (ticket.end_time || 0),
     );
   };
 
   const renderEventCard = (event, isOrgEvent = false) => {
     const eventDate = formatEventDate(event.start_time);
     const registerBy = formatRegisterBy(event.registration_end_time);
-    const registrationClosed = isRegistrationClosed(event.registration_end_time);
+    const registrationClosed = isRegistrationClosed(
+      event.registration_end_time,
+    );
 
     return (
       <div className="col-lg-4 col-md-6 col-12" key={event.id}>
@@ -422,20 +461,19 @@ export default function MyEvents() {
               <span
                 className="event-card-badge"
                 style={{
-                  position: 'absolute',
-                  top: '168px',
-                  right: '0px',
-                  backgroundColor: '#D4A017',
-                  color: '#fff',
-                  padding: '4px 19px',
-                  left: '8px',
-                  borderRadius: '20px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                  position: "absolute",
+                  top: "168px",
+                  right: "0px",
+                  backgroundColor: "#D4A017",
+                  color: "#fff",
+                  padding: "4px 19px",
+                  left: "8px",
+                  borderRadius: "20px",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
                   zIndex: 2,
-                  width: "100px"
-
+                  width: "100px",
                 }}
               >
                 Early Bird
@@ -460,7 +498,9 @@ export default function MyEvents() {
                     title="Copy Event"
                     onClick={() => {
                       setSelectedEventToCopy(event);
-                      setNewName(`${event.name || event.event_name || "Event"} Copy`);
+                      setNewName(
+                        `${event.name || event.event_name || "Event"} Copy`,
+                      );
                       setShowCopyModal(true);
                     }}
                   >
@@ -472,24 +512,38 @@ export default function MyEvents() {
                 {(!isOrgEvent || AccessController.hasEventAccess()) && (
                   <button
                     className="event-edit-btn"
-                    aria-label={isOrgEvent && AccessController.isEventRead() ? "View event" : "Edit event"}
-                    title={isOrgEvent && AccessController.isEventRead() ? "View Event" : "Edit Event"}
+                    aria-label={
+                      isOrgEvent && AccessController.isEventRead()
+                        ? "View event"
+                        : "Edit event"
+                    }
+                    title={
+                      isOrgEvent && AccessController.isEventRead()
+                        ? "View Event"
+                        : "Edit Event"
+                    }
                     onClick={() => {
                       // Store event_id in sessionStorage instead of URL
-                      sessionStorage.setItem('editEventId', event.id);
-                      navigate('/create-event', { state: { isOrgEvent: isOrgEvent } });
+                      sessionStorage.setItem("editEventId", event.id);
+                      navigate("/create-event", {
+                        state: { isOrgEvent: isOrgEvent },
+                      });
                     }}
                   >
-                    <i className={isOrgEvent && AccessController.isEventRead() ? "fas fa-eye" : "fas fa-pen"}></i>
+                    <i
+                      className={
+                        isOrgEvent && AccessController.isEventRead()
+                          ? "fas fa-eye"
+                          : "fas fa-pen"
+                      }
+                    ></i>
                   </button>
                 )}
 
                 {(!isOrgEvent || AccessController.isEventWrite()) && (
                   <button
                     className="event-delete-btn"
-                    onClick={() =>
-                      deleteEventById(event.id, event.active || 0)
-                    }
+                    onClick={() => deleteEventById(event.id, event.active || 0)}
                     aria-label="Delete event"
                     title="Delete Event"
                   >
@@ -581,15 +635,27 @@ export default function MyEvents() {
             </div>
 
             {(!isOrgEvent || AccessController.hasInsightAccess()) && (
-              <div className="event-register-info" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '12px' }}>
+              <div
+                className="event-register-info"
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  alignItems: "center",
+                  marginBottom: "12px",
+                }}
+              >
                 <i
                   className="fas fa-chart-bar"
                   style={{
-                    fontSize: '18px',
-                    color: '#666',
-                    cursor: 'pointer'
+                    fontSize: "18px",
+                    color: "#666",
+                    cursor: "pointer",
                   }}
-                  onClick={() => navigate(`/event-analytics/${event.id}`, { state: { eventName: event.name, isOrgEvent: isOrgEvent } })}
+                  onClick={() =>
+                    navigate(`/event-analytics/${event.id}`, {
+                      state: { eventName: event.name, isOrgEvent: isOrgEvent },
+                    })
+                  }
                   title="View Analytics"
                 ></i>
               </div>
@@ -607,10 +673,7 @@ export default function MyEvents() {
                     gap: "6px",
                   }}
                 >
-                  <i
-                    className="fas fa-ban"
-                    style={{ fontSize: "1rem" }}
-                  ></i>
+                  <i className="fas fa-ban" style={{ fontSize: "1rem" }}></i>
                   Registration Closed
                 </span>
               ) : (
@@ -635,7 +698,9 @@ export default function MyEvents() {
               {(!isOrgEvent || AccessController.isEventWrite()) && (
                 <div
                   className={`event-toggle ${toggleStates[event.id] ? "on" : ""}`}
-                  onClick={() => handleToggleStatus(event.id, toggleStates[event.id])}
+                  onClick={() =>
+                    handleToggleStatus(event.id, toggleStates[event.id])
+                  }
                   role="button"
                   tabIndex={0}
                   aria-pressed={!!toggleStates[event.id]}
@@ -672,28 +737,94 @@ export default function MyEvents() {
         </div>
       </section>
       <div className="my-events-section">
-        <div className="my-events-type-group">
-          <button
-            className={`my-events-type-btn public${activeType === 1 ? " active-red" : ""
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            maxWidth: "1200px",
+            margin: "0 auto",
+            padding: "0 15px",
+            flexWrap: "wrap",
+            gap: "15px",
+          }}
+        >
+          {/* Spacer for desktop centering */}
+          <div
+            style={{ flex: 1, minWidth: "150px" }}
+            className="d-none d-md-block"
+          ></div>
+
+          <div className="my-events-type-group" style={{ margin: "0 auto" }}>
+            <button
+              className={`my-events-type-btn public${
+                activeType === 1 ? " active-red" : ""
               }`}
-            onClick={() => callAllEventDetails(1)}
-          >
-            🔓 Public
-          </button>
-          <button
-            className={`my-events-type-btn private${activeType === 2 ? " active-red" : ""
+              onClick={() => callAllEventDetails(1)}
+            >
+              🔓 Public
+            </button>
+            <button
+              className={`my-events-type-btn private${
+                activeType === 2 ? " active-red" : ""
               }`}
-            onClick={() => callAllEventDetails(2)}
-          >
-            🔒 Private
-          </button>
-          <button
-            className={`my-events-type-btn draft${activeType === 3 ? " active-red" : ""
+              onClick={() => callAllEventDetails(2)}
+            >
+              🔒 Private
+            </button>
+            <button
+              className={`my-events-type-btn draft${
+                activeType === 3 ? " active-red" : ""
               }`}
-            onClick={() => callAllEventDetails(3)}
+              onClick={() => callAllEventDetails(3)}
+            >
+              📝 Draft
+            </button>
+          </div>
+
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              justifyContent: "flex-end",
+              minWidth: "150px",
+            }}
           >
-            📝 Draft
-          </button>
+            <button
+              onClick={() => {
+                sessionStorage.removeItem("editEventId");
+                navigate("/create-event");
+              }}
+              style={{
+                backgroundColor: "#da251c",
+                color: "#fff",
+                border: "1px solid #da251c",
+                padding: "10px 24px",
+                borderRadius: "30px",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                whiteSpace: "nowrap",
+                boxShadow: "0 4px 6px rgba(218, 37, 28, 0.2)",
+                transition: "all 0.3s ease",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow =
+                  "0 6px 12px rgba(218, 37, 28, 0.3)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 6px rgba(218, 37, 28, 0.2)";
+              }}
+            >
+              <i className="fas fa-plus"></i> Create Event
+            </button>
+          </div>
         </div>
 
         <div style={{ marginTop: 20 }}>
@@ -702,7 +833,7 @@ export default function MyEvents() {
               <div className="loading-spinner"></div>
               <p className="loading-text">Loading events...</p>
             </div>
-          ) : (events.length === 0 && orgEvents.length === 0) ? (
+          ) : events.length === 0 && orgEvents.length === 0 ? (
             <div className="my-events-empty">
               <img
                 src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png"
@@ -723,7 +854,16 @@ export default function MyEvents() {
 
               {orgEvents && orgEvents.length > 0 && (
                 <>
-                  <h2 style={{ marginTop: '40px', marginBottom: '20px', color: '#2c3e50', fontWeight: '700' }}>Organiser Events</h2>
+                  <h2
+                    style={{
+                      marginTop: "40px",
+                      marginBottom: "20px",
+                      color: "#2c3e50",
+                      fontWeight: "700",
+                    }}
+                  >
+                    Organiser Events
+                  </h2>
                   <div className="row g-4 mb-5">
                     {orgEvents.map((event) => renderEventCard(event, true))}
                   </div>
@@ -735,40 +875,61 @@ export default function MyEvents() {
       </div>
       {/* Copy Event Modal */}
       {showCopyModal && (
-        <div className="modal-overlay" style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }}>
-          <div className="modal-card" style={{
-            background: '#fff',
-            padding: '30px',
-            borderRadius: '16px',
-            width: '90%',
-            maxWidth: '500px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
-          }}>
-            <h3 style={{ marginBottom: '20px', fontWeight: 700, color: '#2c3e50' }}>Copy Event</h3>
-            <div className="form-group" style={{ marginBottom: '25px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#34495e' }}>
-                New Event Name <span style={{ color: '#da251c' }}>*</span>
+        <div
+          className="modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            className="modal-card"
+            style={{
+              background: "#fff",
+              padding: "30px",
+              borderRadius: "16px",
+              width: "90%",
+              maxWidth: "500px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+            }}
+          >
+            <h3
+              style={{
+                marginBottom: "20px",
+                fontWeight: 700,
+                color: "#2c3e50",
+              }}
+            >
+              Copy Event
+            </h3>
+            <div className="form-group" style={{ marginBottom: "25px" }}>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "8px",
+                  fontWeight: 600,
+                  color: "#34495e",
+                }}
+              >
+                New Event Name <span style={{ color: "#da251c" }}>*</span>
               </label>
               <input
                 type="text"
                 className="form-input"
                 style={{
-                  width: '100%',
-                  padding: '12px 15px',
-                  borderRadius: '10px',
-                  border: '1px solid #ddd',
-                  fontSize: '1rem'
+                  width: "100%",
+                  padding: "12px 15px",
+                  borderRadius: "10px",
+                  border: "1px solid #ddd",
+                  fontSize: "1rem",
                 }}
                 value={newEventName}
                 onChange={(e) => setNewName(e.target.value)}
@@ -776,17 +937,23 @@ export default function MyEvents() {
                 autoFocus
               />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "15px",
+              }}
+            >
               <button
                 className="btn-cancel"
                 onClick={() => setShowCopyModal(false)}
                 style={{
-                  padding: '10px 25px',
-                  borderRadius: '10px',
-                  border: '1px solid #ddd',
-                  background: '#f8f9fa',
-                  cursor: 'pointer',
-                  fontWeight: 600
+                  padding: "10px 25px",
+                  borderRadius: "10px",
+                  border: "1px solid #ddd",
+                  background: "#f8f9fa",
+                  cursor: "pointer",
+                  fontWeight: 600,
                 }}
               >
                 Cancel
@@ -796,17 +963,20 @@ export default function MyEvents() {
                 onClick={handleCopyEvent}
                 disabled={isCopying || !newEventName.trim()}
                 style={{
-                  padding: '10px 30px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: '#da251c',
-                  color: '#fff',
-                  cursor: (isCopying || !newEventName.trim()) ? 'not-allowed' : 'pointer',
+                  padding: "10px 30px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: "#da251c",
+                  color: "#fff",
+                  cursor:
+                    isCopying || !newEventName.trim()
+                      ? "not-allowed"
+                      : "pointer",
                   fontWeight: 600,
-                  opacity: (isCopying || !newEventName.trim()) ? 0.7 : 1
+                  opacity: isCopying || !newEventName.trim() ? 0.7 : 1,
                 }}
               >
-                {isCopying ? 'Copying...' : 'Copy Event'}
+                {isCopying ? "Copying..." : "Copy Event"}
               </button>
             </div>
           </div>
