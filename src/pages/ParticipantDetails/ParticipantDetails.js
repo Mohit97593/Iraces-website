@@ -1096,8 +1096,13 @@ export default function ParticipantDetails() {
             let finalValue = type === "checkbox" ? checked : type === "file" ? files[0] : value;
 
             // NEW: Restrict numbers in name fields (First Name, Last Name, Emergency Contact Name)
-            const nameFields = ['firstName', 'lastName', 'emergencyContactName'];
-            if (nameFields.includes(name) && typeof finalValue === 'string') {
+            const nameFields = ['firstName', 'lastName', 'emergencyContactName', 'firstname', 'lastname', 'emergency_contact_person', 'emergency_contact_name', 'emergencyName'];
+            const isNameField = nameFields.includes(name) || 
+                              name.toLowerCase().includes('firstname') || 
+                              name.toLowerCase().includes('lastname') || 
+                              (name.toLowerCase().includes('emergency') && name.toLowerCase().includes('name'));
+
+            if (isNameField && typeof finalValue === 'string') {
               finalValue = finalValue.replace(/\d/g, ''); // Strip all digits
             }
 
@@ -1708,7 +1713,10 @@ export default function ParticipantDetails() {
       const totalPlatformFee = (convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase) * parseInt(ticket.quantity);
 
       // GST components - only add fee GST if Participant pays those fees
-      const registrationGST = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
+      const ticketDiscount = appliedCoupon ? getTicketDiscount(ticket, appliedCoupon) : 0;
+      const discountPerParticipant = ticketDiscount / parseInt(ticket.quantity);
+
+      const registrationGST = isGSTEnabled ? Math.round(Math.max(0, effectivePrice - discountPerParticipant) * 0.18 * 100) / 100 : 0;
       const convenienceFeeGST = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0) : 0;
       const platformFeeGST = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0) : 0;
       const paymentGatewayGST = isParticipantPayingGateway ? parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0) : 0;
@@ -1964,7 +1972,10 @@ export default function ParticipantDetails() {
       const totalPlatformFee = (convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase) * parseInt(ticket.quantity);
 
       // GST components - only add fee GST if Participant pays those fees
-      const registrationGST = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
+      const ticketDiscount = appliedCoupon ? getTicketDiscount(ticket, appliedCoupon) : 0;
+      const discountPerParticipant = ticketDiscount / parseInt(ticket.quantity);
+
+      const registrationGST = isGSTEnabled ? Math.round(Math.max(0, effectivePrice - discountPerParticipant) * 0.18 * 100) / 100 : 0;
       const convenienceFeeGST = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0) : 0;
       const platformFeeGST = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0) : 0;
       const paymentGatewayGST = isParticipantPayingGateway ? parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0) : 0;
@@ -3866,8 +3877,13 @@ export default function ParticipantDetails() {
           }
 
           // NEW: Validate Name fields (must not contain numbers)
-          const nameFields = ['firstName', 'lastName', 'emergencyContactName'];
-          if (nameFields.includes(fieldName) && fieldValue) {
+          const nameFields = ['firstName', 'lastName', 'emergencyContactName', 'firstname', 'lastname', 'emergency_contact_person', 'emergency_contact_name', 'emergencyName'];
+          const isNameField = nameFields.includes(fieldName) || 
+                             fieldName.toLowerCase().includes('firstname') || 
+                             fieldName.toLowerCase().includes('lastname') || 
+                             (fieldName.toLowerCase().includes('emergency') && fieldName.toLowerCase().includes('name'));
+
+          if (isNameField && fieldValue) {
             if (/\d/.test(fieldValue)) {
               const errorKey = `participant_${participantIndex}_${fieldName}`;
               errors[errorKey] = `${q.question_label} cannot contain numbers for Participant ${participantIndex + 1}`;
@@ -4342,7 +4358,10 @@ export default function ParticipantDetails() {
 
         // Extract individual GST components - these are PER TICKET
         // Only include fee GST if Participant pays those fees
-        const registrationGSTPerTicket = parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
+        const ticketDiscount = appliedCoupon ? getTicketDiscount(ticket, appliedCoupon) : 0;
+        const discountPerParticipant = ticketDiscount / parseInt(ticket.quantity);
+
+        const registrationGSTPerTicket = isGSTEnabled ? Math.round(Math.max(0, effectivePrice - discountPerParticipant) * 0.18 * 100) / 100 : 0;
         const convenienceFeeGSTPerTicket = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0) : 0;
         const platformFeeGSTPerTicket = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0) : 0;
         const paymentGatewayGSTPerTicket = isParticipantPayingGateway ? parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0) : 0;
@@ -4658,7 +4677,10 @@ export default function ParticipantDetails() {
                 const totalPlatformFee = (convenienceFeeBase + platformFeeBase + paymentGatewayChargesBase) * parseInt(ticket.quantity);
 
                 // Extract individual GST components from ticket_calculation_details
-                const registrationGST = isFreeTicket ? 0 : parseFloat(calcDetails.registration_18_percent_GST || calcDetails['registration_18_percent_GST'] || 0);
+                const ticketDiscount = appliedCoupon ? getTicketDiscount(ticket, appliedCoupon) : 0;
+                const discountPerTicket = ticketDiscount / parseInt(ticket.quantity);
+
+                const registrationGST = (isFreeTicket || !isGSTEnabled) ? 0 : Math.round(Math.max(0, effectivePrice - discountPerTicket) * 0.18 * 100) / 100;
                 const convenienceFeeGST = (isFreeTicket || !isParticipantPayingFees) ? 0 : parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0);
                 const platformFeeGST = (isFreeTicket || !isParticipantPayingFees) ? 0 : parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0);
                 const paymentGatewayGST = (isFreeTicket || !isParticipantPayingGateway) ? 0 : parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0);
@@ -4669,7 +4691,6 @@ export default function ParticipantDetails() {
 
                 // Sub Total = Base + Platform Fee + Total Taxes
                 const ticketSubTotal = baseAmount + totalPlatformFee + totalTaxes;
-                const ticketDiscount = appliedCoupon ? getTicketDiscount(ticket, appliedCoupon) : 0;
 
                 return (
                   <div key={index} style={{ marginBottom: index < selectedTickets.length - 1 ? '20px' : '0' }}>
