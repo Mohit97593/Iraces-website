@@ -1997,7 +1997,9 @@ export default function ParticipantDetails() {
     // Build AllTickets array with all ticket details
     const AllTickets = selectedTickets.map(ticket => ({
       ...ticket,
-      count: ticket.quantity
+      count: ticket.quantity,
+      appliedCouponId: appliedCoupon ? appliedCoupon.id : null,
+      appliedCouponAmount: appliedCoupon ? getTicketDiscount(ticket, appliedCoupon) : 0
     }));
 
     // Build GstArray (same as AllTickets for GST calculation)

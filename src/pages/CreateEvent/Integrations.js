@@ -60,7 +60,11 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
 
   const handleTCSConfirm = async () => {
     if (!tcsAccepted) {
-      showToast && showToast("Please acknowledge the terms of services related to TCS.", 'error');
+      showToast &&
+        showToast(
+          "Please acknowledge the terms of services related to TCS.",
+          "error",
+        );
       return;
     }
 
@@ -69,7 +73,11 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
     try {
       const eventId = sessionStorage.getItem("event_id");
       if (!eventId) {
-        showToast && showToast("Event ID not found. Please save the event first.", 'error');
+        showToast &&
+          showToast(
+            "Event ID not found. Please save the event first.",
+            "error",
+          );
         return;
       }
       const res = await authAPI.eventIntegration(eventId, 1);
@@ -82,11 +90,15 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
         // Show modal here and let user navigate using modal button
         setShowSuccessModal(true);
       } else {
-        showToast && showToast((res && res.message) || "Failed to save integration settings", 'error');
+        showToast &&
+          showToast(
+            (res && res.message) || "Failed to save integration settings",
+            "error",
+          );
       }
     } catch (err) {
       console.error("Failed calling eventIntegration:", err);
-      showToast && showToast("Failed to save integration settings.", 'error');
+      showToast && showToast("Failed to save integration settings.", "error");
     }
   };
 
@@ -96,28 +108,46 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
         <h3>Integrations</h3>
       </div>
 
-      <div className="integrations-grid" style={{ display: "grid", gap: 20, width: "100%", overflow: "hidden" }}>
-        <div>
-          <h4 style={{ color: "#da251c" }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 20,
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <h4
+            style={{
+              color: "#da251c",
+              fontSize: "1.1rem",
+              marginBottom: "8px",
+            }}
+          >
             &lt;&gt; Embed Tickets on your website (Pop-up)
           </h4>
-          <p>
+          <p style={{ fontSize: "0.95rem", marginBottom: "12px" }}>
             To embed ticketing on your website which opens over the content on
             clicking a button, paste this HTML code
           </p>
-          <div className="code-container" style={{ position: "relative" }}>
+          <div
+            className="code-container"
+            style={{ position: "relative", width: "100%" }}
+          >
             <pre
               className="integration-code-block"
               style={{
                 background: "#f7f7f7",
-                padding: 12,
+                padding: "10px",
                 borderRadius: 6,
                 border: "1px solid #eee",
                 overflowX: "auto",
                 whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
+                wordBreak: "break-all",
                 maxWidth: "100%",
-                boxSizing: "border-box"
+                boxSizing: "border-box",
+                fontSize: "0.85rem",
               }}
             >
               <code>{getPopupEmbed()}</code>
@@ -125,27 +155,37 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
           </div>
         </div>
 
-        <div>
-          <h4 style={{ color: "#da251c" }}>
+        <div style={{ minWidth: 0 }}>
+          <h4
+            style={{
+              color: "#da251c",
+              fontSize: "1.1rem",
+              marginBottom: "8px",
+            }}
+          >
             &lt;&gt; Embed Tickets on your website (iframe)
           </h4>
-          <p>
+          <p style={{ fontSize: "0.95rem", marginBottom: "12px" }}>
             To embed ticketing within the content on your website, paste this
             HTML code
           </p>
-          <div className="code-container" style={{ position: "relative" }}>
+          <div
+            className="code-container"
+            style={{ position: "relative", width: "100%" }}
+          >
             <pre
               className="integration-code-block"
               style={{
                 background: "#f7f7f7",
-                padding: 12,
+                padding: "10px",
                 borderRadius: 6,
                 border: "1px solid #eee",
                 overflowX: "auto",
                 whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
+                wordBreak: "break-all",
                 maxWidth: "100%",
-                boxSizing: "border-box"
+                boxSizing: "border-box",
+                fontSize: "0.85rem",
               }}
             >
               <code>{getIframeEmbed()}</code>
@@ -157,8 +197,9 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
           style={{
             display: "flex",
             justifyContent: "flex-end",
-            gap: 12,
-            marginTop: 12,
+            flexWrap: "wrap",
+            gap: 10,
+            marginTop: 10,
           }}
         >
           <button
@@ -168,9 +209,10 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
               color: "#da251c",
               background: "#fff",
               borderRadius: 6,
-              padding: "10px 32px",
+              padding: "8px 24px",
               fontWeight: 600,
               cursor: "pointer",
+              fontSize: "0.95rem",
             }}
           >
             Back
@@ -183,9 +225,10 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
                 color: "#fff",
                 border: "none",
                 borderRadius: 6,
-                padding: "10px 32px",
+                padding: "8px 24px",
                 fontWeight: 600,
                 cursor: "pointer",
+                fontSize: "0.95rem",
               }}
             >
               Save
@@ -221,13 +264,15 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
             }}
           >
             {/* Modal Header */}
-            <div style={{
-              padding: "20px 24px",
-              borderBottom: "1px solid #e0e0e0",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center"
-            }}>
+            <div
+              style={{
+                padding: "20px 24px",
+                borderBottom: "1px solid #e0e0e0",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 600 }}>
                 What is TCS and how does TCS work?
               </h3>
@@ -240,86 +285,107 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
                   cursor: "pointer",
                   color: "#666",
                   padding: 0,
-                  lineHeight: 1
+                  lineHeight: 1,
                 }}
-              >×</button>
+              >
+                ×
+              </button>
             </div>
 
             {/* Modal Content - Scrollable */}
-            <div style={{
-              padding: "24px",
-              overflowY: "auto",
-              flex: 1
-            }}>
+            <div
+              style={{
+                padding: "24px",
+                overflowY: "auto",
+                flex: 1,
+              }}
+            >
               <p style={{ marginTop: 0, lineHeight: 1.6 }}>
-                Starting 1st October 2018, every e-commerce operator has to collect TCS as per the GST regulations.
+                Starting 1st October 2018, every e-commerce operator has to
+                collect TCS as per the GST regulations.
               </p>
 
-              <h4 style={{ marginTop: 20, marginBottom: 10, fontWeight: 600 }}>What is TCS under GST?</h4>
+              <h4 style={{ marginTop: 20, marginBottom: 10, fontWeight: 600 }}>
+                What is TCS under GST?
+              </h4>
               <p style={{ lineHeight: 1.6 }}>
-                Tax Collected at Source (TCS) under GST means the tax collected by an e-commerce operator from the
-                consideration received by it on behalf of the supplier of goods, or services who makes supplies through
-                the operator's online platform. TCS will be charged as a percentage on the net taxable supplies.
+                Tax Collected at Source (TCS) under GST means the tax collected
+                by an e-commerce operator from the consideration received by it
+                on behalf of the supplier of goods, or services who makes
+                supplies through the operator's online platform. TCS will be
+                charged as a percentage on the net taxable supplies.
               </p>
 
               <h4 style={{ marginTop: 20, marginBottom: 10, fontWeight: 600 }}>
                 What is meant by the "net value of taxable supplies"?
               </h4>
               <p style={{ lineHeight: 1.6 }}>
-                The "net value of taxable supplies" means the aggregate value of taxable supplies of goods or services or
-                both, made during any month by a registered supplier through such operator reduced by the aggregate
-                value of taxable supplies returned to such supplier during the said month.
+                The "net value of taxable supplies" means the aggregate value of
+                taxable supplies of goods or services or both, made during any
+                month by a registered supplier through such operator reduced by
+                the aggregate value of taxable supplies returned to such
+                supplier during the said month.
               </p>
 
               <h4 style={{ marginTop: 20, marginBottom: 10, fontWeight: 600 }}>
                 What is the rate of TCS notified by the Government?
               </h4>
               <p style={{ lineHeight: 1.6 }}>
-                Rate of TCS is 0.5% under each Act (i.e. the CGST Act, 2017, and the respective SGST Act / UTGST Act
-                respectively) and the same is 1% under the IGST Act, 2017.
+                Rate of TCS is 0.5% under each Act (i.e. the CGST Act, 2017, and
+                the respective SGST Act / UTGST Act respectively) and the same
+                is 1% under the IGST Act, 2017.
               </p>
 
               <h4 style={{ marginTop: 20, marginBottom: 10, fontWeight: 600 }}>
-                Is every e-commerce operator required to collect tax on behalf of the actual supplier?
+                Is every e-commerce operator required to collect tax on behalf
+                of the actual supplier?
               </h4>
               <p style={{ lineHeight: 1.6 }}>
-                Every e-commerce operator is required to collect tax where the supplier is supplying goods or services
-                through e-commerce operators and consideration with respect to the supply is to be collected by the said
-                e-commerce operator.
+                Every e-commerce operator is required to collect tax where the
+                supplier is supplying goods or services through e-commerce
+                operators and consideration with respect to the supply is to be
+                collected by the said e-commerce operator.
               </p>
 
               <h4 style={{ marginTop: 20, marginBottom: 10, fontWeight: 600 }}>
                 How can actual suppliers/organizers claim credit for TCS?
               </h4>
               <p style={{ lineHeight: 1.6 }}>
-                Based on the statement (FORM GSTR-8) filed by the e-commerce operator, the TCS would be credited to
-                the electronic cash ledger of the actual supplier in the respective tax head. The said credit can be used at
-                the time of discharge of tax liability by the actual supplier.
+                Based on the statement (FORM GSTR-8) filed by the e-commerce
+                operator, the TCS would be credited to the electronic cash
+                ledger of the actual supplier in the respective tax head. The
+                said credit can be used at the time of discharge of tax
+                liability by the actual supplier.
               </p>
 
               <p style={{ lineHeight: 1.6, marginBottom: 8 }}>
-                If the supplier is not able to use the amount lying in the said cash ledger, the actual supplier may claim a
-                refund of the excess balance lying in his electronic cash ledger in accordance with the provisions contained
-                in section 54(1) of the CGST Act, 2017
+                If the supplier is not able to use the amount lying in the said
+                cash ledger, the actual supplier may claim a refund of the
+                excess balance lying in his electronic cash ledger in accordance
+                with the provisions contained in section 54(1) of the CGST Act,
+                2017
               </p>
 
               <h4 style={{ marginTop: 20, marginBottom: 10, fontWeight: 600 }}>
                 How does youtoocanrun handle TCS collected?
               </h4>
               <p style={{ lineHeight: 1.6, marginBottom: 24 }}>
-                Youtoocanrun files the TCS collected from the transaction under an Organizer's account on a monthly basis.
-                Total TCS collected for a month for an organizer is filed at one go.
+                Youtoocanrun files the TCS collected from the transaction under
+                an Organizer's account on a monthly basis. Total TCS collected
+                for a month for an organizer is filed at one go.
               </p>
 
               {/* Checkbox */}
-              <div style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 10,
-                padding: "16px",
-                background: "#f9f9f9",
-                borderRadius: 6
-              }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  padding: "16px",
+                  background: "#f9f9f9",
+                  borderRadius: 6,
+                }}
+              >
                 <input
                   type="checkbox"
                   id="tcsCheckbox"
@@ -329,7 +395,7 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
                     width: 18,
                     height: 18,
                     cursor: "pointer",
-                    marginTop: 2
+                    marginTop: 2,
                   }}
                 />
                 <label
@@ -337,7 +403,7 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
                   style={{
                     cursor: "pointer",
                     fontSize: 14,
-                    lineHeight: 1.5
+                    lineHeight: 1.5,
                   }}
                 >
                   I acknowledge the terms of services related to TCS.
@@ -346,12 +412,14 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
             </div>
 
             {/* Modal Footer */}
-            <div style={{
-              padding: "16px 24px",
-              borderTop: "1px solid #e0e0e0",
-              display: "flex",
-              justifyContent: "flex-end"
-            }}>
+            <div
+              style={{
+                padding: "16px 24px",
+                borderTop: "1px solid #e0e0e0",
+                display: "flex",
+                justifyContent: "flex-end",
+              }}
+            >
               <button
                 onClick={handleTCSConfirm}
                 disabled={!tcsAccepted}
@@ -363,7 +431,7 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
                   padding: "10px 32px",
                   fontWeight: 600,
                   cursor: tcsAccepted ? "pointer" : "not-allowed",
-                  fontSize: 14
+                  fontSize: 14,
                 }}
               >
                 Save
@@ -451,7 +519,7 @@ const Integrations = ({ onBack, onNext, showToast, isReadOnly }) => {
                         showToast && showToast("Link copied!");
                       } catch (e) {
                         console.error("clipboard error", e);
-                        showToast && showToast("Failed to copy link", 'error');
+                        showToast && showToast("Failed to copy link", "error");
                       }
                     }}
                     style={{

@@ -966,7 +966,7 @@ export default function CreateEvent() {
       const sidebar = document.querySelector('.create-event-sidebar');
       const preview = document.querySelector('.event-preview-sidebar');
       const container = document.querySelector('.create-event-layout');
-      
+
       if (!sidebar || !preview || !container) return;
 
       const sidebarChild = sidebar.children[0];
@@ -992,8 +992,8 @@ export default function CreateEvent() {
         sidebarChild.style.position = 'fixed';
         sidebarChild.style.top = `${stickyOffset}px`;
         sidebarChild.style.width = '230px';
-        sidebarChild.style.left = `${containerRect.left + 12}px`; 
-        
+        sidebarChild.style.left = `${containerRect.left + 12}px`;
+
         // Fix Right Sidebar
         previewChild.style.position = 'fixed';
         previewChild.style.top = `${stickyOffset}px`;
@@ -1004,7 +1004,7 @@ export default function CreateEvent() {
         sidebarChild.style.top = '';
         sidebarChild.style.width = 'auto';
         sidebarChild.style.left = '';
-        
+
         previewChild.style.position = 'static';
         previewChild.style.top = '';
         previewChild.style.width = 'auto';
@@ -1443,290 +1443,290 @@ export default function CreateEvent() {
         <aside className="create-event-sidebar">
           <div className="sidebar-sticky-wrapper">
             <div className="sidebar-step-list">
-            {steps.map((step, idx) => {
-              const isCompleted = savedSteps[idx];
-              const isCurrent = idx === currentStep - 1;
-              const isDisabled = idx > 0 && !savedSteps[0];
-              return (
-                <div
-                  key={step.title}
-                  className={`sidebar-step-item ${isCompleted ? "sidebar-step-completed" : ""} ${isCurrent ? "sidebar-step-active" : ""}`}
-                  role="button"
-                  tabIndex={isDisabled ? -1 : 0}
-                  aria-label={step.title}
-                  title={isDisabled ? "Complete step 1 first" : step.title}
-                  style={{ cursor: isDisabled ? "not-allowed" : "pointer", opacity: isDisabled ? 0.5 : 1 }}
-                  onClick={() => { if (!isDisabled) setCurrentStep(idx + 1); }}
-                  onKeyDown={(e) => { if (!isDisabled && (e.key === "Enter" || e.key === " ")) setCurrentStep(idx + 1); }}
-                >
-                  <div className="sidebar-step-connector" />
-                  <div className="sidebar-step-circle">
-                    {isCompleted ? (
-                      <i className="fas fa-check" />
-                    ) : (
-                      <span>{idx + 1}</span>
-                    )}
+              {steps.map((step, idx) => {
+                const isCompleted = savedSteps[idx];
+                const isCurrent = idx === currentStep - 1;
+                const isDisabled = idx > 0 && !savedSteps[0];
+                return (
+                  <div
+                    key={step.title}
+                    className={`sidebar-step-item ${isCompleted ? "sidebar-step-completed" : ""} ${isCurrent ? "sidebar-step-active" : ""}`}
+                    role="button"
+                    tabIndex={isDisabled ? -1 : 0}
+                    aria-label={step.title}
+                    title={isDisabled ? "Complete step 1 first" : step.title}
+                    style={{ cursor: isDisabled ? "not-allowed" : "pointer", opacity: isDisabled ? 0.5 : 1 }}
+                    onClick={() => { if (!isDisabled) setCurrentStep(idx + 1); }}
+                    onKeyDown={(e) => { if (!isDisabled && (e.key === "Enter" || e.key === " ")) setCurrentStep(idx + 1); }}
+                  >
+                    <div className="sidebar-step-connector" />
+                    <div className="sidebar-step-circle">
+                      {isCompleted ? (
+                        <i className="fas fa-check" />
+                      ) : (
+                        <span>{idx + 1}</span>
+                      )}
+                    </div>
+                    <div className="sidebar-step-label">
+                      <span className="sidebar-step-title">{step.title}</span>
+                      {isCompleted && <span className="sidebar-step-badge">Done</span>}
+                      {isCurrent && !isCompleted && <span className="sidebar-step-badge active-badge">In Progress</span>}
+                    </div>
                   </div>
-                  <div className="sidebar-step-label">
-                    <span className="sidebar-step-title">{step.title}</span>
-                    {isCompleted && <span className="sidebar-step-badge">Done</span>}
-                    {isCurrent && !isCompleted && <span className="sidebar-step-badge active-badge">In Progress</span>}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
             </div>
           </div>
         </aside>
 
         <div className="create-event-main">
 
-            {currentStep === 1 && (
-              <div className="event-form-section">
-                <div className="section-header">
-                  <h3>Event Essentials</h3>
-                  <div className="status-buttons">
-                    <button
-                      className={`status-btn ${status === "public" ? "active" : ""
-                        }`}
-                      onClick={() => !isReadOnly && setStatus("public")}
-                      disabled={isReadOnly}
-                      style={{ cursor: isReadOnly ? "default" : "pointer" }}
-                    >
-                      <i className="fas fa-globe"></i> Public
-                    </button>
-                    <button
-                      className={`status-btn ${status === "private" ? "active" : ""
-                        }`}
-                      onClick={() => !isReadOnly && setStatus("private")}
-                      disabled={isReadOnly}
-                      style={{ cursor: isReadOnly ? "default" : "pointer" }}
-                    >
-                      <i className="fas fa-lock"></i> Private
-                    </button>
-                    <button
-                      className={`status-btn ${status === "draft" ? "active" : ""
-                        }`}
-                      onClick={() => !isReadOnly && setStatus("draft")}
-                      disabled={isReadOnly}
-                      style={{ cursor: isReadOnly ? "default" : "pointer" }}
-                    >
-                      <i className="fas fa-file-alt"></i> Draft
-                    </button>
-                  </div>
+          {currentStep === 1 && (
+            <div className="event-form-section">
+              <div className="section-header">
+                <h3>Event Essentials</h3>
+                <div className="status-buttons">
+                  <button
+                    className={`status-btn ${status === "public" ? "active" : ""
+                      }`}
+                    onClick={() => !isReadOnly && setStatus("public")}
+                    disabled={isReadOnly}
+                    style={{ cursor: isReadOnly ? "default" : "pointer" }}
+                  >
+                    <i className="fas fa-globe"></i> Public
+                  </button>
+                  <button
+                    className={`status-btn ${status === "private" ? "active" : ""
+                      }`}
+                    onClick={() => !isReadOnly && setStatus("private")}
+                    disabled={isReadOnly}
+                    style={{ cursor: isReadOnly ? "default" : "pointer" }}
+                  >
+                    <i className="fas fa-lock"></i> Private
+                  </button>
+                  <button
+                    className={`status-btn ${status === "draft" ? "active" : ""
+                      }`}
+                    onClick={() => !isReadOnly && setStatus("draft")}
+                    disabled={isReadOnly}
+                    style={{ cursor: isReadOnly ? "default" : "pointer" }}
+                  >
+                    <i className="fas fa-file-alt"></i> Draft
+                  </button>
+                </div>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleEssentialsSave();
+                }}
+              >
+                {/* Event Name */}
+                <div className="form-group">
+                  <label>
+                    Event Name <span className="required">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder={`(Allowed only this special characters - , @ , ' , " )`}
+                    value={eventName}
+                    onChange={(e) => {
+                      if (isReadOnly) return;
+                      setEventName(sanitizeEventName(e.target.value));
+                      if (nameError) setNameError("");
+                    }}
+                    onPaste={(e) => {
+                      if (isReadOnly) return;
+                      const pasted = (
+                        e.clipboardData || window.clipboardData
+                      ).getData("text");
+                      e.preventDefault();
+                      setEventName(sanitizeEventName(pasted));
+                    }}
+                    disabled={isReadOnly}
+                    style={{ cursor: isReadOnly ? "default" : "text" }}
+                    required
+                  />
+                  {nameError ? (
+                    <div style={{ color: "#d32f2f", marginTop: 8 }}>
+                      {nameError}
+                    </div>
+                  ) : null}
                 </div>
 
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleEssentialsSave();
-                  }}
-                >
-                  {/* Event Name */}
-                  <div className="form-group">
-                    <label>
-                      Event Name <span className="required">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder={`(Allowed only this special characters - , @ , ' , " )`}
-                      value={eventName}
-                      onChange={(e) => {
-                        if (isReadOnly) return;
-                        setEventName(sanitizeEventName(e.target.value));
-                        if (nameError) setNameError("");
-                      }}
-                      onPaste={(e) => {
-                        if (isReadOnly) return;
-                        const pasted = (
-                          e.clipboardData || window.clipboardData
-                        ).getData("text");
-                        e.preventDefault();
-                        setEventName(sanitizeEventName(pasted));
-                      }}
-                      disabled={isReadOnly}
-                      style={{ cursor: isReadOnly ? "default" : "text" }}
-                      required
-                    />
-                    {nameError ? (
-                      <div style={{ color: "#d32f2f", marginTop: 8 }}>
-                        {nameError}
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {/* Event Category */}
-                  <div className="form-group">
-                    <label>
-                      Event Category <span className="required">*</span>
-                    </label>
-                    <div className="category-grid">
-                      {categories.length > 0 ? (
-                        categories.map((cat, index) => {
-                          return (
-                            <div
-                              key={cat.id || index}
-                              className={`category-card ${selectedCategories.includes(cat.name)
-                                ? "selected"
-                                : ""
-                                }`}
-                              onClick={() => !isReadOnly && handleCategoryToggle(cat.name)}
-                              style={{ cursor: isReadOnly ? "default" : "pointer" }}
-                              title={stripHtml(cat.name)}
-                            >
-                              {renderCategoryIcon(cat)}
-                              <span className="category-name-text">{stripHtml(cat.name)}</span>
-                              <input
-                                type="checkbox"
-                                checked={selectedCategories.includes(cat.name)}
-                                onChange={() => { }}
-                              />
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <p>Loading categories...</p>
-                      )}
-                    </div>
-                    {categoryError && (
-                      <div style={{ color: "#da251c", fontSize: "14px", marginTop: "8px" }}>
-                        {categoryError}
-                      </div>
+                {/* Event Category */}
+                <div className="form-group">
+                  <label>
+                    Event Category <span className="required">*</span>
+                  </label>
+                  <div className="category-grid">
+                    {categories.length > 0 ? (
+                      categories.map((cat, index) => {
+                        return (
+                          <div
+                            key={cat.id || index}
+                            className={`category-card ${selectedCategories.includes(cat.name)
+                              ? "selected"
+                              : ""
+                              }`}
+                            onClick={() => !isReadOnly && handleCategoryToggle(cat.name)}
+                            style={{ cursor: isReadOnly ? "default" : "pointer" }}
+                            title={stripHtml(cat.name)}
+                          >
+                            {renderCategoryIcon(cat)}
+                            <span className="category-name-text">{stripHtml(cat.name)}</span>
+                            <input
+                              type="checkbox"
+                              checked={selectedCategories.includes(cat.name)}
+                              onChange={() => { }}
+                            />
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <p>Loading categories...</p>
                     )}
                   </div>
-
-                  {!isReadOnly && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-                      <button type="submit" className="btn-save-continue">
-                        Save & Continue
-                      </button>
+                  {categoryError && (
+                    <div style={{ color: "#da251c", fontSize: "14px", marginTop: "8px" }}>
+                      {categoryError}
                     </div>
                   )}
-                </form>
-              </div>
-            )}
+                </div>
 
-            {currentStep === 2 && (
-              <EventScheduling
-                onBack={() => setCurrentStep(1)}
-                onNext={handleSchedulingNext}
-                initialFormData={eventFormData}
-                showToast={showToast}
-                onChange={(data) => setEventFormData((prev) => ({ ...prev, ...data }))}
-                isEditMode={isEditMode}
-                isReadOnly={isReadOnly}
-              />
-            )}
-            {currentStep === 3 && (
-              <EventImages
-                onBack={() => setCurrentStep(2)}
-                onNext={handleImagesSave}
-                showToast={showToast}
-                isReadOnly={isReadOnly}
-              />
-            )}
-            {currentStep === 4 && (
-              <EventSettings
-                onBack={() => setCurrentStep(3)}
-                onNext={handleSettingsSave}
-                showToast={showToast}
-                isReadOnly={isReadOnly}
-              />
-            )}
-            {currentStep === 5 && (
-              <RaceCategories
-                onBack={() => setCurrentStep(4)}
-                onNext={handleRaceCategoriesSave}
-                setShowPreview={setShowPreview}
-                paidType={paidType}
-                setPaidType={setPaidType}
-                eventFormData={eventFormData}
-                setEventFormData={setEventFormData}
-                organizerGST={organizerGST}
-                showToast={showToast}
-                isEditMode={isEditMode}
-                isReadOnly={isReadOnly}
-              />
-            )}
-            {currentStep === 6 && (
-              <FormQuestions
-                onBack={() => setCurrentStep(5)}
-                onNext={() => {
-                  /* Next step logic */
-                  setSavedSteps((prev) => {
-                    const updated = [...prev];
-                    updated[5] = true;
-                    // Persist to localStorage
-                    try {
-                      const eventId = sessionStorage.getItem("event_id");
-                      if (eventId) {
-                        localStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
-                      }
-                    } catch (e) { }
-                    return updated;
-                  });
-                  setCurrentStep(7);
-                }}
-                showToast={showToast}
-                isReadOnly={isReadOnly}
-              />
-            )}
-            {currentStep === 7 && (
-              <Grouping
-                onBack={() => setCurrentStep(6)}
-                onNext={handleGroupingSave}
-                showToast={showToast}
-                isReadOnly={isReadOnly}
-              />
-            )}
-            {currentStep === 8 && (
-              <AgeCategory
-                onBack={() => setCurrentStep(7)}
-                onNext={() => markCurrentSavedAndGo(9)}
-                showToast={showToast}
-                isReadOnly={isReadOnly}
-              />
-            )}
-            {currentStep === 9 && (
-              <DiscountCoupons
-                onBack={() => setCurrentStep(8)}
-                onNext={() => markCurrentSavedAndGo(10)}
-                showToast={showToast}
-                isEditMode={isEditMode}
-                isReadOnly={isReadOnly}
-              />
-            )}
-            {currentStep === 10 && (
-              <CommunicationsStep
-                onBack={() => setCurrentStep(9)}
-                onNext={() => markCurrentSavedAndGo(11)}
-                onEditingChange={setIsEditingCommunication}
-                showToast={showToast}
-                isReadOnly={isReadOnly}
-              />
-            )}
-            {currentStep === 11 && (
-              <FAQsStep
-                onBack={() => setCurrentStep(10)}
-                onNext={() => markCurrentSavedAndGo(12)}
-                showToast={showToast}
-                isReadOnly={isReadOnly}
-              />
-            )}
-            {currentStep === 12 && (
-              <Integrations
-                onBack={() => setCurrentStep(11)}
-                onNext={() => markCurrentSavedAndGo(13)}
-                showToast={showToast}
-                isReadOnly={isReadOnly}
-              />
-            )}
-          </div>
+                {!isReadOnly && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+                    <button type="submit" className="btn-save-continue">
+                      Save & Continue
+                    </button>
+                  </div>
+                )}
+              </form>
+            </div>
+          )}
 
-          {/* Event Preview Sidebar */}
-          <div className="event-preview-sidebar">
-            <div className="preview-sticky-wrapper">
+          {currentStep === 2 && (
+            <EventScheduling
+              onBack={() => setCurrentStep(1)}
+              onNext={handleSchedulingNext}
+              initialFormData={eventFormData}
+              showToast={showToast}
+              onChange={(data) => setEventFormData((prev) => ({ ...prev, ...data }))}
+              isEditMode={isEditMode}
+              isReadOnly={isReadOnly}
+            />
+          )}
+          {currentStep === 3 && (
+            <EventImages
+              onBack={() => setCurrentStep(2)}
+              onNext={handleImagesSave}
+              showToast={showToast}
+              isReadOnly={isReadOnly}
+            />
+          )}
+          {currentStep === 4 && (
+            <EventSettings
+              onBack={() => setCurrentStep(3)}
+              onNext={handleSettingsSave}
+              showToast={showToast}
+              isReadOnly={isReadOnly}
+            />
+          )}
+          {currentStep === 5 && (
+            <RaceCategories
+              onBack={() => setCurrentStep(4)}
+              onNext={handleRaceCategoriesSave}
+              setShowPreview={setShowPreview}
+              paidType={paidType}
+              setPaidType={setPaidType}
+              eventFormData={eventFormData}
+              setEventFormData={setEventFormData}
+              organizerGST={organizerGST}
+              showToast={showToast}
+              isEditMode={isEditMode}
+              isReadOnly={isReadOnly}
+            />
+          )}
+          {currentStep === 6 && (
+            <FormQuestions
+              onBack={() => setCurrentStep(5)}
+              onNext={() => {
+                /* Next step logic */
+                setSavedSteps((prev) => {
+                  const updated = [...prev];
+                  updated[5] = true;
+                  // Persist to localStorage
+                  try {
+                    const eventId = sessionStorage.getItem("event_id");
+                    if (eventId) {
+                      localStorage.setItem(`savedSteps_${eventId}`, JSON.stringify(updated));
+                    }
+                  } catch (e) { }
+                  return updated;
+                });
+                setCurrentStep(7);
+              }}
+              showToast={showToast}
+              isReadOnly={isReadOnly}
+            />
+          )}
+          {currentStep === 7 && (
+            <Grouping
+              onBack={() => setCurrentStep(6)}
+              onNext={handleGroupingSave}
+              showToast={showToast}
+              isReadOnly={isReadOnly}
+            />
+          )}
+          {currentStep === 8 && (
+            <AgeCategory
+              onBack={() => setCurrentStep(7)}
+              onNext={() => markCurrentSavedAndGo(9)}
+              showToast={showToast}
+              isReadOnly={isReadOnly}
+            />
+          )}
+          {currentStep === 9 && (
+            <DiscountCoupons
+              onBack={() => setCurrentStep(8)}
+              onNext={() => markCurrentSavedAndGo(10)}
+              showToast={showToast}
+              isEditMode={isEditMode}
+              isReadOnly={isReadOnly}
+            />
+          )}
+          {currentStep === 10 && (
+            <CommunicationsStep
+              onBack={() => setCurrentStep(9)}
+              onNext={() => markCurrentSavedAndGo(11)}
+              onEditingChange={setIsEditingCommunication}
+              showToast={showToast}
+              isReadOnly={isReadOnly}
+            />
+          )}
+          {currentStep === 11 && (
+            <FAQsStep
+              onBack={() => setCurrentStep(10)}
+              onNext={() => markCurrentSavedAndGo(12)}
+              showToast={showToast}
+              isReadOnly={isReadOnly}
+            />
+          )}
+          {currentStep === 12 && (
+            <Integrations
+              onBack={() => setCurrentStep(11)}
+              onNext={() => markCurrentSavedAndGo(13)}
+              showToast={showToast}
+              isReadOnly={isReadOnly}
+            />
+          )}
+        </div>
+
+        {/* Event Preview Sidebar */}
+        <div className="event-preview-sidebar">
+          <div className="preview-sticky-wrapper">
             {/* Show Placeholders section ONLY when editing communication (step 10 + editing mode) */}
             {currentStep === 10 && isEditingCommunication && (
               <div
@@ -1804,14 +1804,14 @@ export default function CreateEvent() {
               paidType &&
               paidType.toLowerCase() === "paid" && (
                 <div
-                style={{
-                  background: "#fff",
-                  padding: "20px",
-                  borderRadius: "12px",
-                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-                  marginBottom: "24px",
-                }}
-              >
+                  style={{
+                    background: "#fff",
+                    padding: "20px",
+                    borderRadius: "12px",
+                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+                    marginBottom: "24px",
+                  }}
+                >
                   {/* Payment calculation logic */}
                   {(() => {
                     let baseAmount = eventFormData.raceCategoryPrice
@@ -2032,7 +2032,7 @@ export default function CreateEvent() {
                             }}
                           >
                             <span style={{ fontSize: "0.95rem", color: "#666" }}>
-                              Payment Gateway Charges (1.85%)
+                              Payment Gateway Charges
                             </span>
                             <span
                               style={{
@@ -2427,9 +2427,9 @@ export default function CreateEvent() {
                 </div>
               </div>
             )}
-            </div>
           </div>
         </div>
+      </div>
 
       {/* Toast Notification */}
       {toast && (
