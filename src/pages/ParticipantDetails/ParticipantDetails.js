@@ -1713,9 +1713,11 @@ export default function ParticipantDetails() {
       const convenienceFeeGST = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0) : 0;
       const platformFeeGST = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0) : 0;
       
-      // Calculate Payment Gateway Charges manually (1.85%) based on (Net Price + All Fees + All GST)
+      // Calculate Payment Gateway Charges manually (dynamic %) based on (Net Price + All Fees + All GST)
       const sumForPG = (effectivePrice - discountPerParticipant) + convenienceFeeBase + platformFeeBase + registrationGST + convenienceFeeGST + platformFeeGST;
-      const manualPGCharges = (isParticipantPayingGateway && sumForPG > 0) ? (sumForPG * 0.0185) : 0;
+      const pgFeePercent = parseFloat(calcDetails.payment_gateway_fees) || 1.85;
+      const pgFeeFactor = pgFeePercent / 100;
+      const manualPGCharges = (isParticipantPayingGateway && sumForPG > 0) ? (sumForPG * pgFeeFactor) : 0;
       const manualPGGST = (isParticipantPayingGateway && manualPGCharges > 0) ? (manualPGCharges * 0.18) : 0;
 
       const totalPlatformFee = (convenienceFeeBase + platformFeeBase + manualPGCharges) * parseInt(ticket.quantity);
@@ -4661,9 +4663,11 @@ export default function ParticipantDetails() {
                 const convenienceFeeGST = (isFreeTicket || !isParticipantPayingFees) ? 0 : parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0);
                 const platformFeeGST = (isFreeTicket || !isParticipantPayingFees) ? 0 : parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0);
 
-                // Calculate Payment Gateway Charges manually (1.85%) based on (Net Price + All Fees + All GST)
+                // Calculate Payment Gateway Charges manually (dynamic %) based on (Net Price + All Fees + All GST)
                 const sumForPG = (isFreeTicket ? 0 : (effectivePrice - discountPerTicket)) + convenienceFeeBase + platformFeeBase + registrationGST + convenienceFeeGST + platformFeeGST;
-                const manualPGCharges = (isFreeTicket || !isParticipantPayingGateway || sumForPG <= 0) ? 0 : (sumForPG * 0.0185);
+                const pgFeePercent = parseFloat(calcDetails.payment_gateway_fees) || 1.85;
+                const pgFeeFactor = pgFeePercent / 100;
+                const manualPGCharges = (isFreeTicket || !isParticipantPayingGateway || sumForPG <= 0) ? 0 : (sumForPG * pgFeeFactor);
                 const manualPGGST = (isFreeTicket || !isParticipantPayingGateway || manualPGCharges <= 0) ? 0 : (manualPGCharges * 0.18);
 
                 console.log('🔍 Platform Fee Components:', {
