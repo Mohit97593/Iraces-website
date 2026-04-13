@@ -87,6 +87,22 @@ export default function MyEvents() {
         // populate events state if available (handle multiple response shapes)
         const parsed = parseEventsFromResponse(eventDetails);
         setEvents(parsed);
+
+        // Check if organiser profile is filled
+        try {
+          const orgRes = await authAPI.getOrganizerDetails();
+          if (
+            orgRes?.data?.organizerData &&
+            orgRes.data.organizerData.length > 0
+          ) {
+            setHasOrganizerProfile(true);
+          } else {
+            setHasOrganizerProfile(false);
+          }
+        } catch (orgErr) {
+          console.error("Failed to fetch organiser details:", orgErr);
+          setHasOrganizerProfile(false);
+        }
       } catch (err) {
         console.error("Failed to call APIs:", err);
       } finally {
@@ -162,6 +178,8 @@ export default function MyEvents() {
   // events state and helpers
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
+  const [hasOrganizerProfile, setHasOrganizerProfile] = useState(false);
+  const [showOrganizerPopup, setShowOrganizerPopup] = useState(false);
   const [orgEvents, setOrgEvents] = useState([]);
   const [organizerId, setOrganizerId] = useState(0);
   const [likedEvents, setLikedEvents] = useState({});
@@ -792,8 +810,12 @@ export default function MyEvents() {
           >
             <button
               onClick={() => {
-                sessionStorage.removeItem("editEventId");
-                navigate("/create-event");
+                if (hasOrganizerProfile) {
+                  sessionStorage.removeItem("editEventId");
+                  navigate("/create-event");
+                } else {
+                  setShowOrganizerPopup(true);
+                }
               }}
               style={{
                 backgroundColor: "#da251c",
@@ -873,6 +895,99 @@ export default function MyEvents() {
           )}
         </div>
       </div>
+      {/* Organiser Profile Required Modal */}
+      {showOrganizerPopup && (
+        <div
+          className="modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            className="modal-card"
+            style={{
+              background: "#fff",
+              padding: "30px",
+              borderRadius: "16px",
+              width: "90%",
+              maxWidth: "500px",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ marginBottom: "20px" }}>
+              <i
+                className="fas fa-exclamation-circle"
+                style={{ fontSize: "48px", color: "#da251c" }}
+              ></i>
+            </div>
+            <h3 style={{ marginBottom: "15px", color: "#2c3e50" }}>
+              Organiser Profile Required
+            </h3>
+            <p
+              style={{
+                color: "#7f8c8d",
+                marginBottom: "25px",
+                fontSize: "16px",
+                lineHeight: "1.5",
+              }}
+            >
+              Please fill your Organiser Profile first to create an event.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                gap: "15px",
+                justifyContent: "center",
+              }}
+            >
+              <button
+                onClick={() => setShowOrganizerPopup(false)}
+                className="cancel-btn"
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "8px",
+                  border: "1px solid #ccc",
+                  background: "#fff",
+                  color: "#333",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setShowOrganizerPopup(false);
+                  navigate("/organiser-profile");
+                }}
+                className="save-btn-form"
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#da251c",
+                  color: "#fff",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Fill Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Copy Event Modal */}
       {showCopyModal && (
         <div

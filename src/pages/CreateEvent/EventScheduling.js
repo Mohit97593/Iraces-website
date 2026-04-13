@@ -228,24 +228,25 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
           const countryName = postOffice.Country;
           const cityName = postOffice.District || postOffice.Name;
 
-          // Find matching country in the countries list (exact match only)
           const matchedCountry = countries.find(
             (c) => c.name.toLowerCase() === countryName.toLowerCase()
           );
+          
+          const finalCountry = matchedCountry ? matchedCountry.name : countryName;
+
+          // Sync search inputs OUTSIDE the state updater to avoid React batching issues
+          setCountrySearch(finalCountry);
+          setStateSearch(stateName);
+          setCitySearch(cityName);
 
           // Update formData with country, state, and city
           setFormData((prev) => {
             const updated = {
               ...prev,
-              country: matchedCountry ? matchedCountry.name : countryName,
+              country: finalCountry,
               state: stateName,
               city: cityName,
             };
-
-            // Sync search inputs
-            setCountrySearch(updated.country);
-            setStateSearch(updated.state);
-            setCitySearch(updated.city);
 
             sessionStorage.setItem(
               "eventSchedulingFormData",
