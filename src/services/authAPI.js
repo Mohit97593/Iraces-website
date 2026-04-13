@@ -1392,7 +1392,7 @@ export const authAPI = {
           "Content-Type": "multipart/form-data",
         },
       });
-      return response;
+      return response.data;
     } catch (error) {
       console.error("AddEventDescription API error:", error);
       throw error.response?.data || error.message;

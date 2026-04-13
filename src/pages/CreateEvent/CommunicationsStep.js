@@ -4,6 +4,8 @@ import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import "./CreateEvent.css";
 import Toast from "../../components/Toast/Toast";
+import HelpIcon from "../../components/HelpModal/HelpIcon";
+import { helpContent } from "../../utils/HelpContent";
 
 const CommunicationsStep = ({ onBack, onNext, onEditingChange, isReadOnly }) => {
   const [items, setItems] = useState([]);
@@ -556,7 +558,13 @@ const CommunicationsStep = ({ onBack, onNext, onEditingChange, isReadOnly }) => 
         />
       )}
       <div className="section-header">
-        <h3>Communications</h3>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <h3 style={{ margin: 0 }}>Communications</h3>
+          <HelpIcon 
+            title={helpContent.communications.title} 
+            content={helpContent.communications.content} 
+          />
+        </div>
       </div>
 
       <div style={{ display: "grid", gap: 20 }}>

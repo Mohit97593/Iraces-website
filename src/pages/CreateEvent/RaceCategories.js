@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import RaceCategoryForm from "./RaceCategoryForm";
 import { authAPI } from "../../services/authAPI";
+import HelpIcon from "../../components/HelpModal/HelpIcon";
+import { helpContent } from "../../utils/HelpContent";
 
 export default function RaceCategories({
   onBack,
@@ -219,9 +221,15 @@ export default function RaceCategories({
               marginBottom: 32,
             }}
           >
-            <h3 style={{ fontWeight: 700, fontSize: "1.6rem", margin: 0 }}>
-              Race Category
-            </h3>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <h3 style={{ fontWeight: 700, fontSize: "1.6rem", margin: 0 }}>
+                Race Category
+              </h3>
+              <HelpIcon 
+                title={helpContent.raceCategories.title} 
+                content={helpContent.raceCategories.content} 
+              />
+            </div>
             {!isReadOnly && (
               <button
                 type="button"

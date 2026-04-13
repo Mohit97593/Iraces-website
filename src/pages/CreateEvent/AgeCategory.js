@@ -3,6 +3,8 @@ import { authAPI } from "../../services/authAPI";
 import AddAgeCategoryForm from "./AddAgeCategoryForm";
 import "./CreateEvent.css";
 import Toast from "../../components/Toast/Toast";
+import HelpIcon from "../../components/HelpModal/HelpIcon";
+import { helpContent } from "../../utils/HelpContent";
 
 const AgeCategory = ({ onBack, onNext, isReadOnly }) => {
   const [hovered, setHovered] = useState(null);
@@ -185,15 +187,21 @@ const AgeCategory = ({ onBack, onNext, isReadOnly }) => {
               marginBottom: 24,
             }}
           >
-            <h2
-              style={{
-                fontWeight: 700,
-                fontSize: "1.6rem",
-                marginBottom: 0,
-              }}
-            >
-              Age Category
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <h2
+                style={{
+                  fontWeight: 700,
+                  fontSize: "1.6rem",
+                  marginBottom: 0,
+                }}
+              >
+                Age Category
+              </h2>
+              <HelpIcon 
+                title={helpContent.ageCategory.title} 
+                content={helpContent.ageCategory.content} 
+              />
+            </div>
             {!isReadOnly && (
               <button
                 style={{

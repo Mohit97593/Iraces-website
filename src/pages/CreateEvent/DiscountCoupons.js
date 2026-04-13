@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 import Toast from "../../components/Toast/Toast";
+import HelpIcon from "../../components/HelpModal/HelpIcon";
+import { helpContent } from "../../utils/HelpContent";
 
 export default function DiscountCoupons({ onBack, onNext, isEditMode, isReadOnly }) {
   const [toast, setToast] = useState(null);
@@ -457,9 +459,17 @@ export default function DiscountCoupons({ onBack, onNext, isEditMode, isReadOnly
           onClose={() => setToast(null)}
         />
       )}
-      <div className="section-header">
-        {!showForm && <h3>Discount Coupons</h3>}
-      </div>
+      {!showForm && (
+        <div className="section-header">
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <h3 style={{ margin: 0 }}>Discount Coupons</h3>
+            <HelpIcon 
+              title={helpContent.coupons.title} 
+              content={helpContent.coupons.content} 
+            />
+          </div>
+        </div>
+      )}
 
       <div style={{ marginTop: 24 }}>
         <div

@@ -18,6 +18,8 @@ import Integrations from "./Integrations";
 import eventViewImg from "../../assets/image/event-view.jpg";
 import Toast from "../../components/Toast/Toast";
 import AccessController from "../../utils/AccessController";
+import HelpIcon from "../../components/HelpModal/HelpIcon";
+import { helpContent } from "../../utils/HelpContent";
 
 export default function CreateEvent() {
   const location = useLocation();
@@ -1102,13 +1104,11 @@ export default function CreateEvent() {
   };
 
   // Mark the current step as saved (for progress) and move to a target step
-  const markCurrentSavedAndGo = (targetStep) => {
+  const markCurrentSavedAndGo = (targetStep, successMsg) => {
     setSavedSteps((prev) => {
       const updated = [...prev];
-      // mark current as saved
       if (currentStep - 1 >= 0 && currentStep - 1 < updated.length)
         updated[currentStep - 1] = true;
-      // Persist to localStorage
       try {
         const eventId = sessionStorage.getItem("event_id");
         if (eventId) {
@@ -1117,6 +1117,9 @@ export default function CreateEvent() {
       } catch (e) { }
       return updated;
     });
+    if (showToast && successMsg) {
+      showToast(successMsg);
+    }
     setCurrentStep(targetStep);
   };
 
@@ -1304,7 +1307,6 @@ export default function CreateEvent() {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[1] = true;
-      // Persist to localStorage
       try {
         const eventId = sessionStorage.getItem("event_id");
         if (eventId) {
@@ -1313,6 +1315,7 @@ export default function CreateEvent() {
       } catch (e) { }
       return updated;
     });
+    showToast && showToast("Event Scheduling saved successfully!");
     setCurrentStep(3);
   };
   const handleImagesSave = (bannerUrl) => {
@@ -1320,7 +1323,6 @@ export default function CreateEvent() {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[2] = true;
-      // Persist to localStorage
       try {
         const eventId = sessionStorage.getItem("event_id");
         if (eventId) {
@@ -1329,13 +1331,13 @@ export default function CreateEvent() {
       } catch (e) { }
       return updated;
     });
+    showToast && showToast("Event Description & Images saved successfully!");
     setCurrentStep(4);
   };
   const handleSettingsSave = () => {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[3] = true;
-      // Persist to localStorage
       try {
         const eventId = sessionStorage.getItem("event_id");
         if (eventId) {
@@ -1344,13 +1346,13 @@ export default function CreateEvent() {
       } catch (e) { }
       return updated;
     });
+    showToast && showToast("Event Settings saved successfully!");
     setCurrentStep(5);
   };
   const handleRaceCategoriesSave = () => {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[4] = true;
-      // Persist to localStorage
       try {
         const eventId = sessionStorage.getItem("event_id");
         if (eventId) {
@@ -1359,13 +1361,13 @@ export default function CreateEvent() {
       } catch (e) { }
       return updated;
     });
+    showToast && showToast("Race Categories saved successfully!");
     setCurrentStep(6);
   };
   const handleGroupingSave = () => {
     setSavedSteps((prev) => {
       const updated = [...prev];
       updated[6] = true;
-      // Persist to localStorage
       try {
         const eventId = sessionStorage.getItem("event_id");
         if (eventId) {
@@ -1374,6 +1376,7 @@ export default function CreateEvent() {
       } catch (e) { }
       return updated;
     });
+    showToast && showToast("Question Grouping saved successfully!");
     setCurrentStep(8);
   };
 
@@ -1540,7 +1543,13 @@ export default function CreateEvent() {
           {currentStep === 1 && (
             <div className="event-form-section">
               <div className="section-header">
-                <h3>Event Essentials</h3>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <h3 style={{ margin: 0 }}>Event Essentials</h3>
+                  <HelpIcon 
+                    title={helpContent.essentials.title} 
+                    content={helpContent.essentials.content} 
+                  />
+                </div>
                 <div className="status-buttons">
                   <button
                     className={`status-btn ${status === "public" ? "active" : ""
@@ -1722,6 +1731,7 @@ export default function CreateEvent() {
                   } catch (e) { }
                   return updated;
                 });
+                showToast && showToast("Form Questions saved successfully!");
                 setCurrentStep(7);
               }}
               showToast={showToast}
@@ -1739,7 +1749,7 @@ export default function CreateEvent() {
           {currentStep === 8 && (
             <AgeCategory
               onBack={() => setCurrentStep(7)}
-              onNext={() => markCurrentSavedAndGo(9)}
+              onNext={() => markCurrentSavedAndGo(9, "Age Categories saved successfully!")}
               showToast={showToast}
               isReadOnly={isReadOnly}
             />
@@ -1747,7 +1757,7 @@ export default function CreateEvent() {
           {currentStep === 9 && (
             <DiscountCoupons
               onBack={() => setCurrentStep(8)}
-              onNext={() => markCurrentSavedAndGo(10)}
+              onNext={() => markCurrentSavedAndGo(10, "Discount Coupons saved successfully!")}
               showToast={showToast}
               isEditMode={isEditMode}
               isReadOnly={isReadOnly}
@@ -1756,7 +1766,7 @@ export default function CreateEvent() {
           {currentStep === 10 && (
             <CommunicationsStep
               onBack={() => setCurrentStep(9)}
-              onNext={() => markCurrentSavedAndGo(11)}
+              onNext={() => markCurrentSavedAndGo(11, "Communications saved successfully!")}
               onEditingChange={setIsEditingCommunication}
               showToast={showToast}
               isReadOnly={isReadOnly}

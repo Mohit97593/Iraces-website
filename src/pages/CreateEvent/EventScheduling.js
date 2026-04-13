@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 import Toast from "../../components/Toast/Toast";
+import HelpIcon from "../../components/HelpModal/HelpIcon";
+import { helpContent } from "../../utils/HelpContent";
 
 export default function EventScheduling({ onBack, onNext, initialFormData, showToast, onChange, isEditMode, isReadOnly }) {
   const defaultFormData = {
@@ -244,7 +246,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
           const matchedCountry = (countries || []).find(
             (c) => c && c.name && c.name.toLowerCase() === countryName.toLowerCase()
           );
-          
+
           const finalCountry = matchedCountry ? matchedCountry.name : countryName;
 
           // Sync search inputs
@@ -270,7 +272,7 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
             }
             return updated;
           });
-          
+
           showToast && showToast("Location auto-filled successfully!");
         } else {
           console.warn("API returned success status but no data or error status:", data);
@@ -834,7 +836,8 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
       .then((res) => {
         const isSuccess = res.success === 200 || res.success === "200" || res.status === 200;
         if (isSuccess) {
-          triggerToast(res.message || "Event Scheduling saved successfully!");
+          if (showToast) showToast(res.message || "Event Scheduling saved successfully!");
+          else triggerToast(res.message || "Event Scheduling saved successfully!");
           // Save registration end date to sessionStorage
           sessionStorage.setItem(
             "registerEndDate",
@@ -851,18 +854,26 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
           // Delay navigation so toast is visible
           setTimeout(() => onNext(formData), 1500);
         } else {
-          triggerToast(res.message || "Failed to update event duration", 'error');
+          if (showToast) showToast(res.message || "Failed to update event duration", 'error');
+          else triggerToast(res.message || "Failed to update event duration", 'error');
         }
       })
       .catch((err) => {
-        triggerToast("Failed to update event duration", 'error');
+        if (showToast) showToast("Failed to update event duration", 'error');
+        else triggerToast("Failed to update event duration", 'error');
       });
   };
 
   return (
     <div className="event-form-section">
       <div className="section-header">
-        <h3>Event Scheduling</h3>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <h3 style={{ margin: 0 }}>Event Scheduling</h3>
+          <HelpIcon
+            title={helpContent.scheduling.title}
+            content={helpContent.scheduling.content}
+          />
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} noValidate>

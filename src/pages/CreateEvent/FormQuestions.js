@@ -3,6 +3,8 @@ import "./CreateEvent.css";
 import GeneralFormQuestions from "./GeneralFormQuestions";
 import { authAPI } from "../../services/authAPI";
 import Toast from "../../components/Toast/Toast";
+import HelpIcon from "../../components/HelpModal/HelpIcon";
+import { helpContent } from "../../utils/HelpContent";
 
 const FormQuestions = ({ onBack, onNext, isReadOnly }) => {
   const [showGeneralForm, setShowGeneralForm] = useState(false);
@@ -272,6 +274,7 @@ const FormQuestions = ({ onBack, onNext, isReadOnly }) => {
 
     setShowGeneralForm(false);
     setEditQuestion(null);
+    triggerToast(updatedQuestion ? "Question updated successfully!" : "Question added successfully!");
     console.log("Saved questions (optimistic):", newQuestions, updatedQuestion);
     // Refresh from server to reflect canonical state
     (async () => {
@@ -435,6 +438,7 @@ const FormQuestions = ({ onBack, onNext, isReadOnly }) => {
           if (commonRes && commonRes.data) setFormCommon(commonRes.data);
           // server confirmed; keep optimistic override so UI remains in user's chosen state
           setLocalToggleMap((s) => ({ ...s, [id]: !!newVisualState }));
+          triggerToast(`Question ${newVisualState ? "enabled" : "disabled"} successfully!`);
         } catch (err) {
           console.error("Failed to refresh after toggle:", err);
         }
@@ -689,14 +693,17 @@ const FormQuestions = ({ onBack, onNext, isReadOnly }) => {
               alignItems: "center",
             }}
           >
-            <h2
-              style={{ fontWeight: 700, fontSize: "1.6rem", marginBottom: 0 }}
-            >
-              Event Form Questions
-              <span title="You can sort order for the following question. Just Drag and Drop.">
-                <i className="fas fa-info-circle"></i>
-              </span>
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <h2
+                style={{ fontWeight: 700, fontSize: "1.6rem", marginBottom: 0 }}
+              >
+                Event Form Questions
+              </h2>
+              <HelpIcon 
+                title={helpContent.formQuestions.title} 
+                content={helpContent.formQuestions.content} 
+              />
+            </div>
             {!isReadOnly && (
               <button
                 onClick={handleAddQuestions}

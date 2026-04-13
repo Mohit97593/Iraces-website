@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
 import Toast from "../../components/Toast/Toast";
+import HelpIcon from "../../components/HelpModal/HelpIcon";
+import { helpContent } from "../../utils/HelpContent";
 
 const Grouping = ({ onBack, onNext, isReadOnly }) => {
     const [groups, setGroups] = useState([]);
@@ -74,6 +76,8 @@ const Grouping = ({ onBack, onNext, isReadOnly }) => {
 
                 // Fetch updated groups list to get the correct data
                 await fetchGroupQuestions();
+                
+                triggerToast(isEditMode ? "Group updated successfully!" : "Group created successfully!");
 
                 setGroupName("");
                 setIsEditMode(false);
@@ -529,9 +533,15 @@ const Grouping = ({ onBack, onNext, isReadOnly }) => {
                     marginBottom: 24,
                 }}
             >
-                <h3 style={{ fontWeight: 700, fontSize: "1.6rem", margin: 0 }}>
-                    Question Grouping
-                </h3>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <h3 style={{ fontWeight: 700, fontSize: "1.6rem", margin: 0 }}>
+                        Question Grouping
+                    </h3>
+                    <HelpIcon 
+                        title={helpContent.grouping.title} 
+                        content={helpContent.grouping.content} 
+                    />
+                </div>
                 {!isReadOnly && (
                     <button
                         style={{

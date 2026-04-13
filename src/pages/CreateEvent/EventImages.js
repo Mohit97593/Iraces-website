@@ -3,8 +3,10 @@ import { authAPI } from "../../services/authAPI";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import Toast from "../../components/Toast/Toast";
+import HelpIcon from "../../components/HelpModal/HelpIcon";
+import { helpContent } from "../../utils/HelpContent";
 
-export default function EventImages({ onBack, onNext, isReadOnly }) {
+export default function EventImages({ onBack, onNext, isReadOnly, showToast }) {
   const [bannerBg, setBannerBg] = useState(false);
   const [eventDetails, setEventDetails] = useState(null);
   const [description, setDescription] = useState("");
@@ -204,8 +206,10 @@ export default function EventImages({ onBack, onNext, isReadOnly }) {
 
     try {
       const res = await authAPI.addEventDescription(formData);
-      if (res.data && res.data.status === 200) {
-        triggerToast("Event description saved!");
+      // Backend may return status in res.status, res.success or res.data.status
+      const isSuccess = res && (res.status === 200 || res.success === 200 || (res.data && res.data.status === 200));
+
+      if (isSuccess) {
         // Call event details API after saving description
         let bannerImage = null;
         if (eventDetails && eventDetails.id) {
@@ -225,16 +229,19 @@ export default function EventImages({ onBack, onNext, isReadOnly }) {
         // Pass banner image to parent (CreateEvent) if available
         if (bannerImage) {
           onNext(bannerImage);
-        } else if (res.data.banner_image) {
-          onNext(res.data.banner_image);
+        } else if (res?.banner_image || res?.data?.banner_image) {
+          onNext(res?.banner_image || res?.data?.banner_image);
         } else {
           onNext();
         }
       } else {
-        setErrorMsg(res.data.message || "Failed to save event description");
+        const msg = res?.message || res?.data?.message || "Failed to save event description";
+        setErrorMsg(msg);
+        triggerToast(msg, 'error');
       }
     } catch (err) {
       setErrorMsg("Error saving event description");
+      triggerToast("Error saving event description", 'error');
     }
   };
 
@@ -317,7 +324,15 @@ export default function EventImages({ onBack, onNext, isReadOnly }) {
           onClose={() => setToast(null)}
         />
       )}
-      <h3>Event Description</h3>
+      <div className="section-header">
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <h3 style={{ margin: 0 }}>Event Description</h3>
+          <HelpIcon 
+            title={helpContent.description.title} 
+            content={helpContent.description.content} 
+          />
+        </div>
+      </div>
       <form>
         <div className="form-group">
           <label>
@@ -929,6 +944,14 @@ export default function EventImages({ onBack, onNext, isReadOnly }) {
           </div>
         )}
       </form>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

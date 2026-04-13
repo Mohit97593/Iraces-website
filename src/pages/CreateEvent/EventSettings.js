@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
 import Toast from "../../components/Toast/Toast";
+import HelpIcon from "../../components/HelpModal/HelpIcon";
+import { helpContent } from "../../utils/HelpContent";
 
 export default function EventSettings({ onBack, onNext, showToast, isReadOnly }) {
   const [toast, setToast] = useState(null);
@@ -115,9 +117,17 @@ export default function EventSettings({ onBack, onNext, showToast, isReadOnly })
           onClose={() => setToast(null)}
         />
       )}
-      <h3 style={{ fontWeight: 700, fontSize: "1.6rem", marginBottom: 32 }}>
-        Event Settings
-      </h3>
+      <div className="section-header">
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <h3 style={{ fontWeight: 700, fontSize: "1.6rem", margin: 0 }}>
+            Event Settings
+          </h3>
+          <HelpIcon
+            title={helpContent.settings.title}
+            content={helpContent.settings.content}
+          />
+        </div>
+      </div>
       <form style={{ width: "100%" }}>
         {/* You can use eventDetails here if needed */}
         <div

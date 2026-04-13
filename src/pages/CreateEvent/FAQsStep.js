@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { authAPI } from "../../services/authAPI";
 import "./CreateEvent.css";
+import HelpIcon from "../../components/HelpModal/HelpIcon";
+import { helpContent } from "../../utils/HelpContent";
 
 const FAQsStep = ({ onBack, onNext, showToast, isReadOnly }) => {
   const [items, setItems] = useState([]);
@@ -221,7 +223,15 @@ const FAQsStep = ({ onBack, onNext, showToast, isReadOnly }) => {
   return (
     <div className="event-form-section">
       <div className="section-header">
-        <h3>{adding ? "Add FAQ's" : "FAQ's"}</h3>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <h3 style={{ margin: 0 }}>{adding ? "Add FAQ's" : "FAQ's"}</h3>
+          {!adding && (
+            <HelpIcon 
+              title={helpContent.faqs.title} 
+              content={helpContent.faqs.content} 
+            />
+          )}
+        </div>
         {!adding && !isReadOnly && (
           <button
             onClick={handleAdd}
