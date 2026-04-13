@@ -1704,15 +1704,13 @@ export default function ParticipantDetails() {
       const isParticipantPayingFees = ticket.player_of_fee === 2 || ticket.player_of_fee === "2";
       const isParticipantPayingGateway = ticket.player_of_gateway_fee === 2 || ticket.player_of_gateway_fee === "2";
 
-      // Check if GST enabled hai
-      const isGSTEnabled = calcDetails.collect_gst === "1" || calcDetails.collect_gst === 1;
+      // Determine if GST should be collected (Using global event setting)
+      const isGSTEnabled = collectGst == 1 || collectGst == '1';
+      const isExclusive = priceTaxesStatus == 2 || priceTaxesStatus == '2';
 
       // Platform fees (GST handling ke saath) - Only add if Participant pays
       const convenienceFeeWithGST = isParticipantPayingFees ? (parseFloat(calcDetails.convenience_fee_amount) || 0) : 0;
-      const convenienceFeeBase = !isGSTEnabled && convenienceFeeWithGST > 0
-        ? Math.round((convenienceFeeWithGST / 1.18) * 100) / 100
-        : convenienceFeeWithGST;
-
+      const convenienceFeeBase = convenienceFeeWithGST;
       const platformFeeBase = isParticipantPayingFees ? (parseFloat(calcDetails.platform_fees_5_each) || 0) : 0;
 
       // GST components - only add fee GST if Participant pays those fees
@@ -1724,21 +1722,18 @@ export default function ParticipantDetails() {
       const platformFeeGST = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0) : 0;
       
       // Calculate Payment Gateway Charges manually (dynamic %) based on (Net Price + All Fees + All GST)
-      const sumForPG = (effectivePrice - discountPerParticipant) + convenienceFeeBase + platformFeeBase + registrationGST + convenienceFeeGST + platformFeeGST;
+      // Note: We include registrationGST in the PG base if it's being charged to the participant
+      const pgBaseRegistrationGST = isExclusive ? registrationGST : 0;
+      const sumForPG = (effectivePrice - discountPerParticipant) + convenienceFeeBase + platformFeeBase + pgBaseRegistrationGST + convenienceFeeGST + platformFeeGST;
       const pgFeePercent = parseFloat(calcDetails.payment_gateway_fees) || 1.85;
       const pgFeeFactor = pgFeePercent / 100;
       const manualPGCharges = (isParticipantPayingGateway && sumForPG > 0) ? (sumForPG * pgFeeFactor) : 0;
       const manualPGGST = (isParticipantPayingGateway && manualPGCharges > 0) ? (manualPGCharges * 0.18) : 0;
 
-      let totalPlatformFee = (convenienceFeeBase + platformFeeBase + manualPGCharges) * parseInt(ticket.quantity);
-      let totalTaxes = (registrationGST + convenienceFeeGST + platformFeeGST + manualPGGST) * parseInt(ticket.quantity);
-
-      // Check event level visibility
-      const showFeesAndTaxes = (collectGst == 1 || collectGst == '1') && (priceTaxesStatus == 2 || priceTaxesStatus == '2');
-      if (!showFeesAndTaxes) {
-        totalPlatformFee = 0;
-        totalTaxes = 0;
-      }
+      const totalPlatformFee = (convenienceFeeBase + platformFeeBase + manualPGCharges) * parseInt(ticket.quantity);
+      
+      // Total Extra Taxes = (Registration GST if Exclusive) + (GST on all fees)
+      const totalTaxes = (pgBaseRegistrationGST + convenienceFeeGST + platformFeeGST + manualPGGST) * parseInt(ticket.quantity);
 
       return sum + baseAmount + totalPlatformFee + totalTaxes;
     }, 0);
@@ -1970,15 +1965,13 @@ export default function ParticipantDetails() {
       const isParticipantPayingFees = ticket.player_of_fee === 2 || ticket.player_of_fee === "2";
       const isParticipantPayingGateway = ticket.player_of_gateway_fee === 2 || ticket.player_of_gateway_fee === "2";
 
-      // Check if GST enabled hai
-      const isGSTEnabled = calcDetails.collect_gst === "1" || calcDetails.collect_gst === 1;
+      // Determine if GST should be collected (Using global event setting)
+      const isGSTEnabled = collectGst == 1 || collectGst == '1';
+      const isExclusive = priceTaxesStatus == 2 || priceTaxesStatus == '2';
 
       // Platform fees (GST handling ke saath) - Only add if Participant pays
       const convenienceFeeWithGST = isParticipantPayingFees ? (parseFloat(calcDetails.convenience_fee_amount) || 0) : 0;
-      const convenienceFeeBase = !isGSTEnabled && convenienceFeeWithGST > 0
-        ? Math.round((convenienceFeeWithGST / 1.18) * 100) / 100
-        : convenienceFeeWithGST;
-
+      const convenienceFeeBase = convenienceFeeWithGST;
       const platformFeeBase = isParticipantPayingFees ? (parseFloat(calcDetails.platform_fees_5_each) || 0) : 0;
 
       // GST components - only add fee GST if Participant pays those fees
@@ -1990,12 +1983,13 @@ export default function ParticipantDetails() {
       const platformFeeGST = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0) : 0;
 
       // Calculate Payment Gateway Charges manually (1.85%) based on (Net Price + All Fees + All GST)
-      const sumForPG = (effectivePrice - discountPerParticipant) + convenienceFeeBase + platformFeeBase + registrationGST + convenienceFeeGST + platformFeeGST;
+      const pgBaseRegistrationGST = isExclusive ? registrationGST : 0;
+      const sumForPG = (effectivePrice - discountPerParticipant) + convenienceFeeBase + platformFeeBase + pgBaseRegistrationGST + convenienceFeeGST + platformFeeGST;
       const manualPGCharges = (isParticipantPayingGateway && sumForPG > 0) ? (sumForPG * 0.0185) : 0;
       const manualPGGST = (isParticipantPayingGateway && manualPGCharges > 0) ? (manualPGCharges * 0.18) : 0;
 
       const totalPlatformFee = (convenienceFeeBase + platformFeeBase + manualPGCharges) * parseInt(ticket.quantity);
-      const totalTaxes = (registrationGST + convenienceFeeGST + platformFeeGST + manualPGGST) * parseInt(ticket.quantity);
+      const totalTaxes = (pgBaseRegistrationGST + convenienceFeeGST + platformFeeGST + manualPGGST) * parseInt(ticket.quantity);
 
       return sum + baseAmount + totalPlatformFee + totalTaxes;
     }, 0);
@@ -4378,19 +4372,18 @@ export default function ParticipantDetails() {
         const ticketDiscount = appliedCoupon ? getTicketDiscount(ticket, appliedCoupon) : 0;
         const discountPerParticipant = ticketDiscount / parseInt(ticket.quantity);
 
+        // Determine if GST should be collected (Using global event setting)
+        const isGSTEnabled = collectGst == 1 || collectGst == '1';
+        const isExclusive = priceTaxesStatus == 2 || priceTaxesStatus == '2';
+
         const registrationGSTPerTicket = isGSTEnabled ? Math.round(Math.max(0, effectivePrice - discountPerParticipant) * 0.18 * 100) / 100 : 0;
         const convenienceFeeGSTPerTicket = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_convenience_fees'] || 0) : 0;
         const platformFeeGSTPerTicket = isParticipantPayingFees ? parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0) : 0;
         const paymentGatewayGSTPerTicket = isParticipantPayingGateway ? parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0) : 0;
 
         // Calculate total taxes = (per ticket taxes) * quantity
-        let totalTaxes = (registrationGSTPerTicket + convenienceFeeGSTPerTicket + platformFeeGSTPerTicket + paymentGatewayGSTPerTicket) * parseInt(ticket.quantity);
-
-        const showFeesAndTaxes = (collectGst == 1 || collectGst == '1') && (priceTaxesStatus == 2 || priceTaxesStatus == '2');
-        if (!showFeesAndTaxes) {
-          totalPlatformFee = 0;
-          totalTaxes = 0;
-        }
+        const pgBaseRegistrationGST = isExclusive ? registrationGSTPerTicket : 0;
+        let totalTaxes = (pgBaseRegistrationGST + convenienceFeeGSTPerTicket + platformFeeGSTPerTicket + paymentGatewayGSTPerTicket) * parseInt(ticket.quantity);
 
         // Sub Total = Base + Platform Fee + Total Taxes
         return sum + baseAmount + totalPlatformFee + totalTaxes;
@@ -4664,8 +4657,10 @@ export default function ParticipantDetails() {
                 console.log('🔍 Full calcDetails:', calcDetails);
 
                 // Individual fee components (base amounts only, without GST)
-                // Check if GST is enabled
-                const isGSTEnabled = calcDetails.collect_gst === "1" || calcDetails.collect_gst === 1;
+                // Determine if GST should be collected
+                const currentGstSignal = (collectGst !== null && collectGst !== undefined) ? collectGst : calcDetails.collect_gst;
+                const isGSTEnabled = currentGstSignal == 1 || currentGstSignal == '1';
+                const isExclusive = priceTaxesStatus == 2 || priceTaxesStatus == '2';
 
                 // Check if participant is paying fees/gateway
                 const isParticipantPayingFees = ticket.player_of_fee === 2 || ticket.player_of_fee === "2";
@@ -4674,10 +4669,7 @@ export default function ParticipantDetails() {
                 // IMPORTANT: When GST is ON, convenience_fee_amount and payment_gateway_1.85_buyer INCLUDE GST
                 // When GST is OFF, they are already base amounts
                 const convenienceFeeWithGST = isFreeTicket ? 0 : (isParticipantPayingFees ? (parseFloat(calcDetails.convenience_fee_amount) || 0) : 0);
-                const convenienceFeeBase = !isGSTEnabled && convenienceFeeWithGST > 0
-                  ? Math.round((convenienceFeeWithGST / 1.18) * 100) / 100
-                  : convenienceFeeWithGST;
-
+                const convenienceFeeBase = convenienceFeeWithGST;
                 const platformFeeBase = isFreeTicket ? 0 : (isParticipantPayingFees ? (parseFloat(calcDetails.platform_fees_5_each) || 0) : 0);
 
                 // Extract individual GST components from ticket_calculation_details
@@ -4689,21 +4681,12 @@ export default function ParticipantDetails() {
                 const platformFeeGST = (isFreeTicket || !isParticipantPayingFees) ? 0 : parseFloat(calcDetails['18_percent_GST_platform_fees'] || 0);
 
                 // Calculate Payment Gateway Charges manually (dynamic %) based on (Net Price + All Fees + All GST)
-                const sumForPG = (isFreeTicket ? 0 : (effectivePrice - discountPerTicket)) + convenienceFeeBase + platformFeeBase + registrationGST + convenienceFeeGST + platformFeeGST;
+                const pgBaseRegistrationGST = isExclusive ? registrationGST : 0;
+                const sumForPG = (isFreeTicket ? 0 : (effectivePrice - discountPerTicket)) + convenienceFeeBase + platformFeeBase + pgBaseRegistrationGST + convenienceFeeGST + platformFeeGST;
                 const pgFeePercent = parseFloat(calcDetails.payment_gateway_fees) || 1.85;
                 const pgFeeFactor = pgFeePercent / 100;
                 const manualPGCharges = (isFreeTicket || !isParticipantPayingGateway || sumForPG <= 0) ? 0 : (sumForPG * pgFeeFactor);
                 const manualPGGST = (isFreeTicket || !isParticipantPayingGateway || manualPGCharges <= 0) ? 0 : (manualPGCharges * 0.18);
-
-                console.log('🔍 Platform Fee Components:', {
-                  isGSTEnabled,
-                  convenienceFeeBase,
-                  platformFeeBase,
-                  manualPGCharges,
-                  manualPGGST,
-                  sumForPG,
-                  totalFee: convenienceFeeBase + platformFeeBase + manualPGCharges
-                });
 
                 // Platform Fee = Convenience + Platform + Payment Gateway (base amounts only)
                 // Multiply by quantity to get total for all tickets
@@ -4711,13 +4694,9 @@ export default function ParticipantDetails() {
 
                 // Calculate total taxes from individual components
                 // Multiply by quantity to get total for all tickets
-                let totalTaxes = (registrationGST + convenienceFeeGST + platformFeeGST + manualPGGST) * parseInt(ticket.quantity);
+                let totalTaxes = (pgBaseRegistrationGST + convenienceFeeGST + platformFeeGST + manualPGGST) * parseInt(ticket.quantity);
 
-                const showFeesAndTaxes = (collectGst == 1 || collectGst == '1') && (priceTaxesStatus == 2 || priceTaxesStatus == '2');
-                if (!showFeesAndTaxes) {
-                  totalPlatformFee = 0;
-                  totalTaxes = 0;
-                }
+                const showFeesAndTaxes = priceTaxesStatus == 2 || priceTaxesStatus == '2';
 
                 // Sub Total = Base + Platform Fee + Total Taxes
                 const ticketSubTotal = baseAmount + totalPlatformFee + totalTaxes;
