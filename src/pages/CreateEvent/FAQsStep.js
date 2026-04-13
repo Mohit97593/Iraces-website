@@ -387,7 +387,7 @@ const FAQsStep = ({ onBack, onNext, showToast, isReadOnly }) => {
                   fontWeight: 600,
                 }}
               >
-                Save & Next (10/11)
+                Save
               </button>
             </>
           )

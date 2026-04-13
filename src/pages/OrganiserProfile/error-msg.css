@@ -1,7 +1,12 @@
 .error-msg {
   color: #e53935;
   font-size: 13px;
-  margin-top: 4px;
-  margin-bottom: 2px;
+  margin-top: 2px;
+  margin-bottom: 0px;
   font-weight: 500;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  display: block;
 }

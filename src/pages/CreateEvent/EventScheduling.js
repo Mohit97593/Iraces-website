@@ -178,6 +178,8 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
 
   const handlePincodeChange = async (e) => {
     const { value } = e.target;
+    console.log("Pincode input changed:", value);
+
     // Update pincode in formData
     setFormData((prev) => {
       const updated = { ...prev, pincode: value };
@@ -204,17 +206,26 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
         );
         return updated;
       });
-      return; // Exit early, don't make API call
+      return; // Exit early
     }
 
     // If pincode is 6 digits, fetch location data
     if (value.length === 6 && /^\d{6}$/.test(value)) {
       setPincodeLoading(true);
+      console.log("Pincode reached 6 digits. Attempting API call for:", value);
       try {
-        const response = await fetch(
-          `https://api.postalpincode.in/pincode/${value}`
-        );
+        const apiUrl = `https://api.postalpincode.in/pincode/${value}`;
+        console.log("Fetching from URL:", apiUrl);
+
+        const response = await fetch(apiUrl);
+        console.log("Response status:", response.status);
+
+        if (!response.ok) {
+          throw new Error(`API response error: ${response.status}`);
+        }
+
         const data = await response.json();
+        console.log("API Data received:", data);
 
         if (
           data &&
@@ -225,16 +236,18 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
         ) {
           const postOffice = data[0].PostOffice[0];
           const stateName = postOffice.State;
-          const countryName = postOffice.Country;
-          const cityName = postOffice.District || postOffice.Name;
+          const countryName = postOffice.Country || "India";
+          const cityName = postOffice.District || postOffice.Name || postOffice.Block;
 
-          const matchedCountry = countries.find(
-            (c) => c.name.toLowerCase() === countryName.toLowerCase()
+          console.log("Parsed location data:", { stateName, cityName, countryName });
+
+          const matchedCountry = (countries || []).find(
+            (c) => c && c.name && c.name.toLowerCase() === countryName.toLowerCase()
           );
           
           const finalCountry = matchedCountry ? matchedCountry.name : countryName;
 
-          // Sync search inputs OUTSIDE the state updater to avoid React batching issues
+          // Sync search inputs
           setCountrySearch(finalCountry);
           setStateSearch(stateName);
           setCitySearch(cityName);
@@ -257,9 +270,14 @@ export default function EventScheduling({ onBack, onNext, initialFormData, showT
             }
             return updated;
           });
+          
+          showToast && showToast("Location auto-filled successfully!");
+        } else {
+          console.warn("API returned success status but no data or error status:", data);
         }
       } catch (error) {
-        console.error("Error fetching pincode data:", error);
+        console.error("Critical error in pincode fetch:", error);
+        if (showToast) showToast("Could not auto-fill location. Please enter manually.", "error");
       } finally {
         setPincodeLoading(false);
       }

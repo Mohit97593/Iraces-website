@@ -238,6 +238,76 @@ export default function EventImages({ onBack, onNext, isReadOnly }) {
     }
   };
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleBannerDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isReadOnly) return;
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      const allowedExtensions = /(\.jpg|\.jpeg|\.png)$/i;
+      if (!allowedExtensions.exec(file.name)) {
+        setErrorMsg("Invalid file format. Only jpg, jpeg, and png are allowed.");
+        setEventBanner(null);
+        setEventBannerPreview(null);
+        triggerToast("Invalid file format. Only jpg, jpeg, and png are allowed.", "error");
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        setErrorMsg("Banner image must be 5MB or less.");
+        setEventBanner(null);
+        triggerToast("Banner image must be 5MB or less.", "error");
+      } else {
+        setErrorMsg("");
+        setEventBanner(file);
+        if (prevObjectUrl.current) {
+          try {
+            URL.revokeObjectURL(prevObjectUrl.current);
+          } catch (e) { }
+          prevObjectUrl.current = null;
+        }
+        const url = URL.createObjectURL(file);
+        prevObjectUrl.current = url;
+        setEventBannerPreview(url);
+        triggerToast("Banner image added via drop!");
+      }
+    }
+  };
+
+  const handleCreativesDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isReadOnly) return;
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const files = Array.from(e.dataTransfer.files);
+      const allowedExtensions = /(\.jpg|\.jpeg|\.png)$/i;
+      
+      const validFiles = files.filter(file => allowedExtensions.exec(file.name));
+      const invalidFiles = files.filter(file => !allowedExtensions.exec(file.name));
+
+      if (invalidFiles.length > 0) {
+        triggerToast(`Skipped ${invalidFiles.length} file(s). Only jpg, jpeg, and png are allowed.`, 'error');
+      }
+
+      if (validFiles.length > 0) {
+        const newPreviews = validFiles.map((file) =>
+          URL.createObjectURL(file)
+        );
+        setCreatives((prev) => [...prev, ...validFiles]);
+        setCreativesPreviews((prev) => [...prev, ...newPreviews]);
+        triggerToast(`${validFiles.length} photo(s) added via drop!`);
+      }
+    }
+  };
+
   return (
     <div className="event-form-section">
       {toast && (
@@ -360,7 +430,12 @@ export default function EventImages({ onBack, onNext, isReadOnly }) {
           )}
         </div>
         <div className="form-row" style={{ display: "flex", gap: 16 }}>
-          <div className="form-group" style={{ flex: 1 }}>
+          <div 
+            className="form-group" 
+            style={{ flex: 1 }}
+            onDragOver={handleDragOver}
+            onDrop={handleBannerDrop}
+          >
             <label>
               Event Banner <span style={{ color: "#da251c" }}>*</span>
             </label>
@@ -370,23 +445,34 @@ export default function EventImages({ onBack, onNext, isReadOnly }) {
               accept=".jpg,.jpeg,.png"
               onChange={(e) => {
                 const file = e.target.files[0];
-                if (file && file.size > 5 * 1024 * 1024) {
-                  setErrorMsg("Banner image must be 5MB or less.");
-                  e.target.value = null;
-                  setEventBanner(null);
-                } else if (file) {
-                  setErrorMsg("");
-                  setEventBanner(file);
-                  // revoke previous object URL if any
-                  if (prevObjectUrl.current) {
-                    try {
-                      URL.revokeObjectURL(prevObjectUrl.current);
-                    } catch (e) { }
-                    prevObjectUrl.current = null;
+                if (file) {
+                  const allowedExtensions = /(\.jpg|\.jpeg|\.png)$/i;
+                  if (!allowedExtensions.exec(file.name)) {
+                    setErrorMsg("Invalid file format. Only jpg, jpeg, and png are allowed.");
+                    e.target.value = null;
+                    setEventBanner(null);
+                    setEventBannerPreview(null);
+                    return;
                   }
-                  const url = URL.createObjectURL(file);
-                  prevObjectUrl.current = url;
-                  setEventBannerPreview(url);
+
+                  if (file.size > 5 * 1024 * 1024) {
+                    setErrorMsg("Banner image must be 5MB or less.");
+                    e.target.value = null;
+                    setEventBanner(null);
+                  } else {
+                    setErrorMsg("");
+                    setEventBanner(file);
+                    // revoke previous object URL if any
+                    if (prevObjectUrl.current) {
+                      try {
+                        URL.revokeObjectURL(prevObjectUrl.current);
+                      } catch (e) { }
+                      prevObjectUrl.current = null;
+                    }
+                    const url = URL.createObjectURL(file);
+                    prevObjectUrl.current = url;
+                    setEventBannerPreview(url);
+                  }
                 }
               }}
               disabled={isReadOnly}
@@ -532,7 +618,12 @@ export default function EventImages({ onBack, onNext, isReadOnly }) {
               </div>
             )}
           </div>
-          <div className="form-group" style={{ flex: 1 }}>
+          <div 
+            className="form-group" 
+            style={{ flex: 1 }}
+            onDragOver={handleDragOver}
+            onDrop={handleCreativesDrop}
+          >
             <label>Event Communication Creatives</label>
             <input
               type="file"
@@ -542,11 +633,23 @@ export default function EventImages({ onBack, onNext, isReadOnly }) {
               onChange={(e) => {
                 if (e.target.files && e.target.files.length > 0) {
                   const files = Array.from(e.target.files);
-                  const newPreviews = files.map((file) =>
-                    URL.createObjectURL(file)
-                  );
-                  setCreatives((prev) => [...prev, ...files]);
-                  setCreativesPreviews((prev) => [...prev, ...newPreviews]);
+                  const allowedExtensions = /(\.jpg|\.jpeg|\.png)$/i;
+                  
+                  const validFiles = files.filter(file => allowedExtensions.exec(file.name));
+                  const invalidFiles = files.filter(file => !allowedExtensions.exec(file.name));
+
+                  if (invalidFiles.length > 0) {
+                    triggerToast(`Skipped ${invalidFiles.length} file(s). Only jpg, jpeg, and png are allowed.`, 'error');
+                  }
+
+                  if (validFiles.length > 0) {
+                    const newPreviews = validFiles.map((file) =>
+                      URL.createObjectURL(file)
+                    );
+                    setCreatives((prev) => [...prev, ...validFiles]);
+                    setCreativesPreviews((prev) => [...prev, ...newPreviews]);
+                  }
+                  
                   // Clear input value to allow re-selecting same file if needed
                   e.target.value = null;
                 }

@@ -135,17 +135,32 @@ export default function OrganiserProfile() {
     // Validation
     const newErrors = {};
     const mobileRegex = /^[0-9]{10}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+
     if (!profileData.organisationName.trim())
       newErrors.organisationName = "Organisation Name is required.";
-    if (!profileData.email.trim()) newErrors.email = "Email is required.";
+
+    if (!profileData.email.trim()) {
+      newErrors.email = "Email is required.";
+    } else if (!emailRegex.test(profileData.email)) {
+      newErrors.email = "Enter a valid email address.";
+    }
+
     if (!profileData.mobile.trim()) {
       newErrors.mobile = "Mobile is required.";
     } else if (!mobileRegex.test(profileData.mobile)) {
       newErrors.mobile = "Enter a valid 10-digit mobile number.";
     }
     if (!profileData.about.trim()) newErrors.about = "About is required.";
-    if (hasGST && !profileData.gstNumber.trim())
-      newErrors.gstNumber = "GST Number is required.";
+
+    if (hasGST) {
+      if (!profileData.gstNumber.trim()) {
+        newErrors.gstNumber = "GST Number is required.";
+      } else if (!gstRegex.test(profileData.gstNumber.toUpperCase())) {
+        newErrors.gstNumber = "Enter a valid 15-digit GST number (e.g. 22AAAAA0000A1Z5).";
+      }
+    }
     if (!profileData.logoImage) newErrors.logoImage = "Logo Image is required.";
     if (
       profileData.contactNumber &&
@@ -156,6 +171,18 @@ export default function OrganiserProfile() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      // Wait for DOM to update then scroll to first error
+      setTimeout(() => {
+        const firstError = document.querySelector(".error-msg");
+        if (firstError) {
+          firstError.scrollIntoView({ behavior: "smooth", block: "center" });
+          // Focus the input before the error message if possible
+          const input = firstError.previousElementSibling;
+          if (input && (input.tagName === "INPUT" || input.tagName === "TEXTAREA")) {
+            input.focus();
+          }
+        }
+      }, 100);
       return;
     }
 
@@ -168,7 +195,7 @@ export default function OrganiserProfile() {
         mobile: profileData.mobile,
         about: `<p>${profileData.about}</p>`,
         gst: hasGST ? 1 : 0,
-        gst_number: profileData.gstNumber || "",
+        gst_number: (profileData.gstNumber || "").toUpperCase(),
         gst_percentage: profileData.gstPercentage || 18,
         contact_person: profileData.contactPerson || "",
         contact_no: profileData.contactNumber || "",
@@ -361,9 +388,14 @@ export default function OrganiserProfile() {
                       type="text"
                       name="gstNumber"
                       value={profileData.gstNumber || ""}
-                      onChange={handleChange}
+                      onChange={(e) => {
+                        const val = e.target.value.toUpperCase();
+                        setProfileData(prev => ({ ...prev, gstNumber: val }));
+                        setErrors(prev => ({ ...prev, gstNumber: undefined }));
+                      }}
                       className="form-input"
-                      placeholder="GST Number"
+                      placeholder="GST Number (e.g. 22AAAAA0000A1Z5)"
+                      maxLength={15}
                       required
                     />
                     {errors.gstNumber && (
