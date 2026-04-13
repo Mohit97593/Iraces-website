@@ -51,6 +51,7 @@ export default function CreateEvent() {
   const [paidType, setPaidType] = useState("Paid");
   const [bannerImageUrl, setBannerImageUrl] = useState(null);
   const [organizerGST, setOrganizerGST] = useState(false); // Track organizer's GST setting
+  const [showOrganizerPopup, setShowOrganizerPopup] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isEditingCommunication, setIsEditingCommunication] = useState(false);
   const [toast, setToast] = useState(null); // Toast notification state
@@ -845,15 +846,22 @@ export default function CreateEvent() {
       }
 
       // Call get organizer details API to fetch GST setting
-      const organizerRes = await authAPI.getOrganizerDetails();
-      if (
-        organizerRes &&
-        organizerRes.data &&
-        organizerRes.data.organizerData &&
-        organizerRes.data.organizerData.length > 0
-      ) {
-        const organizerData = organizerRes.data.organizerData[0];
-        setOrganizerGST(organizerData.gst === 1);
+      try {
+        const organizerRes = await authAPI.getOrganizerDetails();
+        if (
+          organizerRes &&
+          organizerRes.data &&
+          organizerRes.data.organizerData &&
+          organizerRes.data.organizerData.length > 0
+        ) {
+          const organizerData = organizerRes.data.organizerData[0];
+          setOrganizerGST(organizerData.gst === 1);
+        } else {
+          setShowOrganizerPopup(true);
+        }
+      } catch (orgErr) {
+        console.error("Failed to fetch organiser details:", orgErr);
+        setShowOrganizerPopup(true);
       }
 
       // Call get category API
@@ -2430,6 +2438,102 @@ export default function CreateEvent() {
           </div>
         </div>
       </div>
+
+      {/* Organiser Profile Required Modal */}
+      {showOrganizerPopup && (
+        <div
+          className="modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            className="modal-card"
+            style={{
+              background: "#fff",
+              padding: "30px",
+              borderRadius: "16px",
+              width: "90%",
+              maxWidth: "500px",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ marginBottom: "20px" }}>
+              <i
+                className="fas fa-exclamation-circle"
+                style={{ fontSize: "48px", color: "#da251c" }}
+              ></i>
+            </div>
+            <h3 style={{ marginBottom: "15px", color: "#2c3e50" }}>
+              Organiser Profile Required
+            </h3>
+            <p
+              style={{
+                color: "#7f8c8d",
+                marginBottom: "25px",
+                fontSize: "16px",
+                lineHeight: "1.5",
+              }}
+            >
+              Please fill your Organiser Profile first to create an event.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                gap: "15px",
+                justifyContent: "center",
+              }}
+            >
+              <button
+                onClick={() => {
+                  setShowOrganizerPopup(false);
+                  navigate("/");
+                }}
+                className="cancel-btn"
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "8px",
+                  border: "1px solid #ccc",
+                  background: "#fff",
+                  color: "#333",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Go Back
+              </button>
+              <button
+                onClick={() => {
+                  setShowOrganizerPopup(false);
+                  navigate("/organiser-profile");
+                }}
+                className="save-btn-form"
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#da251c",
+                  color: "#fff",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Fill Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toast && (

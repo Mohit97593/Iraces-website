@@ -82,6 +82,8 @@ export default function ParticipantDetails() {
   const [couponDisplayLocation, setCouponDisplayLocation] = useState("both"); // Default to 'both'
   const [apiError, setApiError] = useState(null); // Global API error (e.g. duplicate registration)
   const [allowUniqueRegistration, setAllowUniqueRegistration] = useState(0); // Track AllowUniqueRegistration setting
+  const [collectGst, setCollectGst] = useState(null); // Track CollectGst setting
+  const [priceTaxesStatus, setPriceTaxesStatus] = useState(null); // Track PriceTaxesStatus setting
 
   // Load existing coupon from sessionStorage on mount
   useEffect(() => {
@@ -325,6 +327,14 @@ export default function ParticipantDetails() {
         // 1. Fetch Ticket
         const ticketRes = await authAPI.getEventTicket(eventId);
         let currentTicket = null;
+        if (ticketRes && ticketRes.data) {
+          if (ticketRes.data.CollectGst !== undefined) {
+             setCollectGst(ticketRes.data.CollectGst);
+          }
+          if (ticketRes.data.PriceTaxesStatus !== undefined) {
+             setPriceTaxesStatus(ticketRes.data.PriceTaxesStatus);
+          }
+        }
         if (ticketRes && ticketRes.data && ticketRes.data.event_tickets) {
           const title = sessionStorage.getItem("selectedCategoryTitle");
           if (title) {
@@ -1720,8 +1730,15 @@ export default function ParticipantDetails() {
       const manualPGCharges = (isParticipantPayingGateway && sumForPG > 0) ? (sumForPG * pgFeeFactor) : 0;
       const manualPGGST = (isParticipantPayingGateway && manualPGCharges > 0) ? (manualPGCharges * 0.18) : 0;
 
-      const totalPlatformFee = (convenienceFeeBase + platformFeeBase + manualPGCharges) * parseInt(ticket.quantity);
-      const totalTaxes = (registrationGST + convenienceFeeGST + platformFeeGST + manualPGGST) * parseInt(ticket.quantity);
+      let totalPlatformFee = (convenienceFeeBase + platformFeeBase + manualPGCharges) * parseInt(ticket.quantity);
+      let totalTaxes = (registrationGST + convenienceFeeGST + platformFeeGST + manualPGGST) * parseInt(ticket.quantity);
+
+      // Check event level visibility
+      const showFeesAndTaxes = (collectGst == 1 || collectGst == '1') && (priceTaxesStatus == 2 || priceTaxesStatus == '2');
+      if (!showFeesAndTaxes) {
+        totalPlatformFee = 0;
+        totalTaxes = 0;
+      }
 
       return sum + baseAmount + totalPlatformFee + totalTaxes;
     }, 0);
@@ -4354,7 +4371,7 @@ export default function ParticipantDetails() {
         const paymentGatewayPerTicket = isParticipantPayingGateway ? (parseFloat(calcDetails.payment_gateway_1_85_buyer || (effectivePrice * 0.0185)) || 0) : 0;
 
         // Platform Fee total = (per ticket fees) * quantity
-        const totalPlatformFee = (convenienceFeePerTicket + platformFeePerTicket + paymentGatewayPerTicket) * parseInt(ticket.quantity);
+        let totalPlatformFee = (convenienceFeePerTicket + platformFeePerTicket + paymentGatewayPerTicket) * parseInt(ticket.quantity);
 
         // Extract individual GST components - these are PER TICKET
         // Only include fee GST if Participant pays those fees
@@ -4367,7 +4384,13 @@ export default function ParticipantDetails() {
         const paymentGatewayGSTPerTicket = isParticipantPayingGateway ? parseFloat(calcDetails['18_per_payment_gateway_GST'] || 0) : 0;
 
         // Calculate total taxes = (per ticket taxes) * quantity
-        const totalTaxes = (registrationGSTPerTicket + convenienceFeeGSTPerTicket + platformFeeGSTPerTicket + paymentGatewayGSTPerTicket) * parseInt(ticket.quantity);
+        let totalTaxes = (registrationGSTPerTicket + convenienceFeeGSTPerTicket + platformFeeGSTPerTicket + paymentGatewayGSTPerTicket) * parseInt(ticket.quantity);
+
+        const showFeesAndTaxes = (collectGst == 1 || collectGst == '1') && (priceTaxesStatus == 2 || priceTaxesStatus == '2');
+        if (!showFeesAndTaxes) {
+          totalPlatformFee = 0;
+          totalTaxes = 0;
+        }
 
         // Sub Total = Base + Platform Fee + Total Taxes
         return sum + baseAmount + totalPlatformFee + totalTaxes;
@@ -4684,11 +4707,17 @@ export default function ParticipantDetails() {
 
                 // Platform Fee = Convenience + Platform + Payment Gateway (base amounts only)
                 // Multiply by quantity to get total for all tickets
-                const totalPlatformFee = (convenienceFeeBase + platformFeeBase + manualPGCharges) * parseInt(ticket.quantity);
+                let totalPlatformFee = (convenienceFeeBase + platformFeeBase + manualPGCharges) * parseInt(ticket.quantity);
 
                 // Calculate total taxes from individual components
                 // Multiply by quantity to get total for all tickets
-                const totalTaxes = (registrationGST + convenienceFeeGST + platformFeeGST + manualPGGST) * parseInt(ticket.quantity);
+                let totalTaxes = (registrationGST + convenienceFeeGST + platformFeeGST + manualPGGST) * parseInt(ticket.quantity);
+
+                const showFeesAndTaxes = (collectGst == 1 || collectGst == '1') && (priceTaxesStatus == 2 || priceTaxesStatus == '2');
+                if (!showFeesAndTaxes) {
+                  totalPlatformFee = 0;
+                  totalTaxes = 0;
+                }
 
                 // Sub Total = Base + Platform Fee + Total Taxes
                 const ticketSubTotal = baseAmount + totalPlatformFee + totalTaxes;
@@ -4710,7 +4739,7 @@ export default function ParticipantDetails() {
                     )}
 
                     {/* Platform Fee (Combined) - Multiplied by quantity */}
-                    {totalPlatformFee > 0 && (
+                    {(totalPlatformFee > 0 && showFeesAndTaxes) && (
                       <div className="summary-item">
                         <span>Platform Fee</span>
                         <span>₹{totalPlatformFee.toFixed(2)}</span>
@@ -4718,7 +4747,7 @@ export default function ParticipantDetails() {
                     )}
 
                     {/* Tax - Sum of all GST components - Multiplied by quantity */}
-                    {totalTaxes > 0 && (
+                    {(totalTaxes > 0 && showFeesAndTaxes) && (
                       <div className="summary-item">
                         <span>Tax</span>
                         <span>₹{totalTaxes.toFixed(2)}</span>
