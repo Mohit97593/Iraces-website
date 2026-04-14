@@ -151,6 +151,10 @@ export const helpContent = {
         <li><strong>Custom Control:</strong> Enable or disable each communication based on your event needs.</li>
       </ul>
       <p>Use this to keep participants informed, engaged, and updated at every stage.</p>
+      <br/>
+      <strong>Terms & Conditions</strong>
+      <p>Add and enable terms that participants must agree to during registration.</p>
+      <p>Helps ensure compliance and clear communication of event policies.</p>
     `
   },
   terms: {
