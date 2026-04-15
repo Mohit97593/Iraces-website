@@ -409,16 +409,52 @@ export default function DiscountCoupons({ onBack, onNext, isEditMode, isReadOnly
             c.discount_to_time || prev.discountAvailedToTime,
           userEmail: c.user_email_address || prev.userEmail,
         }));
-        // set selected tickets based on edit_ticket_details if available
-        if (
-          Array.isArray(c.edit_ticket_details) &&
-          c.edit_ticket_details.length > 0
-        ) {
-          const ticketIds = c.edit_ticket_details
-            .filter(Boolean)
-            .map((t) => t.id);
+        // Use apply_ticket as the authoritative flag: "1" = all, "2" = selected
+        // This is what the backend saves when the coupon is created/edited.
+        const applyTicketFlag = c.apply_ticket;
+        if (applyTicketFlag === "2" || applyTicketFlag === 2) {
+          // Selected Race Categories — filter by checked flag (API returns all tickets with checked:true/false)
+          const ticketIds = Array.isArray(c.edit_ticket_details)
+            ? c.edit_ticket_details
+                .filter((t) => t && (t.checked === true || t.checked === "1" || t.checked === 1))
+                .map((t) => t.id)
+            : [];
           setSelectedTickets(ticketIds);
           setApplyToCategories("selected");
+        } else if (applyTicketFlag === "1" || applyTicketFlag === 1) {
+          // All Race Categories
+          setSelectedTickets(tickets.map((t) => t.id));
+          setApplyToCategories("all");
+        } else {
+          // apply_ticket not present → fall back to edit_ticket_details heuristic
+          if (
+            Array.isArray(c.edit_ticket_details) &&
+            c.edit_ticket_details.length > 0
+          ) {
+            // Filter by checked flag if present, otherwise use all returned IDs
+            const hasCheckedField = c.edit_ticket_details.some(
+              (t) => t && t.checked !== undefined
+            );
+            const ticketIds = hasCheckedField
+              ? c.edit_ticket_details
+                  .filter((t) => t && (t.checked === true || t.checked === "1" || t.checked === 1))
+                  .map((t) => t.id)
+              : c.edit_ticket_details.filter(Boolean).map((t) => t.id);
+            const allTicketIds = tickets.map((t) => t.id);
+            const coversAll =
+              allTicketIds.length > 0 &&
+              allTicketIds.every((id) => ticketIds.includes(id));
+            if (coversAll) {
+              setSelectedTickets(allTicketIds);
+              setApplyToCategories("all");
+            } else {
+              setSelectedTickets(ticketIds);
+              setApplyToCategories("selected");
+            }
+          } else {
+            setSelectedTickets(tickets.map((t) => t.id));
+            setApplyToCategories("all");
+          }
         }
         // Set showPublic state from API response
         // show_public: 0 = No, 1 = Yes

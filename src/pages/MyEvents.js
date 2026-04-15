@@ -800,53 +800,7 @@ export default function MyEvents() {
             </button>
           </div>
 
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              justifyContent: "flex-end",
-              minWidth: "150px",
-            }}
-          >
-            <button
-              onClick={() => {
-                if (hasOrganizerProfile) {
-                  sessionStorage.removeItem("editEventId");
-                  navigate("/create-event");
-                } else {
-                  setShowOrganizerPopup(true);
-                }
-              }}
-              style={{
-                backgroundColor: "#da251c",
-                color: "#fff",
-                border: "1px solid #da251c",
-                padding: "10px 24px",
-                borderRadius: "30px",
-                fontWeight: "600",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                whiteSpace: "nowrap",
-                boxShadow: "0 4px 6px rgba(218, 37, 28, 0.2)",
-                transition: "all 0.3s ease",
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow =
-                  "0 6px 12px rgba(218, 37, 28, 0.3)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow =
-                  "0 4px 6px rgba(218, 37, 28, 0.2)";
-              }}
-            >
-              <i className="fas fa-plus"></i> Create Event
-            </button>
-          </div>
+
         </div>
 
         <div style={{ marginTop: 20 }}>
