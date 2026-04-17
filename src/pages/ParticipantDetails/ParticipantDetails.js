@@ -3282,11 +3282,10 @@ export default function ParticipantDetails() {
         {/* Next Group Button */}
         {hasGroups && (() => {
           // Build array of all tabs in order
-          const allTabs = [];
+          const allTabs = [...groupNames];
           if (ungroupedQuestions.length > 0) {
             allTabs.push('general');
           }
-          allTabs.push(...groupNames);
 
           // Find current tab index
           const currentTabIndex = allTabs.indexOf(currentActiveTab);

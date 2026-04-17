@@ -22,6 +22,7 @@ export default function EventImages({ onBack, onNext, isReadOnly, showToast }) {
   const [creativesPreviews, setCreativesPreviews] = useState([]);
   const [hoveredCreativeIndex, setHoveredCreativeIndex] = useState(null);
   const prevObjectUrl = useRef(null);
+  const bannerInputRef = useRef(null);
   const [toast, setToast] = useState(null);
 
   const triggerToast = (message, type = 'success') => {
@@ -263,6 +264,9 @@ export default function EventImages({ onBack, onNext, isReadOnly, showToast }) {
         setErrorMsg("Invalid file format. Only jpg, jpeg, and png are allowed.");
         setEventBanner(null);
         setEventBannerPreview(null);
+        if (bannerInputRef.current) {
+          bannerInputRef.current.value = "";
+        }
         triggerToast("Invalid file format. Only jpg, jpeg, and png are allowed.", "error");
         return;
       }
@@ -270,10 +274,16 @@ export default function EventImages({ onBack, onNext, isReadOnly, showToast }) {
       if (file.size > 5 * 1024 * 1024) {
         setErrorMsg("Banner image must be 5MB or less.");
         setEventBanner(null);
+        if (bannerInputRef.current) {
+          bannerInputRef.current.value = "";
+        }
         triggerToast("Banner image must be 5MB or less.", "error");
       } else {
         setErrorMsg("");
         setEventBanner(file);
+        if (bannerInputRef.current) {
+          bannerInputRef.current.value = "";
+        }
         if (prevObjectUrl.current) {
           try {
             URL.revokeObjectURL(prevObjectUrl.current);
@@ -296,7 +306,7 @@ export default function EventImages({ onBack, onNext, isReadOnly, showToast }) {
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const files = Array.from(e.dataTransfer.files);
       const allowedExtensions = /(\.jpg|\.jpeg|\.png)$/i;
-      
+
       const validFiles = files.filter(file => allowedExtensions.exec(file.name));
       const invalidFiles = files.filter(file => !allowedExtensions.exec(file.name));
 
@@ -327,9 +337,9 @@ export default function EventImages({ onBack, onNext, isReadOnly, showToast }) {
       <div className="section-header">
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <h3 style={{ margin: 0 }}>Event Description</h3>
-          <HelpIcon 
-            title={helpContent.description.title} 
-            content={helpContent.description.content} 
+          <HelpIcon
+            title={helpContent.description.title}
+            content={helpContent.description.content}
           />
         </div>
       </div>
@@ -445,8 +455,8 @@ export default function EventImages({ onBack, onNext, isReadOnly, showToast }) {
           )}
         </div>
         <div className="form-row" style={{ display: "flex", gap: 16 }}>
-          <div 
-            className="form-group" 
+          <div
+            className="form-group"
             style={{ flex: 1 }}
             onDragOver={handleDragOver}
             onDrop={handleBannerDrop}
@@ -455,6 +465,7 @@ export default function EventImages({ onBack, onNext, isReadOnly, showToast }) {
               Event Banner <span style={{ color: "#da251c" }}>*</span>
             </label>
             <input
+              ref={bannerInputRef}
               type="file"
               className="form-controll"
               accept=".jpg,.jpeg,.png"
@@ -517,7 +528,7 @@ export default function EventImages({ onBack, onNext, isReadOnly, showToast }) {
                 {errorMsg}
               </div>
             )}
-            <small>In jpg, jpeg, png formats. Max upto 5MB. Recommended size: 1490 x 450 pixels (3.3:1 aspect ratio).</small>
+            <small>In jpg, jpeg, png formats. Max upto 5MB. Recommended size: 1400 x 300 pixels (4.67:1 aspect ratio).</small>
             {eventBannerPreview && (
               <div
                 style={{
@@ -609,6 +620,9 @@ export default function EventImages({ onBack, onNext, isReadOnly, showToast }) {
                             prevObjectUrl.current = null;
                           }
                           setEventBannerPreview(null);
+                          if (bannerInputRef.current) {
+                            bannerInputRef.current.value = "";
+                          }
                         }}
                       >
                         <svg
@@ -633,8 +647,8 @@ export default function EventImages({ onBack, onNext, isReadOnly, showToast }) {
               </div>
             )}
           </div>
-          <div 
-            className="form-group" 
+          <div
+            className="form-group"
             style={{ flex: 1 }}
             onDragOver={handleDragOver}
             onDrop={handleCreativesDrop}
@@ -649,7 +663,7 @@ export default function EventImages({ onBack, onNext, isReadOnly, showToast }) {
                 if (e.target.files && e.target.files.length > 0) {
                   const files = Array.from(e.target.files);
                   const allowedExtensions = /(\.jpg|\.jpeg|\.png)$/i;
-                  
+
                   const validFiles = files.filter(file => allowedExtensions.exec(file.name));
                   const invalidFiles = files.filter(file => !allowedExtensions.exec(file.name));
 
@@ -664,7 +678,7 @@ export default function EventImages({ onBack, onNext, isReadOnly, showToast }) {
                     setCreatives((prev) => [...prev, ...validFiles]);
                     setCreativesPreviews((prev) => [...prev, ...newPreviews]);
                   }
-                  
+
                   // Clear input value to allow re-selecting same file if needed
                   e.target.value = null;
                 }
