@@ -220,7 +220,31 @@ export default function OrganiserProfile() {
       await fetchOrganizerData();
     } catch (error) {
       console.error("Error saving organizer data:", error);
-      alert("Failed to save organizer profile. Please try again.");
+      const errorMsg = error.message || (typeof error === "string" ? error : "");
+
+      if (errorMsg && errorMsg.includes("same name is already exists")) {
+        setErrors((prev) => ({
+          ...prev,
+          organisationName:
+            "Organiser with same name already exists, please use another name.",
+        }));
+        // Wait for DOM to update then scroll to error
+        setTimeout(() => {
+          const firstError = document.querySelector(".error-msg");
+          if (firstError) {
+            firstError.scrollIntoView({ behavior: "smooth", block: "center" });
+            const input = firstError.previousElementSibling;
+            if (
+              input &&
+              (input.tagName === "INPUT" || input.tagName === "TEXTAREA")
+            ) {
+              input.focus();
+            }
+          }
+        }, 100);
+      } else {
+        alert("Failed to save organizer profile. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
