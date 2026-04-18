@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import TopNav from "../../components/Navbar/TopNav";
 import { authAPI } from "../../services/authAPI";
 import "./OrganiserProfile.css";
 import "./error-msg.css";
 
 export default function OrganiserProfile() {
+  const navigate = useNavigate();
   // Only allow numbers in mobile/contact number fields
   const handleNumberInput = (e) => {
     const { name, value } = e.target;
@@ -215,6 +217,7 @@ export default function OrganiserProfile() {
       const result = await authAPI.addEditOrganizer(payload);
       if (result.message) {
         alert(result.message);
+        navigate("/");
       }
       setIsEditing(false);
       await fetchOrganizerData();
