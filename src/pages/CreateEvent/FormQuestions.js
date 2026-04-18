@@ -262,29 +262,31 @@ const FormQuestions = ({ onBack, onNext, isReadOnly }) => {
   const handleSaveQuestions = (newQuestions, updatedQuestion) => {
     // Immediately update local grouped data (server-provided) so UI reflects changes
     if (newQuestions) {
+      console.log("Updating questions with fresh data from GeneralFormQuestions:", newQuestions);
       setQuestions(newQuestions);
     }
 
     // Also merge the single updated question into current state as a safe fallback
-    if (updatedQuestion) {
+    if (updatedQuestion && !newQuestions) {
       setQuestions((prev) =>
-        mergeUpdatedQuestion(prev || newQuestions, updatedQuestion)
+        mergeUpdatedQuestion(prev, updatedQuestion)
       );
     }
 
     setShowGeneralForm(false);
     setEditQuestion(null);
     triggerToast(updatedQuestion ? "Question updated successfully!" : "Question added successfully!");
-    console.log("Saved questions (optimistic):", newQuestions, updatedQuestion);
-    // Refresh from server to reflect canonical state
-    (async () => {
+    
+    // Background refresh after a short delay to ensure DB consistency
+    setTimeout(async () => {
       try {
+        // We pass updatedQuestion to fetchQuestions so it can merge it if the server returns stale data
         await fetchQuestions(updatedQuestion);
-        console.log("Refreshed questions after save");
+        console.log("Background refresh complete");
       } catch (err) {
-        console.error("Failed to refresh questions after save:", err);
+        console.error("Background refresh failed:", err);
       }
-    })();
+    }, 1000);
   };
 
   const getRenderList = () => {

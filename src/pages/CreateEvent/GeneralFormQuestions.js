@@ -475,10 +475,10 @@ const GeneralFormQuestions = ({
           loadedSubQ.priceEnabled = loadedSubQ.options.some(opt => opt.price);
           loadedSubQ.maxCountEnabled = loadedSubQ.options.some(opt => opt.count);
 
-          // NEW: Convert options to comma-separated strings for UI fields
-          loadedSubQ.newOptionLabel = loadedSubQ.options.map(opt => opt.label).join(', ');
-          loadedSubQ.newOptionPrice = loadedSubQ.options.map(opt => opt.price || '').join(', ');
-          loadedSubQ.newOptionCount = loadedSubQ.options.map(opt => opt.count || '').join(', ');
+          // NEW: Initialize input fields as empty when editing
+          loadedSubQ.newOptionLabel = "";
+          loadedSubQ.newOptionPrice = "";
+          loadedSubQ.newOptionCount = "";
         }
 
         // Load child sub-questions (nested) if they exist
@@ -499,7 +499,8 @@ const GeneralFormQuestions = ({
               maxCountEnabled: false,
               newOptionLabel: "",
               newOptionPrice: "",
-              newOptionCount: ""
+              newOptionCount: "",
+              description_color: childSubQ.description_color || "#888888"
             };
 
             // Load child options if they exist
@@ -513,10 +514,10 @@ const GeneralFormQuestions = ({
               loadedChildSubQ.priceEnabled = loadedChildSubQ.options.some(opt => opt.price);
               loadedChildSubQ.maxCountEnabled = loadedChildSubQ.options.some(opt => opt.count);
 
-              // NEW: Convert options to comma-separated strings for UI fields
-              loadedChildSubQ.newOptionLabel = loadedChildSubQ.options.map(opt => opt.label).join(', ');
-              loadedChildSubQ.newOptionPrice = loadedChildSubQ.options.map(opt => opt.price || '').join(', ');
-              loadedChildSubQ.newOptionCount = loadedChildSubQ.options.map(opt => opt.count || '').join(', ');
+              // NEW: Initialize input fields as empty when editing
+              loadedChildSubQ.newOptionLabel = "";
+              loadedChildSubQ.newOptionPrice = "";
+              loadedChildSubQ.newOptionCount = "";
             }
 
             return loadedChildSubQ;
@@ -549,10 +550,10 @@ const GeneralFormQuestions = ({
         count: opt.count || ""
       })));
 
-      // Convert to comma-separated strings for input fields
-      setMainQuestionOptionLabels(options.map(opt => opt.label || opt.option_name || "").join(", "));
-      setMainQuestionOptionPrices(options.map(opt => opt.price || "").join(", "));
-      setMainQuestionOptionCounts(options.map(opt => opt.count || "").join(", "));
+      // NEW: Initialize input fields as empty when editing
+      setMainQuestionOptionLabels("");
+      setMainQuestionOptionPrices("");
+      setMainQuestionOptionCounts("");
     } else {
       // Reset to empty
       setMainQuestionPriceEnabled(false);
@@ -1509,49 +1510,51 @@ const GeneralFormQuestions = ({
       res = err || { message: "Save API failed" };
     }
 
-    // Always attempt to refresh eventFormQuestions after the add call completes
-    try {
-      console.log("Calling eventFormQuestions to refresh after add...");
-      const efFd = new FormData();
-      efFd.append("event_id", eventId);
-      const efRes = await authAPI.eventFormQuestions(efFd);
-      console.log("eventFormQuestions refreshed:", efRes);
-      const refreshed = efRes?.data || efRes;
-      setEventFormQuestionsData(refreshed);
+    // Small delay before refreshing to ensure backend has committed changes
+    setTimeout(async () => {
+      try {
+        console.log("Calling eventFormQuestions to refresh after add...");
+        const efFd = new FormData();
+        efFd.append("event_id", eventId);
+        const efRes = await authAPI.eventFormQuestions(efFd);
+        console.log("eventFormQuestions refreshed:", efRes);
+        const refreshed = efRes?.data || efRes;
+        setEventFormQuestionsData(refreshed);
 
-      if (typeof onSave === "function") {
-        const grouped =
-          refreshed?.form_question?.event_form_details ||
-          refreshed?.form_question ||
-          refreshed;
-        try {
-          // pass both grouped data and the single updated question for instant UI merge
-          const updatedQuestion =
-            (res && res.data && res.data.updated_question) ||
-            selectedQuestion ||
-            null;
-          onSave(grouped, updatedQuestion);
-        } catch (err) {
-          console.warn("onSave callback failed:", err);
+        if (typeof onSave === "function") {
+          const grouped =
+            refreshed?.form_question?.event_form_details ||
+            refreshed?.form_question ||
+            refreshed;
+          try {
+            // merge server response with selectedQuestion to ensure we have full data
+            const updatedQuestion = {
+              ...selectedQuestion,
+              ...(res && res.data && res.data.updated_question ? res.data.updated_question : {})
+            };
+            onSave(grouped, updatedQuestion);
+          } catch (err) {
+            console.warn("onSave callback failed:", err);
+          }
         }
-      }
 
-      // Inform user about final status
-      if (res && (res.success === 200 || String(res.success) === "1")) {
-        triggerToast(res.message || "Question saved successfully");
-      } else if (res && res.message) {
-        triggerToast(res.message);
-      } else {
-        triggerToast("Question operation completed; refreshed questions.");
+        // Inform user about final status
+        if (res && (res.success === 200 || String(res.success) === "1")) {
+          triggerToast(res.message || "Question saved successfully");
+        } else if (res && res.message) {
+          triggerToast(res.message);
+        } else {
+          triggerToast("Question operation completed; refreshed questions.");
+        }
+      } catch (err) {
+        console.error("Failed to refresh eventFormQuestions:", err);
+        // Show message even if refresh failed
+        triggerToast(res?.message || "Question saved but failed to refresh questions.", 'error');
+      } finally {
+        setShowModal(false);
+        setSelectedQuestion(null);
       }
-    } catch (err) {
-      console.error("Failed to refresh eventFormQuestions:", err);
-      // Show message even if refresh failed
-      triggerToast(res?.message || "Question saved but failed to refresh questions.", 'error');
-    } finally {
-      setShowModal(false);
-      setSelectedQuestion(null);
-    }
+    }, 500);
   };
 
   return (
