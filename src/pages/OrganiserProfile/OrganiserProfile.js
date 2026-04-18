@@ -218,6 +218,10 @@ export default function OrganiserProfile() {
       }
       setIsEditing(false);
       await fetchOrganizerData();
+
+      // Dispatch custom event to notify other components (e.g. TopNav) 
+      // that the organiser profile has been updated/filled
+      window.dispatchEvent(new CustomEvent("organizerProfileUpdated"));
     } catch (error) {
       console.error("Error saving organizer data:", error);
       const errorMsg = error.message || (typeof error === "string" ? error : "");

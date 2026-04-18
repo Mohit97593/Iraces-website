@@ -112,6 +112,27 @@ export default function MyEvents() {
     // eslint-disable-next-line
   }, []);
 
+  const fetchOrganizerStatus = async () => {
+    try {
+      const orgRes = await authAPI.getOrganizerDetails();
+      if (orgRes?.data?.organizerData && orgRes.data.organizerData.length > 0) {
+        setHasOrganizerProfile(true);
+      } else {
+        setHasOrganizerProfile(false);
+      }
+    } catch (orgErr) {
+      console.error("Failed to fetch organiser details:", orgErr);
+      setHasOrganizerProfile(false);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("organizerProfileUpdated", fetchOrganizerStatus);
+    return () => {
+      window.removeEventListener("organizerProfileUpdated", fetchOrganizerStatus);
+    };
+  }, []);
+
   const callAllEventDetails = async (type) => {
     console.log("callAllEventDetails invoked with type:", type);
     setActiveType(type);

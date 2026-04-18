@@ -612,28 +612,46 @@ export default function TopNav() {
     }
   }, []); // Run only once on mount
 
+  const checkOrganizerProfile = async () => {
+    if (!isAuthenticated) return false;
+    try {
+      const orgRes = await authAPI.getOrganizerDetails();
+      if (orgRes?.data?.organizerData && orgRes.data.organizerData.length > 0) {
+        setHasOrganizerProfile(true);
+        return true;
+      } else {
+        setHasOrganizerProfile(false);
+        return false;
+      }
+    } catch (e) {
+      setHasOrganizerProfile(false);
+      return false;
+    }
+  };
+
   // Check organiser profile on auth
   useEffect(() => {
-    if (!isAuthenticated) {
-      setHasOrganizerProfile(false);
-      return;
-    }
-    (async () => {
-      try {
-        const orgRes = await authAPI.getOrganizerDetails();
-        if (orgRes?.data?.organizerData && orgRes.data.organizerData.length > 0) {
-          setHasOrganizerProfile(true);
-        } else {
-          setHasOrganizerProfile(false);
-        }
-      } catch (e) {
-        setHasOrganizerProfile(false);
-      }
-    })();
+    checkOrganizerProfile();
   }, [isAuthenticated]);
 
-  const handleCreateEvent = () => {
-    if (hasOrganizerProfile) {
+  // Listen for organizer profile updates from other components
+  useEffect(() => {
+    window.addEventListener("organizerProfileUpdated", checkOrganizerProfile);
+    return () => {
+      window.removeEventListener("organizerProfileUpdated", checkOrganizerProfile);
+    };
+  }, [isAuthenticated]);
+
+  const handleCreateEvent = async () => {
+    let currentHasProfile = hasOrganizerProfile;
+
+    // If state says false, double check with API before showing popup
+    // This handles the case where the profile was just saved but state hasn't updated yet
+    if (!currentHasProfile && isAuthenticated) {
+      currentHasProfile = await checkOrganizerProfile();
+    }
+
+    if (currentHasProfile) {
       sessionStorage.removeItem("editEventId");
       navigate("/create-event");
     } else {
