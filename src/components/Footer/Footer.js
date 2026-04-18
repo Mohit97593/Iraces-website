@@ -1,9 +1,31 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "./Footer.css";
 import runmateLogo from "../../assets/image/Runmate-Logo.png";
+import { authAPI } from "../../services/authAPI";
 
 export default function Footer() {
+  const [footerButtons, setFooterButtons] = useState([]);
+
+  useEffect(() => {
+    const fetchFooterButtons = async () => {
+      try {
+        const response = await authAPI.getFooterButtons();
+        if (response && response.data && response.data.footer_buttons) {
+          // Sort or filter if needed, but here we take them as they are
+          const activeButtons = response.data.footer_buttons
+            .filter(btn => btn.is_active === 1)
+            .sort((a, b) => a.index - b.index);
+          setFooterButtons(activeButtons);
+        }
+      } catch (error) {
+        console.error("Error fetching footer buttons:", error);
+      }
+    };
+
+    fetchFooterButtons();
+  }, []);
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -69,72 +91,81 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Column 1 - Quick Links */}
           <div className="footer-column">
             <h3 className="footer-heading">Quick Links</h3>
             <ul className="footer-links">
-              <li>
-                <Link to="/disclaimer" onClick={scrollToTop}>Disclaimer</Link>
-              </li>
-              <li>
-                <Link to="/terms-conditions" onClick={scrollToTop}>Terms & Conditions</Link>
-              </li>
-              <li>
-                <Link to="/privacy-policy" onClick={scrollToTop}>Privacy Policy</Link>
-              </li>
-              <li>
-                <Link to="/cancellation-policy" onClick={scrollToTop}>Cancellation Policy</Link>
-              </li>
+              {footerButtons.slice(0, 5).map((btn) => (
+                <li key={btn.id}>
+                  {btn.type === "link" ? (
+                    <a 
+                      href={btn.content} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      onClick={scrollToTop}
+                    >
+                      {btn.name}
+                    </a>
+                  ) : (
+                    <Link to={`/p/${btn.id}`} onClick={scrollToTop}>
+                      {btn.name}
+                    </Link>
+                  )}
+                </li>
+              ))}
               <li>
                 <Link to="/contact" onClick={scrollToTop}>Contact Us</Link>
               </li>
-              <li>
-                <Link to="/why-choose-races" onClick={scrollToTop}>How It Works?</Link>
-              </li>
             </ul>
           </div>
 
-          {/* Products & Services */}
+          {/* Column 2 - Products & Services */}
           <div className="footer-column">
             <h3 className="footer-heading">Products & Services</h3>
             <ul className="footer-links">
-              <li>
-                <a href="https://youtoocanrun.com/races" target="_blank" >Races</a>
-              </li>
-              <li>
-                <a href="https://youtoocanrun.com/race-management" target="_blank">Race Management</a>
-              </li>
-              <li>
-                <a href="https://youtoocanrun.com/treasured-moments" target="_blank">Treasured moments</a>
-              </li>
-              <li>
-                <a href=" https://racemart.in/" target="_blank">Racemart</a>
-              </li>
-              <li>
-                <a href=" https://youtoocanrun.com/race-kit-management" target="_blank">Bib Expo Management</a>
-              </li>
+              {footerButtons.slice(5, 10).map((btn) => (
+                <li key={btn.id}>
+                  {btn.type === "link" ? (
+                    <a 
+                      href={btn.content} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      onClick={scrollToTop}
+                    >
+                      {btn.name}
+                    </a>
+                  ) : (
+                    <Link to={`/p/${btn.id}`} onClick={scrollToTop}>
+                      {btn.name}
+                    </Link>
+                  )}
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Additional Services */}
+          {/* Column 3 - Additional Services */}
           <div className="footer-column">
             <h3 className="footer-heading">Additional Services</h3>
             <ul className="footer-links">
-              <li>
-                <a href="https://youtoocanrun.com/activeaura" target="_blank">Active Aura</a>
-              </li>
-              <li>
-                <a href="https://youtoocanrun.com/rase" target="_blank">RASE</a>
-              </li>
-              <li>
-                <a href="#">Athlete Id Card</a>
-              </li>
-              <li>
-                <a href=" https://youtoocanrun.com/pace-calculator" target="_blank">Pace Calculator</a>
-              </li>
-              <li>
-                <a href="https://youtoocanrun.com/trump" target="_blank">TRUMP </a>
-              </li>
+              {footerButtons.slice(10, 15).map((btn) => (
+                <li key={btn.id}>
+                  {btn.type === "link" ? (
+                    <a 
+                      href={btn.content} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      onClick={scrollToTop}
+                    >
+                      {btn.name}
+                    </a>
+                  ) : (
+                    <Link to={`/p/${btn.id}`} onClick={scrollToTop}>
+                      {btn.name}
+                    </Link>
+                  )}
+                </li>
+              ))}
             </ul>
           </div>
         </div>

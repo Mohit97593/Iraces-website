@@ -1,0 +1,76 @@
+/* FooterContent Page Styles */
+.footer-content-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f9fa;
+}
+
+.contact-breadcrumb a {
+  color: white !important;
+  text-decoration: none;
+}
+
+.contact-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+/* Main content section */
+.dynamic-content-section {
+  padding: 60px 0;
+  flex: 1;
+}
+
+.content-container {
+  border: none;
+  border-radius: 15px;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.rendered-html-content {
+  color: #333;
+  line-height: 1.8;
+  font-size: 1.1rem;
+}
+
+.rendered-html-content h1,
+.rendered-html-content h2,
+.rendered-html-content h3 {
+  color: #da251c;
+  margin-top: 25px;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.rendered-html-content p {
+  margin-bottom: 20px;
+}
+
+.rendered-html-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  margin: 20px 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.rendered-html-content ul,
+.rendered-html-content ol {
+  margin-bottom: 20px;
+  padding-left: 20px;
+}
+
+.rendered-html-content li {
+  margin-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+  .content-hero-title {
+    font-size: 2.2rem;
+  }
+  
+  .dynamic-content-section {
+    padding: 40px 0;
+  }
+}

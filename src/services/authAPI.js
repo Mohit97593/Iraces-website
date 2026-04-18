@@ -66,6 +66,16 @@ api.interceptors.response.use(
 
 // Auth API Functions
 export const authAPI = {
+  // Get Footer Buttons API
+  getFooterButtons: async () => {
+    try {
+      const response = await api.get("/get_footer_buttons");
+      return response.data;
+    } catch (error) {
+      console.error("getFooterButtons API error:", error);
+      throw error.response?.data || error.message;
+    }
+  },
   // Get Maintenance Mode Status
   getMaintenanceMode: async () => {
     try {

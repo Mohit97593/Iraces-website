@@ -41,6 +41,7 @@ import PaymentSuccess from "../pages/PaymentSuccess";
 import PaymentFailure from "../pages/PaymentFailure";
 import TicketDetails from "../pages/TicketDetails";
 import ResumePayment from "../pages/ResumePayment/ResumePayment";
+import FooterContent from "../pages/FooterContent/FooterContent";
 
 const AppRouter = createBrowserRouter([
   {
@@ -386,6 +387,15 @@ const AppRouter = createBrowserRouter([
         element: (
           <ErrorBoundary>
             <CreateEvent />
+          </ErrorBoundary>
+        ),
+        errorElement: <NotFound />,
+      },
+      {
+        path: "/p/:id",
+        element: (
+          <ErrorBoundary>
+            <FooterContent />
           </ErrorBoundary>
         ),
         errorElement: <NotFound />,
